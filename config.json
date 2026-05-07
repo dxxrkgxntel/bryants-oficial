@@ -1,6 +1,0 @@
-{
-  "token":"MTQ5Nzk3MzEyNjU2OTY1NjU0MA.G-1ON4.wpQIpaFmSoJuXwMO8K-jM_wTul9fy5D7ZDx0BA",
-  "openAiToken": "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",
-  "developer":"784821330687033354",
-  "dataBaseURL":"mongodb://test:lilbryant1@ac-twy7f9b-shard-00-00.aad2q4o.mongodb.net:27017,ac-twy7f9b-shard-00-01.aad2q4o.mongodb.net:27017,ac-twy7f9b-shard-00-02.aad2q4o.mongodb.net:27017/?ssl=true&replicaSet=atlas-bbl4u6-shard-0&authSource=admin&appName=test"
-}
