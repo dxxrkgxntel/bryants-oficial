@@ -30,7 +30,7 @@ client.login(config.token).then(() => {
 
   loadEvents(client);
   loadCommands(client);
-  loadInteractions(client); // ✅ ahora usa el handler externo
+  loadInteractions(client);
 
 });
 

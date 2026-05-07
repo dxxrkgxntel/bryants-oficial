@@ -13,7 +13,5 @@ module.exports = async (userData, guildId) => {
   userData.bank -= fee;
 
   if (userData.bank < 0) userData.bank = 0;
-
-  // ⚠️ MUY IMPORTANTE:
-  // ❌ NO guardar aquí
+  
 };
