@@ -8,7 +8,7 @@ function userPermsReply(interaction,razon,invisible){
             .addFields(
                 {name:'Necesito los siguientes permisos', value:`\`\`\`prolog\n${razon}\`\`\``}
             )
-            .setColor('Red')
+            .setColor('#8A2BE2')
         ],
         ephemeral:invisible
     })

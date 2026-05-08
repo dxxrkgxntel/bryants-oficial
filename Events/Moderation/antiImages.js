@@ -35,7 +35,7 @@ module.exports = {
             if (logChannel) {
 
                 const embed = new EmbedBuilder()
-                    .setColor("Red")
+                    .setColor("#8A2BE2")
                     .setTitle("🚫 Imagen bloqueada")
                     .addFields(
                         { name: "👤 Usuario", value: `${message.author}`, inline: true },

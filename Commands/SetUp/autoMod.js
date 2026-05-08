@@ -94,7 +94,7 @@ module.exports = {
 
                     const embed = new EmbedBuilder()
 
-                    .setColor('Random')
+                    .setColor('#8A2BE2')
 
                     .setDescription(`You AutoMod rule has been created- all swears will be stopped by ${client.user.tag}`)
 
@@ -170,7 +170,7 @@ module.exports = {
 
                     const embed2 = new EmbedBuilder()
 
-                    .setColor('Random')
+                    .setColor('#8A2BE2')
 
                     .setDescription(`You AutoMod rule has been created- all messages containing the word ${word} will be deleted by ${client.user.tag}`)
 
@@ -246,7 +246,7 @@ module.exports = {
 
                     const embed3 = new EmbedBuilder()
 
-                    .setColor('Random')
+                    .setColor('#8A2BE2')
 
                     .setDescription(`You AutoMod rule has been created- all messages suspected of spam will be deleted by ${client.user.tag}`)
 
@@ -324,7 +324,7 @@ module.exports = {
 
                     const embed4 = new EmbedBuilder()
 
-                    .setColor('Random')
+                    .setColor('#8A2BE2')
 
                     .setDescription(`You AutoMod rule has been created- all messages suspetected of mention spam will be deleted. by ${client.user.tag}`)
 
@@ -404,7 +404,7 @@ module.exports = {
 
                     const embed5 = new EmbedBuilder()
 
-                    .setColor('Random')
+                    .setColor('#8A2BE2')
 
                     .setDescription(`You AutoMod rule has been created- all links now blocked. by ${client.user.tag}`)
 
@@ -480,7 +480,7 @@ module.exports = {
 
                     const embed6 = new EmbedBuilder()
 
-                    .setColor('Random')
+                    .setColor('#8A2BE2')
 
                     .setDescription(`You AutoMod rule has been created- all discord invites now blocked. by ${client.user.tag}`)
 

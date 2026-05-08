@@ -45,7 +45,7 @@ module.exports = {
             const embedReport = new EmbedBuilder()
             .setTitle('Nuevo Reporte')
             .setDescription(`**Informacion del Usuario Reportado**\n\n> Member Tag: <@${user.id}>\n> Miembro desde: <t:${Math.floor(buscar.joinedTimestamp/1000)}:R>\n> Id del usuario:${user.id}\n> Cuenta Creada: <t:${Math.floor(user.createdTimestamp/1000)}:R>\n\n\n**Informacion del reportante**\n\n> Member Tag: <@${interaction.user.id}>\n> Miembro desde: <t:${parseInt(interaction.member.joinedTimestamp/1000)}:R>\n> Id del miemrbo: ${interaction.user.id}\n> Cuenta creada: <t:${parseInt(interaction.user.createdTimestamp/1000)}:R>\n`)
-            .setColor('Gold')
+            .setColor('#8A2BE2')
             .setThumbnail(user.avatarURL({dynamic:true}) ?? 'https://cdn.discordapp.com/embed/avatars/0.png')
             .setFields(
                 {name:'Razon', value:`\`\`\`${description}\`\`\``, inline:true},

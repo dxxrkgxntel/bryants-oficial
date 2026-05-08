@@ -13,7 +13,7 @@ module.exports = {
         try {
 
             const embed = new EmbedBuilder()
-                .setColor('#1bfcbe')
+                .setColor('#8A2BE2')
                 .setAuthor({ 
                     name: interaction.user.tag, 
                     iconURL: interaction.user.displayAvatarURL() 

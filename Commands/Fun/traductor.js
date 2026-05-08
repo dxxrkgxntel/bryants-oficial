@@ -10,7 +10,7 @@ const {
   module.exports = {
     data: new SlashCommandBuilder()
       .setName("traducir")
-      .setDescription("Traducir texto")
+      .setDescription("Traducir texto a otro idioma")
       .addStringOption((uwagi) =>
         uwagi
           .setName("text")
@@ -35,7 +35,7 @@ const {
         .then((result) => {
           const languageName = ISO6391.getName(language) || language;
           const Embed = new EmbedBuilder()
-            .setColor("Aqua")
+            .setColor("#8A2BE2")
             .setTitle(`Translated to ${languageName} language`)
             .addFields(
               {

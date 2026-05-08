@@ -4,7 +4,7 @@ const ImageConfig = require("../../Models/ImageConfig");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("img-list")
-        .setDescription("Ver canales permitidos")
+        .setDescription("Ver canales de imagenes permitidos")
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async execute(interaction) {
@@ -38,7 +38,7 @@ module.exports = {
         const IMAGE_URL = "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png?ex=69fce734&is=69fb95b4&hm=ce0ce8d6ce02a2092a9a6d57952aa8dafdefc54a6d1f015ff6d22be289e0088a&=&format=webp&quality=lossless&width=1288&height=515";
 
         const embed = new EmbedBuilder()
-    .setColor("Purple")
+    .setColor("#8A2BE2")
     .setTitle("📸 Canales permitidos")
     .setDescription(`
             ${channels || "❌ No hay canales válidos"}

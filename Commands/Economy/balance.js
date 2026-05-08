@@ -18,7 +18,7 @@ module.exports = {
     const userData = await getUser(interaction.guild.id, target.id);
 
     const embed = new EmbedBuilder()
-      .setColor('#2f3136')
+      .setColor('#8A2BE2')
       .setTitle(`💰 Balance de ${target.username}`)
       .addFields(
         { name: '💵 Wallet', value: `${userData.wallet.toLocaleString()} monedas`, inline: true },

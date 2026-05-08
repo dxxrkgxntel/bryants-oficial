@@ -67,7 +67,7 @@ module.exports = {
         ]);
         
         const embed = new EmbedBuilder()
-                .setColor("Green")
+                .setColor("#8A2BE2")
                 .setTitle(`Información de ${guild.name}`)
                 .setThumbnail(guild.iconURL({ size: 1024 }))
                 .setImage(guild.bannerURL({ size: 1024 }))

@@ -1,10 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args)); // since require is not supported, we will use this 
-
-//workaround to import node-fetch
-
-
+const fetch = (...args) =>
+    import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 module.exports = {
 
@@ -12,55 +9,63 @@ module.exports = {
 
         .setName("shitpost")
 
-        .setDescription("ShitPost en español."),
-
-
+        .setDescription("Recibe un humor negro"),
 
     async execute(interaction) {
 
-        const { guild, options, member } = interaction;
+        try {
 
+            const embed = new EmbedBuilder();
 
+            const response = await fetch(
+                "https://www.reddit.com/r/ShitpostESP/random/.json"
+            );
 
-        const platform = options.getString("platform");
+            const data = await response.json();
 
+            // 🔥 VALIDAR DATA
+            if (
+                !data ||
+                !data[0] ||
+                !data[0].data ||
+                !data[0].data.children ||
+                !data[0].data.children[0]
+            ) {
 
-        const embed = new EmbedBuilder();
+                return interaction.reply({
+                    content: "❌ No pude obtener un shitpost.",
+                    ephemeral: true
+                });
+            }
 
+            const post = data[0].data.children[0].data;
 
+            // 🔥 VALIDAR URL
+            if (!post.url) {
 
-        async function meme() {
+                return interaction.reply({
+                    content: "❌ El post no contiene imagen.",
+                    ephemeral: true
+                });
+            }
 
-            await fetch('https://www.reddit.com/r/ShitpostESP/random/.json').then(async res => {
+            embed
+                .setColor("#8A2BE2")
+                .setImage(post.url)
+                .setURL(post.url);
 
-                let meme = await res.json();
-
-
-
-                let url = meme[0].data.children[0].data.url;
-
-
-
-                return interaction.reply({ embeds: [embed.setImage(url).setURL(url).setColor("Random")] });
-
+            return interaction.reply({
+                embeds: [embed]
             });
 
+        } catch (err) {
+
+            console.log(err);
+
+            return interaction.reply({
+                content: "❌ Ocurrió un error obteniendo el shitpost.",
+                ephemeral: true
+            });
         }
-
-
-
-        //generating a random meme from any platform
-
-        if (!platform) {
-
-            let memes = [meme];
-
-            memes[Math.floor(Math.random() * memes.length)]();
-
-        }
-
-
-
     }
-
-}
+};

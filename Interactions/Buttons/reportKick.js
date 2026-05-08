@@ -35,7 +35,7 @@ module.exports = {
                     iconURL: member.user.displayAvatarURL({ dynamic: true })
                 })
                 .setTitle(`Fuiste kickeado de ${guild.name}`)
-                .setColor('Red')
+                .setColor('#8A2BE2')
                 .setDescription(`Puedes volver a entrar al servidor con una nueva invitación. Tómalo como una advertencia.\nPor favor no seas tóxico o no **rompas las reglas del servidor**`)
                 .setTimestamp();
 
@@ -61,7 +61,7 @@ module.exports = {
                 inline: true
             };
 
-            const editEmbed = EmbedBuilder.from(embed).setColor('Red');
+            const editEmbed = EmbedBuilder.from(embed).setColor('#8A2BE2');
 
             await member.kick();
             await message.edit({

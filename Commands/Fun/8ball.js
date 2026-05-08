@@ -59,7 +59,7 @@ module.exports = {
         try {
             const indice = Math.floor(Math.random() * respuestas.length)
             const ballEmbed = new EmbedBuilder()
-                .setColor('Random')
+                .setColor('#8A2BE2')
                 .setAuthor({ name: `${interaction.user.username} Acaba de hacer una pregunta`, iconURL: interaction.user.avatarURL({ dynamic: true }) })
                 .addFields(
                     {name:'Pregunta', value:`\`\`\`${pregunta}\`\`\``},

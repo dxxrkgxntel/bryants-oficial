@@ -20,7 +20,7 @@ module.exports = {
     const embed = new EmbedBuilder()
       .setTitle('🛒 Tienda de Roles')
       .setDescription(desc)
-      .setColor('#2ecc71');
+      .setColor('#8A2BE2');
 
     interaction.reply({ embeds: [embed] });
   }

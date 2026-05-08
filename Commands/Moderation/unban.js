@@ -31,7 +31,7 @@ module.exports = {
 
             unbanEmbed.setTitle('✅| Usuario fue desbaneado correctamente')
             .setDescription(`<@${userId}> fue desbaneado.\nDesbaneado por: ${interaction.user.tag}`)
-            .setColor('Green')
+            .setColor('#8A2BE2')
             .setTimestamp()
 
             await interaction.reply({embeds:[unbanEmbed]})

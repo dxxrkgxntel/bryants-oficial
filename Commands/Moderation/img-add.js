@@ -38,7 +38,7 @@ module.exports = {
         await config.save();
 
         const embed = new EmbedBuilder()
-            .setColor("Green")
+            .setColor("#8A2BE2")
             .setDescription(`✅ Imágenes permitidas en ${channel}`);
 
         interaction.reply({ embeds: [embed] });

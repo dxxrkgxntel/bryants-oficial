@@ -79,9 +79,9 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setTimestamp()
-            .setColor('DarkButNotBlack')
+            .setColor('#8A2BE2')
             .setDescription(`***TICKETS ${interaction.guild.name}***\nSistema de tickets para ayuda y soporte de este servidor.`)
-            .setFooter({ text: `Administración Nixx Network`, iconURL: interaction.guild.iconURL({ dynamic: true }) })
+            .setFooter({ text: `Administración Bryant's Oficial`, iconURL: interaction.guild.iconURL({ dynamic: true }) })
 
         const data = await ticketSchema.findOne({ guildId: interaction.guild.id })
         if (!data) {

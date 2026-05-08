@@ -7,7 +7,7 @@ const reportSchema = require('../../Models/reportGuldSchema')
 
 module.exports = {
     data: new SlashCommandBuilder()
-    .setName('report-setup')
+    .setName('reporte-setup')
     .setDescription('Crea el sistema de reportes para tu servidor')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addChannelOption(option=>

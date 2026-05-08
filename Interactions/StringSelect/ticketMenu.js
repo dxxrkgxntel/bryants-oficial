@@ -79,7 +79,7 @@ module.exports = {
                     });
 
                     const embed = new EmbedBuilder()
-                        .setColor('DarkButNotBlack')
+                        .setColor('#8A2BE2')
                         .setDescription(
                             `${interaction.guild.name} SOPORTE\nBienvenido <@${interaction.user.id}>`
                         )
@@ -147,7 +147,7 @@ module.exports = {
                     });
 
                     const embed = new EmbedBuilder()
-                        .setColor('DarkButNotBlack')
+                        .setColor('#8A2BE2')
                         .setDescription(
                             `${interaction.guild.name} COMPRAS\nBienvenido <@${interaction.user.id}>`
                         )

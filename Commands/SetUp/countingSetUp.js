@@ -7,7 +7,7 @@ const countingSchema = require('../../Models/countingSchema')
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('counting-setup')
+        .setName('contador-setup')
         .setDescription('Crea un sistema de conteo para tu servidor')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addChannelOption(option =>

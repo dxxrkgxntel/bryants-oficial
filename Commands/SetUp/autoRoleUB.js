@@ -6,7 +6,7 @@ const botReply = require('../../Functions/interactionBotReply')
 const autoRole = require('../../Models/autoRoleType')
 module.exports = {
     data: new SlashCommandBuilder()
-    .setName('role-setup')
+    .setName('autorol-setup')
     .setDescription('Crea un sistema de autoroles para usuarios y bots')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addRoleOption(option=>

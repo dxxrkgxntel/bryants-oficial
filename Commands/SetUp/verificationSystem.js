@@ -19,7 +19,7 @@ module.exports = {
 
     data: new SlashCommandBuilder()
 
-        .setName('verify-setup')
+        .setName('verificacion-setup')
         .setDescription('Crea un sistema de verificacion para tu servidor')
 
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
@@ -133,7 +133,7 @@ module.exports = {
 
             .setDescription(description)
 
-            .setColor('Purple');
+            .setColor('#8A2BE2');
 
         // 🖼️ THUMBNAIL
         if (thumbnail) {

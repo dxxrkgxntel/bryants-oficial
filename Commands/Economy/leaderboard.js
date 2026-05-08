@@ -23,7 +23,7 @@ module.exports = {
     const embed = new EmbedBuilder()
       .setTitle('🏆 Leaderboard de Economía')
       .setDescription(description)
-      .setColor('#f1c40f')
+      .setColor('#8A2BE2')
       .setFooter({ text: interaction.guild.name });
 
     await interaction.reply({ embeds: [embed] });

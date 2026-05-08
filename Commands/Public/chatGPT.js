@@ -45,7 +45,7 @@ module.exports = {
           name: `${interaction.user.tag} preguntó a ChatGPT`,
           iconURL: interaction.user.avatarURL({ dynamic: true })
         })
-        .setColor('Random')
+        .setColor('#8A2BE2')
         .setDescription(
           `**Pregunta:**\n\`\`\`${pregunta}\`\`\`\n` +
           `**Respuesta:**\n\`\`\`${response.choices[0].message.content}\`\`\``

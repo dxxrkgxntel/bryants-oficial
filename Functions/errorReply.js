@@ -8,7 +8,7 @@ function errorReply(message,razon){
             .addFields(
                 {name:'Error', value:`\`\`\`yaml\n${razon}\`\`\``}
             )
-            .setColor('Red')
+            .setColor('#8A2BE2')
         ]
     })
 }

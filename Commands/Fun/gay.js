@@ -8,7 +8,7 @@ module.exports = {
         .setDescription('ve un percentaje de cuanto eres de gay')
         .addUserOption((option) =>
             option.setName(`usuario`)
-                .setDescription(`ve a un usuario cuanto es de gay`)
+                .setDescription(`Mira el porcentaje gay de este usuario`)
                 .setRequired(false)
         ),
     /**
@@ -23,13 +23,13 @@ module.exports = {
 
         ///   if (!pregunta) return int.reply('Escriba una pregunta.')
         const embed = new EmbedBuilder()
-            .setColor(`#2b2d31`)
+            .setColor(`#8A2BE2`)
             .setTitle(`Cuanto eres de gay `)
             .setDescription(`
      usuario: 
      ${usuario.username}
       Te ha tocado:
-        ${rpts[Math.floor(Math.random() * rpts.length)]} gey 🏳‍🌈
+        ${rpts[Math.floor(Math.random() * rpts.length)]} gay 🏳‍🌈
         `)
             .setFooter({ text: `Usuario quien puso el comando ${interaction.user.username}` })
 

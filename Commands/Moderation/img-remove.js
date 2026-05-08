@@ -4,7 +4,7 @@ const ImageConfig = require("../../Models/ImageConfig");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("img-remove")
-        .setDescription("Quitar canal permitido")
+        .setDescription("Quitar canal permitido para imagenes")
         .addChannelOption(option =>
             option.setName("canal")
                 .setDescription("Canal")
@@ -31,7 +31,7 @@ module.exports = {
         await config.save();
 
         const embed = new EmbedBuilder()
-            .setColor("Red")
+            .setColor("#8A2BE2")
             .setDescription(`❌ Canal eliminado: ${channel}`);
 
         interaction.reply({ embeds: [embed] });

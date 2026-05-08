@@ -35,7 +35,7 @@ module.exports = {
                     kissCount: 1
                 })
                 const kissEmbed = new EmbedBuilder()
-                    .setColor('Random')
+                    .setColor('#8A2BE2')
                     .setAuthor({ name: `${interaction.user.username}`, iconURL: interaction.user.avatarURL({ dynamic: true }) })
                     .setTitle('Nuevo beso')
                     .setDescription(`<@${interaction.user.id}> acaba de besar a <@${user.id}>\n\n> <@${user.id}> tiene 1 beso en total`)
@@ -47,7 +47,7 @@ module.exports = {
             if (userData) {
                 userData.kissCount++
                 const kissEmbed = new EmbedBuilder()
-                    .setColor('Random')
+                    .setColor('#8A2BE2')
                     .setAuthor({ name: `${interaction.user.username}`, iconURL: interaction.user.avatarURL({ dynamic: true }) })
                     .setTitle('Nuevo beso')
                     .setDescription(`<@${interaction.user.id}> acaba de besar a <@${user.id}>\n\n> <@${user.id}> tiene ${userData.kissCount} besos en total`)

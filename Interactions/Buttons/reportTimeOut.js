@@ -35,7 +35,7 @@ module.exports = {
                     iconURL: member.user.displayAvatarURL({ dynamic: true })
                 })
                 .setTitle(`Te dieron timeout en ${guild.name}`)
-                .setColor('Red')
+                .setColor('#8A2BE2')
                 .setDescription(`Por favor no seas tóxico o no **rompas las reglas del servidor**`)
                 .setTimestamp();
 
@@ -61,7 +61,7 @@ module.exports = {
                 inline: true
             };
 
-            const editEmbed = EmbedBuilder.from(embed).setColor('Red');
+            const editEmbed = EmbedBuilder.from(embed).setColor('#8A2BE2');
 
             // ⏱️ 15 minutos (puedes cambiarlo)
             await member.timeout(15 * 60 * 1000);

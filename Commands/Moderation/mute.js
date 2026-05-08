@@ -54,7 +54,7 @@ module.exports = {
         const muteEmbed = new EmbedBuilder()
         .setTitle('Muteado correctamente')
         .setDescription(`El usuario ${user} fue muteado por <@${interaction.user.id}>\nRazón:${description}`)
-        .setColor('Red')
+        .setColor('#8A2BE2')
         .setTimestamp()
 
         try {

@@ -9,7 +9,7 @@ let currentIndex = 0; // Variable para almacenar el índice actual de la imagen
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('google')
-    .setDescription('Hola')
+    .setDescription('Busca algo en google')
     .addStringOption(option =>
       option.setName('query')
         .setDescription('Escribe la imagen a buscar')

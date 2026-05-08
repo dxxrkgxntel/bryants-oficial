@@ -17,7 +17,7 @@ module.exports = {
         const botchoice = `${choices[(Math.floor(Math.random() * choices.length))]}`
 
         const Embed = new EmbedBuilder()
-            .setColor("Blue")
+            .setColor("#8A2BE2")
             .setAuthor({ name: "Pedra papel tijeras", iconURL: user.displayAvatarURL() })
             .setDescription(`<@${user.id}> vamos al ataque !`)
 
@@ -63,7 +63,7 @@ module.exports = {
                         return interaction.editReply({
                             embeds: [
                                 new EmbedBuilder()
-                                    .setColor(`Blue`)
+                                    .setColor(`#8A2BE2`)
                                     .setAuthor({ name: "Piedra papel tijeras", iconURL: user.displayAvatarURL() })
                                     .setDescription(`\`\`\`Empate\`\`\``)
                                     .addFields(
@@ -80,7 +80,7 @@ module.exports = {
                         return interaction.editReply({
                             embeds: [
                                 new EmbedBuilder()
-                                    .setColor(`Blue`)
+                                    .setColor(`#8A2BE2`)
                                     .setAuthor({ name: "Piedra papel tijeras", iconURL: user.displayAvatarURL() })
                                     .setDescription(`\`\`\`has perdido la partida el bot gana\`\`\``)
                                     .addFields(
@@ -96,7 +96,7 @@ module.exports = {
                         return interaction.editReply({
                             embeds: [
                                 new EmbedBuilder()
-                                    .setColor(`Blue`)
+                                    .setColor(`#8A2BE2`)
                                     .setAuthor({ name: "Piedra papel tijeras", iconURL: user.displayAvatarURL() })
                                     .setDescription(`\`\`\`Has ganado la partida\`\`\``)
                                     .addFields(
@@ -115,7 +115,7 @@ module.exports = {
                         return interaction.editReply({
                             embeds: [
                                 new EmbedBuilder()
-                                    .setColor(`Blue`)
+                                    .setColor(`#8A2BE2`)
                                     .setAuthor({ name: "Piedra papel tijeras", iconURL: user.displayAvatarURL() })
                                     .setDescription(`\`\`\`Has ganado la partida\`\`\``)
                                     .addFields(
@@ -132,7 +132,7 @@ module.exports = {
                         return interaction.editReply({
                             embeds: [
                                 new EmbedBuilder()
-                                    .setColor(`Blue`)
+                                    .setColor(`#8A2BE2`)
                                     .setAuthor({ name: "Piedra papel tijeras", iconURL: user.displayAvatarURL() })
                                     .setDescription(`\`\`\`Empate\`\`\``)
                                     .addFields(
@@ -148,7 +148,7 @@ module.exports = {
                         return interaction.editReply({
                             embeds: [
                                 new EmbedBuilder()
-                                    .setColor(`Blue`)
+                                    .setColor(`#8A2BE2`)
                                     .setAuthor({ name: "Piedra papel tijeras", iconURL: user.displayAvatarURL() })
                                     .setDescription(`\`\`\`Has perdido la partida el bot gana\`\`\``)
                                     .addFields(
@@ -169,7 +169,7 @@ module.exports = {
                         return interaction.editReply({
                             embeds: [
                                 new EmbedBuilder()
-                                    .setColor(`Blue`)
+                                    .setColor(`#8A2BE2`)
                                     .setAuthor({ name: "Piedra papel tijeras", iconURL: user.displayAvatarURL() })
                                     .setDescription(`\`\`\`Has perdido la partido el bot gana\`\`\``)
                                     .addFields(
@@ -186,7 +186,7 @@ module.exports = {
                         return interaction.editReply({
                             embeds: [
                                 new EmbedBuilder()
-                                    .setColor(`Blue`)
+                                    .setColor(`#8A2BE2`)
                                     .setAuthor({ name: "Piedra papel tijeras", iconURL: user.displayAvatarURL() })
                                     .setDescription(`\`\`\`Has ganado la partida el bot pierde\`\`\``)
                                     .addFields(
@@ -202,7 +202,7 @@ module.exports = {
                         return interaction.editReply({
                             embeds: [
                                 new EmbedBuilder()
-                                    .setColor(`Blue`)
+                                    .setColor(`#8A2BE2`)
                                     .setAuthor({ name: "Piedra papel tijeras", iconURL: user.displayAvatarURL() })
                                     .setDescription(`\`\`\`Empate\`\`\``)
                                     .addFields(

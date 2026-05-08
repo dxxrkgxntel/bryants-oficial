@@ -5,12 +5,12 @@ module.exports = {
     developer: true,
     data: new SlashCommandBuilder()
         .setName('calculadora')
-        .setDescription('Usa la calculadora'),
+        .setDescription('Calcula en tiempo real'),
     async execute(interaction) {
         const idPrefix = 'calulator'
         const embed = new EmbedBuilder()
             .setDescription("```\nEmpieza a usar la calculadora\n```")
-            .setColor('Random')
+            .setColor('#8A2BE2')
         const row = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()

@@ -45,7 +45,7 @@ module.exports = {
                         .setAuthor({ name: `${interaction.user.tag} acaba de realizar una confesion` })
                         .setDescription(`**La confesion es:**\n> \`\`\`${desc}\`\`\``)
                         .setThumbnail(interaction.user.avatarURL({ dynamic: true }))
-                        .setColor('Random')
+                        .setColor('#8A2BE2')
                         .setFooter({ text: `${interaction.guild.name}`, iconURL: client.user.avatarURL({ dynamic: true }) })
 
                     await channel.send({ embeds: [embed] })
@@ -56,7 +56,7 @@ module.exports = {
                         .setAuthor({ name: `Acaban de realizar una confesion privada 😏` })
                         .setDescription(`**La confesion es tal:**\n> \`\`\`${desc}\`\`\``)
                         .setThumbnail("https://www.shutterstock.com/image-photo/unknown-woman-holding-question-mark-260nw-1718774170.jpg")
-                        .setColor('Random')
+                        .setColor('#8A2BE2')
                         .setFooter({ text: `${interaction.guild.name}`, iconURL: client.user.avatarURL({ dynamic: true }) })
 
                     await channel.send({ embeds: [embedd] })

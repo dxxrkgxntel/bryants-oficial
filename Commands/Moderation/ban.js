@@ -25,7 +25,7 @@ module.exports = {
 
         const embedError = new EmbedBuilder()
         .setDescription(`No puedes banear a ${user} ya que tiene un rol mayor`)
-        .setColor('Red')
+        .setColor('#8A2BE2')
 
         if(member.roles.highest.position >= interaction.member.roles.highest.position){
             return interaction.reply({embeds:[embedError]})
@@ -39,7 +39,7 @@ module.exports = {
         .setFields(
             {name:`Id`, value:`${user.id}`}
         )
-        .setColor('Green')
+        .setColor('#8A2BE2')
         .setTimestamp()
 
         await interaction.reply({embeds:[embedBan]})

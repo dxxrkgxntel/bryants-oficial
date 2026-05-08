@@ -21,7 +21,7 @@ module.exports = {
             
             const embed = new EmbedBuilder()
                 .setTitle(`Información de ${user.username}`) 
-                .setColor('Red')
+                .setColor('#8A2BE2')
                 .setThumbnail(userAvatar)
                 .addFields({
                     name: `¿Cuándo se unió a discord?:`,

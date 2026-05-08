@@ -6,7 +6,7 @@ const botReply = require('../../Functions/interactionBotReply')
 const applyGuildSchema = require('../../Models/applyGuildSchema')
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('applysetup')
+        .setName('aplicar-setup')
         .setDescription('Crea un sistema de aplicaciones para tu servidor')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addChannelOption(option =>
@@ -49,7 +49,7 @@ module.exports = {
             const embedApply = new EmbedBuilder()
                 .setTitle('¿Quieres aplicar a staff?')
                 .setDescription(`${applyDescription}`)
-                .setColor('Gold')
+                .setColor('#8A2BE2')
 
             // Creacion de los botones
 

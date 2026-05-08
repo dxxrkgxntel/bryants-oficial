@@ -3,7 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder, Client } = require("discord.js");
 module.exports = {
     data: new SlashCommandBuilder()
     .setName("uptime")
-    .setDescription("Shows you the uptime of the bot."),
+    .setDescription("Muestra el tiempo que el bot tiene activo."),
 
     async execute(interaction, client) {
         const days = Math.floor(client.uptime / 86400000)
@@ -13,7 +13,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
         .setTitle(`__${client.user.username}'s Uptime__`)
-        .setColor("Blue")
+        .setColor("#8A2BE2")
         .setTimestamp()
         .addFields(
             { name: "Uptime", value: ` \`${days}\` days, \`${hours}\` hours, \`${minutes}\` minutes and \`${seconds}\` seconds.`}

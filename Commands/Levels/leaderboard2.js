@@ -4,7 +4,7 @@ const Level = require("../../Models/Level");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("leaderboard-nivel")
-        .setDescription("Top niveles del servidor"),
+        .setDescription("Top de niveles del servidor"),
 
     async execute(interaction) {
 
@@ -23,7 +23,7 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setTitle("🏆 Leaderboard del servidor")
             .setDescription(leaderboard)
-            .setColor("Gold")
+            .setColor("#8A2BE2")
             .setFooter({ text: "Top 10 usuarios" });
 
         interaction.reply({ embeds: [embed] });

@@ -16,7 +16,7 @@ module.exports = {
         .setDescription("Juega un minijuego multijugador dentro de Discord.")
         .addStringOption(option =>
             option.setName("game")
-                .setDescription("*Choose a game to play.")
+                .setDescription("Elige el juego que deseas.")
                 .setRequired(true)
                 .addChoices(
                     { name: "Connect-4", value: "connect4" },
@@ -26,7 +26,7 @@ module.exports = {
         )
         .addUserOption(option =>
             option.setName("user")
-                .setDescription('*Choose your opponent for the game.')
+                .setDescription('Elige tu oponente para iniciar el juego.')
                 .setRequired(true)
         )
         .setDMPermission(false),
@@ -42,7 +42,7 @@ module.exports = {
             return interaction.reply({
                 embeds: [
                     new EmbedBuilder()
-                        .setColor("Red")
+                        .setColor("#8A2BE2")
                         .setDescription(":warning: | The target specified has most likely left the server.")
                 ],
                 ephemeral: true
@@ -53,7 +53,7 @@ module.exports = {
             return interaction.reply({
                 embeds: [
                     new EmbedBuilder()
-                        .setColor("Red")
+                        .setColor("#8A2BE2")
                         .setDescription(":warning: | You are not allowed to play with or against a bot.")
                 ],
                 ephemeral: true
@@ -64,7 +64,7 @@ module.exports = {
             return interaction.reply({
                 embeds: [
                     new EmbedBuilder()
-                        .setColor("Red")
+                        .setColor("#8A2BE2")
                         .setDescription(":warning: | You cannot play a multi-player game with yourself.")
                 ],
                 ephemeral: true

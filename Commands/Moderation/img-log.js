@@ -66,7 +66,7 @@ module.exports = {
         await config.save();
 
         const embed = new EmbedBuilder()
-            .setColor("Purple")
+            .setColor("#8A2BE2")
             .setDescription(`📜 Canal de logs configurado: ${channel}`);
 
         // 🔥 APLICAR EN EMBED DE CONFIRMACIÓN

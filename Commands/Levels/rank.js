@@ -4,7 +4,7 @@ const Level = require("../../Models/Level");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("rank")
-        .setDescription("Ver nivel")
+        .setDescription("Ver nivel y XP de un usuario")
         .addUserOption(option =>
             option.setName("usuario")
                 .setDescription("Usuario")

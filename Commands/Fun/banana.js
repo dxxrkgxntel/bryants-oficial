@@ -3,7 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js')
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('banana')
-        .setDescription('Mira cuánto te mide.')
+        .setDescription('Mira cuánto te mide tu banana')
         .addUserOption(option =>
             option.setName('usuario')
                 .setDescription('Usuario')
@@ -18,8 +18,8 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setDescription(`**La banana de ${usuario.username} mide ${banana} cm.**`)
-            .setColor("DarkButNotBlack")
-            .setImage('https://cdn.discordapp.com/attachments/1499375657103392839/1499375701391052882/Nombre_Server.gif?ex=69f491f0&is=69f34070&hm=df6984d9f019012dce0c0ca52d009664855863ba95b26ed035544dab806664a3&')
+            .setColor("#8A2BE2")
+            .setImage('https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png?ex=69fee174&is=69fd8ff4&hm=b48c5ce432015c93e79d154a706dcbac9e3b92c9ca8df626f7408f84fa09a57c&=&format=webp&quality=lossless&width=1208&height=483')
 
 
         await interaction.reply({ embeds: [embed] })

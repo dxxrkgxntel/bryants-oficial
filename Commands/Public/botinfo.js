@@ -16,9 +16,9 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setTitle("Información del bot")
-            .setColor("Blue")
+            .setColor("#8A2BE2")
             .addFields(
-                { name: "Desarrollador", value: "bryantdx_1", inline: true },
+                { name: "Desarrollador", value: "@bryantdx", inline: true },
                 { name: "Nombre de usuario", value: `${client.user.username}`, inline: true },
                 { name: "ID", value: `${client.user.id}`, inline: true },
                 { name: "Fecha de creación", value: `09 Diciembre 2023` },

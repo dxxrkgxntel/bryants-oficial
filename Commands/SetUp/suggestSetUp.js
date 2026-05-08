@@ -3,7 +3,7 @@ const suggestSchema = require('../../Models/suggestSchema')
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('suggestsetup')
+        .setName('sugerencia-setup')
         .setDescription('Crea el sistema de sugerencias')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addChannelOption(option =>

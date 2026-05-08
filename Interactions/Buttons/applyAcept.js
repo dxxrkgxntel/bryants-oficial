@@ -46,7 +46,7 @@ module.exports = {
                     name: 'Aplicacion Aceptada',
                     iconURL: user.displayAvatarURL({ dynamic: true })
                 })
-                .setColor('Green')
+                .setColor('#8A2BE2')
                 .addFields({
                     name: `Aceptado por`,
                     value: `<@${interaction.user.id}>`
@@ -66,7 +66,7 @@ module.exports = {
                     name: 'Servidor: ',
                     value: `${interaction.guild.name}`
                 })
-                .setColor('Green');
+                .setColor('#8A2BE2');
 
             await user.roles.add(dataGuild.applyRole);
 

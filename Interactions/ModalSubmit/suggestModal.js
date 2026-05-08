@@ -27,7 +27,7 @@ module.exports = {
             const suggestDesc = interaction.fields.getTextInputValue('suggestdesc');
 
             const suggestEmbed = new EmbedBuilder()
-                .setColor('Random')
+                .setColor('#8A2BE2')
                 .setAuthor({
                     name: `${interaction.user.username} acaba de hacer una sugerencia`,
                     iconURL: interaction.user.displayAvatarURL({ dynamic: true })

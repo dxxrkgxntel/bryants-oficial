@@ -3,7 +3,7 @@ const leaveSchema = require('../../Models/leaveSchema');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('leavesetup')
+        .setName('salida-setup')
         .setDescription('Crea un sistema de salidas del servidor')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 

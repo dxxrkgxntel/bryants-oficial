@@ -41,7 +41,7 @@ module.exports = {
                     name: 'Aplicacion Denegada',
                     iconURL: user.displayAvatarURL({ dynamic: true })
                 })
-                .setColor('Red')
+                .setColor('#8A2BE2')
                 .addFields({
                     name: `Denegado por`,
                     value: `<@${interaction.user.id}>`
@@ -55,7 +55,7 @@ module.exports = {
             const embedUser = new EmbedBuilder()
                 .setTitle('Aplicacion Denegada')
                 .setDescription('Tu aplicacion para staff fue denegada')
-                .setColor('Red');
+                .setColor('#8A2BE2');
 
             await user.send({ embeds: [embedUser] });
 

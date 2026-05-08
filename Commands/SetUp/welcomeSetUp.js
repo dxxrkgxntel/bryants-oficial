@@ -3,7 +3,7 @@ const welcomeSchema = require('../../Models/welcomeSchema');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('welcomesetup')
+        .setName('bienvenida-setup')
         .setDescription('Crea un sistema de bienvenidas al servidor')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 

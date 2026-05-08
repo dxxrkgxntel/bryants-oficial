@@ -8,7 +8,7 @@ const ms = require('ms')
 module.exports = {
     data:new SlashCommandBuilder()
     .setName('unmute')
-    .setDescription('Unmutea a un usuario de tu servidor')
+    .setDescription('Desmutea a un usuario de tu servidor')
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers) // 🔥 OCULTA COMANDO
     .addUserOption(option=>
         option.setName('user')
@@ -43,7 +43,7 @@ module.exports = {
         const unmuteEmbed = new EmbedBuilder()
         .setTitle('Unmuteado correctamente')
         .setDescription(`El usuario ${user} fue unmuteado por <@${interaction.user.id}>\nRazón:${description}`)
-        .setColor('Green')
+        .setColor('#8A2BE2')
         .setTimestamp()
 
         try {
