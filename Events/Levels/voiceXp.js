@@ -1,4 +1,5 @@
 const Level = require("../../Models/Level");
+const LevelConfig = require("../../Models/LevelConfig");
 
 //////////////////////////////////////////////////
 // CONFIG
@@ -164,33 +165,68 @@ module.exports = {
 
                             //////////////////////////////////////////////////
 
-                            if (
-                                data.xp >= xpNeeded
-                            ) {
+                            if (data.xp >= xpNeeded) {
+
+                                //////////////////////////////////////////////////
+                                // SUBIR NIVEL
+                                //////////////////////////////////////////////////
 
                                 data.level += 1;
 
                                 data.xp = 0;
 
                                 //////////////////////////////////////////////////
+                                // CONFIG
+                                //////////////////////////////////////////////////
+
+                                const levelConfig =
+                                    await LevelConfig.findOne({
+
+                                        guildId:
+                                            guild.id
+                                    });
+
+                                //////////////////////////////////////////////////
+                                // CANAL
+                                //////////////////////////////////////////////////
+
+                                const levelChannel =
+                                    guild.channels.cache.get(
+
+                                        levelConfig?.levelChannel
+                                    );
+
+                                //////////////////////////////////////////////////
                                 // MENSAJE
                                 //////////////////////////////////////////////////
 
-                                channel.send?.({
+                                if (levelChannel) {
 
-                                    embeds: [{
+                                    await levelChannel.send({
 
-                                        title:
-                                            "🎉 Subida de nivel",
+                                        embeds: [{
 
-                                        description:
+                                            title:
+                                                "🎙️ Subida de nivel en voz",
 
-                                            `${member} subió al nivel **${data.level}** por actividad en voz.`,
+                                            description:
 
-                                        color:
-                                            0x8A2BE2
-                                    }]
-                                }).catch(() => {});
+                                                `${member} subió al nivel **${data.level}** por actividad en canales de voz.`,
+
+                                            color:
+                                                0x8A2BE2,
+
+                                            footer: {
+
+                                                text:
+                                                    "Sistema de niveles por voz"
+                                            },
+
+                                            timestamp:
+                                                new Date()
+                                        }]
+                                    }).catch(() => {});
+                                }
                             }
 
                             //////////////////////////////////////////////////

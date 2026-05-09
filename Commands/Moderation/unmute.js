@@ -42,7 +42,7 @@ module.exports = {
 
         const unmuteEmbed = new EmbedBuilder()
         .setTitle('Unmuteado correctamente')
-        .setDescription(`El usuario ${user} fue unmuteado por <@${interaction.user.id}>\nRazón:${description}`)
+        .setDescription(`El usuario ${user} fue desmuteado por <@${interaction.user.id}>\nRazón:${description}`)
         .setColor('#8A2BE2')
         .setTimestamp()
 

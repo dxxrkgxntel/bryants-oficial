@@ -12,11 +12,11 @@ module.exports = {
         const seconds = Math.floor(client.uptime / 1000) % 60
 
         const embed = new EmbedBuilder()
-        .setTitle(`__${client.user.username}'s Uptime__`)
+        .setTitle(`Time ${client.user.username}`)
         .setColor("#8A2BE2")
         .setTimestamp()
         .addFields(
-            { name: "Uptime", value: ` \`${days}\` days, \`${hours}\` hours, \`${minutes}\` minutes and \`${seconds}\` seconds.`}
+            { name: "Tiempo activo:", value: ` \`${days}\` días, \`${hours}\` horas, \`${minutes}\` minutos y \`${seconds}\` segundos.`}
         )
 
         interaction.reply({ embeds: [embed] })
