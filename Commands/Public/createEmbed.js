@@ -41,6 +41,21 @@ module.exports = {
         )
 
         .addStringOption(option =>
+            option.setName('description')
+                .setDescription('Ingresa la descripcion de tu embed')
+        )
+
+        .addAttachmentOption(option =>
+            option.setName('thumbnail')
+                .setDescription('Elige el Thumbnail de tu embed')
+        )
+
+        .addAttachmentOption(option =>
+            option.setName('image')
+                .setDescription('Elige la imagen de tu embed')
+        )
+
+        .addStringOption(option =>
             option.setName('url')
                 .setDescription('Ingresa el link para el titulo')
         )
@@ -48,21 +63,6 @@ module.exports = {
         .addStringOption(option =>
             option.setName('author')
                 .setDescription('Elige el autor')
-        )
-
-        .addStringOption(option =>
-            option.setName('description')
-                .setDescription('Ingresa la descripcion de tu embed')
-        )
-
-        .addAttachmentOption(option =>
-            option.setName('image')
-                .setDescription('Elige el Thumbnail de tu embed')
-        )
-
-        .addAttachmentOption(option =>
-            option.setName('setimage')
-                .setDescription('Elige la imagen de tu embed')
         )
 
         .addStringOption(option =>
@@ -95,9 +95,9 @@ module.exports = {
         let title = options.getString('title')
         let titleURL = options.getString('url')
         let author = options.getString('author')
-        let description = options.getString('description') || ' '
-        let attachment = options.getAttachment('image')
-        let image = options.getAttachment('setimage')
+        let description = options.getString('description')?.replace(/\\n/g, '\n') || ' '
+        let attachment = options.getAttachment('thumbnail')
+        let image = options.getAttachment('image')
         let timestamp = options.getString('timestamp')
         let footer = options.getString('footer')
 

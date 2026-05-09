@@ -20,7 +20,7 @@ module.exports = {
 
                 .setColor("#8A2BE2")
                 .setTitle("🎛️ - Panel TempVoice")
-                .setDescription(`Administra tu canal temporal usando los menús desplegables.\n\n` +`⚠️ Debes estar dentro de tu sala temporal.`)
+                .setDescription(`🎧 • Panel TempVoice\n\n` +`Personaliza y administra tu sala temporal de voz de manera rápida y sencilla utilizando los menús desplegables disponibles debajo de este panel.\n\n` +`🔒 • Opciones de Privacidad\n` +`• Controla quién puede entrar y ver tu canal\n` +`• Bloquea o desbloquea accesos fácilmente\n` +`• Mantén tu sala privada cuando lo necesites\n\n` +`👥 • Opciones de Usuarios\n` +`• Permite acceso a miembros específicos\n` +`• Expulsa usuarios de tu sala\n` +`• Gestiona quién puede permanecer dentro\n\n` +`⚙️ • Configuración\n` +`• Cambia el nombre de tu sala\n` +`• Ajusta el límite de usuarios\n` +`• Modifica el bitrate y la región de voz\n\n` +`📌 Debes estar conectado dentro de tu sala temporal para utilizar todas las funciones del panel.\n\n` +`💜 Disfruta de una experiencia totalmente personalizada junto a tu comunidad.`)
                 .setThumbnail('https://media.discordapp.net/attachments/1499375657103392839/1501666281651441925/logo_principal.png?ex=69ff8a35&is=69fe38b5&hm=93a35cefa66cd30f2730eaedc8edb5c83509e4d7ccbfcfc7ad5e24c4f9254f90&=&format=webp&quality=lossless&width=694&height=694')
                 .setImage('https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png?ex=69ff8a34&is=69fe38b4&hm=20d0de70c8ae315aae73b3f468611e5d74239caf34394d34aca4cec64cdfaef0&=&format=webp&quality=lossless&width=1288&height=515');
 

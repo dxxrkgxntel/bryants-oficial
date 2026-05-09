@@ -1,12 +1,6 @@
-const {
-    ChannelType
-} = require("discord.js");
-
-const tempVoiceSchema =
-    require("../../Models/tempVoiceSchema");
-
-const tempVoiceChannels =
-    require("../../Models/tempVoiceChannels");
+const {ChannelType} = require("discord.js");
+const tempVoiceSchema = require("../../Models/tempVoiceSchema");
+const tempVoiceChannels = require("../../Models/tempVoiceChannels");
 
 module.exports = {
 

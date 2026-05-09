@@ -173,17 +173,11 @@ module.exports = {
             await targetChannel.send({
 
                 embeds: [{
-
-                    title:
-                        "🎉 Subiste de nivel",
-
-                    description:
-
-                    `${message.author} ahora es nivel **${data.level}**\n\n` +
-
-                    `💰 Recompensa: **${reward} coins**`,
-
-                    color: 0x8000ff
+                    title:"🎉 Subiste de nivel",
+                    description:`✨ ¡Felicidades ${message.author}!\n\n` +`Has alcanzado el nivel **${data.level}** gracias a tu actividad y participación dentro del servidor.\n\n` +`💰 Recompensa recibida: **${reward} coins**\n\n` +`🔥 Sigue enviando mensajes, participando y manteniéndote activo para desbloquear más recompensas y subir aún más rápido.`,
+                    color: 0x8000ff,
+                    thumbnail: {url:message.author.displayAvatarURL({dynamic: true,size: 1024})},
+                    image: {url:"https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png?ex=6a0032f4&is=69fee174&hm=54a509859dcee24cd6a637b9e0373e1821b6ab3898eccd77a59591b6e6d55e3a&=&format=webp&quality=lossless&width=1288&height=515"}
                 }]
             });
 
@@ -222,14 +216,11 @@ module.exports = {
                     await targetChannel.send({
 
                         embeds: [{
-
-                            title:
-                                "🎭 Nuevo Rol",
-
-                            description:
-                                `${message.author} obtuvo el rol **${role.name}**`,
-
-                            color: 0x00ff99
+                            title:"🎭 Nuevo Rol Desbloqueado",
+                            description:`✨ ¡Felicidades ${message.author}!\n\n` +`Has desbloqueado el rol **${role.name}** gracias a tu actividad y progreso dentro del servidor.\n\n` +`🏆 Continúa participando, subiendo de nivel y manteniéndote activo para obtener aún más beneficios y recompensas exclusivas.`,
+                            color: 0x00ff99,
+                            thumbnail: {url: message.author.displayAvatarURL({dynamic: true, size: 1024})},
+                            image: {url:"https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png?ex=6a0032f4&is=69fee174&hm=54a509859dcee24cd6a637b9e0373e1821b6ab3898eccd77a59591b6e6d55e3a&=&format=webp&quality=lossless&width=1288&height=515"}
                         }]
                     });
                 }
@@ -246,8 +237,6 @@ module.exports = {
         // LOG
         ////////////////////////////////////////
 
-        console.log(
-            `XP añadido a ${message.author.username}`
-        );
+        console.log(`XP añadido a ${message.author.username}`.green);
     }
 };
