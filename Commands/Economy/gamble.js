@@ -23,21 +23,21 @@ module.exports = {
 
     if (now - user.lastGamble < cooldown) {
       const remaining = Math.ceil((cooldown - (now - user.lastGamble)) / 1000);
-      return interaction.editReply({
+      return interaction.reply({
         content: `⏳ Espera **${remaining}s** antes de volver a apostar.`,
         flags: 64
       });
     }
 
     if (amount > user.wallet) {
-      return interaction.editReply({
+      return interaction.reply({
         content: '❌ No tienes suficiente dinero.',
         flags: 64
       });
     }
 
     if (amount < config.gambleMin || amount > config.gambleMax) {
-      return interaction.editReply({
+      return interaction.reply({
         content: `❌ La apuesta debe estar entre **${config.gambleMin}** y **${config.gambleMax}**.`,
         flags: 64
       });

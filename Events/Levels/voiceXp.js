@@ -27,7 +27,7 @@ module.exports = {
     async execute(client) {
 
         console.log(
-            "[Voice XP] Cargado correctamente.".green
+            "[VOICE XP] Cargado correctamente.".green
         );
 
         //////////////////////////////////////////////////
