@@ -23,7 +23,7 @@ module.exports = {
         if (!config) {
             return interaction.reply({
                 content: "❌ No hay configuración",
-                ephemeral: true
+                flags: 64
             });
         }
 

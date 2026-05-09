@@ -12,7 +12,7 @@ module.exports = {
         if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
             return interaction.reply({
                 content: "❌ Solo administradores pueden usar este comando",
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -23,7 +23,7 @@ module.exports = {
         if (!config || config.allowedChannels.length === 0) {
             return interaction.reply({
                 content: "❌ No hay canales configurados",
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -49,6 +49,6 @@ module.exports = {
     .setThumbnail(THUMBNAIL_URL)
     .setImage(IMAGE_URL);
 
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({ embeds: [embed], flags: 64 });
     }
 };

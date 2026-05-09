@@ -1,6 +1,7 @@
 const Level = require("../../Models/Level");
 const levelRoles = require("../../Levels/levelRoles");
 const LevelConfig = require("../../Models/LevelConfig");
+const EconomyUser = require("../../Models/EconomyUser");
 
 const cooldown = new Set();
 
@@ -92,6 +93,53 @@ module.exports = {
 
             data.xp = 0;
 
+            //////////////////////////////////////////////////
+            // RECOMPENSA ECONOMIA
+            //////////////////////////////////////////////////
+
+            let economy =
+                await EconomyUser.findOne({
+
+                    guildId:
+                        message.guild.id,
+
+                    userId:
+                        message.author.id
+                });
+
+            //////////////////////////////////////////////////
+
+            if (!economy) {
+
+                economy =
+                    new EconomyUser({
+
+                        guildId:
+                            message.guild.id,
+
+                        userId:
+                            message.author.id,
+
+                        wallet: 0,
+
+                        bank: 0
+                    });
+            }
+
+            //////////////////////////////////////////////////
+            // CALCULO RECOMPENSA
+            //////////////////////////////////////////////////
+
+            const reward =
+
+                data.level * 100;
+
+            //////////////////////////////////////////////////
+
+            economy.wallet += reward;
+
+            await economy.save();
+
             ////////////////////////////////////////
             // BUSCAR CONFIG
             ////////////////////////////////////////
@@ -130,7 +178,10 @@ module.exports = {
                         "🎉 Subiste de nivel",
 
                     description:
-                        `${message.author} ahora es nivel **${data.level}**`,
+
+                    `${message.author} ahora es nivel **${data.level}**\n\n` +
+
+                    `💰 Recompensa: **${reward} coins**`,
 
                     color: 0x8000ff
                 }]

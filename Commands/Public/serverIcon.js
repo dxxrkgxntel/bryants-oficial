@@ -37,7 +37,7 @@ module.exports = {
             if (interaction.deferred || interaction.replied) {
                 await interaction.editReply({ content: "❌ Ocurrió un error" });
             } else {
-                await interaction.reply({ content: "❌ Ocurrió un error", ephemeral: true });
+                await interaction.reply({ content: "❌ Ocurrió un error", flags: 64 });
             }
         }
     },

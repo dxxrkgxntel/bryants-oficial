@@ -41,7 +41,7 @@ module.exports = {
 
             return interaction.reply({
                 embeds: [embedList],
-                ephemeral: true
+                flags: 64
             });
 
         } catch (error) {

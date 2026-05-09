@@ -23,14 +23,14 @@ module.exports = {
     const amount = interaction.options.getInteger('cantidad');
 
     if (target.id === interaction.user.id) {
-      return interaction.reply({ content: '❌ No puedes transferirte a ti mismo.', ephemeral: true });
+      return interaction.reply({ content: '❌ No puedes transferirte a ti mismo.', flags: 64 });
     }
 
     const sender = await getUser(interaction.guild.id, interaction.user.id);
     const receiver = await getUser(interaction.guild.id, target.id);
 
     if (sender.wallet < amount) {
-      return interaction.reply({ content: '❌ No tienes suficiente dinero.', ephemeral: true });
+      return interaction.reply({ content: '❌ No tienes suficiente dinero.', flags: 64 });
     }
 
     await applyInterest(sender, interaction.guild.id);

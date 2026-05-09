@@ -18,7 +18,7 @@ module.exports = {
     const user = await getUser(interaction.guild.id, interaction.user.id);
 
     if (user.wallet < amount) {
-      return interaction.reply({ content: '❌ No tienes suficiente dinero.', ephemeral: true });
+      return interaction.reply({ content: '❌ No tienes suficiente dinero.', flags: 64 });
     }
 
     // mover dinero

@@ -20,7 +20,7 @@ module.exports = {
 
       return interaction.reply({
         content: `⏳ Estás cansado. Vuelve a trabajar en **${minutes} minutos**.`,
-        ephemeral: true
+        flags: 64
       });
     }
 

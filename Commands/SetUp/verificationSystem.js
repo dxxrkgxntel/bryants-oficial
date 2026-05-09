@@ -85,7 +85,7 @@ module.exports = {
 
                 content: "❌ Solo administradores pueden usar este comando",
 
-                ephemeral: true
+                flags: 64
             });
         }
 

@@ -33,11 +33,11 @@ module.exports = {
 
         // 🔥 VALIDACIÓN
         if (thumbnail && !thumbnail.contentType?.startsWith('image')) {
-            return interaction.reply({ content: '❌ La thumbnail debe ser una imagen', ephemeral: true });
+            return interaction.reply({ content: '❌ La thumbnail debe ser una imagen', flags: 64 });
         }
 
         if (image && !image.contentType?.startsWith('image')) {
-            return interaction.reply({ content: '❌ La imagen debe ser válida', ephemeral: true });
+            return interaction.reply({ content: '❌ La imagen debe ser válida', flags: 64 });
         }
 
         let config = await ImageConfig.findOne({
@@ -73,6 +73,6 @@ module.exports = {
         if (thumbnailURL) embed.setThumbnail(thumbnailURL);
         if (imageURL) embed.setImage(imageURL);
 
-        interaction.reply({ embeds: [embed], ephemeral: true });
+        interaction.reply({ embeds: [embed], flags: 64 });
     }
 };

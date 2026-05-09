@@ -18,7 +18,7 @@ module.exports = {
     const user = await getUser(interaction.guild.id, interaction.user.id);
 
     if (user.bank < amount) {
-      return interaction.reply({ content: '❌ No tienes suficiente dinero en el banco.', ephemeral: true });
+      return interaction.reply({ content: '❌ No tienes suficiente dinero en el banco.', flags: 64 });
     }
 
     await applyInterest(user, interaction.guild.id);

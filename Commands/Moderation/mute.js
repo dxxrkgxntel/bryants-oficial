@@ -36,7 +36,7 @@ module.exports = {
         if (!interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
             return interaction.reply({
                 content: "❌ No tienes permisos para usar este comando",
-                ephemeral: true
+                flags: 64
             });
         }
 

@@ -76,7 +76,7 @@ module.exports = {
 
             return await interaction.reply({
                 content: "Se ha enviado correctamente tu sugerencia",
-                ephemeral: true
+                flags: 64
             });
 
         } catch (error) {

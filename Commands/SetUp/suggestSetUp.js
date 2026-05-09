@@ -25,10 +25,10 @@ module.exports = {
                     guildChannel: suggestChannel.id
                 })
 
-                return interaction.reply({ content: "Se ha creado correctamente el sistema de sugerencias", ephemeral: true })
+                return interaction.reply({ content: "Se ha creado correctamente el sistema de sugerencias", flags: 64 })
             }
             if (data) {
-                return interaction.reply({ content: "Tienes una data creada", ephemeral: true })
+                return interaction.reply({ content: "Tienes una data creada", flags: 64 })
             }
         })
     }

@@ -45,7 +45,7 @@ module.exports = {
                         .setColor("#8A2BE2")
                         .setDescription(":warning: | The target specified has most likely left the server.")
                 ],
-                ephemeral: true
+                flags: 64
             })
         }
 
@@ -56,7 +56,7 @@ module.exports = {
                         .setColor("#8A2BE2")
                         .setDescription(":warning: | You are not allowed to play with or against a bot.")
                 ],
-                ephemeral: true
+                flags: 64
             })
         }
 
@@ -67,7 +67,7 @@ module.exports = {
                         .setColor("#8A2BE2")
                         .setDescription(":warning: | You cannot play a multi-player game with yourself.")
                 ],
-                ephemeral: true
+                flags: 64
             })
         }
 

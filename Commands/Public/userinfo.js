@@ -51,11 +51,11 @@ module.exports = {
                 .setTimestamp()
                 .setFooter({ text: `ID de usuario: ${user.id}`})
 
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+            await interaction.reply({ embeds: [embed], flags: 64 });
             
         } catch (error) {
             console.error(error);
-            await interaction.reply({ content: `Se produjo un error al ejecutar el comando.`, ephemeral: true});
+            await interaction.reply({ content: `Se produjo un error al ejecutar el comando.`, flags: 64});
         }
     }
 }

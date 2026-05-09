@@ -34,7 +34,7 @@ module.exports = {
 
                 return interaction.reply({
                     content: "❌ No pude obtener un shitpost.",
-                    ephemeral: true
+                    flags: 64
                 });
             }
 
@@ -45,7 +45,7 @@ module.exports = {
 
                 return interaction.reply({
                     content: "❌ El post no contiene imagen.",
-                    ephemeral: true
+                    flags: 64
                 });
             }
 
@@ -64,7 +64,7 @@ module.exports = {
 
             return interaction.reply({
                 content: "❌ Ocurrió un error obteniendo el shitpost.",
-                ephemeral: true
+                flags: 64
             });
         }
     }

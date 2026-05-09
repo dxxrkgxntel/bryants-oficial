@@ -30,7 +30,7 @@ module.exports = {
         if (config.allowedChannels.includes(channel.id)) {
             return interaction.reply({
                 content: "⚠️ Ese canal ya está permitido",
-                ephemeral: true
+                flags: 64
             });
         }
 

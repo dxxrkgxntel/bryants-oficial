@@ -27,7 +27,7 @@ module.exports = {
     if (userData.wallet < amount) {
       return interaction.reply({
         content: '❌ El usuario no tiene suficiente dinero.',
-        ephemeral: true
+        flags: 64
       });
     }
 

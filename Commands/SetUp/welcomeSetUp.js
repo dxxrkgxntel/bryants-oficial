@@ -46,7 +46,7 @@ module.exports = {
         if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
             return interaction.reply({
                 content: "❌ Solo administradores pueden usar este comando",
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -61,11 +61,11 @@ module.exports = {
 
         // 🔥 VALIDACIÓN (IMPORTANTE)
         if (image && !image.contentType?.startsWith('image')) {
-            return interaction.reply({ content: '❌ La imagen debe ser válida', ephemeral: true });
+            return interaction.reply({ content: '❌ La imagen debe ser válida', flags: 64 });
         }
 
         if (thumbnail && !thumbnail.contentType?.startsWith('image')) {
-            return interaction.reply({ content: '❌ La thumbnail debe ser una imagen', ephemeral: true });
+            return interaction.reply({ content: '❌ La thumbnail debe ser una imagen', flags: 64 });
         }
 
         const imageURL = image?.url || null;
@@ -88,14 +88,14 @@ module.exports = {
 
             return interaction.reply({
                 content: "✅ Sistema de bienvenidas configurado correctamente",
-                ephemeral: true
+                flags: 64
             });
 
         } catch (error) {
             console.log(error);
             return interaction.reply({
                 content: "❌ Error al guardar la configuración",
-                ephemeral: true
+                flags: 64
             });
         }
     }

@@ -26,7 +26,7 @@ module.exports = {
         if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
             return interaction.reply({
                 content: `❌ No tienes permisos para usar AutoMod`,
-                ephemeral: true
+                flags: 64
             });
         }
 

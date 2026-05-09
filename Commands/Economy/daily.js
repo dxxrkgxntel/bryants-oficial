@@ -20,7 +20,7 @@ module.exports = {
 
       return interaction.reply({
         content: `⏳ Ya reclamaste tu daily. Vuelve en **${hours}h**.`,
-        ephemeral: true
+        flags: 64
       });
     }
 

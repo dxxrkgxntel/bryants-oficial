@@ -44,7 +44,7 @@ module.exports = {
             if (!command) {
                 return interaction.reply({
                     content: "Comando deshabilitado",
-                    ephemeral: true
+                    flags: 64
                 });
             }
 
@@ -52,7 +52,7 @@ module.exports = {
             if (command.developer && interaction.user.id !== config.developer) {
                 return interaction.reply({
                     content: "Comando solamente para developers",
-                    ephemeral: true
+                    flags: 64
                 });
             }
 
@@ -68,7 +68,7 @@ module.exports = {
 
                 return interaction.reply({
                     embeds: [embed],
-                    ephemeral: true
+                    flags: 64
                 });
             }
 
@@ -80,7 +80,25 @@ module.exports = {
                 }, cooldownTime);
             }
 
-            await command.execute(interaction, client);
+            //////////////////////////////////////////////////
+// AUTO DEFER
+//////////////////////////////////////////////////
+
+if (
+    !interaction.deferred &&
+    !interaction.replied
+) {
+
+    await interaction.deferReply()
+        .catch(() => {});
+}
+
+//////////////////////////////////////////////////
+
+await command.execute(
+    interaction,
+    client
+);
 
         } catch (error) {
             console.log('❌ Error en interactionCreate:', error);
@@ -88,12 +106,12 @@ module.exports = {
             if (interaction.replied || interaction.deferred) {
                 interaction.followUp({
                     content: "Ocurrió un error ejecutando este comando.",
-                    ephemeral: true
+                    flags: 64
                 }).catch(() => {});
             } else {
                 interaction.reply({
                     content: "Ocurrió un error ejecutando este comando.",
-                    ephemeral: true
+                    flags: 64
                 }).catch(() => {});
             }
         }

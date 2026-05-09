@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 const config = require('./../../config.json')
 require('colors')
 module.exports = {
-    name:'ready',
+    name: "clientReady",
     once:true,
     async execute(client){
         mongoose.set('strictQuery', true)

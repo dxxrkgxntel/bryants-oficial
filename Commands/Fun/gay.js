@@ -35,7 +35,7 @@ module.exports = {
 
 
         interaction.channel.send({ embeds: [embed] });
-        interaction.reply({ content: `revisa tu porcentaje de gay`, ephemeral: true })
+        interaction.reply({ content: `revisa tu porcentaje de gay`, flags: 64 })
 
     },
 

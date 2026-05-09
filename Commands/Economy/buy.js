@@ -22,15 +22,15 @@ module.exports = {
     });
 
     if (!item) {
-      return interaction.reply({ content: '❌ Ese rol no está en la tienda.', ephemeral: true });
+      return interaction.reply({ content: '❌ Ese rol no está en la tienda.', flags: 64 });
     }
 
     if (user.wallet < item.price) {
-      return interaction.reply({ content: '❌ No tienes suficiente dinero.', ephemeral: true });
+      return interaction.reply({ content: '❌ No tienes suficiente dinero.', flags: 64 });
     }
 
     if (interaction.member.roles.cache.has(role.id)) {
-      return interaction.reply({ content: '⚠️ Ya tienes ese rol.', ephemeral: true });
+      return interaction.reply({ content: '⚠️ Ya tienes ese rol.', flags: 64 });
     }
 
     user.wallet -= item.price;
