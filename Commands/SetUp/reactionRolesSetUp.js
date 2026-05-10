@@ -6,7 +6,7 @@ module.exports = {
     data:
         new SlashCommandBuilder()
 
-            .setName("rr-panel")
+            .setName("rr-setup")
 
             .setDescription(
                 "Crear panel de reaction roles"
