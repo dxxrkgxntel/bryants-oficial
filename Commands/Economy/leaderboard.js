@@ -3,7 +3,7 @@ const EconomyUser = require('../../Models/EconomyUser');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('leaderboard')
+    .setName('top-dinero')
     .setDescription('Muestra el top de usuarios más ricos del servidor'),
 
   async execute(interaction) {

@@ -4,7 +4,7 @@ const getConfig = require('../../utils/getConfig');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('gamble')
+    .setName('apostar')
     .setDescription('Apuesta una cantidad de dinero')
     .addIntegerOption(o =>
       o.setName('cantidad')

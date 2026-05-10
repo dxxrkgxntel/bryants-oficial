@@ -4,7 +4,7 @@ const getConfig = require('../../utils/getConfig');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('daily')
+    .setName('diario')
     .setDescription('Reclama tu recompensa diaria'),
 
   async execute(interaction) {

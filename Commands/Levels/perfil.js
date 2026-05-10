@@ -11,7 +11,7 @@ module.exports = {
     data:
         new SlashCommandBuilder()
 
-            .setName("perfil")
+            .setName("perfil-ranking")
 
             .setDescription(
                 "Muestra el perfil del usuario"

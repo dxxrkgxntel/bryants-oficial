@@ -12,7 +12,7 @@ module.exports = {
 
     data: new SlashCommandBuilder()
 
-        .setName("leaderboard-nivel")
+        .setName("top-nivel")
 
         .setDescription(
             "Top de niveles del servidor"

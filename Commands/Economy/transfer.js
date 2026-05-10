@@ -4,7 +4,7 @@ const applyInterest = require('../../utils/applyInterest');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('transfer')
+    .setName('transferir')
     .setDescription('Transfiere dinero a otro usuario')
     .addUserOption(o =>
       o.setName('usuario')

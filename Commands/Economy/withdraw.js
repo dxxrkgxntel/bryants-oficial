@@ -4,7 +4,7 @@ const applyInterest = require('../../utils/applyInterest');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('withdraw')
+    .setName('retirar')
     .setDescription('Retira dinero del banco')
     .addIntegerOption(o =>
       o.setName('cantidad')

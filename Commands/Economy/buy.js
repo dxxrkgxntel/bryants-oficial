@@ -4,7 +4,7 @@ const getUser = require('../../utils/getUser');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('buy')
+    .setName('comprar-rol')
     .setDescription('Compra un rol de la tienda')
     .addRoleOption(o =>
       o.setName('rol')

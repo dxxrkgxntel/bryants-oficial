@@ -3,7 +3,7 @@ const ShopItem = require('../../Models/ShopItem');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('shop')
+    .setName('tienda-roles')
     .setDescription('Muestra la tienda de roles'),
 
   async execute(interaction) {

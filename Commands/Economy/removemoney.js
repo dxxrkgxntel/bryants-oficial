@@ -3,7 +3,7 @@ const getUser = require('../../utils/getUser');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('removemoney')
+    .setName('quitar-dinero')
     .setDescription('Quita dinero a un usuario')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addUserOption(option =>

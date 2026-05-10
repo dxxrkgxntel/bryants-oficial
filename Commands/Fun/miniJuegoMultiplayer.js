@@ -19,9 +19,9 @@ module.exports = {
                 .setDescription("Elige el juego que deseas.")
                 .setRequired(true)
                 .addChoices(
-                    { name: "Connect-4", value: "connect4" },
-                    { name: "Rock-Paper-Scissors", value: "rps" },
-                    { name: "Tic-Tac-Toe", value: "tictactoe" },
+                    { name: "Connect 4", value: "connect4" },
+                    { name: "Piedra, Papel o Tijera", value: "rps" },
+                    { name: "Tic Tac Toe", value: "tictactoe" },
                 )
         )
         .addUserOption(option =>
@@ -43,7 +43,7 @@ module.exports = {
                 embeds: [
                     new EmbedBuilder()
                         .setColor("#8A2BE2")
-                        .setDescription(":warning: | The target specified has most likely left the server.")
+                        .setDescription(":warning: | Es muy probable que el objetivo especificado haya abandonado el servidor.")
                 ],
                 flags: 64
             })
@@ -54,7 +54,7 @@ module.exports = {
                 embeds: [
                     new EmbedBuilder()
                         .setColor("#8A2BE2")
-                        .setDescription(":warning: | You are not allowed to play with or against a bot.")
+                        .setDescription(":warning: | No está permitido jugar con o contra un bot.")
                 ],
                 flags: 64
             })
@@ -65,7 +65,7 @@ module.exports = {
                 embeds: [
                     new EmbedBuilder()
                         .setColor("#8A2BE2")
-                        .setDescription(":warning: | You cannot play a multi-player game with yourself.")
+                        .setDescription(":warning: | No puedes jugar una partida multijugador contigo mismo.")
                 ],
                 flags: 64
             })
@@ -89,12 +89,12 @@ module.exports = {
                     },
                     mentionUser: true,
                     timeoutTime: 60000,
-                    buttonStyle: 'PRIMARY',
-                    turnMessage: '{emoji} | Its turn of player **{player}**.',
-                    winMessage: '{emoji} | **{player}** won the Connect4 Game.',
-                    tieMessage: 'The Game tied! No one won the Game!',
-                    timeoutMessage: 'The Game went unfinished! No one won the Game!',
-                    playerOnlyMessage: 'Only {player} and {opponent} can use these buttons.'
+                    buttonStyle: 'SECONDARY',
+                    turnMessage: '{emoji} | Es el turno del jugador: **{player}**.',
+                    winMessage: '{emoji} | **{player}** ganó el juego Connect4.',
+                    tieMessage: '¡Empate! ¡Nadie ganó el juego!',
+                    timeoutMessage: '¡El juego quedó inconcluso! ¡Nadie ganó el juego!',
+                    playerOnlyMessage: 'Solo {player} y {opponent} pueden usar estos botones.'
                 });
 
                 Game.startGame();

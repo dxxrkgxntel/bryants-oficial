@@ -4,7 +4,7 @@ const getConfig = require('../../utils/getConfig');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('work')
+    .setName('trabajar')
     .setDescription('Trabaja para ganar dinero'),
 
   async execute(interaction) {

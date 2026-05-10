@@ -11,7 +11,7 @@ module.exports = {
 
     data: new SlashCommandBuilder()
 
-        .setName("set-level-channel")
+        .setName("level-setup")
 
         .setDescription(
             "Configura el canal de mensajes de nivel"
