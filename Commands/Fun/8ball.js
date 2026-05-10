@@ -8,7 +8,7 @@ const ms = require('ms')
 module.exports = {
     Cooldown: ms("10s"),
     data: new SlashCommandBuilder()
-        .setName('8ball')
+        .setName('pregunta-y-respuesta')
         .setDescription('Te doy una respuesta tu pregunta')
         .addStringOption(option =>
             option.setName('question')

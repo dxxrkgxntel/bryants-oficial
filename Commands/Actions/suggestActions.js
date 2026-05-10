@@ -7,7 +7,7 @@ const suggestSchema = require('../../Models/suggestSchema')
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('suggest-actions')
+        .setName('accion-sugerencias')
         .setDescription('Elige las acciones de tu sistema de aplicaciones')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addBooleanOption(option =>

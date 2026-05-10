@@ -7,7 +7,7 @@ const applyGuildSchema = require('../../Models/applyGuildSchema')
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('apply-actions')
+        .setName('accion-aplicar')
         .setDescription('Elige las acciones de tu sistema de aplicaciones')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addBooleanOption(option =>

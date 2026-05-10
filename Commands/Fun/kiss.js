@@ -6,7 +6,7 @@ const botReply = require('../../Functions/interactionBotReply')
 const kissData = require('../../Models/kissSchema')
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('kiss')
+        .setName('besar')
         .setDescription('Besa un usuario del servidor')
         .addUserOption(option =>
             option.setName('user')

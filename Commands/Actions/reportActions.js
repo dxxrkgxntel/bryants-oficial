@@ -8,7 +8,7 @@ const reportUserSchema = require('../../Models/reportUserSchema')
 
 module.exports = {
     data:new SlashCommandBuilder()
-    .setName('report')
+    .setName('reportar')
     .setDescription('Reporta a un usuario')
     .addUserOption(option=>
         option.setName('user')
