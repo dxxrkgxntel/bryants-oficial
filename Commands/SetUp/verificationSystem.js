@@ -100,6 +100,8 @@ module.exports = {
 
                     .setEmoji('✅')
 
+                    .setLabel('Verificar')
+
                     .setStyle(ButtonStyle.Secondary)
             );
 
@@ -129,9 +131,9 @@ module.exports = {
         // 📦 EMBED
         const embed = new EmbedBuilder()
 
-            .setTitle('Verificate')
+            .setTitle('Sistema de verificación')
 
-            .setDescription(description)
+            .setDescription( `¡Bienvenido a **${interaction.guild.name}**!\n\n` + `Para acceder al servidor y desbloquear todos los canales, debes completar el proceso de verificación.\n\n` + `> ✅ Obtendrás acceso automáticamente\n` + `> 🔒 Se eliminarán las restricciones iniciales\n` + `> 🚀 Disfruta de toda la comunidad` )
 
             .setColor('#8A2BE2');
 

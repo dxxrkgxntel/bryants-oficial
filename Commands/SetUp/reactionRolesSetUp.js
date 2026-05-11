@@ -1,5 +1,13 @@
-const {SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder} = require("discord.js");
-const reactionRolesSchema = require("../../Models/reactionRolesSchema");
+const {
+    SlashCommandBuilder,
+    EmbedBuilder,
+    ActionRowBuilder,
+    StringSelectMenuBuilder,
+    PermissionFlagsBits
+} = require("discord.js");
+
+const reactionRolesSchema =
+    require("../../Models/reactionRolesSchema");
 
 module.exports = {
 
@@ -10,11 +18,92 @@ module.exports = {
 
             .setDescription(
                 "Crear panel de reaction roles"
+            )
+
+            //////////////////////////////////////////////////
+            // SOLO ADMINISTRADORES
+            //////////////////////////////////////////////////
+
+            .setDefaultMemberPermissions(
+                PermissionFlagsBits.Administrator
             ),
 
     //////////////////////////////////////////////////
 
     async execute(interaction) {
+
+        //////////////////////////////////////////////////
+        // VALIDACION EXTRA
+        //////////////////////////////////////////////////
+
+        if (
+
+            !interaction.member.permissions.has(
+                PermissionFlagsBits.Administrator
+            )
+
+        ) {
+
+            return interaction.reply({
+
+                embeds: [
+
+                    new EmbedBuilder()
+
+                        .setColor("#ff0000")
+
+                        .setTitle(
+                            "❌ Sin permisos"
+                        )
+
+                        .setDescription(
+
+                            `Necesitas permisos de **Administrador** para utilizar este comando.`
+                        )
+                ],
+
+                flags: 64
+            });
+        }
+
+        //////////////////////////////////////////////////
+        // EVITAR DUPLICADOS
+        //////////////////////////////////////////////////
+
+        const existingPanel =
+            await reactionRolesSchema.findOne({
+
+                guildId:
+                    interaction.guild.id
+            });
+
+        //////////////////////////////////////////////////
+
+        if (existingPanel) {
+
+            return interaction.reply({
+
+                embeds: [
+
+                    new EmbedBuilder()
+
+                        .setColor("#ffaa00")
+
+                        .setTitle(
+                            "⚠️ Panel ya existente"
+                        )
+
+                        .setDescription(
+
+                            `Ya existe un panel de reaction roles configurado en este servidor.\n\n` +
+
+                            `🗑️ Elimina el anterior antes de crear uno nuevo.`
+                        )
+                ],
+
+                flags: 64
+            });
+        }
 
         //////////////////////////////////////////////////
         // EMBED
@@ -24,23 +113,41 @@ module.exports = {
             new EmbedBuilder()
 
                 .setColor("#8A2BE2")
-                .setTitle("✅ ・ Selección de Roles")
+
+                .setTitle(
+                    "✅ ・ Selección de Roles"
+                )
+
                 .setDescription(
 
-    `> ✨ Personaliza tu perfil seleccionando los roles que mejor te representen.\n` +
-    `> Los cambios se aplicarán automáticamente al elegir una opción.\n\n` +
+                    `> ✨ Personaliza tu perfil seleccionando los roles que mejor te representen.\n` +
+                    `> Los cambios se aplicarán automáticamente al elegir una opción.\n\n` +
 
-    `🌍 **País**\n` +
-    `> Selecciona tu nacionalidad o región.\n\n` +
+                    `🌍 **País**\n` +
+                    `> Selecciona tu nacionalidad o región.\n\n` +
 
-    `🎂 **Edad**\n` +
-    `> Escoge el rango de edad correspondiente.\n\n` +
+                    `🎂 **Edad**\n` +
+                    `> Escoge el rango de edad correspondiente.\n\n` +
 
-    `👽 **Sexo**\n` +
-    `> Selecciona cómo deseas identificarte.`
-)
-                .setThumbnail('https://media.discordapp.net/attachments/1499375657103392839/1501666281651441925/logo_principal.png?ex=69ff8a35&is=69fe38b5&hm=93a35cefa66cd30f2730eaedc8edb5c83509e4d7ccbfcfc7ad5e24c4f9254f90&=&format=webp&quality=lossless&width=694&height=694')
-                .setImage('https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png?ex=69ff8a34&is=69fe38b4&hm=20d0de70c8ae315aae73b3f468611e5d74239caf34394d34aca4cec64cdfaef0&=&format=webp&quality=lossless&width=1288&height=515');
+                    `👽 **Sexo**\n` +
+                    `> Selecciona cómo deseas identificarte.`
+                )
+
+                .setThumbnail(
+                    "https://media.discordapp.net/attachments/1499375657103392839/1501666281651441925/logo_principal.png"
+                )
+
+                .setImage(
+                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
+                )
+
+                .setFooter({
+
+                    text:
+                        `Panel creado por ${interaction.user.username}`
+                })
+
+                .setTimestamp();
 
         //////////////////////////////////////////////////
         // MENU PAISES
@@ -50,9 +157,15 @@ module.exports = {
             new StringSelectMenuBuilder()
 
                 .setCustomId("rr_country")
-                .setPlaceholder("🌍 Selecciona tu país")
+
+                .setPlaceholder(
+                    "🌍 Selecciona tu país"
+                )
+
                 .setMinValues(0)
+
                 .setMaxValues(1)
+
                 .addOptions([
 
                     {
@@ -155,13 +268,19 @@ module.exports = {
             new StringSelectMenuBuilder()
 
                 .setCustomId("rr_age")
-                .setPlaceholder("🎂 Selecciona tu edad")
+
+                .setPlaceholder(
+                    "🎂 Selecciona tu edad"
+                )
+
                 .setMinValues(0)
+
                 .setMaxValues(1)
+
                 .addOptions([
 
                     {
-                        label: "Menor de 17",
+                        label:"Menor de 17",
                         value:"menor",
                         emoji:"🍼",
                         description:"Obtener rol de menor"
@@ -190,9 +309,15 @@ module.exports = {
             new StringSelectMenuBuilder()
 
                 .setCustomId("rr_sex")
-                .setPlaceholder("👽 Selecciona tu sexo")
+
+                .setPlaceholder(
+                    "👽 Selecciona tu sexo"
+                )
+
                 .setMinValues(0)
+
                 .setMaxValues(1)
+
                 .addOptions([
 
                     {
@@ -223,18 +348,21 @@ module.exports = {
 
         const row1 =
             new ActionRowBuilder()
+
                 .addComponents(countryMenu);
 
         //////////////////////////////////////////////////
 
         const row2 =
             new ActionRowBuilder()
+
                 .addComponents(ageMenu);
 
         //////////////////////////////////////////////////
 
         const row3 =
             new ActionRowBuilder()
+
                 .addComponents(sexMenu);
 
         //////////////////////////////////////////////////
@@ -245,6 +373,7 @@ module.exports = {
             await interaction.channel.send({
 
                 embeds: [embed],
+
                 components: [row1, row2, row3]
             });
 
@@ -254,16 +383,36 @@ module.exports = {
 
         await reactionRolesSchema.create({
 
-            guildId: interaction.guild.id,
-            channelId: interaction.channel.id,
-            messageId: msg.id
+            guildId:
+                interaction.guild.id,
+
+            channelId:
+                interaction.channel.id,
+
+            messageId:
+                msg.id
         });
 
         //////////////////////////////////////////////////
 
         return interaction.reply({
 
-            content: "✅ Panel creado.",
+            embeds: [
+
+                new EmbedBuilder()
+
+                    .setColor("#00ff99")
+
+                    .setTitle(
+                        "✅ Panel creado"
+                    )
+
+                    .setDescription(
+
+                        `El panel de reaction roles fue creado correctamente en ${interaction.channel}.`
+                    )
+            ],
+
             flags: 64
         });
     }

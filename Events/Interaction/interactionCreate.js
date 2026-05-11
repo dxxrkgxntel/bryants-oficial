@@ -16,18 +16,32 @@ module.exports = {
 
             if (interaction.isButton()) {
 
-                const btn =
-                    client.buttons.get(
-                        interaction.customId
-                    );
+const btn =
 
-                if (btn) {
+    [...client.buttons.values()]
 
-                    return await btn.execute(
-                        interaction,
-                        client
-                    );
-                }
+        .find(button =>
+
+            Array.isArray(button.id)
+
+                ? button.id.includes(
+                    interaction.customId
+                )
+
+                : button.id ===
+                  interaction.customId
+        );
+
+//////////////////////////////////////////////////
+
+if (btn) {
+
+    return await btn.execute(
+        interaction,
+        client
+    );
+}
+
             }
 
             //////////////////////////////////////////////////

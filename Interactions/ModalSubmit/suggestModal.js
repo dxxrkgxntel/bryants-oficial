@@ -74,7 +74,7 @@ module.exports = {
                 votesNo: []
             });
 
-            return await interaction.reply({
+            return await interaction.editReply({
                 content: "Se ha enviado correctamente tu sugerencia",
                 flags: 64
             });
