@@ -326,5 +326,7 @@ module.exports = {
         ////////////////////////////////////////
 
         await data.save();
+
+        console.log(`XP añadido a ${message.author.username}`.green);
     }
 };
