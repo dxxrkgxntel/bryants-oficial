@@ -6,6 +6,12 @@ const {
 const getUser =
     require("../../utils/getUser");
 
+const bankConfig =
+    require("../../Config/bankConfig");
+
+const EconomyUser =
+    require("../../Models/EconomyUser");
+
 module.exports = {
 
     data:
@@ -67,12 +73,74 @@ module.exports = {
         }
 
         //////////////////////////////////////////////////
-        // MOVER DINERO
-        //////////////////////////////////////////////////
+// COMISION
+//////////////////////////////////////////////////
 
-        user.bank -= amount;
+const fee = Math.floor(
 
-        user.wallet += amount;
+    amount *
+    bankConfig.withdrawFee
+);
+
+//////////////////////////////////////////////////
+
+const finalAmount =
+    amount - fee;
+
+//////////////////////////////////////////////////
+// RESTAR BANCO
+//////////////////////////////////////////////////
+
+user.bank -= amount;
+
+//////////////////////////////////////////////////
+// DAR DINERO
+//////////////////////////////////////////////////
+
+user.wallet += finalAmount;
+
+//////////////////////////////////////////////////
+// OWNER ACCOUNT
+//////////////////////////////////////////////////
+
+let ownerData =
+    await EconomyUser.findOne({
+
+        guildId:
+            interaction.guild.id,
+
+        userId:
+            bankConfig.ownerId
+    });
+
+//////////////////////////////////////////////////
+
+if (!ownerData) {
+
+    ownerData =
+        new EconomyUser({
+
+            guildId:
+                interaction.guild.id,
+
+            userId:
+                bankConfig.ownerId,
+
+            wallet: 0,
+
+            bank: 0
+        });
+}
+
+//////////////////////////////////////////////////
+// DAR COMISION
+//////////////////////////////////////////////////
+
+ownerData.wallet += fee;
+
+//////////////////////////////////////////////////
+
+await ownerData.save();
 
         //////////////////////////////////////////////////
 
@@ -96,9 +164,13 @@ module.exports = {
 
                     `🏦 Has retirado **${amount.toLocaleString()} monedas** de tu banco.\n\n` +
 
-                    `💵 **Wallet:** ${user.wallet.toLocaleString()}\n` +
+`💸 Comisión bancaria: **${fee.toLocaleString()} monedas**\n` +
 
-                    `🏦 **Banco:** ${user.bank.toLocaleString()}`
+`✅ Recibido: **${finalAmount.toLocaleString()} monedas**\n\n` +
+
+`💵 **Wallet:** ${user.wallet.toLocaleString()}\n` +
+
+`🏦 **Banco:** ${user.bank.toLocaleString()}`
                 )
 
                 .setThumbnail(

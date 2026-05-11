@@ -13,6 +13,7 @@ const economyUser = new Schema({
   jackpots: {type: Number, default: 0},
   gambleStreak: {type: Number, default: 0},
   biggestWin: {type: Number, default: 0},
+  lastBankBonus: {type: Number, default: 0},
 });
 
 module.exports = model('EconomyUser', economyUser);

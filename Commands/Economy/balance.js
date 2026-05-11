@@ -1,33 +1,187 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const getUser = require('../../utils/getUser');
+const {
+    SlashCommandBuilder,
+    EmbedBuilder
+} = require("discord.js");
+
+const getUser =
+    require("../../utils/getUser");
+
+const applyBankBonus =
+    require("../../utils/applyBankBonus");
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName('balance')
-    .setDescription('Muestra tu balance o el de otro usuario')
-    .addUserOption(option =>
-      option
-        .setName('usuario')
-        .setDescription('Usuario a consultar')
-        .setRequired(false)
-    ),
 
-  async execute(interaction) {
-    const target = interaction.options.getUser('usuario') || interaction.user;
+    data:
+        new SlashCommandBuilder()
 
-    const userData = await getUser(interaction.guild.id, target.id);
+            .setName("balance")
 
-    const embed = new EmbedBuilder()
-      .setColor('#8A2BE2')
-      .setTitle(`💰 Balance de ${target.username}`)
-      .addFields(
-        { name: '💵 Wallet', value: `${userData.wallet.toLocaleString()} monedas`, inline: true },
-        { name: '🏦 Banco', value: `${userData.bank.toLocaleString()} monedas`, inline: true },
-        { name: '📊 Total', value: `${(userData.wallet + userData.bank).toLocaleString()} monedas` }
-      )
-      .setThumbnail(target.displayAvatarURL({ dynamic: true }))
-      .setFooter({ text: interaction.guild.name });
+            .setDescription(
+                "Muestra tu balance o el de otro usuario"
+            )
 
-    await interaction.reply({ embeds: [embed] });
-  }
+            .addUserOption(option =>
+
+                option
+
+                    .setName("usuario")
+
+                    .setDescription(
+                        "Usuario a consultar"
+                    )
+
+                    .setRequired(false)
+            ),
+
+    //////////////////////////////////////////////////
+
+    async execute(interaction) {
+
+        //////////////////////////////////////////////////
+        // USER
+        //////////////////////////////////////////////////
+
+        const target =
+
+            interaction.options.getUser(
+                "usuario"
+            ) || interaction.user;
+
+        //////////////////////////////////////////////////
+        // DATA
+        //////////////////////////////////////////////////
+
+        const userData =
+
+            await getUser(
+
+                interaction.guild.id,
+                target.id
+            );
+
+        //////////////////////////////////////////////////
+        // BONUS
+        //////////////////////////////////////////////////
+
+        const bonus =
+
+            await applyBankBonus(
+                userData
+            );
+
+        //////////////////////////////////////////////////
+
+        await userData.save();
+
+        //////////////////////////////////////////////////
+        // TOTAL
+        //////////////////////////////////////////////////
+
+        const total =
+
+            userData.wallet +
+            userData.bank;
+
+        //////////////////////////////////////////////////
+// MEMBER
+//////////////////////////////////////////////////
+
+const member =
+    await interaction.guild.members
+        .fetch(target.id)
+        .catch(() => null);
+
+//////////////////////////////////////////////////
+// DISPLAY NAME
+//////////////////////////////////////////////////
+
+const displayName =
+
+    member?.displayName ||
+    target.username;
+
+        //////////////////////////////////////////////////
+        // EMBED
+        //////////////////////////////////////////////////
+
+        const embed =
+
+            new EmbedBuilder()
+
+                .setColor("#8A2BE2")
+
+                .setTitle(
+                    `💰 Balance de ${displayName}`
+                )
+
+                .addFields(
+
+                    {
+                        name: "💵 Wallet",
+                        value:
+                            `${userData.wallet.toLocaleString()} monedas`,
+                        inline: true
+                    },
+
+                    {
+                        name: "🏦 Banco",
+                        value:
+                            `${userData.bank.toLocaleString()} monedas`,
+                        inline: true
+                    },
+
+                    {
+                        name: "📊 Total",
+                        value:
+                            `${total.toLocaleString()} monedas`,
+                        inline: true
+                    }
+                )
+
+                //////////////////////////////////////////////////
+                // BONUS SOLO SI EXISTE
+                //////////////////////////////////////////////////
+
+                .setThumbnail(
+
+                    target.displayAvatarURL({
+
+                        dynamic: true,
+                        size: 1024
+                    })
+                )
+
+                .setFooter({
+
+                    text:
+                        interaction.guild.name
+                })
+
+                .setTimestamp();
+
+        //////////////////////////////////////////////////
+        // BONUS FIELD
+        //////////////////////////////////////////////////
+
+        if (bonus > 0) {
+
+            embed.addFields({
+
+                name:
+                    "🏦 Bonus Bancario",
+
+                value:
+                    `+${bonus.toLocaleString()} monedas generadas`,
+
+                inline: false
+            });
+        }
+
+        //////////////////////////////////////////////////
+
+        await interaction.reply({
+
+            embeds: [embed]
+        });
+    }
 };
