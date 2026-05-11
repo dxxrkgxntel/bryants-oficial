@@ -1,5 +1,6 @@
 const Level = require("../../Models/Level");
 const LevelConfig = require("../../Models/LevelConfig");
+const levelRoles = require("../../Levels/levelRoles");
 
 //////////////////////////////////////////////////
 // CONFIG
@@ -157,12 +158,14 @@ module.exports = {
                             }
 
                             //////////////////////////////////////////////////
-                            // LEVEL UP
+                            // XP NECESARIA
                             //////////////////////////////////////////////////
 
                             const xpNeeded =
                                 (data.level + 1) * 100;
 
+                            //////////////////////////////////////////////////
+                            // LEVEL UP
                             //////////////////////////////////////////////////
 
                             if (data.xp >= xpNeeded) {
@@ -173,7 +176,11 @@ module.exports = {
 
                                 data.level += 1;
 
-                                data.xp = 0;
+                                //////////////////////////////////////////////////
+                                // XP SOBRANTE
+                                //////////////////////////////////////////////////
+
+                                data.xp -= xpNeeded;
 
                                 //////////////////////////////////////////////////
                                 // CONFIG
@@ -197,7 +204,7 @@ module.exports = {
                                     );
 
                                 //////////////////////////////////////////////////
-                                // MENSAJE
+                                // MENSAJE LEVEL UP
                                 //////////////////////////////////////////////////
 
                                 if (levelChannel) {
@@ -205,16 +212,116 @@ module.exports = {
                                     await levelChannel.send({
 
                                         embeds: [{
-                                            title:"🎉 Subida de nivel en voz",
-                                            description:`🎊 ¡Felicidades ${member}!\n\n` +`Has alcanzado el nivel **${data.level}** gracias a tu actividad en los canales de voz.\n\n` +`🔥 Sigue participando, hablando y manteniéndote activo para continuar subiendo de nivel y desbloquear nuevas recompensas dentro del servidor.`,
-                                            color:0x8A2BE2,
-                                            thumbnail: {url:member.user.displayAvatarURL({dynamic: true, size: 1024})},
-                                            image: {url:"https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png?ex=6a0032f4&is=69fee174&hm=54a509859dcee24cd6a637b9e0373e1821b6ab3898eccd77a59591b6e6d55e3a&=&format=webp&quality=lossless&width=1288&height=515"}
+
+                                            title:
+                                                "🎉 Subida de nivel en voz",
+
+                                            description:
+
+                                                `🎊 ¡Felicidades ${member}!\n\n` +
+
+                                                `Has alcanzado el nivel **${data.level}** gracias a tu actividad en los canales de voz.\n\n` +
+
+                                                `🔥 Sigue participando, hablando y manteniéndote activo para continuar subiendo de nivel y desbloquear nuevas recompensas dentro del servidor.`,
+
+                                            color: 0x8A2BE2,
+
+                                            thumbnail: {
+
+                                                url:
+                                                    member.user.displayAvatarURL({
+
+                                                        dynamic: true,
+
+                                                        size: 1024
+                                                    })
+                                            },
+
+                                            image: {
+
+                                                url:
+                                                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png?ex=6a0032f4&is=69fee174&hm=54a509859dcee24cd6a637b9e0373e1821b6ab3898eccd77a59591b6e6d55e3a&=&format=webp&quality=lossless&width=1288&height=515"
+                                            }
                                         }]
                                     }).catch(() => {});
                                 }
+
+                                //////////////////////////////////////////////////
+                                // ROLES POR NIVEL
+                                //////////////////////////////////////////////////
+
+                                const roleId =
+                                    levelRoles[data.level];
+
+                                //////////////////////////////////////////////////
+                                // SI EXISTE ROL
+                                //////////////////////////////////////////////////
+
+                                if (roleId) {
+
+                                    const role =
+                                        guild.roles.cache.get(
+                                            roleId
+                                        );
+
+                                    //////////////////////////////////////////////////
+                                    // DAR ROL
+                                    //////////////////////////////////////////////////
+
+                                    if (role) {
+
+                                        await member.roles
+                                            .add(role)
+                                            .catch(() => {});
+
+                                        //////////////////////////////////////////////////
+                                        // MENSAJE ROL
+                                        //////////////////////////////////////////////////
+
+                                        if (levelChannel) {
+
+                                            await levelChannel.send({
+
+                                                embeds: [{
+
+                                                    title:
+                                                        "🎭 Nuevo Rol Desbloqueado",
+
+                                                    description:
+
+                                                        `✨ ¡Felicidades ${member}!\n\n` +
+
+                                                        `Has desbloqueado el rol **${role.name}** gracias a tu actividad en canales de voz.\n\n` +
+
+                                                        `🎤 Sigue participando en voz para continuar obteniendo recompensas exclusivas.`,
+
+                                                    color: 0x00ff99,
+
+                                                    thumbnail: {
+
+                                                        url:
+                                                            member.user.displayAvatarURL({
+
+                                                                dynamic: true,
+
+                                                                size: 1024
+                                                            })
+                                                    },
+
+                                                    image: {
+
+                                                        url:
+                                                            "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png?ex=6a0032f4&is=69fee174&hm=54a509859dcee24cd6a637b9e0373e1821b6ab3898eccd77a59591b6e6d55e3a&=&format=webp&quality=lossless&width=1288&height=515"
+                                                    }
+                                                }]
+                                            }).catch(() => {});
+                                        }
+                                    }
+                                }
                             }
 
+                            //////////////////////////////////////////////////
+                            // SAVE
                             //////////////////////////////////////////////////
 
                             await data.save();
