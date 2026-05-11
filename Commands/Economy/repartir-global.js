@@ -1,29 +1,42 @@
 const {
     SlashCommandBuilder,
+    PermissionFlagsBits,
     EmbedBuilder,
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle
 } = require("discord.js");
 
-const getUser =
-    require("../../utils/getUser");
+const GlobalBank =
+    require("../../Models/GlobalBank");
 
 const EconomyUser =
     require("../../Models/EconomyUser");
-
-const GlobalBank =
-    require("../../Models/GlobalBank");
 
 module.exports = {
 
     data:
         new SlashCommandBuilder()
 
-            .setName("retirar")
+            .setName("repartir-global")
 
             .setDescription(
-                "Retira dinero del banco"
+                "Entrega dinero desde el banco global"
+            )
+
+            .setDefaultMemberPermissions(
+                PermissionFlagsBits.Administrator
+            )
+
+            .addUserOption(o =>
+
+                o.setName("usuario")
+
+                    .setDescription(
+                        "Usuario que recibirá el dinero"
+                    )
+
+                    .setRequired(true)
             )
 
             .addIntegerOption(o =>
@@ -31,7 +44,7 @@ module.exports = {
                 o.setName("cantidad")
 
                     .setDescription(
-                        "Cantidad a retirar"
+                        "Cantidad a entregar"
                     )
 
                     .setRequired(true)
@@ -44,7 +57,14 @@ module.exports = {
     async execute(interaction) {
 
         //////////////////////////////////////////////////
-        // AMOUNT
+        // DATA
+        //////////////////////////////////////////////////
+
+        const target =
+            interaction.options.getUser(
+                "usuario"
+            );
+
         //////////////////////////////////////////////////
 
         const amount =
@@ -53,88 +73,102 @@ module.exports = {
             );
 
         //////////////////////////////////////////////////
-        // USER
+        // GLOBAL BANK
         //////////////////////////////////////////////////
 
-        const user =
-            await getUser(
+        let globalBank =
 
-                interaction.guild.id,
-                interaction.user.id
-            );
+            await GlobalBank.findOne({
+
+                guildId:
+                    interaction.guild.id
+            });
 
         //////////////////////////////////////////////////
-        // VALIDAR DINERO
-        //////////////////////////////////////////////////
 
-        if (
-            user.bank < amount
-        ) {
+        if (!globalBank) {
 
             return interaction.reply({
 
                 content:
-                    "❌ No tienes suficiente dinero en el banco.",
+                    "❌ El banco global no existe aún.",
 
                 flags: 64
             });
         }
 
         //////////////////////////////////////////////////
-// COMISION
-//////////////////////////////////////////////////
+        // VALIDAR BALANCE
+        //////////////////////////////////////////////////
 
-const withdrawFee = 0.05;
+        if (
+            globalBank.balance < amount
+        ) {
 
-//////////////////////////////////////////////////
+            return interaction.reply({
 
-const fee = Math.floor(
+                embeds: [
 
-    amount *
-    withdrawFee
-);
+                    new EmbedBuilder()
 
-//////////////////////////////////////////////////
+                        .setColor("#ff0000")
 
-const finalAmount =
-    amount - fee;
+                        .setTitle(
+                            "🏦 Fondos insuficientes"
+                        )
+
+                        .setDescription(
+
+                            `El banco global no tiene suficientes monedas.\n\n` +
+
+                            `💰 Balance actual:\n` +
+
+                            `> ${globalBank.balance.toLocaleString()} monedas`
+                        )
+                ],
+
+                flags: 64
+            });
+        }
 
         //////////////////////////////////////////////////
-        // EMBED CONFIRMACION
+        // EMBED
         //////////////////////////////////////////////////
 
         const embed =
 
             new EmbedBuilder()
 
-                .setColor("#8A2BE2")
+                .setColor("#FFD700")
 
                 .setTitle(
-                    "🏦 Confirmar retiro"
+                    "🏦 Confirmar distribución"
                 )
 
                 .setDescription(
 
-                    `⚠️ ¿Realmente deseas retirar ` +
+                    `¿Deseas entregar dinero desde el banco global?\n\n` +
 
-                    `**${amount.toLocaleString()} monedas**?\n\n` +
+                    `👤 **Usuario**\n` +
 
-                    `💸 Comisión bancaria: ` +
+                    `> ${target}\n\n` +
 
-                    `**${fee.toLocaleString()} monedas**\n\n` +
+                    `💰 **Cantidad**\n` +
 
-                    `✅ Recibirás: ` +
-
-                    `**${finalAmount.toLocaleString()} monedas**`
+                    `> ${amount.toLocaleString()} monedas`
                 )
 
                 .setThumbnail(
 
-                    interaction.user.displayAvatarURL({
+                    target.displayAvatarURL({
 
                         dynamic: true,
                         size: 1024
                     })
+                )
+
+                .setImage(
+                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
                 )
 
                 .setFooter({
@@ -158,7 +192,7 @@ const finalAmount =
                     new ButtonBuilder()
 
                         .setCustomId(
-                            "withdraw_confirm"
+                            "global_confirm"
                         )
 
                         .setLabel(
@@ -174,7 +208,7 @@ const finalAmount =
                     new ButtonBuilder()
 
                         .setCustomId(
-                            "withdraw_cancel"
+                            "global_cancel"
                         )
 
                         .setLabel(
@@ -214,8 +248,6 @@ const finalAmount =
             });
 
         //////////////////////////////////////////////////
-        // COLLECT
-        //////////////////////////////////////////////////
 
         collector.on(
 
@@ -224,40 +256,29 @@ const finalAmount =
             async i => {
 
                 //////////////////////////////////////////////////
-// EVITAR UNKNOWN INTERACTION
-//////////////////////////////////////////////////
+                // EVITAR ERROR
+                //////////////////////////////////////////////////
 
-await i.deferUpdate();
+                await i.deferUpdate();
 
-                ////////////////////////////////////////////////
+                //////////////////////////////////////////////////
                 // SOLO AUTOR
-                ////////////////////////////////////////////////
+                //////////////////////////////////////////////////
 
                 if (
-
-                    i.user.id !==
-                    interaction.user.id
-
+                    i.user.id !== interaction.user.id
                 ) {
 
-                    return i.reply({
-
-                        content:
-                            "❌ No puedes usar estos botones.",
-
-                        flags: 64
-                    });
+                    return;
                 }
 
-                ////////////////////////////////////////////////
+                //////////////////////////////////////////////////
                 // CANCELAR
-                ////////////////////////////////////////////////
+                //////////////////////////////////////////////////
 
                 if (
-
                     i.customId ===
-                    "withdraw_cancel"
-
+                    "global_cancel"
                 ) {
 
                     collector.stop();
@@ -265,7 +286,7 @@ await i.deferUpdate();
                     return msg.edit({
 
                         content:
-                            "❌ Retiro cancelado.",
+                            "❌ Operación cancelada.",
 
                         embeds: [],
 
@@ -273,65 +294,71 @@ await i.deferUpdate();
                     });
                 }
 
-                ////////////////////////////////////////////////
+                //////////////////////////////////////////////////
                 // CONFIRMAR
-                ////////////////////////////////////////////////
+                //////////////////////////////////////////////////
 
                 if (
-
                     i.customId ===
-                    "withdraw_confirm"
-
+                    "global_confirm"
                 ) {
 
                     //////////////////////////////////////////////////
-                    // RETIRAR
+                    // USER DATA
                     //////////////////////////////////////////////////
 
-                    user.bank -= amount;
+                    let userData =
 
-                    user.wallet += finalAmount;
+                        await EconomyUser.findOne({
 
-                    //////////////////////////////////////////////////
-// GLOBAL BANK
-//////////////////////////////////////////////////
+                            guildId:
+                                interaction.guild.id,
 
-let globalBank =
-
-    await GlobalBank.findOne({
-
-        guildId:
-            interaction.guild.id
-    });
-
-//////////////////////////////////////////////////
-
-if (!globalBank) {
-
-    globalBank =
-        new GlobalBank({
-
-            guildId:
-                interaction.guild.id
-        });
-}
-
-//////////////////////////////////////////////////
-// AÑADIR COMISION
-//////////////////////////////////////////////////
-
-globalBank.balance += fee;
-
-globalBank.totalCollected += fee;
-
-//////////////////////////////////////////////////
-
-await user.save();
-
-await globalBank.save();
+                            userId:
+                                target.id
+                        });
 
                     //////////////////////////////////////////////////
-                    // EMBED SUCCESS
+
+                    if (!userData) {
+
+                        userData =
+                            new EconomyUser({
+
+                                guildId:
+                                    interaction.guild.id,
+
+                                userId:
+                                    target.id,
+
+                                wallet: 0,
+
+                                bank: 0
+                            });
+                    }
+
+                    //////////////////////////////////////////////////
+                    // DAR DINERO
+                    //////////////////////////////////////////////////
+
+                    userData.wallet += amount;
+
+                    //////////////////////////////////////////////////
+                    // QUITAR GLOBAL
+                    //////////////////////////////////////////////////
+
+                    globalBank.balance -= amount;
+
+                    globalBank.totalDistributed += amount;
+
+                    //////////////////////////////////////////////////
+
+                    await userData.save();
+
+                    await globalBank.save();
+
+                    //////////////////////////////////////////////////
+                    // SUCCESS
                     //////////////////////////////////////////////////
 
                     const successEmbed =
@@ -341,35 +368,29 @@ await globalBank.save();
                             .setColor("#00ff99")
 
                             .setTitle(
-                                "💸 Retiro realizado"
+                                "🏦 Dinero distribuido"
                             )
 
                             .setDescription(
 
-                                `🏦 Has retirado ` +
+                                `El banco global entregó monedas exitosamente.\n\n` +
 
-                                `**${amount.toLocaleString()} monedas**.\n\n` +
+                                `👤 **Usuario beneficiado**\n` +
 
-                                `💸 Comisión bancaria: ` +
+                                `> ${target}\n\n` +
 
-                                `**${fee.toLocaleString()} monedas**\n` +
+                                `💰 **Cantidad entregada**\n` +
 
-                                `✅ Recibido: ` +
+                                `> ${amount.toLocaleString()} monedas\n\n` +
 
-                                `**${finalAmount.toLocaleString()} monedas**\n\n` +
+                                `🏦 **Nuevo balance global**\n` +
 
-                                `💵 **Wallet:** ` +
-
-                                `${user.wallet.toLocaleString()}\n` +
-
-                                `🏦 **Banco:** ` +
-
-                                `${user.bank.toLocaleString()}`
+                                `> ${globalBank.balance.toLocaleString()} monedas`
                             )
 
                             .setThumbnail(
 
-                                interaction.user.displayAvatarURL({
+                                target.displayAvatarURL({
 
                                     dynamic: true,
                                     size: 1024
@@ -383,7 +404,7 @@ await globalBank.save();
                             .setFooter({
 
                                 text:
-                                    "Bryant's Economy System"
+                                    "Bryant's Global Bank"
                             })
 
                             .setTimestamp();
