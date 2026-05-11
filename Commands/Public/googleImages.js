@@ -36,7 +36,7 @@ module.exports = {
         .setURL(currentImage.link);
 
       const nextButton = new ButtonBuilder()
-        .setStyle(ButtonStyle.Success)
+        .setStyle(ButtonStyle.Secondary)
         .setLabel('Siguiente')
         .setCustomId('next');
 

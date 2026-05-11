@@ -16,19 +16,19 @@ module.exports = {
                 new ButtonBuilder()
                     .setLabel('Limpiar')
                     .setCustomId(idPrefix + "_Clear")
-                    .setStyle(ButtonStyle.Danger),
+                    .setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder()
                     .setLabel('(')
                     .setCustomId(idPrefix + "_(")
-                    .setStyle(ButtonStyle.Primary),
+                    .setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder()
                     .setLabel(')')
                     .setCustomId(idPrefix + "_)")
-                    .setStyle(ButtonStyle.Primary),
+                    .setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder()
                     .setLabel('<=')
                     .setCustomId(idPrefix + "_backspace")
-                    .setStyle(ButtonStyle.Primary)
+                    .setStyle(ButtonStyle.Secondary)
             )
         const row1 = new ActionRowBuilder()
             .addComponents(
@@ -47,7 +47,7 @@ module.exports = {
                 new ButtonBuilder()
                     .setLabel('/')
                     .setCustomId(idPrefix + "_/")
-                    .setStyle(ButtonStyle.Primary)
+                    .setStyle(ButtonStyle.Secondary)
             )
         const row2 = new ActionRowBuilder()
             .addComponents(
@@ -66,7 +66,7 @@ module.exports = {
                 new ButtonBuilder()
                     .setLabel('*')
                     .setCustomId(idPrefix + "_*")
-                    .setStyle(ButtonStyle.Primary)
+                    .setStyle(ButtonStyle.Secondary)
             )
         const row3 = new ActionRowBuilder()
             .addComponents(
@@ -85,7 +85,7 @@ module.exports = {
                 new ButtonBuilder()
                     .setLabel('-')
                     .setCustomId(idPrefix + "_-")
-                    .setStyle(ButtonStyle.Primary)
+                    .setStyle(ButtonStyle.Secondary)
             )
         const row4 = new ActionRowBuilder()
             .addComponents(
@@ -100,11 +100,11 @@ module.exports = {
                 new ButtonBuilder()
                     .setLabel('=')
                     .setCustomId(idPrefix + "_=")
-                    .setStyle(ButtonStyle.Success),
+                    .setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder()
                     .setLabel('+')
                     .setCustomId(idPrefix + "_+")
-                    .setStyle(ButtonStyle.Primary)
+                    .setStyle(ButtonStyle.Secondary)
             )
 
         const msg = await interaction.reply({ embeds: [embed], components: [row, row1, row2, row3, row4], ephemeral: false });

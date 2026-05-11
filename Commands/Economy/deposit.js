@@ -1,6 +1,9 @@
 const {
     SlashCommandBuilder,
-    EmbedBuilder
+    EmbedBuilder,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle
 } = require("discord.js");
 
 const getUser =
@@ -48,7 +51,6 @@ module.exports = {
         //////////////////////////////////////////////////
 
         const user =
-
             await getUser(
 
                 interaction.guild.id,
@@ -56,7 +58,7 @@ module.exports = {
             );
 
         //////////////////////////////////////////////////
-        // DINERO
+        // VALIDAR DINERO
         //////////////////////////////////////////////////
 
         if (
@@ -73,21 +75,7 @@ module.exports = {
         }
 
         //////////////////////////////////////////////////
-        // MOVER DINERO
-        //////////////////////////////////////////////////
-
-        user.wallet -= amount;
-
-        user.bank += amount;
-
-        //////////////////////////////////////////////////
-        // SAVE
-        //////////////////////////////////////////////////
-
-        await user.save();
-
-        //////////////////////////////////////////////////
-        // EMBED
+        // EMBED CONFIRMACION
         //////////////////////////////////////////////////
 
         const embed =
@@ -97,16 +85,18 @@ module.exports = {
                 .setColor("#8A2BE2")
 
                 .setTitle(
-                    "🏦 Depósito realizado"
+                    "🏦 Confirmar depósito"
                 )
 
                 .setDescription(
 
-                    `💸 Has depositado **${amount.toLocaleString()} monedas** en tu banco.\n\n` +
+                    `⚠️ ¿Realmente deseas depositar ` +
 
-                    `💵 **Wallet:** ${user.wallet.toLocaleString()}\n` +
+                    `**${amount.toLocaleString()} monedas** en el banco?\n\n` +
 
-                    `🏦 **Banco:** ${user.bank.toLocaleString()}`
+                    `💵 Wallet actual: ` +
+
+                    `**${user.wallet.toLocaleString()} monedas**`
                 )
 
                 .setThumbnail(
@@ -118,23 +108,253 @@ module.exports = {
                     })
                 )
 
-                .setImage(
-                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
-                )
-
                 .setFooter({
 
                     text:
-                        "Bryant's Economy System"
+                        "Tienes 30 segundos para responder"
                 })
 
                 .setTimestamp();
 
         //////////////////////////////////////////////////
+        // BOTONES
+        //////////////////////////////////////////////////
 
-        await interaction.reply({
+        const row =
 
-            embeds: [embed]
-        });
+            new ActionRowBuilder()
+
+                .addComponents(
+
+                    new ButtonBuilder()
+
+                        .setCustomId(
+                            "deposit_confirm"
+                        )
+
+                        .setLabel(
+                            "Confirmar"
+                        )
+
+                        .setEmoji("✅")
+
+                        .setStyle(
+                            ButtonStyle.Secondary
+                        ),
+
+                    new ButtonBuilder()
+
+                        .setCustomId(
+                            "deposit_cancel"
+                        )
+
+                        .setLabel(
+                            "Cancelar"
+                        )
+
+                        .setEmoji("❌")
+
+                        .setStyle(
+                            ButtonStyle.Secondary
+                        )
+                );
+
+        //////////////////////////////////////////////////
+        // SEND
+        //////////////////////////////////////////////////
+
+        const msg =
+            await interaction.reply({
+
+                embeds: [embed],
+
+                components: [row],
+
+                fetchReply: true
+            });
+
+        //////////////////////////////////////////////////
+        // COLLECTOR
+        //////////////////////////////////////////////////
+
+        const collector =
+
+            msg.createMessageComponentCollector({
+
+                time: 30000
+            });
+
+        //////////////////////////////////////////////////
+        // COLLECT
+        //////////////////////////////////////////////////
+
+        collector.on(
+
+            "collect",
+
+            async i => {
+
+                ////////////////////////////////////////////////
+                // SOLO AUTOR
+                ////////////////////////////////////////////////
+
+                if (
+
+                    i.user.id !==
+                    interaction.user.id
+
+                ) {
+
+                    return i.reply({
+
+                        content:
+                            "❌ No puedes usar estos botones.",
+
+                        flags: 64
+                    });
+                }
+
+                ////////////////////////////////////////////////
+                // CANCELAR
+                ////////////////////////////////////////////////
+
+                if (
+
+                    i.customId ===
+                    "deposit_cancel"
+
+                ) {
+
+                    collector.stop();
+
+                    return i.update({
+
+                        content:
+                            "❌ Depósito cancelado.",
+
+                        embeds: [],
+
+                        components: []
+                    });
+                }
+
+                ////////////////////////////////////////////////
+                // CONFIRMAR
+                ////////////////////////////////////////////////
+
+                if (
+
+                    i.customId ===
+                    "deposit_confirm"
+
+                ) {
+
+                    //////////////////////////////////////////////////
+                    // MOVER DINERO
+                    //////////////////////////////////////////////////
+
+                    user.wallet -= amount;
+
+                    user.bank += amount;
+
+                    //////////////////////////////////////////////////
+                    // SAVE
+                    //////////////////////////////////////////////////
+
+                    await user.save();
+
+                    //////////////////////////////////////////////////
+                    // EMBED SUCCESS
+                    //////////////////////////////////////////////////
+
+                    const successEmbed =
+
+                        new EmbedBuilder()
+
+                            .setColor("#00ff99")
+
+                            .setTitle(
+                                "🏦 Depósito realizado"
+                            )
+
+                            .setDescription(
+
+                                `💸 Has depositado ` +
+
+                                `**${amount.toLocaleString()} monedas** en tu banco.\n\n` +
+
+                                `💵 **Wallet:** ` +
+
+                                `${user.wallet.toLocaleString()}\n` +
+
+                                `🏦 **Banco:** ` +
+
+                                `${user.bank.toLocaleString()}`
+                            )
+
+                            .setThumbnail(
+
+                                interaction.user.displayAvatarURL({
+
+                                    dynamic: true,
+                                    size: 1024
+                                })
+                            )
+
+                            .setImage(
+                                "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
+                            )
+
+                            .setFooter({
+
+                                text:
+                                    "Bryant's Economy System"
+                            })
+
+                            .setTimestamp();
+
+                    //////////////////////////////////////////////////
+
+                    collector.stop();
+
+                    //////////////////////////////////////////////////
+
+                    return i.update({
+
+                        embeds: [successEmbed],
+
+                        components: []
+                    });
+                }
+            }
+        );
+
+        //////////////////////////////////////////////////
+        // TIMEOUT
+        //////////////////////////////////////////////////
+
+        collector.on(
+
+            "end",
+
+            async (_, reason) => {
+
+                if (
+                    reason === "time"
+                ) {
+
+                    await msg.edit({
+
+                        content:
+                            "⌛ Tiempo agotado.",
+
+                        embeds: [],
+
+                        components: []
+
+                    }).catch(() => {});
+                }
+            }
+        );
     }
 };

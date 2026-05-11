@@ -1,6 +1,9 @@
 const {
     SlashCommandBuilder,
-    EmbedBuilder
+    EmbedBuilder,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle
 } = require("discord.js");
 
 const getUser =
@@ -45,11 +48,17 @@ module.exports = {
 
     async execute(interaction) {
 
+        //////////////////////////////////////////////////
+        // TARGET
+        //////////////////////////////////////////////////
+
         const target =
             interaction.options.getUser(
                 "usuario"
             );
 
+        //////////////////////////////////////////////////
+        // AMOUNT
         //////////////////////////////////////////////////
 
         const amount =
@@ -96,48 +105,34 @@ module.exports = {
                 target.id
             );
 
-       //////////////////////////////////////////////////
-// DINERO TOTAL
-//////////////////////////////////////////////////
-
-const totalMoney =
-
-    sender.wallet +
-    sender.bank;
-
-//////////////////////////////////////////////////
-// VALIDAR
-//////////////////////////////////////////////////
-
-if (
-    totalMoney < amount
-) {
-
-    return interaction.reply({
-
-        content:
-            "❌ No tienes suficiente dinero entre wallet y banco.",
-
-        flags: 64
-    });
-}
-
         //////////////////////////////////////////////////
-        // TRANSFERIR
+        // DINERO TOTAL
         //////////////////////////////////////////////////
 
-        sender.wallet -= amount;
+        const totalMoney =
 
-        receiver.wallet += amount;
-
-        //////////////////////////////////////////////////
-
-        await sender.save();
-
-        await receiver.save();
+            sender.wallet +
+            sender.bank;
 
         //////////////////////////////////////////////////
-        // EMBED
+        // VALIDAR
+        //////////////////////////////////////////////////
+
+        if (
+            totalMoney < amount
+        ) {
+
+            return interaction.reply({
+
+                content:
+                    "❌ No tienes suficiente dinero entre wallet y banco.",
+
+                flags: 64
+            });
+        }
+
+        //////////////////////////////////////////////////
+        // EMBED CONFIRMACION
         //////////////////////////////////////////////////
 
         const embed =
@@ -147,14 +142,22 @@ if (
                 .setColor("#8A2BE2")
 
                 .setTitle(
-                    "🔁 Transferencia realizada"
+                    "💸 Confirmar transferencia"
                 )
 
                 .setDescription(
 
-                    `💸 Has transferido **${amount.toLocaleString()} monedas** a ${target}.\n\n` +
+                    `⚠️ ¿Realmente deseas transferir ` +
 
-                    `💵 **Tu wallet actual:** ${sender.wallet.toLocaleString()}`
+                    `**${amount.toLocaleString()} monedas** a ${target}?\n\n` +
+
+                    `💵 Wallet: ` +
+
+                    `**${sender.wallet.toLocaleString()}**\n` +
+
+                    `🏦 Banco: ` +
+
+                    `**${sender.bank.toLocaleString()}**`
                 )
 
                 .setThumbnail(
@@ -166,23 +169,281 @@ if (
                     })
                 )
 
-                .setImage(
-                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
-                )
-
                 .setFooter({
 
                     text:
-                        "Bryant's Economy System"
+                        "Tienes 30 segundos para responder"
                 })
 
                 .setTimestamp();
 
         //////////////////////////////////////////////////
+        // BOTONES
+        //////////////////////////////////////////////////
 
-        await interaction.reply({
+        const row =
 
-            embeds: [embed]
-        });
+            new ActionRowBuilder()
+
+                .addComponents(
+
+                    new ButtonBuilder()
+
+                        .setCustomId(
+                            "transfer_confirm"
+                        )
+
+                        .setLabel(
+                            "Confirmar"
+                        )
+
+                        .setEmoji("✅")
+
+                        .setStyle(
+                            ButtonStyle.Secondary
+                        ),
+
+                    new ButtonBuilder()
+
+                        .setCustomId(
+                            "transfer_cancel"
+                        )
+
+                        .setLabel(
+                            "Cancelar"
+                        )
+
+                        .setEmoji("❌")
+
+                        .setStyle(
+                            ButtonStyle.Secondary
+                        )
+                );
+
+        //////////////////////////////////////////////////
+        // SEND
+        //////////////////////////////////////////////////
+
+        const msg =
+            await interaction.reply({
+
+                embeds: [embed],
+
+                components: [row],
+
+                fetchReply: true
+            });
+
+        //////////////////////////////////////////////////
+        // COLLECTOR
+        //////////////////////////////////////////////////
+
+        const collector =
+
+            msg.createMessageComponentCollector({
+
+                time: 30000
+            });
+
+        //////////////////////////////////////////////////
+        // COLLECT
+        //////////////////////////////////////////////////
+
+        collector.on(
+
+            "collect",
+
+            async i => {
+
+                ////////////////////////////////////////////////
+                // SOLO AUTOR
+                ////////////////////////////////////////////////
+
+                if (
+
+                    i.user.id !==
+                    interaction.user.id
+
+                ) {
+
+                    return i.reply({
+
+                        content:
+                            "❌ No puedes usar estos botones.",
+
+                        flags: 64
+                    });
+                }
+
+                ////////////////////////////////////////////////
+                // CANCELAR
+                ////////////////////////////////////////////////
+
+                if (
+
+                    i.customId ===
+                    "transfer_cancel"
+
+                ) {
+
+                    collector.stop();
+
+                    return i.update({
+
+                        content:
+                            "❌ Transferencia cancelada.",
+
+                        embeds: [],
+
+                        components: []
+                    });
+                }
+
+                ////////////////////////////////////////////////
+                // CONFIRMAR
+                ////////////////////////////////////////////////
+
+                if (
+
+                    i.customId ===
+                    "transfer_confirm"
+
+                ) {
+
+                    //////////////////////////////////////////////////
+                    // USAR WALLET PRIMERO
+                    //////////////////////////////////////////////////
+
+                    if (
+                        sender.wallet >= amount
+                    ) {
+
+                        sender.wallet -= amount;
+
+                    } else {
+
+                        //////////////////////////////////////////////////
+                        // RESTANTE
+                        //////////////////////////////////////////////////
+
+                        const remaining =
+
+                            amount -
+                            sender.wallet;
+
+                        //////////////////////////////////////////////////
+
+                        sender.wallet = 0;
+
+                        sender.bank -= remaining;
+                    }
+
+                    //////////////////////////////////////////////////
+                    // RECIBIR
+                    //////////////////////////////////////////////////
+
+                    receiver.wallet += amount;
+
+                    //////////////////////////////////////////////////
+                    // SAVE
+                    //////////////////////////////////////////////////
+
+                    await sender.save();
+
+                    await receiver.save();
+
+                    //////////////////////////////////////////////////
+                    // SUCCESS EMBED
+                    //////////////////////////////////////////////////
+
+                    const successEmbed =
+
+                        new EmbedBuilder()
+
+                            .setColor("#00ff99")
+
+                            .setTitle(
+                                "🔁 Transferencia realizada"
+                            )
+
+                            .setDescription(
+
+                                `💸 Has transferido ` +
+
+                                `**${amount.toLocaleString()} monedas** a ${target}.\n\n` +
+
+                                `💵 **Wallet:** ` +
+
+                                `${sender.wallet.toLocaleString()}\n` +
+
+                                `🏦 **Banco:** ` +
+
+                                `${sender.bank.toLocaleString()}`
+                            )
+
+                            .setThumbnail(
+
+                                target.displayAvatarURL({
+
+                                    dynamic: true,
+                                    size: 1024
+                                })
+                            )
+
+                            .setImage(
+                                "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
+                            )
+
+                            .setFooter({
+
+                                text:
+                                    "Bryant's Economy System"
+                            })
+
+                            .setTimestamp();
+
+                    //////////////////////////////////////////////////
+
+                    collector.stop();
+
+                    //////////////////////////////////////////////////
+
+                    return i.update({
+
+                        embeds: [successEmbed],
+
+                        components: []
+                    });
+                }
+            }
+        );
+
+        //////////////////////////////////////////////////
+        // TIMEOUT
+        //////////////////////////////////////////////////
+
+        collector.on(
+
+            "end",
+
+            async (_, reason) => {
+
+                if (
+                    reason === "time"
+                ) {
+
+                    await msg.edit({
+
+                        content:
+                            "⌛ Tiempo agotado.",
+
+                        embeds: [],
+
+                        components: []
+
+                    }).catch(() => {});
+                }
+            }
+        );
     }
 };

@@ -121,7 +121,7 @@ module.exports = async (
                     .setEmoji("✏️")
 
                     .setStyle(
-                        ButtonStyle.Primary
+                        ButtonStyle.Secondary
                     ),
 
                 new ButtonBuilder()
@@ -133,7 +133,7 @@ module.exports = async (
                     .setEmoji("👥")
 
                     .setStyle(
-                        ButtonStyle.Success
+                        ButtonStyle.Secondary
                     )
             );
 
@@ -155,7 +155,7 @@ module.exports = async (
                     .setEmoji("👁️")
 
                     .setStyle(
-                        ButtonStyle.Danger
+                        ButtonStyle.Secondary
                     ),
 
                 new ButtonBuilder()
@@ -167,7 +167,7 @@ module.exports = async (
                     .setEmoji("👀")
 
                     .setStyle(
-                        ButtonStyle.Success
+                        ButtonStyle.Secondary
                     ),
 
                 new ButtonBuilder()
@@ -179,7 +179,7 @@ module.exports = async (
                     .setEmoji("👑")
 
                     .setStyle(
-                        ButtonStyle.Primary
+                        ButtonStyle.Secondary
                     ),
 
                 new ButtonBuilder()
@@ -191,7 +191,7 @@ module.exports = async (
                     .setEmoji("👢")
 
                     .setStyle(
-                        ButtonStyle.Danger
+                        ButtonStyle.Secondary
                     ),
 
                 new ButtonBuilder()
@@ -203,7 +203,7 @@ module.exports = async (
                     .setEmoji("➕")
 
                     .setStyle(
-                        ButtonStyle.Success
+                        ButtonStyle.Secondary
                     )
             );
 
@@ -225,7 +225,7 @@ module.exports = async (
                     .setEmoji("🚫")
 
                     .setStyle(
-                        ButtonStyle.Danger
+                        ButtonStyle.Secondary
                     ),
 
                 new ButtonBuilder()
@@ -237,7 +237,7 @@ module.exports = async (
                     .setEmoji("🔊")
 
                     .setStyle(
-                        ButtonStyle.Primary
+                        ButtonStyle.Secondary
                     ),
 
                 new ButtonBuilder()

@@ -27,7 +27,7 @@ module.exports = {
             new ButtonBuilder()
                 .setCustomId('apply')
                 .setLabel('Click para empezar')
-                .setStyle(ButtonStyle.Success)
+                .setStyle(ButtonStyle.Secondary)
                 .setDisabled(false)
                 .setEmoji('💻')
         )

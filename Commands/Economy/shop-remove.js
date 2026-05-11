@@ -1,42 +1,39 @@
 const {
     SlashCommandBuilder,
+    PermissionFlagsBits,
     EmbedBuilder,
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle
 } = require("discord.js");
 
-const getUser =
-    require("../../utils/getUser");
-
-const bankConfig =
-    require("../../Config/bankConfig");
-
-const EconomyUser =
-    require("../../Models/EconomyUser");
+const ShopItem =
+    require("../../Models/ShopItem");
 
 module.exports = {
 
     data:
         new SlashCommandBuilder()
 
-            .setName("retirar")
+            .setName("shop-remove")
 
             .setDescription(
-                "Retira dinero del banco"
+                "Elimina un rol de la tienda"
             )
 
-            .addIntegerOption(o =>
+            .setDefaultMemberPermissions(
+                PermissionFlagsBits.Administrator
+            )
 
-                o.setName("cantidad")
+            .addRoleOption(o =>
+
+                o.setName("rol")
 
                     .setDescription(
-                        "Cantidad a retirar"
+                        "Rol que deseas eliminar de la tienda"
                     )
 
                     .setRequired(true)
-
-                    .setMinValue(1)
             ),
 
     //////////////////////////////////////////////////
@@ -44,56 +41,55 @@ module.exports = {
     async execute(interaction) {
 
         //////////////////////////////////////////////////
-        // AMOUNT
+        // ROLE
         //////////////////////////////////////////////////
 
-        const amount =
-            interaction.options.getInteger(
-                "cantidad"
+        const role =
+            interaction.options.getRole(
+                "rol"
             );
 
         //////////////////////////////////////////////////
-        // USER
+        // BUSCAR ITEM
         //////////////////////////////////////////////////
 
-        const user =
-            await getUser(
+        const item =
+            await ShopItem.findOne({
 
-                interaction.guild.id,
-                interaction.user.id
-            );
+                guildId:
+                    interaction.guild.id,
+
+                roleId:
+                    role.id
+            });
 
         //////////////////////////////////////////////////
-        // VALIDAR DINERO
+        // VALIDAR
         //////////////////////////////////////////////////
 
-        if (
-            user.bank < amount
-        ) {
+        if (!item) {
 
             return interaction.reply({
 
-                content:
-                    "❌ No tienes suficiente dinero en el banco.",
+                embeds: [
+
+                    new EmbedBuilder()
+
+                        .setColor("#ff0000")
+
+                        .setTitle(
+                            "❌ Rol no encontrado"
+                        )
+
+                        .setDescription(
+
+                            `El rol ${role} no se encuentra registrado dentro de la tienda del servidor.`
+                        )
+                ],
 
                 flags: 64
             });
         }
-
-        //////////////////////////////////////////////////
-        // COMISION
-        //////////////////////////////////////////////////
-
-        const fee = Math.floor(
-
-            amount *
-            bankConfig.withdrawFee
-        );
-
-        //////////////////////////////////////////////////
-
-        const finalAmount =
-            amount - fee;
 
         //////////////////////////////////////////////////
         // EMBED CONFIRMACION
@@ -103,34 +99,49 @@ module.exports = {
 
             new EmbedBuilder()
 
-                .setColor("#8A2BE2")
+                .setColor(
+                    role.color || "#8A2BE2"
+                )
 
                 .setTitle(
-                    "🏦 Confirmar retiro"
+                    "🗑️ Confirmar eliminación"
                 )
 
                 .setDescription(
 
-                    `⚠️ ¿Realmente deseas retirar ` +
+                    `¿Deseas eliminar el rol ${role} de la tienda del servidor?\n\n` +
 
-                    `**${amount.toLocaleString()} monedas**?\n\n` +
+                    `💰 **Precio registrado**\n` +
 
-                    `💸 Comisión bancaria: ` +
+                    `> ${item.price.toLocaleString()} monedas\n\n` +
 
-                    `**${fee.toLocaleString()} monedas**\n\n` +
-
-                    `✅ Recibirás: ` +
-
-                    `**${finalAmount.toLocaleString()} monedas**`
+                    `⚠️ Los usuarios ya no podrán comprar este rol mediante el sistema económico.`
                 )
+
+                .addFields({
+
+                    name: "👮 Administrador",
+                    value: `${interaction.user}`,
+                    inline: true
+
+                }, {
+
+                    name: "🎭 Rol",
+                    value: `${role}`,
+                    inline: true
+                })
 
                 .setThumbnail(
 
-                    interaction.user.displayAvatarURL({
+                    interaction.guild.iconURL({
 
                         dynamic: true,
                         size: 1024
                     })
+                )
+
+                .setImage(
+                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
                 )
 
                 .setFooter({
@@ -154,14 +165,14 @@ module.exports = {
                     new ButtonBuilder()
 
                         .setCustomId(
-                            "withdraw_confirm"
+                            "shopremove_confirm"
                         )
 
                         .setLabel(
-                            "Confirmar"
+                            "Eliminar"
                         )
 
-                        .setEmoji("✅")
+                        .setEmoji("🗑️")
 
                         .setStyle(
                             ButtonStyle.Secondary
@@ -170,7 +181,7 @@ module.exports = {
                     new ButtonBuilder()
 
                         .setCustomId(
-                            "withdraw_cancel"
+                            "shopremove_cancel"
                         )
 
                         .setLabel(
@@ -210,8 +221,6 @@ module.exports = {
             });
 
         //////////////////////////////////////////////////
-        // COLLECT
-        //////////////////////////////////////////////////
 
         collector.on(
 
@@ -246,7 +255,7 @@ module.exports = {
                 if (
 
                     i.customId ===
-                    "withdraw_cancel"
+                    "shopremove_cancel"
 
                 ) {
 
@@ -255,7 +264,7 @@ module.exports = {
                     return i.update({
 
                         content:
-                            "❌ Retiro cancelado.",
+                            "❌ Operación cancelada.",
 
                         embeds: [],
 
@@ -270,104 +279,60 @@ module.exports = {
                 if (
 
                     i.customId ===
-                    "withdraw_confirm"
+                    "shopremove_confirm"
 
                 ) {
 
                     //////////////////////////////////////////////////
-                    // RETIRAR
+                    // ELIMINAR
                     //////////////////////////////////////////////////
 
-                    user.bank -= amount;
+                    await ShopItem.deleteOne({
 
-                    user.wallet += finalAmount;
+                        guildId:
+                            interaction.guild.id,
 
-                    //////////////////////////////////////////////////
-                    // OWNER
-                    //////////////////////////////////////////////////
-
-                    let ownerData =
-
-                        await EconomyUser.findOne({
-
-                            guildId:
-                                interaction.guild.id,
-
-                            userId:
-                                bankConfig.ownerId
-                        });
+                        roleId:
+                            role.id
+                    });
 
                     //////////////////////////////////////////////////
-
-                    if (!ownerData) {
-
-                        ownerData =
-                            new EconomyUser({
-
-                                guildId:
-                                    interaction.guild.id,
-
-                                userId:
-                                    bankConfig.ownerId,
-
-                                wallet: 0,
-
-                                bank: 0
-                            });
-                    }
-
-                    //////////////////////////////////////////////////
-                    // DAR COMISION
-                    //////////////////////////////////////////////////
-
-                    ownerData.wallet += fee;
-
-                    //////////////////////////////////////////////////
-
-                    await user.save();
-
-                    await ownerData.save();
-
-                    //////////////////////////////////////////////////
-                    // EMBED SUCCESS
+                    // SUCCESS EMBED
                     //////////////////////////////////////////////////
 
                     const successEmbed =
 
                         new EmbedBuilder()
 
-                            .setColor("#00ff99")
+                            .setColor("#ff003c")
 
                             .setTitle(
-                                "💸 Retiro realizado"
+                                "🗑️ Rol eliminado correctamente"
                             )
 
                             .setDescription(
 
-                                `🏦 Has retirado ` +
+                                `El rol ${role} fue eliminado exitosamente de la tienda.\n\n` +
 
-                                `**${amount.toLocaleString()} monedas**.\n\n` +
-
-                                `💸 Comisión bancaria: ` +
-
-                                `**${fee.toLocaleString()} monedas**\n` +
-
-                                `✅ Recibido: ` +
-
-                                `**${finalAmount.toLocaleString()} monedas**\n\n` +
-
-                                `💵 **Wallet:** ` +
-
-                                `${user.wallet.toLocaleString()}\n` +
-
-                                `🏦 **Banco:** ` +
-
-                                `${user.bank.toLocaleString()}`
+                                `🚫 Los usuarios ya no podrán comprar este rol mediante el sistema económico.`
                             )
+
+                            .addFields({
+
+                                name: "👮 Administrador",
+                                value: `${interaction.user}`,
+                                inline: true
+
+                            }, {
+
+                                name: "🎭 Rol eliminado",
+                                value: `${role}`,
+                                inline: true
+                            })
 
                             .setThumbnail(
 
-                                interaction.user.displayAvatarURL({
+                                interaction.guild.iconURL({
 
                                     dynamic: true,
                                     size: 1024

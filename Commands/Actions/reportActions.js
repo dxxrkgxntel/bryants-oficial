@@ -59,7 +59,7 @@ module.exports = {
             const buttonsActions = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                 .setCustomId('reportkick')
-                .setStyle(ButtonStyle.Success)
+                .setStyle(ButtonStyle.Secondary)
                 .setLabel('Kickear')
                 .setEmoji('🥾'),
                 new ButtonBuilder()
@@ -69,7 +69,7 @@ module.exports = {
                 .setEmoji('🎪'),
                 new ButtonBuilder()
                 .setCustomId('reportban')
-                .setStyle(ButtonStyle.Danger)
+                .setStyle(ButtonStyle.Secondary)
                 .setLabel('Banear')
                 .setEmoji('🏒'),
             )

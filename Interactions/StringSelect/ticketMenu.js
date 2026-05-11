@@ -89,7 +89,7 @@ module.exports = {
                         new ButtonBuilder()
                             .setCustomId('closesupport')
                             .setLabel('Cerrar')
-                            .setStyle(ButtonStyle.Danger)
+                            .setStyle(ButtonStyle.Secondary)
                     );
 
                     await channel.send({
@@ -157,7 +157,7 @@ module.exports = {
                         new ButtonBuilder()
                             .setCustomId('closecompras')
                             .setLabel('Cerrar')
-                            .setStyle(ButtonStyle.Danger)
+                            .setStyle(ButtonStyle.Secondary)
                     );
 
                     await channel.send({

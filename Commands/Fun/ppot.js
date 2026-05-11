@@ -24,19 +24,19 @@ module.exports = {
         const row = new ActionRowBuilder().addComponents(
 
             new ButtonBuilder()
-                .setStyle(ButtonStyle.Primary)
+                .setStyle(ButtonStyle.Secondary)
                 .setCustomId("piedra")
                 .setLabel("piedra")
                 .setEmoji(`✊`),
 
             new ButtonBuilder()
-                .setStyle(ButtonStyle.Primary)
+                .setStyle(ButtonStyle.Secondary)
                 .setCustomId("papel")
                 .setLabel("papel")
                 .setEmoji(`✋`),
 
             new ButtonBuilder()
-                .setStyle(ButtonStyle.Primary)
+                .setStyle(ButtonStyle.Secondary)
                 .setCustomId("tijeras")
                 .setLabel("tijeras")
                 .setEmoji(`✌`),

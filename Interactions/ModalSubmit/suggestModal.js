@@ -48,12 +48,12 @@ module.exports = {
                 new ButtonBuilder()
                     .setCustomId('votosi')
                     .setEmoji('✅')
-                    .setStyle(ButtonStyle.Primary),
+                    .setStyle(ButtonStyle.Secondary),
 
                 new ButtonBuilder()
                     .setCustomId('votono')
                     .setEmoji('❎')
-                    .setStyle(ButtonStyle.Danger),
+                    .setStyle(ButtonStyle.Secondary),
 
                 new ButtonBuilder()
                     .setCustomId('votolist')

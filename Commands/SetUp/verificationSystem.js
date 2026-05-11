@@ -100,7 +100,7 @@ module.exports = {
 
                     .setEmoji('✅')
 
-                    .setStyle(ButtonStyle.Primary)
+                    .setStyle(ButtonStyle.Secondary)
             );
 
         const { options } = interaction;

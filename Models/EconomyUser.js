@@ -14,6 +14,8 @@ const economyUser = new Schema({
   gambleStreak: {type: Number, default: 0},
   biggestWin: {type: Number, default: 0},
   lastBankBonus: {type: Number, default: 0},
+  dailyStreak: {type: Number, default: 0},
+  lastDailyDate: {type: String, default: null},
 });
 
 module.exports = model('EconomyUser', economyUser);

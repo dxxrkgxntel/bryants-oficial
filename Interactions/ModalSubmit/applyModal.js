@@ -64,12 +64,12 @@ module.exports = {
                 new ButtonBuilder()
                     .setLabel('Aceptar')
                     .setCustomId('applyacept')
-                    .setStyle(ButtonStyle.Success)
+                    .setStyle(ButtonStyle.Secondary)
                     .setEmoji('🏆'),
                 new ButtonBuilder()
                     .setLabel('Denegar')
                     .setCustomId('applydeny')
-                    .setStyle(ButtonStyle.Danger)
+                    .setStyle(ButtonStyle.Secondary)
                     .setEmoji('🗑')
             );
 
