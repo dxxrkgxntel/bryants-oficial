@@ -8,6 +8,11 @@ const economyUser = new Schema({
   lastWork: { type: Number, default: 0 },
   lastDaily: { type: Number, default: 0 },
   lastGamble: { type: Number, default: 0 },
+  gamblesWon: {type: Number, default: 0},
+  gamblesLost: {type: Number, default: 0},
+  jackpots: {type: Number, default: 0},
+  gambleStreak: {type: Number, default: 0},
+  biggestWin: {type: Number, default: 0},
 });
 
 module.exports = model('EconomyUser', economyUser);
