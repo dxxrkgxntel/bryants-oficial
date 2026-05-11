@@ -6,7 +6,7 @@ const botReply = require('../../Functions/interactionBotReply')
 const suggestSchema = require('../../Models/suggestSchema')
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('suggest')
+        .setName('sugerencia')
         .setDescription('Crea una sugerencia'),
     async execute(interaction) {
         try {

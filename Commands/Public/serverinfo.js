@@ -10,7 +10,7 @@ const {
 
 module.exports = {
     data: new SlashCommandBuilder()
-    .setName("serverinfo")
+    .setName("server-info")
     .setDescription("Obtén información sobre el servidor."),
 
 

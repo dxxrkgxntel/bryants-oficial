@@ -10,7 +10,7 @@ module.exports = {
     Cooldown: ms("10s"),
 
     data: new SlashCommandBuilder()
-        .setName('create-embed')
+        .setName('crear-embed')
         .setDescription('Crea un embed totalmente a tu gusto')
 
         // 🔒 SOLO ADMINISTRADORES

@@ -10,7 +10,7 @@ const logsSchema = require("../../Models/logsSchema");
 module.exports = {
 
     data: new SlashCommandBuilder()
-        .setName("setlogs")
+        .setName("logs-setup")
         .setDescription("Configura el canal de logs")
 
         .setDefaultMemberPermissions(
