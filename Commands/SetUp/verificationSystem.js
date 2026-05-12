@@ -338,11 +338,6 @@ module.exports = {
 
                 {
                     guildId:
-                        interaction.guild.id
-                },
-
-                {
-                    guildId:
                         interaction.guild.id,
 
                     channelId:
