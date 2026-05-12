@@ -1,172 +1,619 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js')
-const errReply = require('../../Functions/interactionErrorReply')
-const correReply = require('../../Functions/interactionReply')
-const userReply = require('../../Functions/interactionUserReply')
-const botReply = require('../../Functions/interactionBotReply')
+const {
+    SlashCommandBuilder,
+    EmbedBuilder,
+    PermissionFlagsBits
+} = require('discord.js');
 
-const ms = require('ms')
+const correReply =
+    require('../../Functions/interactionReply');
+
+const ms =
+    require('ms');
+
+//////////////////////////////////////////////////////
 
 module.exports = {
-    Cooldown: ms("10s"),
 
-    data: new SlashCommandBuilder()
-        .setName('crear-embed')
-        .setDescription('Crea un embed totalmente a tu gusto')
+    Cooldown:
+        ms("10s"),
 
-        // 🔒 SOLO ADMINISTRADORES
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    //////////////////////////////////////////////////////
 
-        .addStringOption(option =>
-            option.setName('color')
-                .setDescription('Elige el color que quieres que tenga tu embed')
-                .addChoices(
-                    { name: 'Defaul', value: 'Default' },
-                    { name: 'White', value: 'White' },
-                    { name: 'Aqua', value: 'Aqua' },
-                    { name: 'Green', value: 'Green' },
-                    { name: 'Blue', value: 'Blue' },
-                    { name: 'Yellow', value: 'Yellow' },
-                    { name: 'Purple', value: 'Purple' },
-                    { name: 'Gold', value: 'Gold' },
-                    { name: 'Red', value: 'Red' },
-                    { name: 'Grey', value: 'Grey' },
-                    { name: 'Navy', value: 'Navy' },
-                    { name: 'Random', value: 'Random' },
-                )
-        )
+    data:
+        new SlashCommandBuilder()
 
-        .addStringOption(option =>
-            option.setName('title')
-                .setDescription('Escribe el titulo de tu embed')
-        )
+            .setName('crear-embed')
 
-        .addStringOption(option =>
-            option.setName('description')
-                .setDescription('Ingresa la descripcion de tu embed')
-        )
+            .setDescription(
+                'Crea un embed totalmente a tu gusto'
+            )
 
-        .addAttachmentOption(option =>
-            option.setName('thumbnail')
-                .setDescription('Elige el Thumbnail de tu embed')
-        )
+            //////////////////////////////////////////////////////
+            // ADMIN ONLY
+            //////////////////////////////////////////////////////
 
-        .addAttachmentOption(option =>
-            option.setName('image')
-                .setDescription('Elige la imagen de tu embed')
-        )
+            .setDefaultMemberPermissions(
+                PermissionFlagsBits.Administrator
+            )
 
-        .addStringOption(option =>
-            option.setName('url')
-                .setDescription('Ingresa el link para el titulo')
-        )
+            //////////////////////////////////////////////////////
+            // COLOR
+            //////////////////////////////////////////////////////
 
-        .addStringOption(option =>
-            option.setName('author')
-                .setDescription('Elige el autor')
-        )
+            .addStringOption(option =>
 
-        .addStringOption(option =>
-            option.setName('timestamp')
-                .setDescription('Quieres que salga el timestamp')
-                .addChoices(
-                    { name: 'Si', value: 'si' },
-                    { name: 'No', value: 'no' },
-                )
-        )
+                option
 
-        .addStringOption(option =>
-            option.setName('footer')
-                .setDescription('Ingresa el footer de tu embed')
-        ),
+                    .setName('color')
+
+                    .setDescription(
+                        'Elige el color que quieres que tenga tu embed'
+                    )
+
+                    .addChoices(
+
+                        {
+                            name: 'Default',
+
+                            value: 'Default'
+                        },
+
+                        {
+                            name: 'White',
+
+                            value: 'White'
+                        },
+
+                        {
+                            name: 'Aqua',
+
+                            value: 'Aqua'
+                        },
+
+                        {
+                            name: 'Green',
+
+                            value: 'Green'
+                        },
+
+                        {
+                            name: 'Blue',
+
+                            value: 'Blue'
+                        },
+
+                        {
+                            name: 'Yellow',
+
+                            value: 'Yellow'
+                        },
+
+                        {
+                            name: 'Purple',
+
+                            value: 'Purple'
+                        },
+
+                        {
+                            name: 'Gold',
+
+                            value: 'Gold'
+                        },
+
+                        {
+                            name: 'Red',
+
+                            value: 'Red'
+                        },
+
+                        {
+                            name: 'Grey',
+
+                            value: 'Grey'
+                        },
+
+                        {
+                            name: 'Navy',
+
+                            value: 'Navy'
+                        },
+
+                        {
+                            name: 'Random',
+
+                            value: 'Random'
+                        }
+                    )
+            )
+
+            //////////////////////////////////////////////////////
+            // TITLE
+            //////////////////////////////////////////////////////
+
+            .addStringOption(option =>
+
+                option
+
+                    .setName('title')
+
+                    .setDescription(
+                        'Escribe el título de tu embed'
+                    )
+            )
+
+            //////////////////////////////////////////////////////
+            // DESCRIPTION
+            //////////////////////////////////////////////////////
+
+            .addStringOption(option =>
+
+                option
+
+                    .setName('description')
+
+                    .setDescription(
+                        'Ingresa la descripción de tu embed'
+                    )
+            )
+
+            //////////////////////////////////////////////////////
+            // THUMBNAIL
+            //////////////////////////////////////////////////////
+
+            .addAttachmentOption(option =>
+
+                option
+
+                    .setName('thumbnail')
+
+                    .setDescription(
+                        'Elige el Thumbnail de tu embed'
+                    )
+            )
+
+            //////////////////////////////////////////////////////
+            // IMAGE
+            //////////////////////////////////////////////////////
+
+            .addAttachmentOption(option =>
+
+                option
+
+                    .setName('image')
+
+                    .setDescription(
+                        'Elige la imagen de tu embed'
+                    )
+            )
+
+            //////////////////////////////////////////////////////
+            // URL
+            //////////////////////////////////////////////////////
+
+            .addStringOption(option =>
+
+                option
+
+                    .setName('url')
+
+                    .setDescription(
+                        'Ingresa el link para el título'
+                    )
+            )
+
+            //////////////////////////////////////////////////////
+            // AUTHOR
+            //////////////////////////////////////////////////////
+
+            .addStringOption(option =>
+
+                option
+
+                    .setName('author')
+
+                    .setDescription(
+                        'Elige el autor'
+                    )
+            )
+
+            //////////////////////////////////////////////////////
+            // TIMESTAMP
+            //////////////////////////////////////////////////////
+
+            .addStringOption(option =>
+
+                option
+
+                    .setName('timestamp')
+
+                    .setDescription(
+                        'Quieres que salga el timestamp'
+                    )
+
+                    .addChoices(
+
+                        {
+                            name: 'Sí',
+
+                            value: 'si'
+                        },
+
+                        {
+                            name: 'No',
+
+                            value: 'no'
+                        }
+                    )
+            )
+
+            //////////////////////////////////////////////////////
+            // FOOTER
+            //////////////////////////////////////////////////////
+
+            .addStringOption(option =>
+
+                option
+
+                    .setName('footer')
+
+                    .setDescription(
+                        'Ingresa el footer de tu embed'
+                    )
+            ),
+
+    //////////////////////////////////////////////////////
 
     async execute(interaction) {
 
-        // 🔒 PROTECCIÓN REAL
-        if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+        //////////////////////////////////////////////////////
+        // ADMIN CHECK
+        //////////////////////////////////////////////////////
+
+        if (
+
+            !interaction.member.permissions.has(
+
+                PermissionFlagsBits.Administrator
+            )
+        ) {
+
             return interaction.reply({
-                content: "❌ Solo administradores pueden usar este comando",
+
+                content:
+                    "❌ Solo administradores pueden usar este comando.",
+
                 flags: 64
             });
         }
 
-        const { options } = interaction
+        //////////////////////////////////////////////////////
+        // BOT PERMISSIONS
+        //////////////////////////////////////////////////////
 
-        let color = options.getString('color')
-        let title = options.getString('title')
-        let titleURL = options.getString('url')
-        let author = options.getString('author')
-        let description = options.getString('description')?.replace(/\\n/g, '\n') || ' '
-        let attachment = options.getAttachment('thumbnail')
-        let image = options.getAttachment('image')
-        let timestamp = options.getString('timestamp')
-        let footer = options.getString('footer')
+        if (
 
-        const embed = new EmbedBuilder()
+            !interaction.channel.permissionsFor(
 
-        // 🎨 COLOR
+                interaction.guild.members.me
+
+            ).has('SendMessages')
+
+        ) {
+
+            return interaction.reply({
+
+                content:
+                    "❌ No tengo permisos para enviar mensajes aquí.",
+
+                flags: 64
+            });
+        }
+
+        //////////////////////////////////////////////////////
+        // OPTIONS
+        //////////////////////////////////////////////////////
+
+        const { options } =
+            interaction;
+
+        //////////////////////////////////////////////////////
+        // DATA
+        //////////////////////////////////////////////////////
+
+        const color =
+            options.getString('color');
+
+        const title =
+            options.getString('title');
+
+        const titleURL =
+            options.getString('url');
+
+        const author =
+            options.getString('author');
+
+        //////////////////////////////////////////////////////
+
+        let description =
+
+            options.getString('description')
+
+                ?.replace(/\\n/g, '\n')
+
+                ?.replace(/```/g, "'''")
+
+            || null;
+
+        //////////////////////////////////////////////////////
+
+        const attachment =
+            options.getAttachment('thumbnail');
+
+        const image =
+            options.getAttachment('image');
+
+        const timestamp =
+            options.getString('timestamp');
+
+        const footer =
+            options.getString('footer');
+
+        //////////////////////////////////////////////////////
+        // EMPTY EMBED
+        //////////////////////////////////////////////////////
+
+        if (
+
+            !title &&
+            !description &&
+            !attachment &&
+            !image &&
+            !footer &&
+            !author
+
+        ) {
+
+            return interaction.reply({
+
+                content:
+                    "❌ Debes agregar contenido al embed.",
+
+                flags: 64
+            });
+        }
+
+        //////////////////////////////////////////////////////
+        // LIMITS
+        //////////////////////////////////////////////////////
+
+        if (
+
+            title &&
+            title.length > 256
+
+        ) {
+
+            return interaction.reply({
+
+                content:
+                    "❌ El título no puede superar 256 caracteres.",
+
+                flags: 64
+            });
+        }
+
+        //////////////////////////////////////////////////////
+
+        if (
+
+            description &&
+            description.length > 4096
+
+        ) {
+
+            return interaction.reply({
+
+                content:
+                    "❌ La descripción no puede superar 4096 caracteres.",
+
+                flags: 64
+            });
+        }
+
+        //////////////////////////////////////////////////////
+
+        if (
+
+            footer &&
+            footer.length > 2048
+
+        ) {
+
+            return interaction.reply({
+
+                content:
+                    "❌ El footer no puede superar 2048 caracteres.",
+
+                flags: 64
+            });
+        }
+
+        //////////////////////////////////////////////////////
+
+        if (
+
+            author &&
+            author.length > 256
+
+        ) {
+
+            return interaction.reply({
+
+                content:
+                    "❌ El author no puede superar 256 caracteres.",
+
+                flags: 64
+            });
+        }
+
+        //////////////////////////////////////////////////////
+        // EMBED
+        //////////////////////////////////////////////////////
+
+        const embed =
+            new EmbedBuilder();
+
+        //////////////////////////////////////////////////////
+        // COLOR
+        //////////////////////////////////////////////////////
+
         if (color) {
 
-            if (color === 'Default') embed.setColor(color)
-            if (color === 'White') embed.setColor(color)
-            if (color === 'Aqua') embed.setColor(color)
-            if (color === 'Green') embed.setColor(color)
-            if (color === 'Blue') embed.setColor(color)
-            if (color === 'Yellow') embed.setColor(color)
-            if (color === 'Purple') embed.setColor(color) // 🔥 ARREGLADO
-            if (color === 'Gold') embed.setColor(color)
-            if (color === 'Red') embed.setColor(color)
-            if (color === 'Navy') embed.setColor(color)
-            if (color === 'Grey') embed.setColor(color)
-            if (color === 'Random') embed.setColor(color)
+            embed.setColor(color);
         }
 
-        // 📝 TITULO
+        //////////////////////////////////////////////////////
+        // TITLE
+        //////////////////////////////////////////////////////
+
         if (title) {
-            embed.setTitle(title)
+
+            embed.setTitle(title);
         }
 
-        // 🔗 URL TITULO
+        //////////////////////////////////////////////////////
+        // URL VALIDATION
+        //////////////////////////////////////////////////////
+
         if (titleURL) {
-            embed.setURL(`${titleURL}`)
-        }
 
-        // 👤 AUTHOR
-        if (author) {
-            embed.setAuthor({ name: `${author}` })
-        }
+            try {
 
-        // 📄 DESCRIPCIÓN
-        if (description) {
-            embed.setDescription(description)
-        }
+                new URL(titleURL);
 
-        // 🖼️ THUMBNAIL
-        if (attachment) {
-            embed.setThumbnail(attachment.url)
-        }
+                embed.setURL(titleURL);
 
-        // 📸 IMAGEN
-        if (image) {
-            embed.setImage(image.url)
-        }
+            } catch {
 
-        // ⏱️ TIMESTAMP
-        if (timestamp) {
-            if (timestamp === 'si') {
-                embed.setTimestamp()
+                return interaction.reply({
+
+                    content:
+                        "❌ URL inválida.",
+
+                    flags: 64
+                });
             }
         }
 
-        // 📌 FOOTER
-        if (footer) {
-            embed.setFooter({ text: footer })
+        //////////////////////////////////////////////////////
+        // AUTHOR
+        //////////////////////////////////////////////////////
+
+        if (author) {
+
+            embed.setAuthor({
+
+                name: author
+            });
         }
 
-        // 🚀 ENVIAR EMBED
-        await interaction.channel.send({ embeds: [embed] })
+        //////////////////////////////////////////////////////
+        // DESCRIPTION
+        //////////////////////////////////////////////////////
 
-        // ✅ RESPUESTA
-        await correReply(interaction, 'Se envio correctamente el embed', true)
+        if (description) {
 
+            embed.setDescription(
+                description
+            );
+        }
+
+        //////////////////////////////////////////////////////
+        // THUMBNAIL
+        //////////////////////////////////////////////////////
+
+        if (attachment) {
+
+            embed.setThumbnail(
+                attachment.url
+            );
+        }
+
+        //////////////////////////////////////////////////////
+        // IMAGE
+        //////////////////////////////////////////////////////
+
+        if (image) {
+
+            embed.setImage(
+                image.url
+            );
+        }
+
+        //////////////////////////////////////////////////////
+        // TIMESTAMP
+        //////////////////////////////////////////////////////
+
+        if (
+            timestamp === 'si'
+        ) {
+
+            embed.setTimestamp();
+        }
+
+        //////////////////////////////////////////////////////
+        // FOOTER
+        //////////////////////////////////////////////////////
+
+        if (footer) {
+
+            embed.setFooter({
+
+                text: footer
+            });
+        }
+
+        //////////////////////////////////////////////////////
+        // TRY
+        //////////////////////////////////////////////////////
+
+        try {
+
+            //////////////////////////////////////////////////////
+            // SEND
+            //////////////////////////////////////////////////////
+
+            await interaction.channel.send({
+
+                embeds: [embed]
+            });
+
+            //////////////////////////////////////////////////////
+            // SUCCESS
+            //////////////////////////////////////////////////////
+
+            await correReply(
+
+                interaction,
+
+                '✅ Se envió correctamente el embed.',
+
+                true
+            );
+
+        } catch (error) {
+
+            console.log(error);
+
+            //////////////////////////////////////////////////////
+
+            return interaction.reply({
+
+                content:
+                    "❌ Ocurrió un error al enviar el embed.",
+
+                flags: 64
+            });
+        }
     }
 };

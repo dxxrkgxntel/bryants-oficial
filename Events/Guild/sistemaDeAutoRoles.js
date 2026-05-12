@@ -1,51 +1,161 @@
-const autoRoleSystem = require('../../Models/autoRoleType');
+const autoRoleSystem =
+    require('../../Models/autoRoleType');
 
 module.exports = {
+
     name: 'guildMemberAdd',
 
-    async execute(member, client) {
-
-        const { guild } = member;
+    async execute(member) {
 
         try {
 
-            // 🔍 Buscar configuración
-            const autoRoleData = await autoRoleSystem.findOne({
-                guildId: guild.id
-            });
+            //////////////////////////////////////////////////
+            // GUILD
+            //////////////////////////////////////////////////
+
+            const guild =
+                member.guild;
+
+            //////////////////////////////////////////////////
+            // BUSCAR DATA
+            //////////////////////////////////////////////////
+
+            const autoRoleData =
+                await autoRoleSystem.findOne({
+
+                    guildId:
+                        guild.id
+
+                }).lean();
+
+            //////////////////////////////////////////////////
 
             if (!autoRoleData) return;
 
-            // 🔥 Obtener roles correctamente
-            const userRole = guild.roles.cache.get(autoRoleData.userRole);
-            const botRole = guild.roles.cache.get(autoRoleData.botRole);
+            //////////////////////////////////////////////////
+            // ROLES
+            //////////////////////////////////////////////////
 
-            // 🔒 Rol objetivo
-            const targetRole = member.user.bot ? botRole : userRole;
+            const userRole =
+                guild.roles.cache.get(
+                    autoRoleData.userRole
+                );
 
-            // ❌ Si no existe
+            //////////////////////////////////////////////////
+
+            const botRole =
+                guild.roles.cache.get(
+                    autoRoleData.botRole
+                );
+
+            //////////////////////////////////////////////////
+            // ROL OBJETIVO
+            //////////////////////////////////////////////////
+
+            const targetRole =
+                member.user.bot
+                    ? botRole
+                    : userRole;
+
+            //////////////////////////////////////////////////
+            // VALIDAR ROL
+            //////////////////////////////////////////////////
+
             if (!targetRole) {
-                return console.log('❌ El rol configurado no existe');
+
+                return console.log(
+
+                    `❌ [AUTOROLE] Rol no encontrado en ${guild.name}`
+                );
             }
 
-            // 🔒 Verificar jerarquía
-            const botMember = guild.members.me;
+            //////////////////////////////////////////////////
+            // BOT MEMBER
+            //////////////////////////////////////////////////
+
+            const botMember =
+                guild.members.me;
+
+            //////////////////////////////////////////////////
 
             if (!botMember) {
-                return console.log('❌ No se encontró el miembro del bot');
+
+                return console.log(
+
+                    `❌ [AUTOROLE] No se encontró el bot member en ${guild.name}`
+                );
             }
 
-            if (targetRole.position >= botMember.roles.highest.position) {
-                return console.log('❌ El rol está por encima del bot');
+            //////////////////////////////////////////////////
+            // PERMISOS
+            //////////////////////////////////////////////////
+
+            if (
+
+                !botMember.permissions.has(
+                    'ManageRoles'
+                )
+
+            ) {
+
+                return console.log(
+
+                    `❌ [AUTOROLE] El bot no tiene ManageRoles en ${guild.name}`
+                );
             }
 
-            // ✅ Añadir rol
-            await member.roles.add(targetRole);
+            //////////////////////////////////////////////////
+            // JERARQUIA
+            //////////////////////////////////////////////////
 
-            console.log(`✅ Rol añadido a ${member.user.tag}`);
+            if (
+
+                targetRole.position >=
+                botMember.roles.highest.position
+
+            ) {
+
+                return console.log(
+
+                    `❌ [AUTOROLE] El rol está por encima del bot en ${guild.name}`
+                );
+            }
+
+            //////////////////////////////////////////////////
+            // YA TIENE EL ROL
+            //////////////////////////////////////////////////
+
+            if (
+                member.roles.cache.has(
+                    targetRole.id
+                )
+            ) return;
+
+            //////////////////////////////////////////////////
+            // AÑADIR ROL
+            //////////////////////////////////////////////////
+
+            await member.roles.add(
+
+                targetRole,
+
+                'Sistema de Autoroles'
+            );
+
+            //////////////////////////////////////////////////
+
+            console.log(
+
+                `✅ [AUTOROLE] Rol añadido a ${member.user.tag} en ${guild.name}`
+            );
 
         } catch (error) {
-            console.log('❌ Error en sistemaDeAutoRoles:', error);
+
+            console.log(
+
+                '❌ Error en sistemaDeAutoRoles:',
+                error
+            );
         }
     }
 };

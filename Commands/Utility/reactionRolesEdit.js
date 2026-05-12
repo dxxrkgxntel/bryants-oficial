@@ -11,137 +11,111 @@ const {
 const reactionRolesSchema =
     require("../../Models/reactionRolesSchema");
 
-//////////////////////////////////////////////////
-// COMMAND
-//////////////////////////////////////////////////
-
-const data =
-    new SlashCommandBuilder()
-
-        .setName("rr-setup")
-
-        .setDescription(
-            "Crear panel de reaction roles"
-        )
-
-        .setDefaultMemberPermissions(
-            PermissionFlagsBits.Administrator
-        )
-
-        //////////////////////////////////////////////////
-        // PANEL ID
-        //////////////////////////////////////////////////
-
-        .addStringOption(option =>
-
-            option
-
-                .setName("panelid")
-
-                .setDescription(
-                    "ID único del panel"
-                )
-
-                .setRequired(true)
-        )
-
-        //////////////////////////////////////////////////
-        // PERSONALIZACIÓN
-        //////////////////////////////////////////////////
-
-        .addStringOption(option =>
-
-            option
-
-                .setName("titulo")
-
-                .setDescription(
-                    "Título del embed"
-                )
-        )
-
-        .addStringOption(option =>
-
-            option
-
-                .setName("descripcion")
-
-                .setDescription(
-                    "Descripción del embed"
-                )
-        )
-
-        .addStringOption(option =>
-
-            option
-
-                .setName("placeholder")
-
-                .setDescription(
-                    "Texto del menú"
-                )
-        )
-
-        .addStringOption(option =>
-
-            option
-
-                .setName("color")
-
-                .setDescription(
-                    "Color HEX del embed"
-                )
-        )
-
-        //////////////////////////////////////////////////
-        // IMÁGENES
-        //////////////////////////////////////////////////
-
-        .addAttachmentOption(option =>
-
-            option
-
-                .setName("imagen")
-
-                .setDescription(
-                    "Imagen principal del embed"
-                )
-        )
-
-        .addAttachmentOption(option =>
-
-            option
-
-                .setName("thumbnail")
-
-                .setDescription(
-                    "Thumbnail del embed"
-                )
-        );
-
-//////////////////////////////////////////////////
-// 18 ROLES
-//////////////////////////////////////////////////
-
-for (let i = 1; i <= 18; i++) {
-
-    data.addRoleOption(option =>
-
-        option
-
-            .setName(`role${i}`)
-
-            .setDescription(
-                `Rol ${i}`
-            )
-    );
-}
-
-//////////////////////////////////////////////////
-
 module.exports = {
 
-    data,
+    data:
+        new SlashCommandBuilder()
+
+            .setName("rr-edit")
+
+            .setDescription(
+                "Editar un panel de reaction roles"
+            )
+
+            .setDefaultMemberPermissions(
+                PermissionFlagsBits.Administrator
+            )
+
+            //////////////////////////////////////////////////
+            // PANEL ID
+            //////////////////////////////////////////////////
+
+            .addStringOption(option =>
+
+                option
+
+                    .setName("panelid")
+
+                    .setDescription(
+                        "ID del panel"
+                    )
+
+                    .setRequired(true)
+            )
+
+            //////////////////////////////////////////////////
+            // CAMPOS
+            //////////////////////////////////////////////////
+
+            .addStringOption(option =>
+
+                option
+
+                    .setName("titulo")
+
+                    .setDescription(
+                        "Nuevo título"
+                    )
+            )
+
+            .addStringOption(option =>
+
+                option
+
+                    .setName("descripcion")
+
+                    .setDescription(
+                        "Nueva descripción"
+                    )
+            )
+
+            .addStringOption(option =>
+
+                option
+
+                    .setName("placeholder")
+
+                    .setDescription(
+                        "Nuevo placeholder"
+                    )
+            )
+
+            .addStringOption(option =>
+
+                option
+
+                    .setName("color")
+
+                    .setDescription(
+                        "Nuevo color HEX"
+                    )
+            )
+
+            //////////////////////////////////////////////////
+            // IMÁGENES
+            //////////////////////////////////////////////////
+
+            .addAttachmentOption(option =>
+
+                option
+
+                    .setName("imagen")
+
+                    .setDescription(
+                        "Nueva imagen del embed"
+                    )
+            )
+
+            .addAttachmentOption(option =>
+
+                option
+
+                    .setName("thumbnail")
+
+                    .setDescription(
+                        "Nuevo thumbnail del embed"
+                    )
+            ),
 
     //////////////////////////////////////////////////
 
@@ -157,10 +131,10 @@ module.exports = {
             );
 
         //////////////////////////////////////////////////
-        // VALIDAR PANEL
+        // BUSCAR PANEL
         //////////////////////////////////////////////////
 
-        const existingPanel =
+        const data =
             await reactionRolesSchema.findOne({
 
                 guildId:
@@ -171,19 +145,19 @@ module.exports = {
 
         //////////////////////////////////////////////////
 
-        if (existingPanel) {
+        if (!data) {
 
             return interaction.reply({
 
                 content:
-                    "❌ Ya existe un panel con ese ID.",
+                    "❌ No encontré ese panel.",
 
                 flags: 64
             });
         }
 
         //////////////////////////////////////////////////
-        // PERSONALIZACIÓN
+        // NUEVOS DATOS
         //////////////////////////////////////////////////
 
         const title =
@@ -191,7 +165,7 @@ module.exports = {
                 "titulo"
             ) ||
 
-            "✨ Reaction Roles";
+            data.title;
 
         //////////////////////////////////////////////////
 
@@ -204,7 +178,7 @@ module.exports = {
 
             ||
 
-            "Selecciona los roles que deseas obtener.";
+            data.description;
 
         //////////////////////////////////////////////////
 
@@ -213,7 +187,7 @@ module.exports = {
                 "placeholder"
             ) ||
 
-            "✨ Selecciona tus roles";
+            data.placeholder;
 
         //////////////////////////////////////////////////
 
@@ -222,7 +196,7 @@ module.exports = {
                 "color"
             ) ||
 
-            "#8A2BE2";
+            data.color;
 
         //////////////////////////////////////////////////
         // IMÁGENES
@@ -281,66 +255,99 @@ module.exports = {
         //////////////////////////////////////////////////
 
         const imageURL =
-            imagen?.url || null;
+            imagen?.url ||
+
+            data.image ||
+
+            null;
 
         //////////////////////////////////////////////////
 
         const thumbnailURL =
-            thumbnail?.url || null;
+            thumbnail?.url ||
+
+            data.thumbnail ||
+
+            null;
 
         //////////////////////////////////////////////////
-        // ROLES
+        // GUARDAR DB
         //////////////////////////////////////////////////
 
-        const roles = [];
+        data.title =
+            title;
+
+        data.description =
+            description;
+
+        data.placeholder =
+            placeholder;
+
+        data.color =
+            color;
+
+        data.image =
+            imageURL;
+
+        data.thumbnail =
+            thumbnailURL;
 
         //////////////////////////////////////////////////
 
-        for (let i = 1; i <= 18; i++) {
-
-            const role =
-                interaction.options.getRole(
-                    `role${i}`
-                );
-
-            //////////////////////////////////////////////////
-
-            if (role) {
-
-                roles.push(role);
-            }
-        }
+        await data.save();
 
         //////////////////////////////////////////////////
-        // VALIDAR
+        // OBTENER MENSAJE
         //////////////////////////////////////////////////
 
-        if (roles.length < 2) {
+        const channel =
+            interaction.guild.channels.cache.get(
+                data.channelId
+            );
+
+        //////////////////////////////////////////////////
+
+        if (!channel) {
 
             return interaction.reply({
 
                 content:
-                    "❌ Debes añadir mínimo 2 roles.",
+                    "❌ No encontré el canal del panel.",
 
                 flags: 64
             });
         }
 
         //////////////////////////////////////////////////
-        // CUSTOM ID
+
+        const msg =
+            await channel.messages.fetch(
+                data.messageId
+            ).catch(() => null);
+
         //////////////////////////////////////////////////
 
-        const customId =
-            `rr_${Date.now()}`;
+        if (!msg) {
+
+            return interaction.reply({
+
+                content:
+                    "❌ No encontré el mensaje del panel.",
+
+                flags: 64
+            });
+        }
 
         //////////////////////////////////////////////////
-        // MENU
+        // RECONSTRUIR MENU
         //////////////////////////////////////////////////
 
         const menu =
             new StringSelectMenuBuilder()
 
-                .setCustomId(customId)
+                .setCustomId(
+                    data.customId
+                )
 
                 .setPlaceholder(
                     placeholder
@@ -352,18 +359,18 @@ module.exports = {
 
                 .addOptions(
 
-                    roles.map(role => ({
+                    data.roles.map(role => ({
 
                         label:
-                            role.name
-                                .slice(0, 100),
+                            role.label,
 
                         value:
-                            role.id,
+                            role.roleId,
 
                         description:
-                            `Obtener ${role.name}`
-                                .slice(0, 100)
+                            role.description ||
+
+                            `Obtener ${role.label}`
                     }))
                 );
 
@@ -394,58 +401,14 @@ module.exports = {
                 .setThumbnail(thumbnailURL)
 
         //////////////////////////////////////////////////
-        // SEND
+        // EDITAR MENSAJE
         //////////////////////////////////////////////////
 
-        const msg =
-            await interaction.channel.send({
+        await msg.edit({
 
-                embeds: [embed],
+            embeds: [embed],
 
-                components: [row]
-            });
-
-        //////////////////////////////////////////////////
-        // SAVE DB
-        //////////////////////////////////////////////////
-
-        await reactionRolesSchema.create({
-
-            guildId:
-                interaction.guild.id,
-
-            panelId,
-
-            channelId:
-                interaction.channel.id,
-
-            messageId:
-                msg.id,
-
-            customId,
-
-            title,
-
-            description,
-
-            placeholder,
-
-            color,
-
-            image:
-                imageURL,
-
-            thumbnail:
-                thumbnailURL,
-
-            roles: roles.map(role => ({
-
-                roleId:
-                    role.id,
-
-                label:
-                    role.name
-            }))
+            components: [row]
         });
 
         //////////////////////////////////////////////////
@@ -453,7 +416,7 @@ module.exports = {
         await interaction.reply({
 
             content:
-                `✅ Panel \`${panelId}\` creado correctamente.`,
+                `✅ Panel \`${panelId}\` actualizado correctamente.`,
 
             flags: 64
         });

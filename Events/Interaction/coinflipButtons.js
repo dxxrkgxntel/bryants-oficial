@@ -7,298 +7,334 @@ const EconomyUser =
 
 module.exports = {
 
-    name:
-        "interactionCreate",
-
-    //////////////////////////////////////////////////
+    name: "interactionCreate",
 
     async execute(interaction) {
 
-        //////////////////////////////////////////////////
-        // BUTTON
-        //////////////////////////////////////////////////
+        try {
 
-        if (
-            !interaction.isButton()
-        ) return;
+            //////////////////////////////////////////////////
+            // BUTTON
+            //////////////////////////////////////////////////
 
-        //////////////////////////////////////////////////
-        // COINFLIP
-        //////////////////////////////////////////////////
+            if (!interaction.isButton()) return;
 
-        if (
-            !interaction.customId.startsWith(
-                "coinflip_"
-            )
-        ) return;
+            //////////////////////////////////////////////////
+            // COINFLIP
+            //////////////////////////////////////////////////
 
-        //////////////////////////////////////////////////
-        // DATA
-        //////////////////////////////////////////////////
+            if (
+                !interaction.customId.startsWith(
+                    "coinflip_"
+                )
+            ) return;
 
-        const args =
+            //////////////////////////////////////////////////
+            // DATA
+            //////////////////////////////////////////////////
 
-            interaction.customId.split("_");
+            const args =
+                interaction.customId.split("_");
 
-        //////////////////////////////////////////////////
+            //////////////////////////////////////////////////
 
-        const authorId =
-            args[1];
+            const authorId =
+                args[1];
 
-        const targetId =
-            args[2];
+            const targetId =
+                args[2];
 
-        const amount =
-            parseInt(args[3]);
+            const amount =
+                parseInt(args[3]);
 
-        //////////////////////////////////////////////////
-        // SOLO TARGET
-        //////////////////////////////////////////////////
+            //////////////////////////////////////////////////
+            // VALIDAR
+            //////////////////////////////////////////////////
 
-        if (
-            interaction.user.id !== targetId
-        ) {
+            if (
+                !authorId ||
+                !targetId ||
+                isNaN(amount) ||
+                amount <= 0
+            ) {
 
-            return interaction.reply({
+                return interaction.reply({
 
-                content:
-                    "❌ No puedes aceptar esta apuesta.",
+                    content:
+                        "❌ Datos inválidos.",
 
-                flags: 64
-            });
-        }
+                    flags: 64
+                });
+            }
 
-        //////////////////////////////////////////////////
-        // USERS
-        //////////////////////////////////////////////////
+            //////////////////////////////////////////////////
+            // NO SELF BET
+            //////////////////////////////////////////////////
 
-        const authorData =
+            if (authorId === targetId) {
 
-            await EconomyUser.findOne({
+                return interaction.reply({
 
-                guildId:
-                    interaction.guild.id,
+                    content:
+                        "❌ No puedes apostar contigo mismo.",
 
-                userId:
-                    authorId
-            });
+                    flags: 64
+                });
+            }
 
-        //////////////////////////////////////////////////
+            //////////////////////////////////////////////////
+            // SOLO TARGET
+            //////////////////////////////////////////////////
 
-        const targetData =
+            if (
+                interaction.user.id !== targetId
+            ) {
 
-            await EconomyUser.findOne({
+                return interaction.reply({
 
-                guildId:
-                    interaction.guild.id,
+                    content:
+                        "❌ No puedes aceptar esta apuesta.",
 
-                userId:
-                    targetId
-            });
+                    flags: 64
+                });
+            }
 
-        //////////////////////////////////////////////////
-        // VERIFICAR DINERO
-        //////////////////////////////////////////////////
+            //////////////////////////////////////////////////
+            // DESACTIVAR BOTONES
+            //////////////////////////////////////////////////
 
-        if (
-            authorData.wallet < amount
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ El creador ya no tiene suficiente dinero.",
-
-                flags: 64
-            });
-        }
-
-        //////////////////////////////////////////////////
-
-        if (
-            targetData.wallet < amount
-        ) {
-
-            return interaction.reply({
+            await interaction.update({
 
                 content:
-                    "❌ No tienes suficiente dinero.",
 
-                flags: 64
+                    `🪙 Lanzando moneda...\n\n` +
+
+                    `💰 Apuesta: **${amount.toLocaleString()} monedas**`,
+
+                embeds: [],
+
+                components: []
             });
-        }
 
-        //////////////////////////////////////////////////
-        // ANIMACION
-        //////////////////////////////////////////////////
+            //////////////////////////////////////////////////
+            // USERS
+            //////////////////////////////////////////////////
 
-        await interaction.update({
+            const authorData =
+                await EconomyUser.findOne({
 
-            content:
+                    guildId:
+                        interaction.guild.id,
 
-                `🪙 Lanzando moneda...\n\n` +
+                    userId:
+                        authorId
+                });
 
-                `💰 Apuesta: **${amount.toLocaleString()} monedas**`,
+            //////////////////////////////////////////////////
 
-            embeds: [],
+            const targetData =
+                await EconomyUser.findOne({
 
-            components: []
-        });
+                    guildId:
+                        interaction.guild.id,
 
-        //////////////////////////////////////////////////
-        // DELAY
-        //////////////////////////////////////////////////
+                    userId:
+                        targetId
+                });
 
-        await new Promise(resolve =>
+            //////////////////////////////////////////////////
+            // VALIDAR CUENTAS
+            //////////////////////////////////////////////////
 
-            setTimeout(resolve, 3000)
-        );
+            if (!authorData || !targetData) {
 
-        //////////////////////////////////////////////////
-        // RANDOM WINNER
-        //////////////////////////////////////////////////
+                return interaction.editReply({
 
-        const winnerId =
+                    content:
+                        "❌ Uno de los usuarios no tiene cuenta de economía."
+                });
+            }
 
-            Math.random() < 0.5
+            //////////////////////////////////////////////////
+            // DINERO
+            //////////////////////////////////////////////////
 
-                ?
+            if (
+                authorData.wallet < amount
+            ) {
 
-                authorId
+                return interaction.editReply({
 
-                :
+                    content:
+                        "❌ El creador ya no tiene suficiente dinero."
+                });
+            }
 
-                targetId;
+            //////////////////////////////////////////////////
 
-        //////////////////////////////////////////////////
+            if (
+                targetData.wallet < amount
+            ) {
 
-        const loserId =
+                return interaction.editReply({
 
-            winnerId === authorId
+                    content:
+                        "❌ No tienes suficiente dinero."
+                });
+            }
 
-                ?
+            //////////////////////////////////////////////////
+            // ANIMACION
+            //////////////////////////////////////////////////
 
-                targetId
+            await new Promise(resolve =>
 
-                :
-
-                authorId;
-
-        //////////////////////////////////////////////////
-        // WINNER DATA
-        //////////////////////////////////////////////////
-
-        const winnerData =
-
-            winnerId === authorId
-
-                ?
-
-                authorData
-
-                :
-
-                targetData;
-
-        //////////////////////////////////////////////////
-
-        const loserData =
-
-            loserId === authorId
-
-                ?
-
-                authorData
-
-                :
-
-                targetData;
-
-        //////////////////////////////////////////////////
-// QUITAR APUESTAS
-//////////////////////////////////////////////////
-
-authorData.wallet -= amount;
-
-targetData.wallet -= amount;
-
-//////////////////////////////////////////////////
-// PREMIO TOTAL
-//////////////////////////////////////////////////
-
-const totalPrize =
-    amount * 2;
-
-//////////////////////////////////////////////////
-// DAR PREMIO
-//////////////////////////////////////////////////
-
-winnerData.wallet += totalPrize;
-
-        //////////////////////////////////////////////////
-
-        await winnerData.save();
-
-        await loserData.save();
-
-        //////////////////////////////////////////////////
-        // WINNER USER
-        //////////////////////////////////////////////////
-
-        const winnerUser =
-
-            await interaction.client.users.fetch(
-                winnerId
+                setTimeout(resolve, 3000)
             );
 
-        //////////////////////////////////////////////////
-        // EMBED
-        //////////////////////////////////////////////////
+            //////////////////////////////////////////////////
+            // WINNER
+            //////////////////////////////////////////////////
 
-        const embed =
+            const winnerId =
 
-            new EmbedBuilder()
+                Math.random() < 0.5
 
-                .setColor("#8A2BE2")
+                    ? authorId
 
-                .setTitle(
-                    "🪙 Resultado Coinflip"
-                )
+                    : targetId;
 
-                .setDescription(
+            //////////////////////////////////////////////////
 
-                    `🎉 ${winnerUser} ganó la apuesta.\n\n` +
+            const loserId =
 
-                    `💰 Premio obtenido: **${totalPrize.toLocaleString()} monedas**`
-                )
+                winnerId === authorId
 
-                .setThumbnail(
+                    ? targetId
 
-                    winnerUser.displayAvatarURL({
+                    : authorId;
 
-                        dynamic: true
+            //////////////////////////////////////////////////
+
+            const winnerData =
+
+                winnerId === authorId
+
+                    ? authorData
+
+                    : targetData;
+
+            //////////////////////////////////////////////////
+
+            const loserData =
+
+                loserId === authorId
+
+                    ? authorData
+
+                    : targetData;
+
+            //////////////////////////////////////////////////
+            // QUITAR DINERO
+            //////////////////////////////////////////////////
+
+            authorData.wallet -= amount;
+
+            targetData.wallet -= amount;
+
+            //////////////////////////////////////////////////
+            // PREMIO
+            //////////////////////////////////////////////////
+
+            const totalPrize =
+                amount * 2;
+
+            //////////////////////////////////////////////////
+            // DAR PREMIO
+            //////////////////////////////////////////////////
+
+            winnerData.wallet += totalPrize;
+
+            //////////////////////////////////////////////////
+            // SEGURIDAD
+            //////////////////////////////////////////////////
+
+            if (authorData.wallet < 0)
+                authorData.wallet = 0;
+
+            if (targetData.wallet < 0)
+                targetData.wallet = 0;
+
+            //////////////////////////////////////////////////
+            // SAVE
+            //////////////////////////////////////////////////
+
+            await authorData.save();
+
+            await targetData.save();
+
+            //////////////////////////////////////////////////
+            // USER
+            //////////////////////////////////////////////////
+
+            const winnerUser =
+                await interaction.client.users.fetch(
+                    winnerId
+                );
+
+            //////////////////////////////////////////////////
+            // EMBED
+            //////////////////////////////////////////////////
+
+            const embed =
+                new EmbedBuilder()
+
+                    .setColor("#8A2BE2")
+
+                    .setTitle(
+                        "🪙 Resultado Coinflip"
+                    )
+
+                    .setDescription(
+
+                        `🎉 ${winnerUser} ganó la apuesta.\n\n` +
+
+                        `💰 Premio: **${totalPrize.toLocaleString()} monedas**\n` +
+
+                        `📉 Perdedor: <@${loserId}>`
+                    )
+
+                    .setThumbnail(
+
+                        winnerUser.displayAvatarURL({
+
+                            dynamic: true
+                        })
+                    )
+
+                    .setFooter({
+
+                        text:
+                            `${interaction.guild.name} • Casino`
                     })
-                )
 
-                .setImage(
-                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png?ex=6a0032f4&is=69fee174&hm=54a509859dcee24cd6a637b9e0373e1821b6ab3898eccd77a59591b6e6d55e3a&=&format=webp&quality=lossless&width=1288&height=515"
-                )
+                    .setTimestamp();
 
-                .setFooter({
+            //////////////////////////////////////////////////
 
-                    text:
-                        "Bryant's Casino"
-                })
+            await interaction.editReply({
 
-                .setTimestamp();
+                content: null,
 
-        //////////////////////////////////////////////////
+                embeds: [embed]
+            });
 
-        await interaction.editReply({
+        } catch (error) {
 
-            content: null,
-
-            embeds: [embed]
-        });
+            console.log(
+                "❌ Error en coinflipButtons:",
+                error
+            );
+        }
     }
 };

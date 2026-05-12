@@ -14,7 +14,7 @@ module.exports = {
     async execute(interaction) {
         const { options } = interaction;
         const usuario = interaction.options.getUser('usuario') || interaction.user
-        const banana = [Math.floor(Math.random() * 22)]
+        const banana = Math.floor(Math.random() * 22)
 
         const embed = new EmbedBuilder()
             .setDescription(`**La banana de ${usuario.username} mide ${banana} cm.**`)

@@ -55,7 +55,7 @@ module.exports = {
                     .setFooter({ text: `${interaction.guild.name}`, iconURL: client.user.avatarURL({ dynamic: true }) })
                     .setTimestamp()
 
-                userData.save()
+                await userData.save()
                 return interaction.reply({ content: `Te dieron un beso <@${user.id}>`, embeds: [kissEmbed] })
             }
         } catch (error) {

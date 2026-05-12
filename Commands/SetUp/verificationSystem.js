@@ -1,8 +1,6 @@
 const {
     SlashCommandBuilder,
     PermissionFlagsBits,
-    Client,
-    ChatInputCommandInteraction,
     ChannelType,
     ActionRowBuilder,
     ButtonBuilder,
@@ -13,218 +11,394 @@ const {
 const errReply = require('../../Functions/interactionErrorReply');
 const correReply = require('../../Functions/interactionReply');
 
-const autoRole = require('../../Models/verificationSchema');
+const verificationSchema =
+    require('../../Models/verificationSchema');
 
 module.exports = {
 
     data: new SlashCommandBuilder()
 
         .setName('verificacion-setup')
-        .setDescription('Crea un sistema de verificacion para tu servidor')
 
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .setDescription(
+            'Crea un sistema de verificación'
+        )
 
-        // ✅ ROL QUE RECIBE
+        .setDefaultMemberPermissions(
+            PermissionFlagsBits.Administrator
+        )
+
+        //////////////////////////////////////////////////
+        // ROL VERIFICADO
+        //////////////////////////////////////////////////
+
         .addRoleOption(option =>
-            option.setName('role')
-                .setDescription('Rol que recibirá el usuario')
+            option
+                .setName('role')
+                .setDescription(
+                    'Rol que recibirá el usuario'
+                )
                 .setRequired(true)
         )
 
-        // ❌ ROL QUE SE REMOVERÁ
+        //////////////////////////////////////////////////
+        // ROL REMOVER
+        //////////////////////////////////////////////////
+
         .addRoleOption(option =>
-            option.setName('remove_role')
-                .setDescription('Rol que se removerá al verificar')
+            option
+                .setName('remove_role')
+                .setDescription(
+                    'Rol que se removerá'
+                )
                 .setRequired(true)
         )
 
-        // 📝 DESCRIPCIÓN
+        //////////////////////////////////////////////////
+        // DESCRIPCION
+        //////////////////////////////////////////////////
+
         .addStringOption(option =>
-            option.setName('description')
-                .setDescription('Mensaje del embed')
+            option
+                .setName('description')
+                .setDescription(
+                    'Descripción del embed'
+                )
                 .setRequired(true)
         )
 
-        // 📍 CANAL
+        //////////////////////////////////////////////////
+        // CANAL
+        //////////////////////////////////////////////////
+
         .addChannelOption(option =>
-            option.setName('channel')
-                .setDescription('Elige el canal')
-                .addChannelTypes(ChannelType.GuildText)
+            option
+                .setName('channel')
+                .setDescription(
+                    'Canal donde se enviará'
+                )
+                .addChannelTypes(
+                    ChannelType.GuildText
+                )
         )
 
-        // 🖼️ THUMBNAIL
+        //////////////////////////////////////////////////
+        // THUMBNAIL
+        //////////////////////////////////////////////////
+
         .addAttachmentOption(option =>
-            option.setName('thumbnail')
-                .setDescription('Sube una thumbnail')
+            option
+                .setName('thumbnail')
+                .setDescription(
+                    'Thumbnail del embed'
+                )
         )
 
-        // 📸 IMAGE
+        //////////////////////////////////////////////////
+        // IMAGEN
+        //////////////////////////////////////////////////
+
         .addAttachmentOption(option =>
-            option.setName('image')
-                .setDescription('Sube una imagen grande')
+            option
+                .setName('image')
+                .setDescription(
+                    'Imagen grande'
+                )
         )
 
-        // 📌 FOOTER
+        //////////////////////////////////////////////////
+        // FOOTER
+        //////////////////////////////////////////////////
+
         .addStringOption(option =>
-            option.setName('footer')
-                .setDescription('Texto del footer')
+            option
+                .setName('footer')
+                .setDescription(
+                    'Texto footer'
+                )
         ),
 
-    /**
-     * 
-     * @param {ChatInputCommandInteraction} interaction 
-     * @param {Client} client 
-     */
+    //////////////////////////////////////////////////
 
-    async execute(interaction, client) {
-
-        // 🔒 SOLO ADMIN
-        if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-
-            return interaction.reply({
-
-                content: "❌ Solo administradores pueden usar este comando",
-
-                flags: 64
-            });
-        }
-
-        // 🔘 BOTÓN
-        const button = new ActionRowBuilder()
-
-            .addComponents(
-
-                new ButtonBuilder()
-
-                    .setCustomId('verifybutton')
-
-                    .setEmoji('✅')
-
-                    .setLabel('Verificar')
-
-                    .setStyle(ButtonStyle.Secondary)
-            );
-
-        const { options } = interaction;
-
-        // ✅ ROL AÑADIR
-        const rol = options.getRole('role');
-
-        // ❌ ROL REMOVER
-        const removeRole = options.getRole('remove_role');
-
-        // 📝 DESCRIPCIÓN
-        const description = options.getString('description');
-
-        // 📍 CANAL
-        const channel = options.getChannel('channel') || interaction.channel;
-
-        // 🖼️ THUMBNAIL
-        const thumbnail = options.getAttachment('thumbnail');
-
-        // 📸 IMAGE
-        const image = options.getAttachment('image');
-
-        // 📌 FOOTER
-        const footer = options.getString('footer');
-
-        // 📦 EMBED
-        const embed = new EmbedBuilder()
-
-            .setTitle('Sistema de verificación')
-
-            .setDescription( `¡Bienvenido a **${interaction.guild.name}**!\n\n` + `Para acceder al servidor y desbloquear todos los canales, debes completar el proceso de verificación.\n\n` + `> ✅ Obtendrás acceso automáticamente\n` + `> 🔒 Se eliminarán las restricciones iniciales\n` + `> 🚀 Disfruta de toda la comunidad` )
-
-            .setColor('#8A2BE2');
-
-        // 🖼️ THUMBNAIL
-        if (thumbnail) {
-            embed.setThumbnail(thumbnail.url);
-        }
-
-        // 📸 IMAGE
-        if (image) {
-            embed.setImage(image.url);
-        }
-
-        // 📌 FOOTER
-        if (footer) {
-            embed.setFooter({
-                text: footer
-            });
-        }
+    async execute(interaction) {
 
         try {
 
-            const autoRolData = await autoRole.findOne({
+            //////////////////////////////////////////////////
+            // DEFER
+            //////////////////////////////////////////////////
 
-                guildId: interaction.guild.id
+            await interaction.deferReply({
+                flags: 64
             });
 
-            // 💾 DATA
-            const payload = {
+            //////////////////////////////////////////////////
+            // VALIDAR ADMIN
+            //////////////////////////////////////////////////
 
-                guildId: interaction.guild.id,
+            if (
+                !interaction.member.permissions.has(
+                    PermissionFlagsBits.Administrator
+                )
+            ) {
 
-                channelId: channel.id,
+                return interaction.editReply({
 
-                roleId: rol.id,
-
-                removeRoleId: removeRole.id
-            };
-
-            // 🚀 ENVIAR EMBED
-            await channel.send({
-
-                embeds: [embed],
-
-                components: [button]
-            });
-
-            // ❌ SI NO EXISTE
-            if (!autoRolData) {
-
-                await autoRole.create(payload);
-
-                return correReply(
-
-                    interaction,
-
-                    "Sistema de verificación creado correctamente",
-
-                    true
-                );
+                    content:
+                        '❌ Solo administradores pueden usar este comando.'
+                });
             }
 
-            // ✅ ACTUALIZAR
-            await autoRole.findOneAndUpdate(
+            //////////////////////////////////////////////////
+            // OPCIONES
+            //////////////////////////////////////////////////
 
-                { guildId: interaction.guild.id },
+            const { options } = interaction;
 
-                payload
+            const verifiedRole =
+                options.getRole('role');
+
+            const removeRole =
+                options.getRole('remove_role');
+
+            const description =
+                options.getString('description');
+
+            const channel =
+                options.getChannel('channel') ||
+                interaction.channel;
+
+            const thumbnail =
+                options.getAttachment('thumbnail');
+
+            const image =
+                options.getAttachment('image');
+
+            const footer =
+                options.getString('footer');
+
+            //////////////////////////////////////////////////
+            // VALIDAR IMAGENES
+            //////////////////////////////////////////////////
+
+            if (
+                thumbnail &&
+                !thumbnail.contentType?.startsWith('image')
+            ) {
+
+                return interaction.editReply({
+
+                    content:
+                        '❌ La thumbnail debe ser una imagen válida.'
+                });
+            }
+
+            //////////////////////////////////////////////////
+
+            if (
+                image &&
+                !image.contentType?.startsWith('image')
+            ) {
+
+                return interaction.editReply({
+
+                    content:
+                        '❌ La imagen debe ser válida.'
+                });
+            }
+
+            //////////////////////////////////////////////////
+            // VALIDAR PERMISOS BOT
+            //////////////////////////////////////////////////
+
+            const botMember =
+                interaction.guild.members.me;
+
+            if (
+                !botMember.permissions.has([
+                    PermissionFlagsBits.ManageRoles,
+                    PermissionFlagsBits.SendMessages,
+                    PermissionFlagsBits.EmbedLinks,
+                    PermissionFlagsBits.ViewChannel
+                ])
+            ) {
+
+                return interaction.editReply({
+
+                    content:
+                        '❌ Necesito permisos suficientes para configurar el sistema.'
+                });
+            }
+
+            //////////////////////////////////////////////////
+            // JERARQUIA ROLES
+            //////////////////////////////////////////////////
+
+            if (
+                verifiedRole.position >=
+                botMember.roles.highest.position
+            ) {
+
+                return interaction.editReply({
+
+                    content:
+                        `❌ Mi rol debe estar encima de ${verifiedRole}.`
+                });
+            }
+
+            //////////////////////////////////////////////////
+
+            if (
+                removeRole.position >=
+                botMember.roles.highest.position
+            ) {
+
+                return interaction.editReply({
+
+                    content:
+                        `❌ Mi rol debe estar encima de ${removeRole}.`
+                });
+            }
+
+            //////////////////////////////////////////////////
+            // BOTON
+            //////////////////////////////////////////////////
+
+            const row =
+                new ActionRowBuilder()
+
+                    .addComponents(
+
+                        new ButtonBuilder()
+
+                            .setCustomId(
+                                'verifybutton'
+                            )
+
+                            .setEmoji('✅')
+
+                            .setLabel(
+                                'Verificar'
+                            )
+
+                            .setStyle(
+                                ButtonStyle.Secondary
+                            )
+                    );
+
+            //////////////////////////////////////////////////
+            // EMBED
+            //////////////////////////////////////////////////
+
+            const embed =
+                new EmbedBuilder()
+
+                    .setColor('#8A2BE2')
+
+                    .setTitle(
+                        'Sistema de Verificación'
+                    )
+
+                    .setDescription( `¡Bienvenido a **${interaction.guild.name}**!\n\n` + `Para acceder al servidor y desbloquear todos los canales, debes completar el proceso de verificación.\n\n` + `> ✅ Obtendrás acceso automáticamente\n` + `> 🔒 Se eliminarán las restricciones iniciales\n` + `> 🚀 Disfruta de toda la comunidad` )
+
+                    .setThumbnail(
+                        thumbnail?.url || null
+                    )
+
+                    .setImage(
+                        image?.url || null
+                    )
+
+                    .setFooter({
+
+                        text:
+                            footer ||
+                            `${interaction.guild.name}`
+                    })
+
+                    .setTimestamp();
+
+            //////////////////////////////////////////////////
+            // ENVIAR PANEL
+            //////////////////////////////////////////////////
+
+            const message =
+                await channel.send({
+
+                    embeds: [embed],
+
+                    components: [row]
+                });
+
+            //////////////////////////////////////////////////
+            // GUARDAR DB
+            //////////////////////////////////////////////////
+
+            await verificationSchema.findOneAndUpdate(
+
+                {
+                    guildId:
+                        interaction.guild.id
+                },
+
+                {
+                    guildId:
+                        interaction.guild.id,
+
+                    channelId:
+                        channel.id,
+
+                    messageId:
+                        message.id,
+
+                    roleId:
+                        verifiedRole.id,
+
+                    removeRoleId:
+                        removeRole.id
+                },
+
+                {
+                    upsert: true,
+                    new: true
+                }
             );
 
-            return correReply(
+            //////////////////////////////////////////////////
+            // RESPUESTA
+            //////////////////////////////////////////////////
 
-                interaction,
+            return interaction.editReply({
 
-                "Sistema actualizado correctamente",
-
-                true
-            );
+                content:
+                    '✅ Sistema de verificación configurado correctamente.'
+            });
 
         } catch (error) {
 
             console.log(error);
 
-            return errReply(
+            if (
+                interaction.deferred ||
+                interaction.replied
+            ) {
 
-                interaction,
+                await interaction.editReply({
 
-                "Error al crear el sistema de verificación",
+                    content:
+                        '❌ Ocurrió un error al crear el sistema.'
+                }).catch(() => {});
 
-                true
-            );
+            } else {
+
+                await interaction.reply({
+
+                    content:
+                        '❌ Ocurrió un error al crear el sistema.',
+
+                    flags: 64
+                }).catch(() => {});
+            }
         }
     }
 };

@@ -1,8 +1,8 @@
 const { Schema, model } = require('mongoose');
 
 const economyUser = new Schema({
-  guildId: String,
-  userId: String,
+  guildId: {type: String, required: true},
+  userId: {type: String, required: true},
   wallet: { type: Number, default: 0 },
   bank: { type: Number, default: 0 },
   lastWork: { type: Number, default: 0 },
@@ -18,4 +18,5 @@ const economyUser = new Schema({
   lastDailyDate: {type: String, default: null},
 });
 
+economyUser.index({ guildId: 1, userId: 1 }, { unique: true });
 module.exports = model('EconomyUser', economyUser);

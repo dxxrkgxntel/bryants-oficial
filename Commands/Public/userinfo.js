@@ -14,9 +14,9 @@ module.exports = {
         try {
 
             const user = interaction.options.getUser('user') || interaction.user;
-            const member = await interaction.guild.members.fetch(user.id);
-            const userAvatar = user.displayAvatarURL({ size: 32 });
-            const badges = user.flags.toArray().join(', ');
+            const member = await interaction.guild.members.fetch(user.id).catch(() => null);
+            const userAvatar = user.displayAvatarURL({dynamic: true, size: 1024});
+            const badges = user.flags?.toArray()?.join(', ') || 'Ninguna';
             const botStatus = user.bot ? 'Si' : 'No';
             
             const embed = new EmbedBuilder()
@@ -30,7 +30,7 @@ module.exports = {
                 })
                 .addFields({
                     name: `¿Cuándo se unió al servidor?:`,
-                    value: `<t:${parseInt(member.joinedAt / 1000)}:R>`,
+                    value: member?.joinedTimestamp? `<t:${parseInt(member.joinedTimestamp / 1000)}:R>`: 'Desconocido',
                     inline: true
                 })
                 .addFields({
@@ -54,8 +54,29 @@ module.exports = {
             await interaction.reply({ embeds: [embed], flags: 64 });
             
         } catch (error) {
-            console.error(error);
-            await interaction.reply({ content: `Se produjo un error al ejecutar el comando.`, flags: 64});
-        }
+
+    console.error(error);
+
+    if (interaction.replied || interaction.deferred) {
+
+        await interaction.followUp({
+
+            content:
+                "❌ Se produjo un error.",
+
+            flags: 64
+        });
+
+    } else {
+
+        await interaction.reply({
+
+            content:
+                "❌ Se produjo un error.",
+
+            flags: 64
+        });
+    }
+}
     }
 }

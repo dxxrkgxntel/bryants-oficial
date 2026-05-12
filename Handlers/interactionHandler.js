@@ -3,85 +3,224 @@ const fs = require('fs');
 
 function loadInteractions(client) {
 
-  const table = new ascii().setHeading('Interacciones', 'Estado');
+    const table =
+        new ascii()
 
-  client.buttons.clear();
-  client.selects.clear();
-  client.modals.clear();
+            .setHeading(
+                'Interacciones',
+                'Estado'
+            );
 
-  //////////////////////////////////////////
-  // 🔘 BOTONES
-  //////////////////////////////////////////
-  fs.readdirSync('./Interactions/Buttons').forEach(file => {
-    try {
-      delete require.cache[require.resolve(`../Interactions/Buttons/${file}`)];
+    //////////////////////////////////////////////////
+    // LIMPIAR COLECCIONES
+    //////////////////////////////////////////////////
 
-      const btn = require(`../Interactions/Buttons/${file}`);
+    client.buttons.clear();
+    client.selects.clear();
+    client.modals.clear();
 
-      if (!btn.id || !btn.execute) {
-        table.addRow(file, '❌ Inválido');
-        return;
-      }
+    //////////////////////////////////////////////////
+    // 🔘 BOTONES
+    //////////////////////////////////////////////////
 
-      client.buttons.set(btn.id, btn);
-      table.addRow(file, '✅ Botón');
+    fs.readdirSync('./Interactions/Buttons')
 
-    } catch (err) {
-      table.addRow(file, '❌ Error');
-      console.log(err);
-    }
-  });
+        .forEach(file => {
 
-  //////////////////////////////////////////
-  // 📜 SELECT MENUS
-  //////////////////////////////////////////
-  fs.readdirSync('./Interactions/StringSelect').forEach(file => {
-    try {
-      delete require.cache[require.resolve(`../Interactions/StringSelect/${file}`)];
+            try {
 
-      const select = require(`../Interactions/StringSelect/${file}`);
+                delete require.cache[
+                    require.resolve(
+                        `../Interactions/Buttons/${file}`
+                    )
+                ];
 
-      if (!select.id || !select.execute) {
-        table.addRow(file, '❌ Inválido');
-        return;
-      }
+                //////////////////////////////////////////////////
 
-      client.selects.set(select.id, select);
-      table.addRow(file, '✅ Select');
+                const btn =
+                    require(
+                        `../Interactions/Buttons/${file}`
+                    );
 
-    } catch (err) {
-      table.addRow(file, '❌ Error');
-      console.log(err);
-    }
-  });
+                //////////////////////////////////////////////////
 
-  //////////////////////////////////////////
-  // 🧾 MODALES
-  //////////////////////////////////////////
-  fs.readdirSync('./Interactions/ModalSubmit').forEach(file => {
-    try {
-      delete require.cache[require.resolve(`../Interactions/ModalSubmit/${file}`)];
+                if (
+                    !btn.id ||
+                    !btn.execute
+                ) {
 
-      const modal = require(`../Interactions/ModalSubmit/${file}`);
+                    table.addRow(
+                        file,
+                        '❌ Inválido'
+                    );
 
-      if (!modal.id || !modal.execute) {
-        table.addRow(file, '❌ Inválido');
-        return;
-      }
+                    return;
+                }
 
-      client.modals.set(modal.id, modal);
-      table.addRow(file, '✅ Modal');
+                //////////////////////////////////////////////////
 
-    } catch (err) {
-      table.addRow(file, '❌ Error');
-      console.log(err);
-    }
-  });
+                client.buttons.set(
+                    btn.id,
+                    btn
+                );
 
-  console.log(
-    table.toString(),
-    "\n[INTERACCIONES] Cargadas correctamente.".green
-  );
+                //////////////////////////////////////////////////
+
+                table.addRow(
+                    file,
+                    '✅ Botón'
+                );
+
+            } catch (err) {
+
+                table.addRow(
+                    file,
+                    '❌ Error'
+                );
+
+                console.log(err);
+            }
+        });
+
+    //////////////////////////////////////////////////
+    // 📜 SELECT MENUS
+    //////////////////////////////////////////////////
+
+    fs.readdirSync('./Interactions/StringSelect')
+
+        .forEach(file => {
+
+            try {
+
+                delete require.cache[
+                    require.resolve(
+                        `../Interactions/StringSelect/${file}`
+                    )
+                ];
+
+                //////////////////////////////////////////////////
+
+                const select =
+                    require(
+                        `../Interactions/StringSelect/${file}`
+                    );
+
+                //////////////////////////////////////////////////
+
+                if (
+                    !select.id ||
+                    !select.execute
+                ) {
+
+                    table.addRow(
+                        file,
+                        '❌ Inválido'
+                    );
+
+                    return;
+                }
+
+                //////////////////////////////////////////////////
+                // SOPORTE PARA REGEX IDS
+                //////////////////////////////////////////////////
+
+                client.selects.set(
+                    file,
+                    select
+                );
+
+                //////////////////////////////////////////////////
+
+                table.addRow(
+                    file,
+                    '✅ Select'
+                );
+
+            } catch (err) {
+
+                table.addRow(
+                    file,
+                    '❌ Error'
+                );
+
+                console.log(err);
+            }
+        });
+
+    //////////////////////////////////////////////////
+    // 🧾 MODALES
+    //////////////////////////////////////////////////
+
+    fs.readdirSync('./Interactions/ModalSubmit')
+
+        .forEach(file => {
+
+            try {
+
+                delete require.cache[
+                    require.resolve(
+                        `../Interactions/ModalSubmit/${file}`
+                    )
+                ];
+
+                //////////////////////////////////////////////////
+
+                const modal =
+                    require(
+                        `../Interactions/ModalSubmit/${file}`
+                    );
+
+                //////////////////////////////////////////////////
+
+                if (
+                    !modal.id ||
+                    !modal.execute
+                ) {
+
+                    table.addRow(
+                        file,
+                        '❌ Inválido'
+                    );
+
+                    return;
+                }
+
+                //////////////////////////////////////////////////
+
+                client.modals.set(
+                    modal.id,
+                    modal
+                );
+
+                //////////////////////////////////////////////////
+
+                table.addRow(
+                    file,
+                    '✅ Modal'
+                );
+
+            } catch (err) {
+
+                table.addRow(
+                    file,
+                    '❌ Error'
+                );
+
+                console.log(err);
+            }
+        });
+
+    //////////////////////////////////////////////////
+
+    console.log(
+
+        table.toString(),
+
+        "\n[INTERACCIONES] Cargadas correctamente."
+            .green
+    );
 }
 
-module.exports = { loadInteractions };
+module.exports = {
+    loadInteractions
+};

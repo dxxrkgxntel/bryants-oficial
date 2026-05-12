@@ -52,7 +52,13 @@ const {
           interaction.reply({ embeds: [Embed] });
         })
         .catch((err) => {
-          console.error(err);
-        });
+
+   console.error(err);
+
+   return interaction.reply({
+      content: "❌ Ocurrió un error al traducir el texto.",
+      flags: 64
+   });
+});
     },
   };

@@ -1,100 +1,154 @@
-const {EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle} = require("discord.js");
+const {
+    EmbedBuilder,
+    PermissionFlagsBits
+} = require("discord.js");
 
-const welcomeSchema = require("../../Models/welcomeSchema");
+const leaveSchema =
+    require("../../Models/leaveSchema");
 
 module.exports = {
 
-    name: "guildMemberAdd",
+    name: "guildMemberRemove",
 
     async execute(member) {
 
         try {
 
             //////////////////////////////////////////////////
-            // DATA
+            // BUSCAR DATA
             //////////////////////////////////////////////////
 
             const data =
-                await welcomeSchema.findOne({Guild: member.guild.id});
+                await leaveSchema.findOne({
+
+                    Guild: member.guild.id
+                });
 
             //////////////////////////////////////////////////
 
             if (!data) return;
 
             //////////////////////////////////////////////////
-            // CHANNEL
+            // CANAL
             //////////////////////////////////////////////////
 
-            const channel =
-                member.guild.channels.cache.get(data.Channel);
+            const leaveChannel =
+                member.guild.channels.cache.get(
+                    data.Channel
+                );
 
             //////////////////////////////////////////////////
 
-            if (!channel) return;
+            if (!leaveChannel) {
+
+                return console.log(
+                    `❌ Canal de salidas no encontrado en ${member.guild.name}`
+                );
+            }
 
             //////////////////////////////////////////////////
-            // FECHAS
+            // PERMISOS
             //////////////////////////////////////////////////
 
-            const created = Math.floor(member.user.createdTimestamp / 1000);
+            const botMember =
+                member.guild.members.me;
+
+            if (
+                !leaveChannel.permissionsFor(botMember)
+                    .has([
+                        PermissionFlagsBits.SendMessages,
+                        PermissionFlagsBits.EmbedLinks
+                    ])
+            ) {
+
+                return console.log(
+                    `❌ Sin permisos en ${leaveChannel.name}`
+                );
+            }
 
             //////////////////////////////////////////////////
-            // MEMBER COUNT
+            // DATOS
             //////////////////////////////////////////////////
 
-            const memberCount = member.guild.memberCount;
+            const leaveDesc =
+                data.MessageDes ||
+                "Un usuario ha salido del servidor.";
+
+            const leaveImg =
+                data.ImagenDesc;
+
+            const leaveThumbnail =
+                data.Thumbnail;
 
             //////////////////////////////////////////////////
             // EMBED
             //////////////////////////////////////////////////
 
-            const embed =
+            const leaveEmbed =
                 new EmbedBuilder()
 
-                    .setColor(data.Color || "#8A2BE2")
-                    .setTitle(`✨ Bienvenido/a a ${member.guild.name}`)
-                    .setDescription('Estamos felices de tenerte en nuestra comunidad.\n\n' +`👤 Usuario: ${member}\n` +`🆔 ID: \`${member.id}\`\n` +`📅 Cuenta creada: <t:${created}:R>\n` +`👥 Miembro número: **#${memberCount}**\n\n` +`💜 Esperamos que disfrutes tu estadía,\n` +`participes en los chats y formes parte\n` +`de esta increíble comunidad.`)
-                    .setThumbnail(data.Thumbnail)
-                    .setImage(data.ImagenDesc)
+                    .setColor("#8A2BE2")
+
+                    .setTitle(
+                        "🚪 Usuario salió del servidor"
+                    )
+
+                    .setDescription(
+
+                        `${leaveDesc}\n\n` +
+
+                        `👤 Usuario: **${member.user.tag}**\n` +
+
+                        `🆔 ID: \`${member.id}\`\n` +
+
+                        `💔 Ahora somos **${member.guild.memberCount}** miembros`
+                    )
+
+                    .setThumbnail(
+
+                        leaveThumbnail ||
+
+                        member.user.displayAvatarURL({
+                            dynamic: true,
+                            size: 1024
+                        })
+                    )
+
+                    .setImage(
+                        leaveImg || null
+                    )
+
+                    .setFooter({
+
+                        text:
+                            `${member.guild.name} • Sistema de Salidas`,
+
+                        iconURL:
+                            member.guild.iconURL({
+                                dynamic: true
+                            })
+                    })
+
+                    .setTimestamp();
 
             //////////////////////////////////////////////////
-            // BOTONES
+            // ENVIAR
             //////////////////////////////////////////////////
 
-            const row =
-                new ActionRowBuilder()
-                    .addComponents(
-                        new ButtonBuilder()
-                            .setLabel("Reglas")
-                            .setEmoji("📜")
-                            .setStyle(ButtonStyle.Link)
-                            .setURL("https://discord.com/channels/1497970030787432624/1497970032548905074"),
+            await leaveChannel.send({
 
-                        new ButtonBuilder()
-                            .setLabel("Soporte")
-                            .setEmoji("🎫")
-                            .setStyle(ButtonStyle.Link)
-                            .setURL("https://discord.com/channels/1497970030787432624/1497970033005953060"),
+                content:
+                    `💨 Se fue **${member.user.tag}**`,
 
-                        new ButtonBuilder()
-                            .setLabel("Invitación")
-                            .setEmoji("🚀")
-                            .setStyle(ButtonStyle.Link)
-                            .setURL("https://discord.gg/MBWg9zCMmq")
-                    );
-
-            //////////////////////////////////////////////////
-            // SEND
-            //////////////////////////////////////////////////
-
-            await channel.send({
-                content: `🎉 ¡Bienvenido ${member}!`,
-                embeds: [embed],
-                components: [row]
+                embeds: [leaveEmbed]
             });
 
         } catch (error) {
-            console.log(error);
+
+            console.log(
+                "❌ Error en sistemaDeSalidas:",
+                error
+            );
         }
     }
 };

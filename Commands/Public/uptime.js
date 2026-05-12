@@ -5,7 +5,8 @@ module.exports = {
     .setName("uptime")
     .setDescription("Muestra el tiempo que el bot tiene activo."),
 
-    async execute(interaction, client) {
+    async execute(interaction) {
+        const client = interaction.client;
         const days = Math.floor(client.uptime / 86400000)
         const hours = Math.floor(client.uptime / 3600000) % 24
         const minutes = Math.floor(client.uptime / 60000) % 60
@@ -19,6 +20,6 @@ module.exports = {
             { name: "Tiempo activo:", value: ` \`${days}\` días, \`${hours}\` horas, \`${minutes}\` minutos y \`${seconds}\` segundos.`}
         )
 
-        interaction.reply({ embeds: [embed] })
+        await interaction.reply({ embeds: [embed] })
     }
 }

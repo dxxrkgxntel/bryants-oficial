@@ -15,6 +15,9 @@ module.exports = {
 
 
     async execute(interaction) {
+
+        await interaction.deferReply();
+
         const { guild } = interaction;
         const {
             members,
@@ -69,8 +72,6 @@ module.exports = {
         const embed = new EmbedBuilder()
                 .setColor("#8A2BE2")
                 .setTitle(`Información de ${guild.name}`)
-                .setThumbnail(guild.iconURL({ size: 1024 }))
-                .setImage(guild.bannerURL({ size: 1024 }))
                 .addFields(
                     { name: "Description", value: `📝 ${guild.description || "None"}` },
                     {
@@ -133,6 +134,12 @@ module.exports = {
                     }
                 )
 
-        interaction.reply({ embeds: [embed] });
+                const banner = guild.bannerURL({ size: 1024 });
+                    if (banner) {embed.setImage(banner);}
+
+                const icon = guild.iconURL({ size: 1024 });
+                    if (icon) {embed.setThumbnail(icon);}
+
+        await interaction.editReply({ embeds: [embed] });
     }
 }

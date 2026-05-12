@@ -1,497 +1,372 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField, ChannelType } = require('discord.js')
+const {
+    SlashCommandBuilder,
+    EmbedBuilder,
+    PermissionsBitField,
+    ChannelType
+} = require('discord.js');
 
 module.exports = {
 
     data: new SlashCommandBuilder()
         .setName('automod')
         .setDescription('Setup AutoMod system')
-        .setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator) // 🔥 OCULTA EL COMANDO
+        .setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator)
 
-        .addSubcommand(command => command.setName('flagged-words').setDescription('block profanety, sexual content, and slurs'))
-        .addSubcommand(command => command.setName('spam-messages').setDescription('block messages suspected of spam'))
-        .addSubcommand(command => command.setName('mention-spam').setDescription('block mentions a certain amount of mentions')
-            .addIntegerOption(option => option.setName('number').setDescription('The number of mentions required').setRequired(true)))
-        .addSubcommand(command => command.setName('keyword').setDescription('block a given keyword in the server')
-            .addStringOption(option => option.setName('word').setDescription('The word to block').setRequired(true)))
-        .addSubcommand(command => command.setName('anti-links').setDescription('block links')
-            .addChannelOption(option => option.setName('channel').setDescription('Canal permitido').addChannelTypes(ChannelType.GuildText)))
-        .addSubcommand(command => command.setName('anti-invites').setDescription('block invites')),
+        .addSubcommand(command =>
+            command
+                .setName('flagged-words')
+                .setDescription('Block profanity, sexual content, and slurs')
+        )
+
+        .addSubcommand(command =>
+            command
+                .setName('spam-messages')
+                .setDescription('Block messages suspected of spam')
+        )
+
+        .addSubcommand(command =>
+            command
+                .setName('mention-spam')
+                .setDescription('Block mention spam')
+                .addIntegerOption(option =>
+                    option
+                        .setName('number')
+                        .setDescription('The number of mentions required')
+                        .setRequired(true)
+                )
+        )
+
+        .addSubcommand(command =>
+            command
+                .setName('keyword')
+                .setDescription('Block a given keyword in the server')
+                .addStringOption(option =>
+                    option
+                        .setName('word')
+                        .setDescription('The word to block')
+                        .setRequired(true)
+                )
+        )
+
+        .addSubcommand(command =>
+            command
+                .setName('anti-links')
+                .setDescription('Block links')
+                .addChannelOption(option =>
+                    option
+                        .setName('channel')
+                        .setDescription('Allowed channel')
+                        .addChannelTypes(ChannelType.GuildText)
+                )
+        )
+
+        .addSubcommand(command =>
+            command
+                .setName('anti-invites')
+                .setDescription('Block Discord invites')
+        ),
 
     async execute(interaction, client) {
 
         const { guild, options } = interaction;
         const sub = options.getSubcommand();
 
-        // 🔒 PROTECCIÓN REAL (BACKEND)
+        // 🔒 Protección backend
         if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
             return interaction.reply({
-                content: `❌ No tienes permisos para usar AutoMod`,
+                content: '❌ No tienes permisos para usar este comando.',
                 flags: 64
             });
         }
 
-        switch (sub) {
+        // 🔥 Evita Unknown Interaction
+        await interaction.deferReply({ flags: 64 });
 
-            case 'flagged-words':
+        try {
 
-                await interaction.reply({content: `Loadding your automod rule...`})
+            switch (sub) {
 
-                const rule = await guild.autoModerationRules.create({
+                // ==================================================
+                // FLAGGED WORDS
+                // ==================================================
 
-                    name: `Block profanity, sexual content and slurs by: ${client.user.tag}`,
+                case 'flagged-words': {
 
-                    creatorId: `679438909478010911"`,
+                    const existingRule = guild.autoModerationRules.cache.find(
+                        r => r.name === `Block profanity by ${client.user.id}`
+                    );
 
-                    enabled: true,
+                    if (existingRule) {
+                        return interaction.editReply({
+                            content: '❌ Ya existe una regla de palabras ofensivas.'
+                        });
+                    }
 
-                    eventType: 1,
+                    await guild.autoModerationRules.create({
 
-                    triggerType: 4,
+                        name: `Block profanity by ${client.user.id}`,
 
-                    triggerMetadata:
+                        enabled: true,
 
-                        {
+                        eventType: 1,
 
-                            presents: [1, 2, 3]
+                        triggerType: 4,
 
+                        triggerMetadata: {
+                            presets: [1, 2, 3]
                         },
 
                         actions: [
-
                             {
-
                                 type: 1,
-
                                 metadata: {
-
-                                    channel: interaction.channel,
-
-                                    durationSeconds: 10,
-
-                                    customMessage: `This message was prevented by ${client.user.tag} Auto Moderation.`
-
+                                    customMessage: `⚠️ Tu mensaje fue bloqueado por el AutoMod de ${guild.name}.`
                                 }
-
                             }
-
                         ]
 
-                }).catch(async err => {
-
-                    setTimeout(async () => {
-
-                        console.log(err);
-
-                        await interaction.editReply({ content: `${err}`});
-
-                    }, 2000)
-
-                })
-
-                setTimeout(async () => {
-
-                    if (!rule) return; 
+                    });
 
                     const embed = new EmbedBuilder()
+                        .setColor('#8A2BE2')
+                        .setDescription('✅ AutoMod de palabras ofensivas activado.');
 
-                    .setColor('#8A2BE2')
+                    return interaction.editReply({
+                        embeds: [embed]
+                    });
+                }
 
-                    .setDescription(`You AutoMod rule has been created- all swears will be stopped by ${client.user.tag}`)
+                // ==================================================
+                // KEYWORD
+                // ==================================================
 
-                    await interaction.editReply({content: ``, embeds: [embed]});
+                case 'keyword': {
 
-                }, 3000)
+                    const word = options.getString('word');
 
-                break;
+                    await guild.autoModerationRules.create({
 
+                        name: `Keyword Block: ${word}`,
 
+                        enabled: true,
 
-                case 'keyword':
+                        eventType: 1,
 
-                    await interaction.reply({content: `Loadding your automod rule...`})
+                        triggerType: 1,
 
-                    const word = options.getString('word')
-
-                const rule2 = await guild.autoModerationRules.create({
-
-                    name: `prevent the word ${word} by: ${client.user.tag}`,
-
-                    creatorId: `679438909478010911`,
-
-                    enabled: true,
-
-                    eventType: 1,
-
-                    triggerType: 1,
-
-                    triggerMetadata:
-
-                        {
-
-                            keywordFilter: [`${word}`]
-
+                        triggerMetadata: {
+                            keywordFilter: [word]
                         },
 
                         actions: [
-
                             {
-
                                 type: 1,
-
                                 metadata: {
-
-                                    channel: interaction.channel,
-
-                                    durationSeconds: 10,
-
-                                    customMessage: `This message was prevented by ${client.user.tag} Auto Moderation.`
-
+                                    customMessage: `⚠️ Esa palabra está bloqueada en este servidor.`
                                 }
-
                             }
-
                         ]
 
-                }).catch(async err => {
+                    });
 
-                    setTimeout(async () => {
+                    const embed = new EmbedBuilder()
+                        .setColor('#8A2BE2')
+                        .setDescription(`✅ La palabra \`${word}\` ahora está bloqueada.`);
 
-                        console.log(err);
+                    return interaction.editReply({
+                        embeds: [embed]
+                    });
+                }
 
-                        await interaction.editReply({ content: `${err}`});
+                // ==================================================
+                // SPAM MESSAGES
+                // ==================================================
 
-                    }, 2000)
+                case 'spam-messages': {
 
-                })
+                    await guild.autoModerationRules.create({
 
-                setTimeout(async () => {
+                        name: `Anti Spam by ${client.user.id}`,
 
-                    if (!rule2) return; 
+                        enabled: true,
 
-                    const embed2 = new EmbedBuilder()
+                        eventType: 1,
 
-                    .setColor('#8A2BE2')
-
-                    .setDescription(`You AutoMod rule has been created- all messages containing the word ${word} will be deleted by ${client.user.tag}`)
-
-                    await interaction.editReply({content: ``, embeds: [embed2]});
-
-                }, 3000)
-
-                break;
-
-
-
-
-
-                case 'spam-messages':
-
-                await interaction.reply({content: `Loadding your automod rule...`})
-
-                const rule3 = await guild.autoModerationRules.create({
-
-                    name: `Prevent spam messages by: ${client.user.tag}`,
-
-                    creatorId: `679438909478010911`,
-
-                    enabled: true,
-
-                    eventType: 1,
-
-                    triggerType: 3,
-
-                    triggerMetadata:
-
-                        {
-
-                            // mentionTotalLimit: number
-
-                        },
+                        triggerType: 3,
 
                         actions: [
-
                             {
-
                                 type: 1,
-
                                 metadata: {
-
-                                    channel: interaction.channel,
-
-                                    durationSeconds: 10,
-
-                                    customMessage: `This message was prevented by ${client.user.tag} Auto Moderation.`
-
+                                    customMessage: `⚠️ Spam detectado.`
                                 }
-
                             }
-
                         ]
 
-                }).catch(async err => {
+                    });
 
-                    setTimeout(async () => {
+                    const embed = new EmbedBuilder()
+                        .setColor('#8A2BE2')
+                        .setDescription('✅ Sistema anti-spam activado.');
 
-                        console.log(err);
+                    return interaction.editReply({
+                        embeds: [embed]
+                    });
+                }
 
-                        await interaction.editReply({ content: `${err}`});
+                // ==================================================
+                // MENTION SPAM
+                // ==================================================
 
-                    }, 2000)
+                case 'mention-spam': {
 
-                })
+                    const number = options.getInteger('number');
 
-                setTimeout(async () => {
+                    await guild.autoModerationRules.create({
 
-                    if (!rule3) return; 
+                        name: `Mention Spam by ${client.user.id}`,
 
-                    const embed3 = new EmbedBuilder()
+                        enabled: true,
 
-                    .setColor('#8A2BE2')
+                        eventType: 1,
 
-                    .setDescription(`You AutoMod rule has been created- all messages suspected of spam will be deleted by ${client.user.tag}`)
+                        triggerType: 5,
 
-                    await interaction.editReply({content: ``, embeds: [embed3]});
-
-                }, 3000)
-
-
-
-
-
-                break;
-
-                case 'mention-spam':
-
-                    await interaction.reply({content: `Loadding your automod rule...`})
-
-                    const number = options.getInteger('number')
-
-                const rule4 = await guild.autoModerationRules.create({
-
-                    name: `Prevent spam mentions by: ${client.user.tag}`,
-
-                    creatorId: `679438909478010911`,
-
-                    enabled: true,
-
-                    eventType: 1,
-
-                    triggerType: 5,
-
-                    triggerMetadata:
-
-                        {
-
+                        triggerMetadata: {
                             mentionTotalLimit: number
-
                         },
 
                         actions: [
-
                             {
-
                                 type: 1,
-
                                 metadata: {
-
-                                    channel: interaction.channel,
-
-                                    durationSeconds: 10,
-
-                                    customMessage: `This message was prevented by ${client.user.tag} Auto Moderation.`
-
+                                    customMessage: `⚠️ Demasiadas menciones detectadas.`
                                 }
-
                             }
-
                         ]
 
-                }).catch(async err => {
+                    });
 
-                    setTimeout(async () => {
+                    const embed = new EmbedBuilder()
+                        .setColor('#8A2BE2')
+                        .setDescription(`✅ Anti mention spam activado (${number} menciones).`);
 
-                        console.log(err);
+                    return interaction.editReply({
+                        embeds: [embed]
+                    });
+                }
 
-                        await interaction.editReply({ content: `${err}`});
+                // ==================================================
+                // ANTI LINKS
+                // ==================================================
 
-                    }, 2000)
+                case 'anti-links': {
 
-                })
+                    const permChannel = options.getChannel('channel');
 
-                setTimeout(async () => {
+                    await guild.autoModerationRules.create({
 
-                    if (!rule4) return; 
+                        name: `Anti Links by ${client.user.id}`,
 
-                    const embed4 = new EmbedBuilder()
+                        enabled: true,
 
-                    .setColor('#8A2BE2')
+                        eventType: 1,
 
-                    .setDescription(`You AutoMod rule has been created- all messages suspetected of mention spam will be deleted. by ${client.user.tag}`)
+                        triggerType: 1,
 
-                    await interaction.editReply({content: ``, embeds: [embed4]});
-
-                }, 3000)
-
-                break;
-
-
-
-                case 'anti-links':
-
-                    const permChannel = interaction.options.getChannel('channel');
-
-                    await interaction.reply({content: `Loadding your AutoMod rule...`})
-
-                const rule5 = await guild.autoModerationRules.create({
-
-                    name: `Prevent links by: ${client.user.tag}`,
-
-                    creatorId: `679438909478010911`,
-
-                    enabled: true,
-
-                    eventType: 1,
-
-                    triggerType: 1,
-
-                    triggerMetadata:
-
-                        {
-
-                            keywordFilter: ['http'],
-
-                            regexPatterns: ['http']
-
+                        triggerMetadata: {
+                            regexPatterns: ['https?://[^\\s]+']
                         },
 
                         actions: [
-
                             {
-
                                 type: 1,
-
                                 metadata: {
-
-                                    channel: interaction.channel,
-
-                                    durationSeconds: 10,
-
-                                    customMessage: `This link was prevented by ${client.user.tag} Auto Moderation.`
-
+                                    customMessage: `⚠️ Los links están bloqueados en este servidor.`
                                 }
-
                             }
-
                         ],
 
-                    exemptChannels: [`${permChannel.id}`]
+                        exemptChannels: permChannel ? [permChannel.id] : []
 
-                }).catch(async err => {
+                    });
 
-                    setTimeout(async () => {
+                    const embed = new EmbedBuilder()
+                        .setColor('#8A2BE2')
+                        .setDescription(
+                            permChannel
+                                ? `✅ Anti-links activado.\n📌 Canal permitido: ${permChannel}`
+                                : `✅ Anti-links activado.`
+                        );
 
-                        console.log(err);
+                    return interaction.editReply({
+                        embeds: [embed]
+                    });
+                }
 
-                        await interaction.editReply({ content: `${err}`});
+                // ==================================================
+                // ANTI INVITES
+                // ==================================================
 
-                    }, 2000)
+                case 'anti-invites': {
 
-                })
+                    await guild.autoModerationRules.create({
 
-                setTimeout(async () => {
+                        name: `Anti Invites by ${client.user.id}`,
 
-                    if (!rule5) return; 
+                        enabled: true,
 
-                    const embed5 = new EmbedBuilder()
+                        eventType: 1,
 
-                    .setColor('#8A2BE2')
+                        triggerType: 1,
 
-                    .setDescription(`You AutoMod rule has been created- all links now blocked. by ${client.user.tag}`)
-
-                    await interaction.editReply({content: ``, embeds: [embed5]});
-
-                }, 3000)
-
-                break;
-
-
-
-                case 'anti-invites':
-
-                    await interaction.reply({content: `Loadding your AutoMod rule...`})
-
-                const rule6 = await guild.autoModerationRules.create({
-
-                    name: `Prevent invite link by: ${client.user.tag}`,
-
-                    creatorId: `679438909478010911`,
-
-                    enabled: true,
-
-                    eventType: 1,
-
-                    triggerType: 1,
-
-                    triggerMetadata:
-
-                        {
-
-                            keywordFilter: ['http'],
-
-                            regexPatterns: ['http']
-
+                        triggerMetadata: {
+                            keywordFilter: [
+                                'discord.gg',
+                                'discord.com/invite'
+                            ]
                         },
 
                         actions: [
-
                             {
-
                                 type: 1,
-
                                 metadata: {
-
-                                    channel: interaction.channel,
-
-                                    durationSeconds: 10,
-
-                                    customMessage: `This discord invite was prevented by ${client.user.tag} Auto Moderation.`
-
+                                    customMessage: `⚠️ Las invitaciones de Discord están bloqueadas.`
                                 }
-
                             }
-
                         ]
 
-                }).catch(async err => {
+                    });
 
-                    setTimeout(async () => {
+                    const embed = new EmbedBuilder()
+                        .setColor('#8A2BE2')
+                        .setDescription('✅ Anti-invitaciones activado.');
 
-                        console.log(err);
+                    return interaction.editReply({
+                        embeds: [embed]
+                    });
+                }
 
-                        await interaction.editReply({ content: `${err}`});
+            }
 
-                    }, 2000)
+        } catch (error) {
 
-                })
+            console.log(error);
 
-                setTimeout(async () => {
+            if (interaction.deferred || interaction.replied) {
 
-                    if (!rule6) return; 
+                return interaction.editReply({
+                    content: '❌ Ocurrió un error al crear la regla.'
+                });
 
-                    const embed6 = new EmbedBuilder()
+            } else {
 
-                    .setColor('#8A2BE2')
+                return interaction.reply({
+                    content: '❌ Ocurrió un error.',
+                    flags: 64
+                });
 
-                    .setDescription(`You AutoMod rule has been created- all discord invites now blocked. by ${client.user.tag}`)
-
-                    await interaction.editReply({content: ``, embeds: [embed6]});
-
-                }, 3000)
-
-                break;
-
+            }
         }
-
     }
-
-                                                     }
+};

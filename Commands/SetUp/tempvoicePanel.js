@@ -1,15 +1,77 @@
-const {SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder} = require("discord.js");
+const {
+    SlashCommandBuilder,
+    PermissionFlagsBits,
+    EmbedBuilder,
+    ActionRowBuilder,
+    StringSelectMenuBuilder,
+    StringSelectMenuOptionBuilder
+} = require("discord.js");
 
 module.exports = {
+
     data: new SlashCommandBuilder()
 
         .setName("tempvoice-panel")
-        .setDescription("Envía el panel global de TempVoice")
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+        .setDescription(
+            "Envía el panel global de TempVoice"
+        )
+
+        // 🔒 SOLO ADMINS
+        .setDefaultMemberPermissions(
+            PermissionFlagsBits.Administrator
+        )
+
+        .setDMPermission(false),
 
     //////////////////////////////////////////////////
 
     async execute(interaction) {
+
+        //////////////////////////////////////////////////
+        // SEGURIDAD EXTRA
+        //////////////////////////////////////////////////
+
+        if (
+            !interaction.member.permissions.has(
+                PermissionFlagsBits.Administrator
+            )
+        ) {
+
+            return interaction.reply({
+
+                content:
+                    "❌ No tienes permisos para usar este comando.",
+
+                flags: 64
+            });
+        }
+
+        //////////////////////////////////////////////////
+        // VALIDAR PERMISOS DEL BOT
+        //////////////////////////////////////////////////
+
+        const permissions =
+            interaction.channel.permissionsFor(
+                interaction.guild.members.me
+            );
+
+        if (
+            !permissions.has([
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.EmbedLinks,
+                PermissionFlagsBits.ViewChannel
+            ])
+        ) {
+
+            return interaction.reply({
+
+                content:
+                    "❌ No tengo permisos suficientes en este canal.",
+
+                flags: 64
+            });
+        }
 
         //////////////////////////////////////////////////
         // EMBED
@@ -19,10 +81,57 @@ module.exports = {
             new EmbedBuilder()
 
                 .setColor("#8A2BE2")
-                .setTitle("🎛️ - Panel TempVoice")
-                .setDescription(`🎧 • Panel TempVoice\n\n` +`Personaliza y administra tu sala temporal de voz de manera rápida y sencilla utilizando los menús desplegables disponibles debajo de este panel.\n\n` +`🔒 • Opciones de Privacidad\n` +`• Controla quién puede entrar y ver tu canal\n` +`• Bloquea o desbloquea accesos fácilmente\n` +`• Mantén tu sala privada cuando lo necesites\n\n` +`👥 • Opciones de Usuarios\n` +`• Permite acceso a miembros específicos\n` +`• Expulsa usuarios de tu sala\n` +`• Gestiona quién puede permanecer dentro\n\n` +`⚙️ • Configuración\n` +`• Cambia el nombre de tu sala\n` +`• Ajusta el límite de usuarios\n` +`• Modifica el bitrate y la región de voz\n\n` +`📌 Debes estar conectado dentro de tu sala temporal para utilizar todas las funciones del panel.\n\n` +`💜 Disfruta de una experiencia totalmente personalizada junto a tu comunidad.`)
-                .setThumbnail('https://media.discordapp.net/attachments/1499375657103392839/1501666281651441925/logo_principal.png?ex=69ff8a35&is=69fe38b5&hm=93a35cefa66cd30f2730eaedc8edb5c83509e4d7ccbfcfc7ad5e24c4f9254f90&=&format=webp&quality=lossless&width=694&height=694')
-                .setImage('https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png?ex=69ff8a34&is=69fe38b4&hm=20d0de70c8ae315aae73b3f468611e5d74239caf34394d34aca4cec64cdfaef0&=&format=webp&quality=lossless&width=1288&height=515');
+
+                .setTitle(
+                    "🎛️ • Panel TempVoice"
+                )
+
+                .setDescription(
+
+                    `🎧 • Panel TempVoice\n\n` +
+
+                    `Personaliza y administra tu sala temporal de voz de manera rápida y sencilla utilizando los menús desplegables disponibles debajo de este panel.\n\n` +
+
+                    `🔒 • Opciones de Privacidad\n` +
+                    `• Controla quién puede entrar y ver tu canal\n` +
+                    `• Bloquea o desbloquea accesos fácilmente\n` +
+                    `• Mantén tu sala privada cuando lo necesites\n\n` +
+
+                    `👥 • Opciones de Usuarios\n` +
+                    `• Permite acceso a miembros específicos\n` +
+                    `• Expulsa usuarios de tu sala\n` +
+                    `• Gestiona quién puede permanecer dentro\n\n` +
+
+                    `⚙️ • Configuración\n` +
+                    `• Cambia el nombre de tu sala\n` +
+                    `• Ajusta el límite de usuarios\n` +
+                    `• Modifica el bitrate y la región de voz\n\n` +
+
+                    `📌 Debes estar conectado dentro de tu sala temporal para utilizar todas las funciones del panel.\n\n` +
+
+                    `💜 Disfruta de una experiencia totalmente personalizada junto a tu comunidad.`
+                )
+
+                .setThumbnail(
+                    "https://media.discordapp.net/attachments/1499375657103392839/1501666281651441925/logo_principal.png"
+                )
+
+                .setImage(
+                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
+                )
+
+                .setFooter({
+
+                    text:
+                        `Panel creado por ${interaction.user.username}`,
+
+                    iconURL:
+                        interaction.user.displayAvatarURL({
+                            dynamic: true
+                        })
+                })
+
+                .setTimestamp();
 
         //////////////////////////////////////////////////
         // PRIVACIDAD
@@ -228,29 +337,18 @@ module.exports = {
 
         const row1 =
             new ActionRowBuilder()
-
-                .addComponents(
-                    privacyMenu
-                );
-
-        //////////////////////////////////////////////////
+                .addComponents(privacyMenu);
 
         const row2 =
             new ActionRowBuilder()
-
-                .addComponents(
-                    usersMenu
-                );
-
-        //////////////////////////////////////////////////
+                .addComponents(usersMenu);
 
         const row3 =
             new ActionRowBuilder()
+                .addComponents(configMenu);
 
-                .addComponents(
-                    configMenu
-                );
-
+        //////////////////////////////////////////////////
+        // ENVIAR PANEL
         //////////////////////////////////////////////////
 
         await interaction.channel.send({
@@ -265,11 +363,13 @@ module.exports = {
         });
 
         //////////////////////////////////////////////////
+        // RESPUESTA
+        //////////////////////////////////////////////////
 
         await interaction.reply({
 
             content:
-                "✅ Panel enviado.",
+                "✅ Panel TempVoice enviado correctamente.",
 
             flags: 64
         });

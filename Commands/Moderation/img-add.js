@@ -34,6 +34,13 @@ module.exports = {
             });
         }
 
+        if(config.allowedChannels.length >= 5){
+            return interaction.reply({
+                content:"❌ Límite máximo alcanzado.",
+                flags: 64
+            });
+        }
+
         config.allowedChannels.push(channel.id);
         await config.save();
 

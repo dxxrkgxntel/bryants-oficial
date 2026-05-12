@@ -21,6 +21,13 @@ module.exports = {
             });
         }
 
+        if(!/^\d{17,19}$/.test(userId)){
+            return interaction.reply({
+                content: "❌ ID inválida.",
+                flags: 64
+            });
+        }
+
         const {channel, options} = interaction
         const userId = options.getString('usuario')
 
@@ -30,7 +37,7 @@ module.exports = {
             await interaction.guild.members.unban(userId)
 
             unbanEmbed.setTitle('✅| Usuario fue desbaneado correctamente')
-            .setDescription(`<@${userId}> fue desbaneado.\nDesbaneado por: ${interaction.user.tag}`)
+            .setDescription(`Usuario ID: ${userId} fue desbaneado.\nDesbaneado por: ${interaction.user.tag}`)
             .setColor('#8A2BE2')
             .setTimestamp()
 

@@ -19,11 +19,17 @@ module.exports = {
                     iconURL: interaction.user.displayAvatarURL() 
                 })
                 .setDescription(`Se está mostrando el avatar de ${interaction.guild.name}`)
-                .setImage(interaction.guild.iconURL({ dynamic: true, size: 1024 }))
                 .setFooter({ 
                     text: `Pedido por ${interaction.user.tag}`, 
                     iconURL: interaction.user.displayAvatarURL() 
                 });
+
+            const icon = interaction.guild.iconURL({dynamic: true, size: 1024});
+
+            if (!icon) {
+                return interaction.editReply({content: "❌ Este servidor no tiene icono."});}
+
+            embed.setImage(icon);
 
             // 🔥 IMPORTANTE: usar editReply después de defer
             await interaction.editReply({

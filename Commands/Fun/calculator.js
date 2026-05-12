@@ -2,12 +2,11 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 const math = require('mathjs'); // npm i mathjs
 
 module.exports = {
-    developer: true,
     data: new SlashCommandBuilder()
         .setName('calculadora')
         .setDescription('Calcula en tiempo real'),
     async execute(interaction) {
-        const idPrefix = 'calulator'
+        const idPrefix = 'calculator'
         const embed = new EmbedBuilder()
             .setDescription("```\nEmpieza a usar la calculadora\n```")
             .setColor('#8A2BE2')
@@ -15,7 +14,7 @@ module.exports = {
             .addComponents(
                 new ButtonBuilder()
                     .setLabel('Limpiar')
-                    .setCustomId(idPrefix + "_Clear")
+                    .setCustomId(idPrefix + "_clear")
                     .setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder()
                     .setLabel('(')
@@ -122,7 +121,9 @@ module.exports = {
 
             if (value === "=") {
                 try {
-                    data = math.evaluate(data).toString();
+                    data = math.evaluate(
+   data.replace(/[^0-9+\-*/(). ]/g, "")
+).toString();
                 } catch (e) {
                     data = "";
                     extra = "Empieza";
@@ -143,8 +144,18 @@ module.exports = {
                 ) || data.length === 0 ? "" : " "}` + value;
             }
 
+            col.on("end", async () => {
+                try {
 
-            i.update({ embeds: [new EmbedBuilder().setColor('Blurple').setDescription(`\`\`\`\n${data || extra}\n\`\`\``)], components: [row, row1, row2, row3, row4], ephemeral: false })
+                    await interaction.editReply({
+                    components: []
+                });
+
+            } catch (err) {}
+        });
+
+
+            i.update({ embeds: [new EmbedBuilder().setColor('#8A2BE2').setDescription(`\`\`\`\n${data || extra}\n\`\`\``)], components: [row, row1, row2, row3, row4] })
         })
     }
 }

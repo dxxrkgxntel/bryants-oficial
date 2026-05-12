@@ -12,37 +12,80 @@ module.exports = {
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addChannelOption(option =>
             option.setName('channel')
-                .setDescription('Elige el canal donde se mostrara las confesiones')
+                .setDescription('Elige el canal donde se mostraran las confesiones')
                 .addChannelTypes(ChannelType.GuildText)
                 .setRequired(true)
         ),
+
     /**
-     * 
-     * @param {ChatInputCommandInteraction} interaction 
+     * @param {ChatInputCommandInteraction} interaction
      */
     async execute(interaction) {
-        const { options } = interaction
-        const channel = options.getChannel('channel')
-        try {
-            const confesionesData = await confesionesSchema.findOne({ guildId: interaction.guild.id })
-            if (!confesionesData) {
-                await confesionesSchema.create({
-                    guildId: interaction.guild.id,
-                    channelId: channel.id
-                })
-                return correReply(interaction, "Se creo correctamente el sistema de confesiones", true)
-            }
-            if (confesionesData) {
-                await confesionesSchema.findOneAndUpdate({
-                    guildId: interaction.guild.id,
-                    channelId: channel.id
-                })
-                return correReply(interaction, "Se modifico correctamente el sistema de confesiones", true)
-            }
-        } catch (error) {
-            console.log(error);
-            return errReply(interaction, "Ocurrio un error al tratar de crear el sistema de confesiones", true)
-        }
 
+        const { options, guild } = interaction;
+
+        const channel = options.getChannel('channel');
+
+        try {
+
+            // 🔒 Verificar permisos del bot
+            const permissions = channel.permissionsFor(guild.members.me);
+
+            if (
+                !permissions.has('ViewChannel') ||
+                !permissions.has('SendMessages') ||
+                !permissions.has('EmbedLinks')
+            ) {
+                return errReply(
+                    interaction,
+                    '❌ No tengo permisos suficientes en ese canal.',
+                    true
+                );
+            }
+
+            const confesionesData = await confesionesSchema.findOne({
+                guildId: guild.id
+            });
+
+            // ✅ CREAR
+            if (!confesionesData) {
+
+                await confesionesSchema.create({
+                    guildId: guild.id,
+                    channelId: channel.id
+                });
+
+                return correReply(
+                    interaction,
+                    `✅ Sistema de confesiones configurado en ${channel}`,
+                    true
+                );
+            }
+
+            // ✅ ACTUALIZAR
+            await confesionesSchema.findOneAndUpdate(
+                { guildId: guild.id },
+                {
+                    channelId: channel.id
+                },
+                { new: true }
+            );
+
+            return correReply(
+                interaction,
+                `✅ Sistema de confesiones actualizado a ${channel}`,
+                true
+            );
+
+        } catch (error) {
+
+            console.log(error);
+
+            return errReply(
+                interaction,
+                '❌ Ocurrió un error al configurar el sistema de confesiones.',
+                true
+            );
+        }
     }
 };

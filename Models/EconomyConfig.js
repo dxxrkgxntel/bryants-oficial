@@ -1,7 +1,7 @@
 const { Schema, model } = require('mongoose');
 
 const economyConfig = new Schema({
-  guildId: String,
+  guildId: {type: String, unique: true},
 
   dailyAmount: { type: Number, default: 500 },
   dailyCooldown: { type: Number, default: 86400000 },

@@ -9,20 +9,23 @@ module.exports = {
 
     async execute(interaction) {
 
-        if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return interaction.reply({
-                content: "❌ Solo administradores pueden usar este comando",
-                flags: 64
-            });
-        }
-
         const config = await ImageConfig.findOne({
             guildId: interaction.guild.id
         });
 
-        if (!config || config.allowedChannels.length === 0) {
+        const validChannels =
+
+            config.allowedChannels.filter(id =>
+
+                interaction.guild.channels.cache.has(id)
+            );
+
+//////////////////////////////////////////////////////
+
+        if (!config || validChannels.length === 0) {
+
             return interaction.reply({
-                content: "❌ No hay canales configurados",
+                content:"❌ No hay canales configurados",
                 flags: 64
             });
         }

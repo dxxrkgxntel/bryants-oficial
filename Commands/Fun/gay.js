@@ -24,18 +24,17 @@ module.exports = {
         ///   if (!pregunta) return int.reply('Escriba una pregunta.')
         const embed = new EmbedBuilder()
             .setColor(`#8A2BE2`)
-            .setTitle(`Cuanto eres de gay `)
+            .setTitle(`Porcentaje de Gay`)
             .setDescription(`
-     usuario: 
-     ${usuario.username}
-      Te ha tocado:
-        ${rpts[Math.floor(Math.random() * rpts.length)]} gay 🏳‍🌈
+     **Usuario:** ${usuario.username}
+      **Te ha tocado:** ${rpts[Math.floor(Math.random() * rpts.length)]} gay 🏳‍🌈
         `)
             .setFooter({ text: `Usuario quien puso el comando ${interaction.user.username}` })
 
 
-        interaction.channel.send({ embeds: [embed] });
-        interaction.reply({ content: `revisa tu porcentaje de gay`, flags: 64 })
+        return interaction.reply({
+            embeds: [embed]
+                });
 
     },
 

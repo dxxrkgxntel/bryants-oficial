@@ -27,6 +27,13 @@ module.exports = {
             });
         }
 
+        if(!config.allowedChannels.includes(channel.id)){
+            return interaction.reply({
+                content: "❌ Ese canal no está configurado.",
+                flags: 64
+            });
+        }
+
         config.allowedChannels = config.allowedChannels.filter(id => id !== channel.id);
         await config.save();
 

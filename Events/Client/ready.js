@@ -1,36 +1,156 @@
-const {ActivityType} = require('discord.js')
-const mongoose = require('mongoose')
-const config = require('./../../config.json')
-require('colors')
+const {
+    ActivityType
+} = require('discord.js');
+
+const mongoose =
+    require('mongoose');
+
+const config =
+    require('../../config.json');
+
+require('colors');
+
 module.exports = {
-    name: "clientReady",
-    once:true,
-    async execute(client){
-        mongoose.set('strictQuery', true)
-        await mongoose.connect(config.dataBaseURL || ''),{
-            keepAlive:true,
+
+    name: 'clientReady',
+
+    once: true,
+
+    async execute(client) {
+
+        //////////////////////////////////////////////////
+        // MONGODB
+        //////////////////////////////////////////////////
+
+        try {
+
+            mongoose.set(
+                'strictQuery',
+                true
+            );
+
+            await mongoose.connect(
+                config.dataBaseURL,
+                {
+                    keepAlive: true
+                }
+            );
+
+            console.log(
+                '[MONGO DB] Conectado correctamente.'
+                .green
+            );
+
+        } catch (error) {
+
+            console.log(
+                '[MONGO DB ERROR]'
+                .red,
+                error
+            );
         }
 
-        if(mongoose.connect){
-            console.log('[MONGO DB] Esta conectado correctamente.'.green);
-        }else
-        console.log(`El ${client.user.username} esta online`);
+        //////////////////////////////////////////////////
+        // PRESENCIAS
+        //////////////////////////////////////////////////
 
-        function updatePresence(){
-            const activities = [
-                {name:`💜 || estoy en ${client.guilds.cache.size} servers`, type:ActivityType.Watching},
-                {name:'💜 || Soporte de Tickets', type:ActivityType.Listening},
-                {name:'💜 || Desenvolvido por @bryantdx', type:ActivityType.Playing},
-                {name:'💜 || Staff 24/7', type:ActivityType.Streaming},
-                {name:`💜 || Bryant's Oficial`, type:ActivityType.Competing},
-                {name:'💜 || .gg/bryantoficial => Nueva comunidad, Nuevos Amigos.', type:ActivityType.Custom},
-            ];
+        const activities = [
 
-            const activity = activities[Math.floor(Math.random()* activities.length)];
+            {
+                name:
+                    `💜 || ${client.guilds.cache.size} servidores`,
+                type:
+                    ActivityType.Watching
+            },
 
-            client.user.setActivity(activity.name, {type:activity.type});
-        }
+            {
+                name:
+                    '💜 || Sistema de Tickets',
+                type:
+                    ActivityType.Listening
+            },
 
-        setInterval(updatePresence, 3000)
+            {
+                name:
+                    '💜 || Desenvolvido por @bryantdx',
+                type:
+                    ActivityType.Playing
+            },
+
+            {
+                name:
+                    '💜 || Staff 24/7',
+                type:
+                    ActivityType.Competing
+            },
+
+            {
+                name:
+                    "💜 || Bryant's Oficial",
+                type:
+                    ActivityType.Playing
+            }
+        ];
+
+        //////////////////////////////////////////////////
+        // ACTUALIZAR PRESENCIA
+        //////////////////////////////////////////////////
+
+        let index = 0;
+
+        const updatePresence = async () => {
+
+            try {
+
+                const activity =
+                    activities[index];
+
+                await client.user.setPresence({
+
+                    activities: [
+                        {
+                            name:
+                                activity.name,
+
+                            type:
+                                activity.type
+                        }
+                    ],
+
+                    status: 'online'
+                });
+
+                index++;
+
+                if (
+                    index >= activities.length
+                ) {
+                    index = 0;
+                }
+
+            } catch (error) {
+
+                console.log(
+                    '[PRESENCE ERROR]'
+                    .red,
+                    error
+                );
+            }
+        };
+
+        //////////////////////////////////////////////////
+        // PRIMERA PRESENCIA
+        //////////////////////////////////////////////////
+
+        updatePresence();
+
+        //////////////////////////////////////////////////
+        // INTERVALO
+        //////////////////////////////////////////////////
+
+        setInterval(
+            updatePresence,
+            15000
+        );
     }
 };

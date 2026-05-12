@@ -115,33 +115,33 @@ module.exports = {
         }
 
         //////////////////////////////////////////////////////
-        // LEADERBOARD
-        //////////////////////////////////////////////////////
+// POSITION (OPTIMIZADO)
+//////////////////////////////////////////////////////
 
-        const leaderboard =
+const position =
 
-            await Level.find({
+    await Level.countDocuments({
 
-                guildId:
-                    interaction.guild.id
-            })
+        guildId:
+            interaction.guild.id,
 
-                .sort({
+        $or: [
 
-                    level: -1,
+            {
+                level: {
+                    $gt: data.level
+                }
+            },
 
-                    xp: -1
-                });
+            {
+                level: data.level,
 
-        //////////////////////////////////////////////////////
-
-        const position =
-
-            leaderboard.findIndex(
-
-                u =>
-                    u.userId === user.id
-            ) + 1;
+                xp: {
+                    $gt: data.xp
+                }
+            }
+        ]
+    }) + 1;
 
         //////////////////////////////////////////////////////
         // XP
@@ -424,9 +424,9 @@ module.exports = {
 
                     `> ✨ XP: **${data.xp}/${xpNeeded}**\n` +
 
-                    `> 📈 Progreso: **${progress}%**\n\n` +
+                    `> 📈 Progreso: **${progress}%**\n` +
 
-                    `${progressBar}\n`
+                    `${progressBar}\n\n`
                 )
 
                 .addFields(

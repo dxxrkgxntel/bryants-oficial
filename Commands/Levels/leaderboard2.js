@@ -114,10 +114,16 @@ module.exports = {
 // BADGES
 //////////////////////////////////////////////////
 
-const member =
-    await interaction.guild.members
-        .fetch(user.userId)
-        .catch(() => null);
+let member =
+   interaction.guild.members.cache.get(user.userId);
+
+if (!member) {
+
+   member =
+      await interaction.guild.members
+         .fetch(user.userId)
+         .catch(() => null);
+}
 
 let badges = "";
 
@@ -284,10 +290,15 @@ const msg =
         //////////////////////////////////////////////////////
 
         const collector =
-            msg.createMessageComponentCollector({
+   msg.createMessageComponentCollector({
 
-                time: 120000
-            });
+      componentType: 2,
+
+      filter: i =>
+         i.user.id === interaction.user.id,
+
+      time: 120000
+   });
 
         //////////////////////////////////////////////////////
 

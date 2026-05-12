@@ -1,35 +1,97 @@
 const mongoose = require("mongoose");
 
-module.exports =
-    mongoose.model(
+module.exports = mongoose.model(
 
-        "reactionRoles",
+    "reactionRoles",
 
-        new mongoose.Schema({
+    new mongoose.Schema({
 
-            guildId: String,
-            channelId: String,
-            messageId: String,
-            embedTitle: String,
-            embedDescription: String,
+        //////////////////////////////////////////////////
+        // GUILD
+        //////////////////////////////////////////////////
 
-        menus: [
+        guildId: {
+            type: String,
+            required: true
+        },
 
-            {
-                customId: String,
-                placeholder: String,
-                maxValues: Number,
+        //////////////////////////////////////////////////
+        // PANEL ID
+        //////////////////////////////////////////////////
+
+        panelId: {
+            type: String,
+            required: true,
+            unique: true
+        },
+
+        //////////////////////////////////////////////////
+        // CHANNEL
+        //////////////////////////////////////////////////
+
+        channelId: {
+            type: String,
+            required: true
+        },
+
+        //////////////////////////////////////////////////
+        // MESSAGE
+        //////////////////////////////////////////////////
+
+        messageId: {
+            type: String,
+            required: true
+        },
+
+        //////////////////////////////////////////////////
+        // CUSTOM ID
+        //////////////////////////////////////////////////
+
+        customId: {
+            type: String,
+            required: true
+        },
+
+        //////////////////////////////////////////////////
+        // EMBED
+        //////////////////////////////////////////////////
+
+        title: {
+            type: String,
+            default: "Reaction Roles"
+        },
+
+        description: {
+            type: String,
+            default: "Selecciona tus roles."
+        },
+
+        placeholder: {
+            type: String,
+            default: "Selecciona roles"
+        },
+
+        color: {
+            type: String,
+            default: "#8A2BE2"
+        },
+
+        image: String,
+        thumbnail: String,
+
+        //////////////////////////////////////////////////
+        // ROLES
+        //////////////////////////////////////////////////
 
         roles: [
 
             {
                 roleId: String,
                 label: String,
-                emoji: String,
-                description: String
+                description: String,
+                emoji: String
             }
-                ]
-            }
-                ]
-        })
-    );
+        ]
+
+    },)
+);

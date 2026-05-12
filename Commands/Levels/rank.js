@@ -73,25 +73,33 @@ module.exports = {
             );
 
         //////////////////////////////////////////////////////
-        // LEADERBOARD
-        //////////////////////////////////////////////////////
+// POSITION (OPTIMIZADO)
+//////////////////////////////////////////////////////
 
-        const leaderboard =
-            await Level.find({
+const position =
 
-                guildId:
-                    interaction.guild.id
-            })
+    await Level.countDocuments({
 
-                .sort({
-                    level: -1,
-                    xp: -1
-                });
+        guildId:
+            interaction.guild.id,
 
-        const position =
-            leaderboard.findIndex(
-                u => u.userId === user.id
-            ) + 1;
+        $or: [
+
+            {
+                level: {
+                    $gt: data.level
+                }
+            },
+
+            {
+                level: data.level,
+
+                xp: {
+                    $gt: data.xp
+                }
+            }
+        ]
+    }) + 1;
 
         //////////////////////////////////////////////////////
         // BADGES
@@ -137,7 +145,7 @@ module.exports = {
             `https://api.discordarts.com/rankcard` +
             `?avatar=${avatar}` +
             `&username=${encodeURIComponent(user.username)}` +
-            `&discriminator=${user.discriminator}` +
+            `&discriminator=${user.discriminator || "0000"}` +
             `&level=${data.level}` +
             `&currentxp=${data.xp}` +
             `&nextlevelxp=${xpNeeded}` +

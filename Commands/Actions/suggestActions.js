@@ -25,20 +25,21 @@ module.exports = {
             if(!data) return errReply(interaction,"Todavia no se ha creado el sistema de sugerencias",true);
             const {options} = interaction
             let action = await options.getBoolean('boolean')
-            switch (action) {
-                case true:
-                    data.Enabled = true;
-                    data.save()
-                    return correReply(interaction,'Se cambio correctamente el estado de las sugerencias, ahora se reciben nuevamente sugerencias',true)
-                case false:
-                    data.Enabled = false;
-                    data.save()
-                    return correReply(interaction,'Se cambio correctamente el estado de las sugerencias, ahora no se reciben sugerencias',true)
-            }
+            data.Enabled = action
+
+            await data.save()
+
+            return correReply(
+                interaction,
+                action
+                    ? 'Se activaron nuevamente las sugerencias'
+                    : 'Las sugerencias fueron desactivadas',
+                true
+            )
 
         } catch (error) {
             console.log(error);
-            return errReply(interaction,'Acaba de ocurrir un error al tratar de actualizar las opciones del sistema de aplicaciones',true)
+            return errReply(interaction,'Acaba de ocurrir un error al actualizar el sistema de sugerencias',true)
         }
     }
 };

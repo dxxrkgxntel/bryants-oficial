@@ -40,6 +40,13 @@ module.exports = {
             return interaction.reply({ content: '❌ La imagen debe ser válida', flags: 64 });
         }
 
+        if(!channel.isTextBased()){
+            return interaction.reply({
+                content: "❌ Debe ser un canal de texto.",
+                flags: 64
+            });
+        }
+
         let config = await ImageConfig.findOne({
             guildId: interaction.guild.id
         });

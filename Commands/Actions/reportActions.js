@@ -3,7 +3,7 @@ const errReply = require('../../Functions/interactionErrorReply')
 const correReply = require('../../Functions/interactionReply')
 const userReply = require('../../Functions/interactionUserReply')
 const botReply = require('../../Functions/interactionBotReply')
-const reportSchema = require('../../Models/reportGuldSchema')
+const reportSchema = require('../../Models/reportGuildSchema')
 const reportUserSchema = require('../../Models/reportUserSchema')
 
 module.exports = {
@@ -28,14 +28,18 @@ module.exports = {
     async execute(interaction,client){
         const {options, guild} = interaction
         const user = options.getUser('user')
-        const buscar = guild.members.cache.find(m=>m.id === user.id)
+        const buscar = await guild.members.fetch(user.id).catch(() => null)
+            if(!buscar){
+                return errReply(interaction, "Ese usuario no está en este servidor", true)
+            }
+
         const description = options.getString('description')
         try {
             const guildData = await reportSchema.findOne({reportGuildId:interaction.guild.id})
             if(!guildData){
                 return errReply(interaction,"Todavia no se ha creado el sistema de reportes, intentalo de nuevo mas tarde",true)
             }
-            const channelLogs = client.channels.cache.get(guildData.reportChannelId)
+            const channelLogs = await guild.channels.fetch(guildData.reportChannelId).catch(() => null)
             if(!channelLogs){
                 console.log('NO se encontro el canal de los logs');
             }
@@ -76,11 +80,10 @@ module.exports = {
 
             const messageId = await channelLogs.send({embeds:[embedReport], components:[buttonsActions]})
             const userReportado = await reportUserSchema.create({
-                reportGuildId:interaction.guild.id,
-                reportUserId:user.id,
-                reportMessageId:messageId.id
+                reportGuildId: interaction.guild.id,
+                reportUserId: user.id,
+                reportMessageId: messageId.id
             })
-            userReportado.save()
             return correReply(interaction,"Se reporto correctamente al usuario",true)
         } catch (error) {
             console.log(error);

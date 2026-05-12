@@ -41,25 +41,6 @@ module.exports = {
     async execute(interaction) {
 
         ////////////////////////////////////////
-        // SOLO ADMINS
-        ////////////////////////////////////////
-
-        if (
-            !interaction.member.permissions.has(
-                PermissionFlagsBits.Administrator
-            )
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ Solo administradores pueden usar este comando.",
-
-                flags: 64
-            });
-        }
-
-        ////////////////////////////////////////
 
         const channel =
             interaction.options.getChannel("canal");

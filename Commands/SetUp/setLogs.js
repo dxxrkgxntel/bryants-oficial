@@ -13,9 +13,12 @@ module.exports = {
         .setName("logs-setup")
         .setDescription("Configura el canal de logs")
 
+        // 🔒 SOLO ADMINS
         .setDefaultMemberPermissions(
             PermissionFlagsBits.Administrator
         )
+
+        .setDMPermission(false)
 
         .addChannelOption(option =>
             option
@@ -28,7 +31,7 @@ module.exports = {
     async execute(interaction) {
 
         //////////////////////////////////////////////////
-        // PERMISOS
+        // SEGURIDAD EXTRA
         //////////////////////////////////////////////////
 
         if (
@@ -36,12 +39,9 @@ module.exports = {
                 PermissionFlagsBits.Administrator
             )
         ) {
-
             return interaction.reply({
-
                 content:
                     "❌ Solo administradores pueden usar este comando.",
-
                 flags: 64
             });
         }
@@ -54,75 +54,151 @@ module.exports = {
             interaction.options.getChannel("canal");
 
         //////////////////////////////////////////////////
-        // BUSCAR DATA
+        // VALIDAR CANAL
         //////////////////////////////////////////////////
 
-        let data =
-            await logsSchema.findOne({
+        const realChannel =
+            interaction.guild.channels.cache.get(
+                channel.id
+            );
 
-                Guild: interaction.guild.id
+        if (!realChannel) {
+
+            return interaction.reply({
+
+                content:
+                    "❌ El canal seleccionado no existe.",
+
+                flags: 64
             });
-
-        //////////////////////////////////////////////////
-        // CREAR O ACTUALIZAR
-        //////////////////////////////////////////////////
-
-        if (!data) {
-
-            data =
-                await logsSchema.create({
-
-                    Guild: interaction.guild.id,
-                    Channel: channel.id
-                });
-
-        } else {
-
-            data.Channel = channel.id;
-
-            await data.save();
         }
 
         //////////////////////////////////////////////////
-        // EMBED
+        // VALIDAR PERMISOS DEL BOT
         //////////////////////////////////////////////////
 
-        const embed =
-            new EmbedBuilder()
+        const permissions =
+            realChannel.permissionsFor(
+                interaction.guild.members.me
+            );
 
-                .setColor("#8A2BE2")
+        if (
+            !permissions.has([
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.EmbedLinks
+            ])
+        ) {
 
-                .setTitle("📜 Sistema de Logs Configurado")
+            return interaction.reply({
 
-                .setDescription(
-                    `> Los logs del servidor ahora se enviarán en ${channel}\n\n` +
-                    `💜 El sistema registrará eventos importantes\n` +
-                    `como moderación, mensajes, canales y más.`
-                )
+                content:
+                    "❌ No tengo permisos suficientes en ese canal.",
 
-                .setThumbnail(
-                    interaction.guild.iconURL({
-                        dynamic: true
+                flags: 64
+            });
+        }
+
+        try {
+
+            //////////////////////////////////////////////////
+            // BUSCAR DATA
+            //////////////////////////////////////////////////
+
+            let data =
+                await logsSchema.findOne({
+
+                    Guild:
+                        interaction.guild.id
+                });
+
+            //////////////////////////////////////////////////
+            // CREAR
+            //////////////////////////////////////////////////
+
+            if (!data) {
+
+                data =
+                    await logsSchema.create({
+
+                        Guild:
+                            interaction.guild.id,
+
+                        Channel:
+                            channel.id
+                    });
+
+            } else {
+
+                //////////////////////////////////////////////////
+                // ACTUALIZAR
+                //////////////////////////////////////////////////
+
+                data.Channel =
+                    channel.id;
+
+                await data.save();
+            }
+
+            //////////////////////////////////////////////////
+            // EMBED
+            //////////////////////////////////////////////////
+
+            const embed =
+                new EmbedBuilder()
+
+                    .setColor("#8A2BE2")
+
+                    .setTitle(
+                        "📜 Sistema de Logs Configurado"
+                    )
+
+                    .setDescription(
+
+                        `> Los logs del servidor ahora se enviarán en ${channel}\n\n` +
+
+                        `💜 El sistema registrará eventos importantes\n` +
+
+                        `como moderación, mensajes, canales y más.`
+                    )
+
+                    .setThumbnail(
+
+                        interaction.guild.iconURL({
+                            dynamic: true
+                        })
+                    )
+
+                    .setFooter({
+
+                        text:
+                            `${interaction.guild.name} • Sistema de Logs`
                     })
-                )
 
-                .setFooter({
+                    .setTimestamp();
 
-                    text:
-                        `${interaction.guild.name} • Sistema de Logs`
-                })
+            //////////////////////////////////////////////////
+            // RESPUESTA
+            //////////////////////////////////////////////////
 
-                .setTimestamp();
+            await interaction.reply({
 
-        //////////////////////////////////////////////////
-        // RESPUESTA
-        //////////////////////////////////////////////////
+                embeds: [embed],
 
-        await interaction.reply({
+                flags: 64
+            });
 
-            embeds: [embed],
+        } catch (error) {
 
-            flags: 64
-        });
+            console.log(error);
+
+            return interaction.reply({
+
+                content:
+                    "❌ Ocurrió un error al configurar el sistema de logs.",
+
+                flags: 64
+            });
+        }
     }
 };

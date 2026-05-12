@@ -1,117 +1,327 @@
-const { PermissionFlagsBits, SlashCommandBuilder, ChatInputCommandInteraction, StringSelectMenuBuilder, StringSelectMenuComponent, StringSelectMenuOptionBuilder, ActionRowBuilder, ChannelType, EmbedBuilder } = require('discord.js')
+const {
+    PermissionFlagsBits,
+    SlashCommandBuilder,
+    StringSelectMenuBuilder,
+    StringSelectMenuOptionBuilder,
+    ActionRowBuilder,
+    ChannelType,
+    EmbedBuilder
+} = require('discord.js');
 
-const errReply = require('../../Functions/interactionErrorReply')
-const correReply = require('../../Functions/interactionReply')
+const errReply = require('../../Functions/interactionErrorReply');
+const correReply = require('../../Functions/interactionReply');
 
 const ticketSchema = require('../../Models/ticketGuildSchema');
 
 module.exports = {
+
     data: new SlashCommandBuilder()
+
         .setName('ticket-setup')
-        .setDescription('Crea un sistema de tickets para tu servidor de discord')
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+
+        .setDescription(
+            'Crea un sistema de tickets para tu servidor'
+        )
+
+        .setDefaultMemberPermissions(
+            PermissionFlagsBits.Administrator
+        )
+
         .addChannelOption(option =>
-            option.setName('channel')
-                .setDescription('Elige el canal donde se mostrara el ticket')
+            option
+                .setName('channel')
+                .setDescription('Canal donde irá el panel')
                 .addChannelTypes(ChannelType.GuildText)
                 .setRequired(true)
         )
+
         .addChannelOption(option =>
-            option.setName('channellogs')
-                .setDescription('Elige el canal donde se mostrara los logs')
+            option
+                .setName('channellogs')
+                .setDescription('Canal de logs')
                 .addChannelTypes(ChannelType.GuildText)
                 .setRequired(true)
         )
+
         .addChannelOption(option =>
-            option.setName('channelsupport')
-                .setDescription('Elige la categoria donde se mostrara los tickets de soporte')
+            option
+                .setName('channelsupport')
+                .setDescription('Categoría tickets soporte')
                 .addChannelTypes(ChannelType.GuildCategory)
                 .setRequired(true)
         )
+
         .addChannelOption(option =>
-            option.setName('channelbuy')
-                .setDescription('Elige la categoria donde se mostrara los tickets de compras')
+            option
+                .setName('channelbuy')
+                .setDescription('Categoría tickets compra')
                 .addChannelTypes(ChannelType.GuildCategory)
                 .setRequired(true)
         )
+
         .addRoleOption(option =>
-            option.setName('handlers')
-                .setDescription('Elige el rol del staff')
+            option
+                .setName('handlers')
+                .setDescription('Rol del staff')
                 .setRequired(true)
         )
+
         .addRoleOption(option =>
-            option.setName('everyone')
-                .setDescription('Elige el rol everyone')
+            option
+                .setName('everyone')
+                .setDescription('Rol @everyone')
                 .setRequired(true)
         ),
-    /**
-     * 
-     * @param {ChatInputCommandInteraction} interaction 
-     */
+
+    //////////////////////////////////////////////////
+
     async execute(interaction) {
-        const { options } = interaction;
-        const channelDisplay = options.getChannel('channel')
-        const channelLogs = options.getChannel('channellogs')
-        const categorySupport = options.getChannel('channelsupport')
-        const categoryBuy = options.getChannel('channelbuy')
-        const everyoneRol = options.getRole('everyone')
-        const handlerRol = options.getRole('handlers')
 
-        if (!everyoneRol.name === 'everyone') return errReply(interaction, "El rol everyone no es el correcto", true)
+        try {
 
-        const menu = new StringSelectMenuBuilder()
-            .setCustomId('tickets')
-            .setPlaceholder('Elige la opción que necesites')
-            .setMinValues(1)
-            .addOptions(
-                new StringSelectMenuOptionBuilder()
-                    .setDescription('SI NECESITAS SOPORTE ELIGE ESTA CATEGORIA')
-                    .setLabel('SOPORTE')
-                    .setEmoji('<:7256staricon:1101865000299151360>')
-                    .setValue('soporte'),
-                new StringSelectMenuOptionBuilder()
-                    .setDescription('SI NECESITAS AYUDA EN LA COMPRA ELIGE ESTA CATEGORIA')
-                    .setLabel('COMPRA')
-                    .setEmoji('<:2800odnoklassnikiflushed:1101923578066243735> ')
-                    .setValue('compra')
-            )
-        const row = new ActionRowBuilder().addComponents(menu)
+            //////////////////////////////////////////////////
+            // DEFER
+            //////////////////////////////////////////////////
 
-        const embed = new EmbedBuilder()
-            .setTimestamp()
-            .setColor('#8A2BE2')
-            .setDescription(`***TICKETS ${interaction.guild.name}***\nSistema de tickets para ayuda y soporte de este servidor.`)
-            .setFooter({ text: `Administración Bryant's Oficial`, iconURL: interaction.guild.iconURL({ dynamic: true }) })
+            await interaction.deferReply({
+                flags: 64
+            });
 
-        const data = await ticketSchema.findOne({ guildId: interaction.guild.id })
-        if (!data) {
-            await channelDisplay.send({embeds:[embed], components:[row]})
-            await ticketSchema.create({
-                guildId: interaction.guild.id,
-                channelId: channelDisplay.id,
-                categorySoporte: categorySupport.id,
-                categoryBuy: categoryBuy.id,
-                channelLogs: channelLogs.id,
-                handlerRol: handlerRol.id,
-                everyoneRol: everyoneRol.id,
-            })
+            //////////////////////////////////////////////////
+            // OPCIONES
+            //////////////////////////////////////////////////
 
-            return correReply(interaction, "Se creo correctamente el sistema de tickets", true)
-        }
-        if (data) {
-            await channelDisplay.send({embeds:[embed], components:[row]})
-            await ticketSchema.findOneAndUpdate({
-                guildId: interaction.guild.id,
-                channelId: channelDisplay.id,
-                categorySoporte: categorySupport.id,
-                categoryBuy: categoryBuy.id,
-                channelLogs: channelLogs.id,
-                handlerRol: handlerRol.id,
-                everyoneRol: everyoneRol.id,
-            })
-            await data.save()
-            return correReply(interaction, "SE MODIFICO CORRECTAMENTE EL SISTEMA DE TICKETS", true)
+            const { options } = interaction;
+
+            const channelDisplay =
+                options.getChannel('channel');
+
+            const channelLogs =
+                options.getChannel('channellogs');
+
+            const categorySupport =
+                options.getChannel('channelsupport');
+
+            const categoryBuy =
+                options.getChannel('channelbuy');
+
+            const everyoneRol =
+                options.getRole('everyone');
+
+            const handlerRol =
+                options.getRole('handlers');
+
+            //////////////////////////////////////////////////
+            // VALIDAR ROL EVERYONE
+            //////////////////////////////////////////////////
+
+            if (
+                everyoneRol.id !==
+                interaction.guild.roles.everyone.id
+            ) {
+
+                return interaction.editReply({
+
+                    content:
+                        '❌ Debes seleccionar el rol @everyone correcto.'
+                });
+            }
+
+            //////////////////////////////////////////////////
+            // VALIDAR PERMISOS BOT
+            //////////////////////////////////////////////////
+
+            const botMember =
+                interaction.guild.members.me;
+
+            if (
+                !botMember.permissions.has([
+                    PermissionFlagsBits.ManageChannels,
+                    PermissionFlagsBits.SendMessages,
+                    PermissionFlagsBits.ViewChannel,
+                    PermissionFlagsBits.EmbedLinks
+                ])
+            ) {
+
+                return interaction.editReply({
+
+                    content:
+                        '❌ Necesito permisos suficientes para configurar el sistema de tickets.'
+                });
+            }
+
+            //////////////////////////////////////////////////
+            // MENU
+            //////////////////////////////////////////////////
+
+            const menu =
+                new StringSelectMenuBuilder()
+
+                    .setCustomId('tickets')
+
+                    .setPlaceholder(
+                        '🎫 Elige una opción'
+                    )
+
+                    .addOptions(
+
+                        new StringSelectMenuOptionBuilder()
+
+                            .setLabel('SOPORTE')
+
+                            .setDescription(
+                                'Abrir ticket de soporte'
+                            )
+
+                            .setEmoji('🛠️')
+
+                            .setValue('soporte'),
+
+                        new StringSelectMenuOptionBuilder()
+
+                            .setLabel('COMPRA')
+
+                            .setDescription(
+                                'Abrir ticket de compra'
+                            )
+
+                            .setEmoji('💰')
+
+                            .setValue('compra')
+                    );
+
+            //////////////////////////////////////////////////
+            // ROW
+            //////////////////////////////////////////////////
+
+            const row =
+                new ActionRowBuilder()
+
+                    .addComponents(menu);
+
+            //////////////////////////////////////////////////
+            // EMBED
+            //////////////////////////////////////////////////
+
+            const embed =
+                new EmbedBuilder()
+
+                    .setColor('#8A2BE2')
+
+                    .setTitle(
+                        `🎫 Tickets ${interaction.guild.name}`
+                    )
+
+                    .setDescription(
+
+                        `Bienvenido al sistema de tickets.\n\n` +
+
+                        `📌 Selecciona una categoría del menú para abrir un ticket.\n\n` +
+
+                        `🛠️ Soporte\n` +
+                        `💰 Compras`
+                    )
+
+                    .setThumbnail(
+                        interaction.guild.iconURL({
+                            dynamic: true
+                        })
+                    )
+
+                    .setFooter({
+
+                        text:
+                            `${interaction.guild.name} • Sistema de Tickets`
+                    })
+
+                    .setTimestamp();
+
+            //////////////////////////////////////////////////
+            // ENVIAR PANEL
+            //////////////////////////////////////////////////
+
+            await channelDisplay.send({
+
+                embeds: [embed],
+
+                components: [row]
+            });
+
+            //////////////////////////////////////////////////
+            // GUARDAR DB
+            //////////////////////////////////////////////////
+
+            await ticketSchema.findOneAndUpdate(
+
+                {
+                    guildId:
+                        interaction.guild.id
+                },
+
+                {
+                    guildId:
+                        interaction.guild.id,
+
+                    channelId:
+                        channelDisplay.id,
+
+                    categorySoporte:
+                        categorySupport.id,
+
+                    categoryBuy:
+                        categoryBuy.id,
+
+                    channelLogs:
+                        channelLogs.id,
+
+                    handlerRol:
+                        handlerRol.id,
+
+                    everyoneRol:
+                        everyoneRol.id
+                },
+
+                {
+                    upsert: true,
+                    new: true
+                }
+            );
+
+            //////////////////////////////////////////////////
+            // RESPUESTA
+            //////////////////////////////////////////////////
+
+            return interaction.editReply({
+
+                content:
+                    '✅ Sistema de tickets configurado correctamente.'
+            });
+
+        } catch (error) {
+
+            console.log(error);
+
+            if (
+                interaction.deferred ||
+                interaction.replied
+            ) {
+
+                await interaction.editReply({
+
+                    content:
+                        '❌ Ocurrió un error al configurar el sistema.'
+                }).catch(() => {});
+
+            } else {
+
+                await interaction.reply({
+
+                    content:
+                        '❌ Ocurrió un error al configurar el sistema.',
+
+                    flags: 64
+                }).catch(() => {});
+            }
         }
     }
 };
-

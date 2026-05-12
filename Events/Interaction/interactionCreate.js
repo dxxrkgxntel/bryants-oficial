@@ -16,48 +16,27 @@ module.exports = {
 
             if (interaction.isButton()) {
 
-const btn =
+                const btn =
 
-    [...client.buttons.values()]
+                    [...client.buttons.values()]
 
-        .find(button =>
+                        .find(button =>
 
-            Array.isArray(button.id)
+                            Array.isArray(button.id)
 
-                ? button.id.includes(
-                    interaction.customId
-                )
+                                ? button.id.includes(
+                                    interaction.customId
+                                )
 
-                : button.id ===
-                  interaction.customId
-        );
+                                : button.id ===
+                                  interaction.customId
+                        );
 
-//////////////////////////////////////////////////
+                //////////////////////////////////////////////////
 
-if (btn) {
+                if (btn) {
 
-    return await btn.execute(
-        interaction,
-        client
-    );
-}
-
-            }
-
-            //////////////////////////////////////////////////
-            // SELECT MENUS
-            //////////////////////////////////////////////////
-
-            if (interaction.isStringSelectMenu()) {
-
-                const select =
-                    client.selects.get(
-                        interaction.customId
-                    );
-
-                if (select) {
-
-                    return await select.execute(
+                    return await btn.execute(
                         interaction,
                         client
                     );
@@ -65,139 +44,41 @@ if (btn) {
             }
 
             //////////////////////////////////////////////////
-            // REACTION ROLES
-            //////////////////////////////////////////////////
+// SELECT MENUS
+//////////////////////////////////////////////////
 
-            if (
-            interaction.isStringSelectMenu() &&
-            interaction.customId.startsWith("rr_")
-            ) {
+if (interaction.isStringSelectMenu()) {
 
-            //////////////////////////////////////////////////
+    const select =
 
-            const member =
-                interaction.member;
+        [...client.selects.values()]
 
-            //////////////////////////////////////////////////
+            .find(select =>
 
-            const roles = {
+                select.id instanceof RegExp
 
-                rd:"1502711022748958780",
-                usa:"1502710053935775915",
-                spain:"1502711543853223997",
-                mexico:"1502711751404158977",
-                arg:"1502712088735252631",
-                pnm:"1502712227432501268",
-                prc:"1502712375709532290",
-                chl:"1502712547118157955",
-                vnzl:"1502712716165382366",
-                per:"1502712897942454312",
-                cba:"1502713049520410686",
-                clba:"1502713178327617708",
-                hdr:"1502713300893565160",
+                    ?
 
-                menor:"1502716877733105965",
-                intermedio:"1502717691281149972",
-                mayor:"1502718131213172876",
+                    select.id.test(
+                        interaction.customId
+                    )
 
-                hm:"1502719430868733953",
-                mj:"1502719554789441537",
-                homo:"1502719752508805362"
-            };
+                    :
 
-            //////////////////////////////////////////////////
-            // COUNTRY
-            //////////////////////////////////////////////////
+                    select.id ===
+                    interaction.customId
+            );
 
-            if (
-                interaction.customId ===
-                "rr_country"
-            ) {
+    //////////////////////////////////////////////////
 
-                await member.roles.remove([
+    if (select) {
 
-                roles.rd,
-                roles.usa,
-                roles.spain,
-                roles.mexico,
-                roles.arg,
-                roles.pnm,
-                roles.prc,
-                roles.chl,
-                roles.vnzl,
-                roles.per,
-                roles.cba,
-                roles.clba,
-                roles.hdr
-
-            ]).catch(() => {});
-            }
-
-            //////////////////////////////////////////////////
-            // AGE
-            //////////////////////////////////////////////////
-
-            if (
-                interaction.customId ===
-                "rr_age"
-            ) {
-
-                await member.roles.remove([
-
-                roles.menor,
-                roles.intermedio,
-                roles.mayor
-
-            ]).catch(() => {});
-            }
-
-            //////////////////////////////////////////////////
-            // SEX
-            //////////////////////////////////////////////////
-
-            if (
-                interaction.customId ===
-                "rr_sex"
-            ) {
-
-                await member.roles.remove([
-
-                roles.hm,
-                roles.mj,
-                roles.homo
-
-            ]).catch(() => {});
-            }
-
-            //////////////////////////////////////////////////
-            // ADD ROLES
-            //////////////////////////////////////////////////
-
-            for (const value of interaction.values) {
-
-                const roleId =
-                    roles[value];
-
-            //////////////////////////////////////////////////
-
-            if (!roleId)
-                continue;
-
-            //////////////////////////////////////////////////
-
-                await member.roles.add(
-                    roleId
-                ).catch(() => {});
-            }
-
-            //////////////////////////////////////////////////
-
-            return interaction.reply({
-
-                content:"✅ Tus roles fueron actualizados.",
-                flags: 64
-            });
-        }
+        return await select.execute(
+            interaction,
+            client
+        );
+    }
+}
 
             //////////////////////////////////////////////////
             // MODALS
@@ -281,11 +162,14 @@ if (btn) {
 
             //////////////////////////////////////////////////
 
+            const cooldownKey =
+                `${interaction.user.id}-${command.data.name}`;
+
+            //////////////////////////////////////////////////
+
             if (
                 cooldownTime > 0 &&
-                cooldown.has(
-                    `${interaction.user.id}-${command.data.name}`
-                )
+                cooldown.has(cooldownKey)
             ) {
 
                 const embed =
@@ -311,15 +195,11 @@ if (btn) {
 
             if (cooldownTime > 0) {
 
-                cooldown.add(
-                    `${interaction.user.id}-${command.data.name}`
-                );
+                cooldown.add(cooldownKey);
 
                 setTimeout(() => {
 
-                    cooldown.delete(
-                        `${interaction.user.id}-${command.data.name}`
-                    );
+                    cooldown.delete(cooldownKey);
 
                 }, cooldownTime);
             }

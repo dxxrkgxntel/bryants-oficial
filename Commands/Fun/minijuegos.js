@@ -294,7 +294,8 @@ module.exports = {
                 })
                 const col = Page.createMessageComponentCollector({
                     componentType: ComponentType.Button,
-                    time: ms("10s")
+                    time: ms("10s"),
+                    filter: i => i.user.id === interaction.user.id
                 })
                 col.on("collect", i => {
 
