@@ -5,7 +5,15 @@ const levelConfigSchema =
 
         guildId: String,
 
-        levelChannel: String
+        levelChannel: String,
+
+        levelImage: String,
+
+        levelThumbnail: String,
+
+        levelColor: String
+
+
     });
 
 module.exports =

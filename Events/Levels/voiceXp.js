@@ -1,6 +1,6 @@
 const Level = require("../../Models/Level");
 const LevelConfig = require("../../Models/LevelConfig");
-const levelRoles = require("../../Levels/levelRoles");
+const LevelReward = require("../../Models/LevelReward");
 
 //////////////////////////////////////////////////
 // CONFIG
@@ -250,8 +250,19 @@ module.exports = {
                                 // ROLES POR NIVEL
                                 //////////////////////////////////////////////////
 
+                                const LevelReward =
+                                    require("../../Models/LevelReward");
+
+                                const reward =
+                                    await LevelReward.findOne({
+
+                                    guildId: guild.id,
+
+                                    level: data.level
+                                });
+
                                 const roleId =
-                                    levelRoles[data.level];
+                                    reward?.roleId;
 
                                 //////////////////////////////////////////////////
                                 // SI EXISTE ROL
