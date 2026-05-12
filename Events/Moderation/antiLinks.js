@@ -6,8 +6,8 @@ const {
 // CONFIG
 //////////////////////////////////////////////////
 
-const LINK_CHANNEL =
-    "1499398585715003432";
+const AntiLinksConfig =
+    require("../../Models/AntiLinksConfig");
 
 //////////////////////////////////////////////////
 // REGEX LINKS
@@ -36,6 +36,20 @@ module.exports = {
 
             if (!message.guild) return;
 
+            const config =
+            await AntiLinksConfig.findOne({
+
+            guildId:
+            message.guild.id
+            });
+
+            //////////////////////////////////////////////////
+
+            if (
+            !config ||
+            !config.enabled
+            ) return;
+
             //////////////////////////////////////////////////
             // IGNORAR ADMINS
             //////////////////////////////////////////////////
@@ -61,8 +75,9 @@ module.exports = {
             //////////////////////////////////////////////////
 
             if (
-                message.channel.id ===
-                LINK_CHANNEL
+            config.allowedChannels.includes(
+            message.channel.id
+            )
             ) return;
 
             //////////////////////////////////////////////////

@@ -101,9 +101,21 @@ module.exports = {
 
             const config =
                 await getConfig(
+                interaction.guild.id
+            );
 
-                    interaction.guild.id
-                );
+            if (!config) {
+
+                activeGambles.delete(
+                    interaction.user.id
+            );
+
+            return interaction.reply({
+
+                content: "❌ La economía no está configurada en este servidor.",
+                flags: 64
+            });
+            }
 
             //////////////////////////////////////////////////
             // TIME

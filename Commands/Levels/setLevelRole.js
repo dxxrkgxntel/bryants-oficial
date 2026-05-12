@@ -14,7 +14,7 @@ module.exports = {
         new SlashCommandBuilder()
 
             .setName(
-                "set-level-role"
+                "levelrole-setup"
             )
 
             .setDescription(

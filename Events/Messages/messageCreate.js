@@ -11,16 +11,23 @@ module.exports = {
         const command = client.pcommands.get(commandName) || client.pcommands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName))
         const cooldowns = await command.Cooldown
         if(!command) return;
-        if(command.Cooldown && cooldown.has(message.author.id)){
+        const cooldownKey = `${message.guild.id}-${message.author.id}-${commandName}`;
+
+       //////////////////////////////////////////////////
+
+        if (
+        command.Cooldown &&
+        cooldown.has(cooldownKey)
+        ) {
             const embed = new EmbedBuilder()
             .setDescription(`Este comando tiene cooldown tienes que esperar un poco para volver a utilizar este comando | Tienes que esperar ${cooldowns / 1000} segundos`)
 
             return message.reply({embeds:[embed]})
         }
-        cooldown.add(message.author.id)
+        cooldown.add(cooldownKey)
         try {
             setTimeout(()=>{
-                cooldown.delete(message.author.id)
+                cooldown.delete(cooldownKey)
             }, cooldowns)
         } catch (error) {
             return;
