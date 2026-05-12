@@ -58,7 +58,7 @@ module.exports = {
 
             {
                 name:
-                    `💜 || ${client.guilds.cache.size} servidores`,
+                    `💜 || Estoy en ${client.guilds.cache.size} servidores`,
                 type:
                     ActivityType.Watching
             },
@@ -150,7 +150,7 @@ module.exports = {
 
         setInterval(
             updatePresence,
-            15000
+            2000
         );
     }
 };

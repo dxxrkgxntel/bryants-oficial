@@ -108,7 +108,9 @@ module.exports = {
 
                         `📅 Cuenta creada: <t:${created}:R>\n` +
 
-                        `👥 Miembro número: **#${memberCount}**`
+                        `👥 Miembro número: **#${memberCount}**\n\n` +
+
+                        '💜 Esperamos que disfrutes tu estadía participes en los chats y formes parte de esta increíble comunidad.'
                     )
 
                     .setThumbnail(
