@@ -1,47 +1,154 @@
-const { EmbedBuilder } = require('discord.js');
-const leaveSchema = require('../../Models/leaveSchema');
+const {
+    EmbedBuilder,
+    PermissionFlagsBits
+} = require("discord.js");
+
+const leaveSchema =
+    require("../../Models/leaveSchema");
 
 module.exports = {
-    name: 'guildMemberRemove',
 
-    async execute(member, client) {
+    name: "guildMemberRemove",
 
-        leaveSchema.findOne({ Guild: member.guild.id }, async (err, data) => {
+    async execute(member) {
 
-            if (err) {
-                console.log(err);
-                return;
-            }
+        try {
+
+            //////////////////////////////////////////////////
+            // BUSCAR DATA
+            //////////////////////////////////////////////////
+
+            const data =
+                await leaveSchema.findOne({
+
+                    Guild: member.guild.id
+                });
+
+            //////////////////////////////////////////////////
 
             if (!data) return;
 
-            const leaveChannel = member.guild.channels.cache.get(data.Channel);
-            if (!leaveChannel) return;
+            //////////////////////////////////////////////////
+            // CANAL
+            //////////////////////////////////////////////////
 
-            const leaveDesc = data.MessageDes || 'Un usuario ha salido del servidor.';
-            const leaveImg = data.ImagenDesc;
-            const leaveThumbnail = data.Thumbnail;
+            const leaveChannel =
+                member.guild.channels.cache.get(
+                    data.Channel
+                );
 
-            const { guild } = member;
+            //////////////////////////////////////////////////
 
-            const leaveEmbed = new EmbedBuilder()
-                .setTitle('🚪 Usuario salió del servidor')
+            if (!leaveChannel) {
 
-                // 🔥 DESCRIPCIÓN
-                .setDescription(`
-${leaveDesc}
+                return console.log(
+                    `❌ Canal de salidas no encontrado en ${member.guild.name}`
+                );
+            }
 
-━━━━━━━━━━━━━━
-💔 Sin ti somos **${guild.memberCount}** miembros
-`)
-                .setThumbnail('https://media.discordapp.net/attachments/1499375657103392839/1501666281651441925/logo_principal.png?ex=6a02d5f5&is=6a018475&hm=9eb8204d8e0049e68f8459791e3217f177574fe301752206bf3215e55d9118c1&=&format=webp&quality=lossless&width=694&height=694')
-                .setImage('https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png?ex=6a02d5f4&is=6a018474&hm=238e9973b8db4ea1c061a42c7547baed00c85be00364b22abb1587ed0b1576c0&=&format=webp&quality=lossless&width=1288&height=515')
-                .setColor('#8A2BE2');
+            //////////////////////////////////////////////////
+            // PERMISOS
+            //////////////////////////////////////////////////
 
-            leaveChannel.send({
-                content: `💨 Se fue ${member}`,
+            const botMember =
+                member.guild.members.me;
+
+            if (
+                !leaveChannel.permissionsFor(botMember)
+                    .has([
+                        PermissionFlagsBits.SendMessages,
+                        PermissionFlagsBits.EmbedLinks
+                    ])
+            ) {
+
+                return console.log(
+                    `❌ Sin permisos en ${leaveChannel.name}`
+                );
+            }
+
+            //////////////////////////////////////////////////
+            // DATOS
+            //////////////////////////////////////////////////
+
+            const leaveDesc =
+                data.MessageDes ||
+                "Un usuario ha salido del servidor.";
+
+            const leaveImg =
+                data.ImagenDesc;
+
+            const leaveThumbnail =
+                data.Thumbnail;
+
+            //////////////////////////////////////////////////
+            // EMBED
+            //////////////////////////////////////////////////
+
+            const leaveEmbed =
+                new EmbedBuilder()
+
+                    .setColor("#8A2BE2")
+
+                    .setTitle(
+                        "🚪 Usuario salió del servidor"
+                    )
+
+                    .setDescription(
+
+                        `${leaveDesc}\n\n` +
+
+                        `👤 Usuario: **${member.user.tag}**\n` +
+
+                        `🆔 ID: \`${member.id}\`\n` +
+
+                        `💔 Ahora somos **${member.guild.memberCount}** miembros`
+                    )
+
+                    .setThumbnail(
+
+                        leaveThumbnail ||
+
+                        member.user.displayAvatarURL({
+                            dynamic: true,
+                            size: 1024
+                        })
+                    )
+
+                    .setImage(
+                        leaveImg || null
+                    )
+
+                    .setFooter({
+
+                        text:
+                            `${member.guild.name} • Sistema de Salidas`,
+
+                        iconURL:
+                            member.guild.iconURL({
+                                dynamic: true
+                            })
+                    })
+
+                    .setTimestamp();
+
+            //////////////////////////////////////////////////
+            // ENVIAR
+            //////////////////////////////////////////////////
+
+            await leaveChannel.send({
+
+                content:
+                    `💨 Se fue **${member.user.tag}**`,
+
                 embeds: [leaveEmbed]
             });
-        });
+
+        } catch (error) {
+
+            console.log(
+                "❌ Error en sistemaDeSalidas:",
+                error
+            );
+        }
     }
 };

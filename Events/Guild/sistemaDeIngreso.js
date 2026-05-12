@@ -1,14 +1,17 @@
 const {
     EmbedBuilder,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
     PermissionFlagsBits
 } = require("discord.js");
 
-const leaveSchema =
-    require("../../Models/leaveSchema");
+const welcomeSchema =
+    require("../../Models/welcomeSchema");
 
 module.exports = {
 
-    name: "guildMemberRemove",
+    name: "guildMemberAdd",
 
     async execute(member) {
 
@@ -19,7 +22,7 @@ module.exports = {
             //////////////////////////////////////////////////
 
             const data =
-                await leaveSchema.findOne({
+                await welcomeSchema.findOne({
 
                     Guild: member.guild.id
                 });
@@ -29,32 +32,34 @@ module.exports = {
             if (!data) return;
 
             //////////////////////////////////////////////////
-            // CANAL
+            // OBTENER CANAL
             //////////////////////////////////////////////////
 
-            const leaveChannel =
+            const channel =
                 member.guild.channels.cache.get(
                     data.Channel
                 );
 
             //////////////////////////////////////////////////
 
-            if (!leaveChannel) {
+            if (!channel) {
 
-                return console.log(
-                    `❌ Canal de salidas no encontrado en ${member.guild.name}`
+                console.log(
+                    `❌ Canal de bienvenida no encontrado en ${member.guild.name}`
                 );
+
+                return;
             }
 
             //////////////////////////////////////////////////
-            // PERMISOS
+            // VALIDAR PERMISOS
             //////////////////////////////////////////////////
 
             const botMember =
                 member.guild.members.me;
 
             if (
-                !leaveChannel.permissionsFor(botMember)
+                !channel.permissionsFor(botMember)
                     .has([
                         PermissionFlagsBits.SendMessages,
                         PermissionFlagsBits.EmbedLinks
@@ -62,7 +67,7 @@ module.exports = {
             ) {
 
                 return console.log(
-                    `❌ Sin permisos en ${leaveChannel.name}`
+                    `❌ Sin permisos en ${channel.name}`
                 );
             }
 
@@ -70,61 +75,63 @@ module.exports = {
             // DATOS
             //////////////////////////////////////////////////
 
-            const leaveDesc =
-                data.MessageDes ||
-                "Un usuario ha salido del servidor.";
+            const created =
+                Math.floor(
+                    member.user.createdTimestamp / 1000
+                );
 
-            const leaveImg =
-                data.ImagenDesc;
-
-            const leaveThumbnail =
-                data.Thumbnail;
+            const memberCount =
+                member.guild.memberCount;
 
             //////////////////////////////////////////////////
             // EMBED
             //////////////////////////////////////////////////
 
-            const leaveEmbed =
+            const embed =
                 new EmbedBuilder()
 
-                    .setColor("#8A2BE2")
+                    .setColor(
+                        data.Color || "#8A2BE2"
+                    )
 
                     .setTitle(
-                        "🚪 Usuario salió del servidor"
+                        `✨ Bienvenido/a a ${member.guild.name}`
                     )
 
                     .setDescription(
 
-                        `${leaveDesc}\n\n` +
+                        `${data.MessageDes || "Esperamos que disfrutes tu estadía en el servidor."}\n\n` +
 
-                        `👤 Usuario: **${member.user.tag}**\n` +
+                        `👤 Usuario: ${member}\n` +
 
                         `🆔 ID: \`${member.id}\`\n` +
 
-                        `💔 Ahora somos **${member.guild.memberCount}** miembros`
+                        `📅 Cuenta creada: <t:${created}:R>\n` +
+
+                        `👥 Miembro número: **#${memberCount}**`
                     )
 
                     .setThumbnail(
 
-                        leaveThumbnail ||
+                        data.Thumbnail ||
 
-                        member.user.displayAvatarURL({
+                        member.guild.iconURL({
                             dynamic: true,
                             size: 1024
                         })
                     )
 
                     .setImage(
-                        leaveImg || null
+                        data.ImagenDesc || null
                     )
 
                     .setFooter({
 
                         text:
-                            `${member.guild.name} • Sistema de Salidas`,
+                            `${member.guild.name} • Sistema de Bienvenidas`,
 
                         iconURL:
-                            member.guild.iconURL({
+                            member.user.displayAvatarURL({
                                 dynamic: true
                             })
                     })
@@ -132,21 +139,44 @@ module.exports = {
                     .setTimestamp();
 
             //////////////////////////////////////////////////
+            // BOTONES (OPCIONAL)
+            //////////////////////////////////////////////////
+
+            const row =
+                new ActionRowBuilder()
+                    .addComponents(
+
+                        new ButtonBuilder()
+
+                            .setLabel("Invitar Bot")
+
+                            .setEmoji("🚀")
+
+                            .setStyle(ButtonStyle.Link)
+
+                            .setURL(
+                                "https://discord.com/oauth2/authorize?client_id=1497973126569656540&permissions=8&scope=bot%20applications.commands"
+                            )
+                    );
+
+            //////////////////////////////////////////////////
             // ENVIAR
             //////////////////////////////////////////////////
 
-            await leaveChannel.send({
+            await channel.send({
 
                 content:
-                    `💨 Se fue **${member.user.tag}**`,
+                    `🎉 ¡Bienvenido ${member}!`,
 
-                embeds: [leaveEmbed]
+                embeds: [embed],
+
+                components: [row]
             });
 
         } catch (error) {
 
             console.log(
-                "❌ Error en sistemaDeSalidas:",
+                "❌ Error en sistemaDeIngreso:",
                 error
             );
         }
