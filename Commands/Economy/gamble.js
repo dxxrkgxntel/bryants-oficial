@@ -1,6 +1,9 @@
 const {
     SlashCommandBuilder,
-    EmbedBuilder
+    EmbedBuilder,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle
 } = require("discord.js");
 
 const getUser =
@@ -101,20 +104,22 @@ module.exports = {
 
             const config =
                 await getConfig(
-                interaction.guild.id
-            );
+                    interaction.guild.id
+                );
 
             if (!config) {
 
                 activeGambles.delete(
                     interaction.user.id
-            );
+                );
 
-            return interaction.reply({
+                return interaction.reply({
 
-                content: "❌ La economía no está configurada en este servidor.",
-                flags: 64
-            });
+                    content:
+                        "❌ La economía no está configurada en este servidor.",
+
+                    flags: 64
+                });
             }
 
             //////////////////////////////////////////////////
@@ -210,16 +215,182 @@ module.exports = {
             }
 
             //////////////////////////////////////////////////
-            // ANIMACION
+            // EMBED CONFIRMACION
+            //////////////////////////////////////////////////
+
+            const confirmEmbed =
+
+                new EmbedBuilder()
+
+                    .setColor("#8A2BE2")
+
+                    .setTitle(
+                        "🎰 Confirmar apuesta"
+                    )
+
+                    .setDescription(
+
+                        `💸 Vas a apostar **${amount.toLocaleString()} monedas**\n\n` +
+
+                        `👛 Tu wallet actual es: **${user.wallet.toLocaleString()} monedas**\n\n` +
+
+                        `❓ ¿Realmente quieres continuar?`
+                    )
+
+                    .setThumbnail(
+
+                        interaction.user.displayAvatarURL({
+
+                            dynamic: true
+                        })
+                    )
+
+                    .setFooter({
+
+                        text:
+                            "Bryant's Casino"
+                    })
+
+                    .setTimestamp();
+
+            //////////////////////////////////////////////////
+            // BOTONES
+            //////////////////////////////////////////////////
+
+            const row =
+
+                new ActionRowBuilder()
+
+                    .addComponents(
+
+                        new ButtonBuilder()
+
+                            .setCustomId(
+                                "gamble_confirm"
+                            )
+
+                            .setLabel(
+                                "Confirmar"
+                            )
+
+                            .setEmoji("✅")
+
+                            .setStyle(
+                                ButtonStyle.Secondary
+                            ),
+
+                        new ButtonBuilder()
+
+                            .setCustomId(
+                                "gamble_cancel"
+                            )
+
+                            .setLabel(
+                                "Cancelar"
+                            )
+
+                            .setEmoji("❌")
+
+                            .setStyle(
+                                ButtonStyle.Secondary
+                            )
+                    );
+
             //////////////////////////////////////////////////
 
             await interaction.reply({
 
+                embeds: [confirmEmbed],
+
+                components: [row]
+            });
+
+            //////////////////////////////////////////////////
+            // ESPERAR BOTON
+            //////////////////////////////////////////////////
+
+            const message =
+                await interaction.fetchReply();
+
+            const response =
+
+                await message.awaitMessageComponent({
+
+                    filter: i =>
+
+                        i.user.id === interaction.user.id,
+
+                    time: 30000
+                }).catch(() => null);
+
+            //////////////////////////////////////////////////
+            // TIMEOUT
+            //////////////////////////////////////////////////
+
+            if (!response) {
+
+                activeGambles.delete(
+                    interaction.user.id
+                );
+
+                return interaction.editReply({
+
+                    content:
+                        "⌛ La apuesta expiró.",
+
+                    embeds: [],
+
+                    components: []
+                });
+            }
+
+            //////////////////////////////////////////////////
+            // CANCELAR
+            //////////////////////////////////////////////////
+
+            if (
+
+                response.customId ===
+                "gamble_cancel"
+
+            ) {
+
+                activeGambles.delete(
+                    interaction.user.id
+                );
+
+                return response.update({
+
+                    content:
+                        "❌ Apuesta cancelada.",
+
+                    embeds: [],
+
+                    components: []
+                });
+            }
+
+            //////////////////////////////////////////////////
+            // RESPONDER BOTON RAPIDO
+            //////////////////////////////////////////////////
+
+            await response.deferUpdate();
+
+            //////////////////////////////////////////////////
+            // GIRANDO
+            //////////////////////////////////////////////////
+
+            await interaction.editReply({
+
                 content:
 
-                    `🎰 Girando tragamonedas...\n` +
+                    `🎰 Girando tragamonedas...\n\n` +
 
-                    `💸 Apostando **${amount.toLocaleString()} monedas**`
+                    `💸 Apostando **${amount.toLocaleString()} monedas**`,
+
+                embeds: [],
+
+                components: []
             });
 
             //////////////////////////////////////////////////

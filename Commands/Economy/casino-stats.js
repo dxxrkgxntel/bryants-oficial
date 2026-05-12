@@ -15,19 +15,6 @@ module.exports = {
 
             .setDescription(
                 "Muestra tus estadísticas del casino"
-            )
-
-            .addUserOption(option =>
-
-                option
-
-                    .setName("usuario")
-
-                    .setDescription(
-                        "Usuario a consultar"
-                    )
-
-                    .setRequired(false)
             ),
 
     //////////////////////////////////////////////////
@@ -38,13 +25,7 @@ module.exports = {
         // USER
         //////////////////////////////////////////////////
 
-        const target =
-
-            interaction.options.getUser(
-                "usuario"
-            ) ||
-
-            interaction.user;
+        const target = interaction.user;
 
         //////////////////////////////////////////////////
         // DATA
@@ -68,7 +49,7 @@ module.exports = {
             return interaction.reply({
 
                 content:
-                    "❌ Este usuario no tiene estadísticas.",
+                    "❌ No tienes estadísticas.",
 
                 flags: 64
             });

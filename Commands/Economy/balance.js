@@ -17,20 +17,7 @@ module.exports = {
             .setName("balance")
 
             .setDescription(
-                "Muestra tu balance o el de otro usuario"
-            )
-
-            .addUserOption(option =>
-
-                option
-
-                    .setName("usuario")
-
-                    .setDescription(
-                        "Usuario a consultar"
-                    )
-
-                    .setRequired(false)
+                "Muestra tu balance"
             ),
 
     //////////////////////////////////////////////////
@@ -41,11 +28,7 @@ module.exports = {
         // USER
         //////////////////////////////////////////////////
 
-        const target =
-
-            interaction.options.getUser(
-                "usuario"
-            ) || interaction.user;
+        const target = interaction.user;
 
         //////////////////////////////////////////////////
         // DATA

@@ -1,6 +1,9 @@
 const {
     SlashCommandBuilder,
-    EmbedBuilder
+    EmbedBuilder,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle
 } = require("discord.js");
 
 const EconomyUser =
@@ -72,7 +75,7 @@ module.exports = {
                     .setName("apuesta")
 
                     .setDescription(
-                        "Rojo, negro, verde o número"
+                        "rojo, negro, verde o número"
                     )
 
                     .setRequired(true)
@@ -170,10 +173,172 @@ module.exports = {
         }
 
         //////////////////////////////////////////////////
-        // ANIMACION
+        // CONFIRM EMBED
+        //////////////////////////////////////////////////
+
+        const confirmEmbed =
+
+            new EmbedBuilder()
+
+                .setColor("#8A2BE2")
+
+                .setTitle(
+                    "🎡 Confirmar apuesta"
+                )
+
+                .setDescription(
+
+                    `🎲 Tipo: **${type}**\n` +
+
+                    `📌 Apuesta: **${bet}**\n` +
+
+                    `💰 Cantidad: **${amount.toLocaleString()} monedas**\n\n` +
+
+                    `👛 Wallet actual: **${userData.wallet.toLocaleString()} monedas**\n\n` +
+
+                    `❓ ¿Deseas continuar?`
+                )
+
+                .setThumbnail(
+
+                    interaction.user.displayAvatarURL({
+
+                        dynamic: true
+                    })
+                )
+
+                .setFooter({
+
+                    text:
+                        "Bryant's Casino"
+                })
+
+                .setTimestamp();
+
+        //////////////////////////////////////////////////
+        // BUTTONS
+        //////////////////////////////////////////////////
+
+        const row =
+
+            new ActionRowBuilder()
+
+                .addComponents(
+
+                    new ButtonBuilder()
+
+                        .setCustomId(
+                            "roulette_confirm"
+                        )
+
+                        .setLabel(
+                            "Confirmar"
+                        )
+
+                        .setEmoji("✅")
+
+                        .setStyle(
+                            ButtonStyle.Secondary
+                        ),
+
+                    new ButtonBuilder()
+
+                        .setCustomId(
+                            "roulette_cancel"
+                        )
+
+                        .setLabel(
+                            "Cancelar"
+                        )
+
+                        .setEmoji("❌")
+
+                        .setStyle(
+                            ButtonStyle.Secondary
+                        )
+                );
+
         //////////////////////////////////////////////////
 
         await interaction.reply({
+
+            embeds: [confirmEmbed],
+
+            components: [row]
+        });
+
+        //////////////////////////////////////////////////
+        // MESSAGE
+        //////////////////////////////////////////////////
+
+        const message =
+            await interaction.fetchReply();
+
+        //////////////////////////////////////////////////
+        // BUTTON RESPONSE
+        //////////////////////////////////////////////////
+
+        const response =
+
+            await message.awaitMessageComponent({
+
+                filter: i =>
+
+                    i.user.id === interaction.user.id,
+
+                time: 30000
+            }).catch(() => null);
+
+        //////////////////////////////////////////////////
+        // TIMEOUT
+        //////////////////////////////////////////////////
+
+        if (!response) {
+
+            return interaction.editReply({
+
+                content:
+                    "⌛ La apuesta expiró.",
+
+                embeds: [],
+
+                components: []
+            });
+        }
+
+        //////////////////////////////////////////////////
+        // CANCEL
+        //////////////////////////////////////////////////
+
+        if (
+
+            response.customId ===
+            "roulette_cancel"
+
+        ) {
+
+            return response.update({
+
+                content:
+                    "❌ Apuesta cancelada.",
+
+                embeds: [],
+
+                components: []
+            });
+        }
+
+        //////////////////////////////////////////////////
+        // DEFER BUTTON
+        //////////////////////////////////////////////////
+
+        await response.deferUpdate();
+
+        //////////////////////////////////////////////////
+        // GIRANDO RULETA
+        //////////////////////////////////////////////////
+
+        await interaction.editReply({
 
             embeds: [
 
@@ -189,9 +354,11 @@ module.exports = {
 
                         `🎲 Girando la ruleta...\n\n` +
 
-                        `💰 Apuesta: **${amount.toLocaleString()} monedas**`
+                        `💰 Apostando **${amount.toLocaleString()} monedas**`
                     )
-            ]
+            ],
+
+            components: []
         });
 
         //////////////////////////////////////////////////
@@ -298,11 +465,12 @@ module.exports = {
 
             //////////////////////////////////////////////////
 
-            userData.wallet += winnings;
+            const profit =
+                winnings - amount;
 
             //////////////////////////////////////////////////
 
-            userData.wallet -= amount;
+            userData.wallet += profit;
 
         } else {
 
@@ -371,6 +539,7 @@ module.exports = {
                     `# ${colorEmoji} ${rolledColor.toUpperCase()} ${rolledNumber}\n\n` +
 
                     (
+
                         won
 
                             ?
@@ -380,7 +549,9 @@ module.exports = {
                             :
 
                             `💸 Perdiste **${amount.toLocaleString()} monedas**`
-                    )
+                    ) +
+
+                    `\n\n👛 Balance actual: **${userData.wallet.toLocaleString()} monedas**`
                 )
 
                 .setThumbnail(
@@ -392,7 +563,7 @@ module.exports = {
                 )
 
                 .setImage(
-                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png?ex=6a0032f4&is=69fee174&hm=54a509859dcee24cd6a637b9e0373e1821b6ab3898eccd77a59591b6e6d55e3a&=&format=webp&quality=lossless&width=1288&height=515"
+                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
                 )
 
                 .setFooter({
