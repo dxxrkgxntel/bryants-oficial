@@ -1,62 +1,48 @@
 const {
     SlashCommandBuilder,
-    EmbedBuilder
+    EmbedBuilder,
+    PermissionFlagsBits
 } = require("discord.js");
 
-const Birthday =
-    require("../../Models/Birthday");
+const BirthdayConfig =
+    require("../../Models/BirthdayConfig");
 
 module.exports = {
 
     data:
         new SlashCommandBuilder()
 
-            .setName("birthday-edit")
+            .setName(
+                "birthday-role"
+            )
 
             .setDescription(
-                "Editar tu cumpleaños"
+                "Configurar rol de cumpleaños"
             )
 
             //////////////////////////////////////////////////
-            // DAY
+            // ADMIN
             //////////////////////////////////////////////////
 
-            .addIntegerOption(option =>
-
-                option
-
-                    .setName("dia")
-
-                    .setDescription(
-                        "Nuevo día"
-                    )
-
-                    .setRequired(true)
-
-                    .setMinValue(1)
-
-                    .setMaxValue(31)
+            .setDefaultMemberPermissions(
+                PermissionFlagsBits.Administrator
             )
 
             //////////////////////////////////////////////////
-            // MONTH
+            // ROLE
             //////////////////////////////////////////////////
 
-            .addIntegerOption(option =>
+            .addRoleOption(option =>
 
                 option
 
-                    .setName("mes")
+                    .setName("rol")
 
                     .setDescription(
-                        "Nuevo mes"
+                        "Rol que se dará en cumpleaños"
                     )
 
                     .setRequired(true)
-
-                    .setMinValue(1)
-
-                    .setMaxValue(12)
             ),
 
     //////////////////////////////////////////////////
@@ -64,62 +50,44 @@ module.exports = {
     async execute(interaction) {
 
         //////////////////////////////////////////////////
-        // OPTIONS
+        // ROLE
         //////////////////////////////////////////////////
 
-        const day =
-            interaction.options.getInteger(
-                "dia"
+        const role =
+            interaction.options.getRole(
+                "rol"
             );
 
         //////////////////////////////////////////////////
-
-        const month =
-            interaction.options.getInteger(
-                "mes"
-            );
-
-        //////////////////////////////////////////////////
-        // FIND USER
+        // FIND OR CREATE
         //////////////////////////////////////////////////
 
-        const data =
-            await Birthday.findOne({
+        let data =
+            await BirthdayConfig.findOne({
 
                 guildId:
-                    interaction.guild.id,
-
-                userId:
-                    interaction.user.id
+                    interaction.guild.id
             });
 
         //////////////////////////////////////////////////
 
         if (!data) {
 
-            return interaction.reply({
+            data =
+                new BirthdayConfig({
 
-                content:
-                    "❌ No tienes cumpleaños registrado.",
-
-                flags: 64
-            });
+                    guildId:
+                        interaction.guild.id
+                });
         }
 
         //////////////////////////////////////////////////
-        // UPDATE
-        //////////////////////////////////////////////////
-
-        data.day =
-            day;
-
-        //////////////////////////////////////////////////
-
-        data.month =
-            month;
-
-        //////////////////////////////////////////////////
         // SAVE
+        //////////////////////////////////////////////////
+
+        data.roleId =
+            role.id;
+
         //////////////////////////////////////////////////
 
         await data.save();
@@ -135,14 +103,12 @@ module.exports = {
                 .setColor("#8A2BE2")
 
                 .setTitle(
-                    "🎂 Cumpleaños actualizado"
+                    "🎂 Rol configurado"
                 )
 
                 .setDescription(
 
-                    `📅 Nueva fecha:\n\n` +
-
-                    `🎉 **${day}/${month}**`
+                    `✅ El rol ${role} será entregado automáticamente en cumpleaños.`
                 )
 
                 .setFooter({
@@ -157,9 +123,7 @@ module.exports = {
 
         await interaction.reply({
 
-            embeds: [embed],
-
-            flags: 64
+            embeds: [embed]
         });
     }
 };

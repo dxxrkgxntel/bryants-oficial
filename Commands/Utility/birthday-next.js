@@ -11,10 +11,12 @@ module.exports = {
     data:
         new SlashCommandBuilder()
 
-            .setName("birthday-list")
+            .setName(
+                "birthday-next"
+            )
 
             .setDescription(
-                "Lista de cumpleaños registrados"
+                "Muestra los próximos cumpleaños"
             ),
 
     //////////////////////////////////////////////////
@@ -22,7 +24,7 @@ module.exports = {
     async execute(interaction) {
 
         //////////////////////////////////////////////////
-        // GET DATA
+        // FIND
         //////////////////////////////////////////////////
 
         const birthdays =
@@ -46,35 +48,93 @@ module.exports = {
         }
 
         //////////////////////////////////////////////////
+        // TODAY
+        //////////////////////////////////////////////////
+
+        const now =
+            new Date();
+
+        //////////////////////////////////////////////////
+
+        const currentMonth =
+            now.getMonth() + 1;
+
+        //////////////////////////////////////////////////
+
+        const currentDay =
+            now.getDate();
+
+        //////////////////////////////////////////////////
         // SORT
         //////////////////////////////////////////////////
 
         birthdays.sort((a, b) => {
 
+            const dateA =
+                new Date(
+
+                    now.getFullYear(),
+                    a.month - 1,
+                    a.day
+                );
+
+            const dateB =
+                new Date(
+
+                    now.getFullYear(),
+                    b.month - 1,
+                    b.day
+                );
+
             //////////////////////////////////////////////////
 
-            if (a.month !== b.month) {
+            if (
+                dateA < now
+            ) {
 
-                return a.month - b.month;
+                dateA.setFullYear(
+                    now.getFullYear() + 1
+                );
             }
 
             //////////////////////////////////////////////////
 
-            return a.day - b.day;
+            if (
+                dateB < now
+            ) {
+
+                dateB.setFullYear(
+                    now.getFullYear() + 1
+                );
+            }
+
+            //////////////////////////////////////////////////
+
+            return dateA - dateB;
         });
+
+        //////////////////////////////////////////////////
+        // TOP 10
+        //////////////////////////////////////////////////
+
+        const nextBirthdays =
+            birthdays.slice(0, 10);
 
         //////////////////////////////////////////////////
         // DESCRIPTION
         //////////////////////////////////////////////////
 
         const description =
+            nextBirthdays.map((b, i) => {
 
-            birthdays.map((b, i) =>
+                return (
 
-                `\`${i + 1}.\` <@${b.userId}> • 🎂 **${b.day}/${b.month}**`
-            )
+                    `🎂 <@${b.userId}>\n` +
 
-            .join("\n");
+                    `> 📅 ${b.day}/${b.month}`
+                );
+
+            }).join("\n\n");
 
         //////////////////////////////////////////////////
         // EMBED
@@ -84,10 +144,10 @@ module.exports = {
 
             new EmbedBuilder()
 
-                .setColor("#8A2BE2")
+                .setColor("#ff69b4")
 
                 .setTitle(
-                    "🎂 Lista de Cumpleaños"
+                    "🎉 Próximos Cumpleaños"
                 )
 
                 .setDescription(
