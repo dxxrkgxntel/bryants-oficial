@@ -380,18 +380,51 @@ module.exports = {
             // GIRANDO
             //////////////////////////////////////////////////
 
-            await interaction.editReply({
+            const loadingEmbed =
 
-                content:
+    new EmbedBuilder()
 
-                    `🎰 Girando tragamonedas...\n\n` +
+        .setColor("#8A2BE2")
 
-                    `💸 Apostando **${amount.toLocaleString()} monedas**`,
+        .setTitle(
+            "🎰 Bryant's Casino"
+        )
 
-                embeds: [],
+        .setDescription(
 
-                components: []
-            });
+            `## 🎲 Girando tragamonedas...\n\n` +
+
+            `💸 Apostando **${amount.toLocaleString()} monedas**\n\n` +
+
+            `🍀 La suerte está siendo decidida...`
+        )
+
+        .setThumbnail(
+
+            interaction.user.displayAvatarURL({
+
+                dynamic: true
+            })
+        )
+
+        .setFooter({
+
+            text:
+                "Bryant's Casino"
+        })
+
+        .setTimestamp();
+
+//////////////////////////////////////////////////
+
+await interaction.editReply({
+
+    content: null,
+
+    embeds: [loadingEmbed],
+
+    components: []
+});
 
             //////////////////////////////////////////////////
             // DELAY
@@ -758,8 +791,12 @@ module.exports = {
 
                 return interaction.editReply({
 
-                    embeds: [embed]
-                });
+    content: null,
+
+    embeds: [embed],
+
+    components: []
+});
             }
 
         } catch (err) {

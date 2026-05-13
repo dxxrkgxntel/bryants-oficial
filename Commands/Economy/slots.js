@@ -268,29 +268,53 @@ module.exports = {
         await response.deferUpdate();
 
         //////////////////////////////////////////////////
-        // SPIN
+        // GRID 3x3
         //////////////////////////////////////////////////
 
-        const roll = [
+        const grid = [];
 
-            slots[
-                Math.floor(
-                    Math.random() * slots.length
-                )
-            ],
+        for (let row = 0; row < 3; row++) {
 
-            slots[
-                Math.floor(
-                    Math.random() * slots.length
-                )
-            ],
+            const currentRow = [];
 
-            slots[
-                Math.floor(
-                    Math.random() * slots.length
-                )
-            ]
-        ];
+            for (let col = 0; col < 3; col++) {
+
+                currentRow.push(
+
+                    slots[
+                        Math.floor(
+                            Math.random() * slots.length
+                        )
+                    ]
+                );
+            }
+
+            grid.push(currentRow);
+        }
+
+        //////////////////////////////////////////////////
+        // DISPLAY
+        //////////////////////////////////////////////////
+
+        const generateDisplay = (data) => {
+
+            return data.map((row, index) => {
+
+                //////////////////////////////////////////////////
+                // LINEA CENTRAL
+                //////////////////////////////////////////////////
+
+                if (index === 1) {
+
+                    return `${row.join(" │ ")} <`;
+                }
+
+                //////////////////////////////////////////////////
+
+                return `${row.join(" │ ")}`;
+
+            }).join("\n");
+        };
 
         //////////////////////////////////////////////////
         // ANIMACION
@@ -312,7 +336,9 @@ module.exports = {
 
                         `## 🎲 Girando tragamonedas...\n\n` +
 
-                        `🎰 ❔ ❔ ❔`
+                        `❔ │ ❔ │ ❔\n` +
+                        `❔ │ ❔ │ ❔ <\n` +
+                        `❔ │ ❔ │ ❔`
                     )
             ],
 
@@ -329,6 +355,12 @@ module.exports = {
         );
 
         //////////////////////////////////////////////////
+        // LINEA VALIDA
+        //////////////////////////////////////////////////
+
+        const middleLine = grid[1];
+
+        //////////////////////////////////////////////////
         // RESULTADO
         //////////////////////////////////////////////////
 
@@ -342,15 +374,17 @@ module.exports = {
         //////////////////////////////////////////////////
 
         if (
-            roll[0] === "👑" &&
-            roll[1] === "👑" &&
-            roll[2] === "👑"
+
+            middleLine[0] === "👑" &&
+            middleLine[1] === "👑" &&
+            middleLine[2] === "👑"
+
         ) {
 
-            multiplier = 10;
+            multiplier = 15;
 
             resultText =
-                "👑 JACKPOT x10";
+                "👑 JACKPOT x15";
         }
 
         //////////////////////////////////////////////////
@@ -359,8 +393,9 @@ module.exports = {
 
         else if (
 
-            roll[0] === roll[1] &&
-            roll[1] === roll[2]
+            middleLine[0] === middleLine[1] &&
+            middleLine[1] === middleLine[2]
+
         ) {
 
             multiplier = 5;
@@ -375,11 +410,12 @@ module.exports = {
 
         else if (
 
-            roll[0] === roll[1] ||
+            middleLine[0] === middleLine[1] ||
 
-            roll[1] === roll[2] ||
+            middleLine[1] === middleLine[2] ||
 
-            roll[0] === roll[2]
+            middleLine[0] === middleLine[2]
+
         ) {
 
             multiplier = 2;
@@ -394,27 +430,21 @@ module.exports = {
 
         let winnings = 0;
 
-        //////////////////////////////////////////////////
-
         if (multiplier > 0) {
 
             winnings =
                 amount * multiplier;
 
-            //////////////////////////////////////////////////
-
             const profit =
                 winnings - amount;
 
-            //////////////////////////////////////////////////
-
-            userData.wallet += profit;
+            userData.wallet +=
+                profit;
 
         } else {
 
-            //////////////////////////////////////////////////
-
-            userData.wallet -= amount;
+            userData.wallet -=
+                amount;
         }
 
         //////////////////////////////////////////////////
@@ -450,7 +480,11 @@ module.exports = {
 
                 .setDescription(
 
-                    `# ${roll.join(" │ ")}\n\n` +
+                    `## 🎰 Resultado\n\n` +
+
+                    `${generateDisplay(grid)}\n\n` +
+
+                    `🎯 Línea válida: **Fila central**\n\n` +
 
                     `${resultText}\n\n` +
 
@@ -494,7 +528,9 @@ module.exports = {
 
         await interaction.editReply({
 
-            embeds: [embed]
+            embeds: [embed],
+
+            components: []
         });
     }
 };

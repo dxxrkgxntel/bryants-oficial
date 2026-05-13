@@ -1,7 +1,8 @@
 const {
 
     SlashCommandBuilder,
-    EmbedBuilder
+    EmbedBuilder,
+    PermissionFlagsBits
 
 } = require("discord.js");
 
@@ -19,11 +20,40 @@ module.exports = {
 
             .setDescription(
                 "Ver configuración AntiLinks"
+            )
+
+            //////////////////////////////////////////////////
+            // SOLO ADMIN
+            //////////////////////////////////////////////////
+
+            .setDefaultMemberPermissions(
+                PermissionFlagsBits.Administrator
             ),
 
     //////////////////////////////////////////////////
 
     async execute(interaction) {
+
+        //////////////////////////////////////////////////
+        // VALIDAR ADMIN
+        //////////////////////////////////////////////////
+
+        if (
+
+            !interaction.member.permissions.has(
+                PermissionFlagsBits.Administrator
+            )
+
+        ) {
+
+            return interaction.reply({
+
+                content:
+                    "❌ Solo los administradores pueden usar este comando.",
+
+                flags: 64
+            });
+        }
 
         //////////////////////////////////////////////////
 
@@ -90,7 +120,15 @@ module.exports = {
 
                                 "Ninguno"
                     }
-                );
+                )
+
+                .setFooter({
+
+                    text:
+                        interaction.guild.name
+                })
+
+                .setTimestamp();
 
         //////////////////////////////////////////////////
 

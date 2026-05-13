@@ -79,21 +79,21 @@ module.exports = {
 
                                 .setCustomId("claim_booster")
                                 .setLabel("BOOSTER")
-                                .setEmoji("💜")
+                                .setEmoji("<:booster:1503957081068142662>")
                                 .setStyle(ButtonStyle.Secondary),
 
                             new ButtonBuilder()
 
                                 .setCustomId("claim_booster_vip")
                                 .setLabel("BOOSTER VIP")
-                                .setEmoji("🚀")
+                                .setEmoji("<:booster_vip:1503957123871019139>")
                                 .setStyle(ButtonStyle.Secondary),
 
                             new ButtonBuilder()
 
                                 .setCustomId("claim_booster_legend")
                                 .setLabel("BOOSTER LEGEND")
-                                .setEmoji("👑")
+                                .setEmoji("<:booster_legend:1503958247458078840>")
                                 .setStyle(ButtonStyle.Secondary)
                         );
 
