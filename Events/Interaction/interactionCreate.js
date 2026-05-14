@@ -18,19 +18,25 @@ module.exports = {
 
                 const btn =
 
-                    [...client.buttons.values()]
+    [...client.buttons.values()]
 
-                        .find(button =>
+        .find(button =>
 
-                            Array.isArray(button.id)
+            Array.isArray(button.id)
 
-                                ? button.id.includes(
-                                    interaction.customId
-                                )
+                ?
 
-                                : button.id ===
-                                  interaction.customId
-                        );
+                button.id.some(id =>
+
+                    interaction.customId.startsWith(id)
+                )
+
+                :
+
+                interaction.customId.startsWith(
+                    button.id
+                )
+        );
 
                 //////////////////////////////////////////////////
 

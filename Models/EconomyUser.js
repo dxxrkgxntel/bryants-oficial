@@ -20,6 +20,8 @@ const economyUser = new Schema({
   loanTaken: {type: Boolean, default: false},
   loanDate: {type: Date, default: null},
   bankDonated: {type: Number, default: 0},
+  diceWins: {type: Number, default: 0},
+  diceLosses: {type: Number, default: 0},
 });
 
 economyUser.index({ guildId: 1, userId: 1 }, { unique: true });

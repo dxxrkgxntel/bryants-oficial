@@ -105,7 +105,7 @@ const casinoStatsSchema =
 
             type: Number,
             default: 0
-        }
+        },
     });
 
 //////////////////////////////////////////////////
