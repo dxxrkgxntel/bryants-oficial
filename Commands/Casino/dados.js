@@ -93,16 +93,14 @@ module.exports = {
 
                 .setDescription(
 
-                    `💰 Apuesta:\n` +
+    `💰 **Apuesta:**\n` +
+    `> ${bet.toLocaleString()} monedas\n\n` +
 
-`**${bet.toLocaleString()} monedas**\n\n` +
+    `💵 **Wallet actual:**\n` +
+    `> ${userData.wallet.toLocaleString()} monedas\n\n` +
 
-`💵 Wallet actual:\n` +
-
-`**${userData.wallet.toLocaleString()} monedas**\n\n` +
-
-                    `❓ ¿Realmente quieres realizar esta apuesta?`
-                )
+    `❓ ¿Realmente quieres realizar esta apuesta?`
+)
 
                 //////////////////////////////////////////////////
                 // THUMBNAIL

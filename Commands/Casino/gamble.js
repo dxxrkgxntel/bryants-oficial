@@ -233,9 +233,11 @@ module.exports = {
 
                     .setDescription(
 
-                        `💸 Vas a apostar **${amount.toLocaleString()} monedas**\n\n` +
+                        `💸 Vas a apostar:\n` +
+                        `> **${amount.toLocaleString()} monedas**\n\n` +
 
-                        `👛 Tu wallet actual es: **${user.wallet.toLocaleString()} monedas**\n\n` +
+                        `👛 Tu wallet actual es:\n` +
+                        `> **${user.wallet.toLocaleString()} monedas**\n\n` +
 
                         `❓ ¿Realmente quieres continuar?`
                     )

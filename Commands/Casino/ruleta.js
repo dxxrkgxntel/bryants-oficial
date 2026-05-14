@@ -221,13 +221,17 @@ module.exports = {
 
                 .setDescription(
 
-                    `🎲 Tipo: **${type}**\n` +
+                    `🎲 Tipo:\n` +
+                    `> **${type}**\n` +
 
-                    `📌 Apuesta: **${bet}**\n` +
+                    `📌 Apuesta:\n` +
+                    `> **${bet}**\n` +
 
-                    `💰 Cantidad: **${amount.toLocaleString()} monedas**\n\n` +
+                    `💰 Cantidad:\n` +
+                    `> **${amount.toLocaleString()} monedas**\n\n` +
 
-                    `👛 Wallet actual: **${userData.wallet.toLocaleString()} monedas**\n\n` +
+                    `👛 Wallet actual:\n` +
+                    `> **${userData.wallet.toLocaleString()} monedas**\n\n` +
 
                     `❓ ¿Deseas continuar?`
                 )
