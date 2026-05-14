@@ -25,16 +25,24 @@ module.exports = {
                 PermissionFlagsBits.Administrator
             )
 
+            //////////////////////////////////////////////////
+            // ROLE
+            //////////////////////////////////////////////////
+
             .addRoleOption(o =>
 
                 o.setName("rol")
 
                     .setDescription(
-                        "Rol que se añadirá a la tienda"
+                        "Rol que se añadirá"
                     )
 
                     .setRequired(true)
             )
+
+            //////////////////////////////////////////////////
+            // PRICE
+            //////////////////////////////////////////////////
 
             .addIntegerOption(o =>
 
@@ -47,6 +55,36 @@ module.exports = {
                     .setRequired(true)
 
                     .setMinValue(1)
+            )
+
+            //////////////////////////////////////////////////
+            // EMOJI
+            //////////////////////////////////////////////////
+
+            .addStringOption(o =>
+
+                o.setName("emoji")
+
+                    .setDescription(
+                        "Emoji del rol"
+                    )
+
+                    .setRequired(false)
+            )
+
+            //////////////////////////////////////////////////
+            // DESCRIPTION
+            //////////////////////////////////////////////////
+
+            .addStringOption(o =>
+
+                o.setName("descripcion")
+
+                    .setDescription(
+                        "Descripción del rol"
+                    )
+
+                    .setRequired(false)
             ),
 
     //////////////////////////////////////////////////
@@ -54,7 +92,7 @@ module.exports = {
     async execute(interaction) {
 
         //////////////////////////////////////////////////
-        // ROLE
+        // DATA
         //////////////////////////////////////////////////
 
         const role =
@@ -63,8 +101,6 @@ module.exports = {
             );
 
         //////////////////////////////////////////////////
-        // PRICE
-        //////////////////////////////////////////////////
 
         const price =
             interaction.options.getInteger(
@@ -72,7 +108,21 @@ module.exports = {
             );
 
         //////////////////////////////////////////////////
-        // VALIDAR SI YA EXISTE
+
+        const emoji =
+            interaction.options.getString(
+                "emoji"
+            ) || "🛒";
+
+        //////////////////////////////////////////////////
+
+        const description =
+            interaction.options.getString(
+                "descripcion"
+            ) || "Rol exclusivo";
+
+        //////////////////////////////////////////////////
+        // EXISTING
         //////////////////////////////////////////////////
 
         const existing =
@@ -91,21 +141,8 @@ module.exports = {
 
             return interaction.reply({
 
-                embeds: [
-
-                    new EmbedBuilder()
-
-                        .setColor("#ff0000")
-
-                        .setTitle(
-                            "⚠️ Rol ya registrado"
-                        )
-
-                        .setDescription(
-
-                            `El rol ${role} ya se encuentra dentro de la tienda del servidor.`
-                        )
-                ],
+                content:
+                    "❌ Ese rol ya está en la tienda.",
 
                 flags: 64
             });
@@ -124,56 +161,38 @@ module.exports = {
                 )
 
                 .setTitle(
-                    "🛒 Confirmar registro de rol"
+                    "🛒 Confirmar rol"
                 )
 
                 .setDescription(
 
-                    `¿Deseas añadir el rol ${role} a la tienda del servidor?\n\n` +
+                    `¿Deseas añadir ${role} a la tienda?\n\n` +
 
-                    `💰 **Precio asignado**\n` +
+                    `${emoji} **Emoji:** ${emoji}\n` +
 
-                    `> ${price.toLocaleString()} monedas\n\n` +
+                    `📝 **Descripción:** ${description}\n` +
 
-                    `🏪 Los usuarios podrán comprar este rol usando el sistema económico.`
+                    `💰 **Precio:** ${price.toLocaleString()} monedas`
                 )
-
-                .addFields({
-
-                    name: "👮 Administrador",
-                    value: `${interaction.user}`,
-                    inline: true
-
-                }, {
-
-                    name: "🎭 Rol",
-                    value: `${role}`,
-                    inline: true
-                })
 
                 .setThumbnail(
 
                     interaction.guild.iconURL({
 
-                        dynamic: true,
-                        size: 1024
+                        dynamic: true
                     })
-                )
-
-                .setImage(
-                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
                 )
 
                 .setFooter({
 
                     text:
-                        "Tienes 30 segundos para responder"
+                        "Bryant's Economy"
                 })
 
                 .setTimestamp();
 
         //////////////////////////////////////////////////
-        // BOTONES
+        // BUTTONS
         //////////////////////////////////////////////////
 
         const row =
@@ -216,8 +235,6 @@ module.exports = {
                 );
 
         //////////////////////////////////////////////////
-        // SEND
-        //////////////////////////////////////////////////
 
         const msg =
             await interaction.reply({
@@ -249,7 +266,7 @@ module.exports = {
             async i => {
 
                 ////////////////////////////////////////////////
-                // SOLO AUTOR
+                // AUTHOR ONLY
                 ////////////////////////////////////////////////
 
                 if (
@@ -269,7 +286,7 @@ module.exports = {
                 }
 
                 ////////////////////////////////////////////////
-                // CANCELAR
+                // CANCEL
                 ////////////////////////////////////////////////
 
                 if (
@@ -293,7 +310,7 @@ module.exports = {
                 }
 
                 ////////////////////////////////////////////////
-                // CONFIRMAR
+                // CONFIRM
                 ////////////////////////////////////////////////
 
                 if (
@@ -304,7 +321,7 @@ module.exports = {
                 ) {
 
                     //////////////////////////////////////////////////
-                    // CREAR ITEM
+                    // CREATE
                     //////////////////////////////////////////////////
 
                     await ShopItem.create({
@@ -315,11 +332,15 @@ module.exports = {
                         roleId:
                             role.id,
 
-                        price
+                        price,
+
+                        emoji,
+
+                        description
                     });
 
                     //////////////////////////////////////////////////
-                    // SUCCESS EMBED
+                    // SUCCESS
                     //////////////////////////////////////////////////
 
                     const successEmbed =
@@ -327,55 +348,23 @@ module.exports = {
                         new EmbedBuilder()
 
                             .setColor(
-                                role.color || "#00ff99"
+                                "#00ff99"
                             )
 
                             .setTitle(
-                                "✅ Rol añadido correctamente"
+                                "✅ Rol añadido"
                             )
 
                             .setDescription(
 
-                                `El rol ${role} ahora forma parte de la tienda del servidor.\n\n` +
+                                `${role} fue añadido a la tienda.\n\n` +
 
-                                `💰 **Precio configurado**\n` +
+                                `${emoji} **Emoji:** ${emoji}\n` +
 
-                                `> ${price.toLocaleString()} monedas\n\n` +
+                                `📝 **Descripción:** ${description}\n` +
 
-                                `🛒 Los usuarios ya pueden comprar este rol usando el sistema económico.`
+                                `💰 **Precio:** ${price.toLocaleString()} monedas`
                             )
-
-                            .addFields({
-
-                                name: "👮 Administrador",
-                                value: `${interaction.user}`,
-                                inline: true
-
-                            }, {
-
-                                name: "🎭 Rol añadido",
-                                value: `${role}`,
-                                inline: true
-                            })
-
-                            .setThumbnail(
-
-                                interaction.guild.iconURL({
-
-                                    dynamic: true,
-                                    size: 1024
-                                })
-                            )
-
-                            .setImage(
-                                "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
-                            )
-
-                            .setFooter({
-
-                                text:
-                                    "Bryant's Economy System"
-                            })
 
                             .setTimestamp();
 
@@ -396,7 +385,7 @@ module.exports = {
         );
 
         //////////////////////////////////////////////////
-        // TIMEOUT
+        // END
         //////////////////////////////////////////////////
 
         collector.on(

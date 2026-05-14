@@ -4,7 +4,8 @@ const {
     EmbedBuilder,
     ActionRowBuilder,
     ButtonBuilder,
-    ButtonStyle
+    ButtonStyle,
+    StringSelectMenuBuilder
 } = require("discord.js");
 
 const ShopItem =
@@ -23,17 +24,6 @@ module.exports = {
 
             .setDefaultMemberPermissions(
                 PermissionFlagsBits.Administrator
-            )
-
-            .addRoleOption(o =>
-
-                o.setName("rol")
-
-                    .setDescription(
-                        "Rol que deseas eliminar de la tienda"
-                    )
-
-                    .setRequired(true)
             ),
 
     //////////////////////////////////////////////////
@@ -41,33 +31,21 @@ module.exports = {
     async execute(interaction) {
 
         //////////////////////////////////////////////////
-        // ROLE
+        // ITEMS
         //////////////////////////////////////////////////
 
-        const role =
-            interaction.options.getRole(
-                "rol"
-            );
-
-        //////////////////////////////////////////////////
-        // BUSCAR ITEM
-        //////////////////////////////////////////////////
-
-        const item =
-            await ShopItem.findOne({
+        const items =
+            await ShopItem.find({
 
                 guildId:
-                    interaction.guild.id,
-
-                roleId:
-                    role.id
+                    interaction.guild.id
             });
 
         //////////////////////////////////////////////////
         // VALIDAR
         //////////////////////////////////////////////////
 
-        if (!item) {
+        if (!items.length) {
 
             return interaction.reply({
 
@@ -78,12 +56,12 @@ module.exports = {
                         .setColor("#ff0000")
 
                         .setTitle(
-                            "❌ Rol no encontrado"
+                            "❌ No hay roles"
                         )
 
                         .setDescription(
 
-                            `El rol ${role} no se encuentra registrado dentro de la tienda del servidor.`
+                            "No existen roles registrados dentro de la tienda."
                         )
                 ],
 
@@ -92,10 +70,200 @@ module.exports = {
         }
 
         //////////////////////////////////////////////////
-        // EMBED CONFIRMACION
+        // OPTIONS
         //////////////////////////////////////////////////
 
-        const embed =
+        const options = [];
+
+        //////////////////////////////////////////////////
+
+        for (const item of items) {
+
+            const role =
+                interaction.guild.roles.cache.get(
+                    item.roleId
+                );
+
+            //////////////////////////////////////////////////
+
+            if (!role)
+                continue;
+
+            //////////////////////////////////////////////////
+
+            options.push({
+
+                label:
+                    role.name.substring(0, 100),
+
+                description:
+                    `${item.price.toLocaleString()} monedas`,
+
+                value:
+                    role.id,
+
+                emoji:
+                    item.emoji || "🛒"
+            });
+        }
+
+        //////////////////////////////////////////////////
+        // EMBED SELECT
+        //////////////////////////////////////////////////
+
+        const selectEmbed =
+
+            new EmbedBuilder()
+
+                .setColor("#8A2BE2")
+
+                .setTitle(
+                    "🛒 Eliminar rol de la tienda"
+                )
+
+                .setDescription(
+
+                    `Selecciona el rol que deseas eliminar de la tienda.\n\n` +
+
+                    `📦 Roles disponibles: **${options.length}**`
+                )
+
+                .setThumbnail(
+
+                    interaction.guild.iconURL({
+
+                        dynamic: true
+                    })
+                )
+
+                .setFooter({
+
+                    text:
+                        "Selecciona un rol abajo"
+                })
+
+                .setTimestamp();
+
+        //////////////////////////////////////////////////
+        // SELECT MENU
+        //////////////////////////////////////////////////
+
+        const selectMenu =
+
+            new StringSelectMenuBuilder()
+
+                .setCustomId(
+                    "shopremove_select"
+                )
+
+                .setPlaceholder(
+                    "Selecciona un rol..."
+                )
+
+                .addOptions(options);
+
+        //////////////////////////////////////////////////
+
+        const selectRow =
+
+            new ActionRowBuilder()
+
+                .addComponents(
+                    selectMenu
+                );
+
+        //////////////////////////////////////////////////
+        // SEND
+        //////////////////////////////////////////////////
+
+        const msg =
+            await interaction.reply({
+
+                embeds: [selectEmbed],
+
+                components: [selectRow],
+
+                fetchReply: true
+            });
+
+        //////////////////////////////////////////////////
+        // SELECT RESPONSE
+        //////////////////////////////////////////////////
+
+        const selectInteraction =
+
+            await msg.awaitMessageComponent({
+
+                filter: i =>
+
+                    i.user.id ===
+                    interaction.user.id,
+
+                time: 30000
+            }).catch(() => null);
+
+        //////////////////////////////////////////////////
+        // TIMEOUT
+        //////////////////////////////////////////////////
+
+        if (!selectInteraction) {
+
+            return interaction.editReply({
+
+                content:
+                    "⌛ Tiempo agotado.",
+
+                embeds: [],
+
+                components: []
+            });
+        }
+
+        //////////////////////////////////////////////////
+        // ROLE
+        //////////////////////////////////////////////////
+
+        const roleId =
+            selectInteraction.values[0];
+
+        //////////////////////////////////////////////////
+
+        const role =
+            interaction.guild.roles.cache.get(
+                roleId
+            );
+
+        //////////////////////////////////////////////////
+
+        const item =
+            await ShopItem.findOne({
+
+                guildId:
+                    interaction.guild.id,
+
+                roleId
+            });
+
+        //////////////////////////////////////////////////
+
+        if (!role || !item) {
+
+            return selectInteraction.update({
+
+                content:
+                    "❌ Ese rol ya no existe.",
+
+                embeds: [],
+
+                components: []
+            });
+        }
+
+        //////////////////////////////////////////////////
+        // CONFIRM EMBED
+        //////////////////////////////////////////////////
+
+        const confirmEmbed =
 
             new EmbedBuilder()
 
@@ -109,25 +277,31 @@ module.exports = {
 
                 .setDescription(
 
-                    `¿Deseas eliminar el rol ${role} de la tienda del servidor?\n\n` +
+                    `¿Realmente deseas eliminar el rol ${role} de la tienda?\n\n` +
 
-                    `💰 **Precio registrado**\n` +
+                    `💰 Precio registrado:\n` +
 
-                    `> ${item.price.toLocaleString()} monedas\n\n` +
-
-                    `⚠️ Los usuarios ya no podrán comprar este rol mediante el sistema económico.`
+                    `> ${item.price.toLocaleString()} monedas`
                 )
 
                 .addFields({
 
-                    name: "👮 Administrador",
-                    value: `${interaction.user}`,
+                    name:
+                        "👮 Administrador",
+
+                    value:
+                        `${interaction.user}`,
+
                     inline: true
 
                 }, {
 
-                    name: "🎭 Rol",
-                    value: `${role}`,
+                    name:
+                        "🎭 Rol",
+
+                    value:
+                        `${role}`,
+
                     inline: true
                 })
 
@@ -135,13 +309,8 @@ module.exports = {
 
                     interaction.guild.iconURL({
 
-                        dynamic: true,
-                        size: 1024
+                        dynamic: true
                     })
-                )
-
-                .setImage(
-                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
                 )
 
                 .setFooter({
@@ -153,10 +322,10 @@ module.exports = {
                 .setTimestamp();
 
         //////////////////////////////////////////////////
-        // BOTONES
+        // BUTTONS
         //////////////////////////////////////////////////
 
-        const row =
+        const buttonRow =
 
             new ActionRowBuilder()
 
@@ -169,10 +338,10 @@ module.exports = {
                         )
 
                         .setLabel(
-                            "Eliminar"
+                            "Aceptar"
                         )
 
-                        .setEmoji("🗑️")
+                        .setEmoji("✅")
 
                         .setStyle(
                             ButtonStyle.Secondary
@@ -196,203 +365,152 @@ module.exports = {
                 );
 
         //////////////////////////////////////////////////
-        // SEND
-        //////////////////////////////////////////////////
 
-        const msg =
-            await interaction.reply({
+        await selectInteraction.update({
 
-                embeds: [embed],
+            embeds: [confirmEmbed],
 
-                components: [row],
-
-                fetchReply: true
-            });
+            components: [buttonRow]
+        });
 
         //////////////////////////////////////////////////
-        // COLLECTOR
+        // FETCH MESSAGE
         //////////////////////////////////////////////////
 
-        const collector =
+        const updatedMsg =
+            await interaction.fetchReply();
 
-            msg.createMessageComponentCollector({
+        //////////////////////////////////////////////////
+        // BUTTON RESPONSE
+        //////////////////////////////////////////////////
+
+        const buttonInteraction =
+
+            await updatedMsg.awaitMessageComponent({
+
+                filter: i =>
+
+                    i.user.id ===
+                    interaction.user.id,
 
                 time: 30000
-            });
-
-        //////////////////////////////////////////////////
-
-        collector.on(
-
-            "collect",
-
-            async i => {
-
-                ////////////////////////////////////////////////
-                // SOLO AUTOR
-                ////////////////////////////////////////////////
-
-                if (
-
-                    i.user.id !==
-                    interaction.user.id
-
-                ) {
-
-                    return i.reply({
-
-                        content:
-                            "❌ No puedes usar estos botones.",
-
-                        flags: 64
-                    });
-                }
-
-                ////////////////////////////////////////////////
-                // CANCELAR
-                ////////////////////////////////////////////////
-
-                if (
-
-                    i.customId ===
-                    "shopremove_cancel"
-
-                ) {
-
-                    collector.stop();
-
-                    return i.update({
-
-                        content:
-                            "❌ Operación cancelada.",
-
-                        embeds: [],
-
-                        components: []
-                    });
-                }
-
-                ////////////////////////////////////////////////
-                // CONFIRMAR
-                ////////////////////////////////////////////////
-
-                if (
-
-                    i.customId ===
-                    "shopremove_confirm"
-
-                ) {
-
-                    //////////////////////////////////////////////////
-                    // ELIMINAR
-                    //////////////////////////////////////////////////
-
-                    await ShopItem.deleteOne({
-
-                        guildId:
-                            interaction.guild.id,
-
-                        roleId:
-                            role.id
-                    });
-
-                    //////////////////////////////////////////////////
-                    // SUCCESS EMBED
-                    //////////////////////////////////////////////////
-
-                    const successEmbed =
-
-                        new EmbedBuilder()
-
-                            .setColor("#ff003c")
-
-                            .setTitle(
-                                "🗑️ Rol eliminado correctamente"
-                            )
-
-                            .setDescription(
-
-                                `El rol ${role} fue eliminado exitosamente de la tienda.\n\n` +
-
-                                `🚫 Los usuarios ya no podrán comprar este rol mediante el sistema económico.`
-                            )
-
-                            .addFields({
-
-                                name: "👮 Administrador",
-                                value: `${interaction.user}`,
-                                inline: true
-
-                            }, {
-
-                                name: "🎭 Rol eliminado",
-                                value: `${role}`,
-                                inline: true
-                            })
-
-                            .setThumbnail(
-
-                                interaction.guild.iconURL({
-
-                                    dynamic: true,
-                                    size: 1024
-                                })
-                            )
-
-                            .setImage(
-                                "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
-                            )
-
-                            .setFooter({
-
-                                text:
-                                    "Bryant's Economy System"
-                            })
-
-                            .setTimestamp();
-
-                    //////////////////////////////////////////////////
-
-                    collector.stop();
-
-                    //////////////////////////////////////////////////
-
-                    return i.update({
-
-                        embeds: [successEmbed],
-
-                        components: []
-                    });
-                }
-            }
-        );
+            }).catch(() => null);
 
         //////////////////////////////////////////////////
         // TIMEOUT
         //////////////////////////////////////////////////
 
-        collector.on(
+        if (!buttonInteraction) {
 
-            "end",
+            return interaction.editReply({
 
-            async (_, reason) => {
+                content:
+                    "⌛ Tiempo agotado.",
 
-                if (
-                    reason === "time"
-                ) {
+                embeds: [],
 
-                    await msg.edit({
+                components: []
+            });
+        }
 
-                        content:
-                            "⌛ Tiempo agotado.",
+        //////////////////////////////////////////////////
+        // CANCEL
+        //////////////////////////////////////////////////
 
-                        embeds: [],
+        if (
 
-                        components: []
+            buttonInteraction.customId ===
+            "shopremove_cancel"
 
-                    }).catch(() => {});
-                }
-            }
-        );
+        ) {
+
+            return buttonInteraction.update({
+
+                content:
+                    "❌ Operación cancelada.",
+
+                embeds: [],
+
+                components: []
+            });
+        }
+
+        //////////////////////////////////////////////////
+        // DELETE
+        //////////////////////////////////////////////////
+
+        await ShopItem.deleteOne({
+
+            guildId:
+                interaction.guild.id,
+
+            roleId:
+                role.id
+        });
+
+        //////////////////////////////////////////////////
+        // SUCCESS EMBED
+        //////////////////////////////////////////////////
+
+        const successEmbed =
+
+            new EmbedBuilder()
+
+                .setColor("#ff003c")
+
+                .setTitle(
+                    "🗑️ Rol eliminado"
+                )
+
+                .setDescription(
+
+                    `El rol ${role} fue eliminado exitosamente de la tienda.`
+                )
+
+                .addFields({
+
+                    name:
+                        "👮 Administrador",
+
+                    value:
+                        `${interaction.user}`,
+
+                    inline: true
+
+                }, {
+
+                    name:
+                        "🎭 Rol eliminado",
+
+                    value:
+                        `${role}`,
+
+                    inline: true
+                })
+
+                .setThumbnail(
+
+                    interaction.guild.iconURL({
+
+                        dynamic: true
+                    })
+                )
+
+                .setFooter({
+
+                    text:
+                        "Bryant's Economy System"
+                })
+
+                .setTimestamp();
+
+        //////////////////////////////////////////////////
+
+        await buttonInteraction.update({
+
+            embeds: [successEmbed],
+
+            components: []
+        });
     }
 };

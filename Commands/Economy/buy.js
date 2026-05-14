@@ -2,6 +2,7 @@ const {
     SlashCommandBuilder,
     EmbedBuilder,
     ActionRowBuilder,
+    StringSelectMenuBuilder,
     ButtonBuilder,
     ButtonStyle
 } = require("discord.js");
@@ -9,8 +10,8 @@ const {
 const ShopItem =
     require("../../Models/ShopItem");
 
-const getUser =
-    require("../../utils/getUser");
+const EconomyUser =
+    require("../../Models/EconomyUser");
 
 module.exports = {
 
@@ -20,18 +21,7 @@ module.exports = {
             .setName("comprar-rol")
 
             .setDescription(
-                "Compra un rol de la tienda"
-            )
-
-            .addRoleOption(o =>
-
-                o.setName("rol")
-
-                    .setDescription(
-                        "Rol que deseas comprar"
-                    )
-
-                    .setRequired(true)
+                "Compra roles de la tienda"
             ),
 
     //////////////////////////////////////////////////
@@ -39,205 +29,154 @@ module.exports = {
     async execute(interaction) {
 
         //////////////////////////////////////////////////
-        // ROLE
+        // ITEMS
         //////////////////////////////////////////////////
 
-        const role =
-            interaction.options.getRole(
-                "rol"
-            );
+        const items =
+            await ShopItem.find({
+
+                guildId:
+                    interaction.guild.id
+            });
+
+        //////////////////////////////////////////////////
+
+        if (!items.length) {
+
+            return interaction.reply({
+
+                content:
+                    "❌ La tienda está vacía.",
+
+                flags: 64
+            });
+        }
 
         //////////////////////////////////////////////////
         // USER DATA
         //////////////////////////////////////////////////
 
-        const user =
-            await getUser(
-
-                interaction.guild.id,
-                interaction.user.id
-            );
-
-        //////////////////////////////////////////////////
-        // ITEM
-        //////////////////////////////////////////////////
-
-        const item =
-            await ShopItem.findOne({
+        const userData =
+            await EconomyUser.findOne({
 
                 guildId:
                     interaction.guild.id,
 
-                roleId:
-                    role.id
+                userId:
+                    interaction.user.id
             });
 
         //////////////////////////////////////////////////
-        // VALIDAR TIENDA
-        //////////////////////////////////////////////////
 
-        if (!item) {
+        if (!userData) {
 
             return interaction.reply({
 
                 content:
-                    "❌ Ese rol no está en la tienda.",
+                    "❌ No tienes datos económicos.",
 
                 flags: 64
             });
         }
 
         //////////////////////////////////////////////////
-        // VALIDAR DINERO
-        //////////////////////////////////////////////////
-
-        if (
-            user.wallet < item.price
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ No tienes suficiente dinero.",
-
-                flags: 64
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // YA TIENE ROL
-        //////////////////////////////////////////////////
-
-        if (
-
-            interaction.member.roles.cache.has(
-                role.id
-            )
-
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "⚠️ Ya tienes ese rol.",
-
-                flags: 64
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // PERMISOS BOT
-        //////////////////////////////////////////////////
-
-        if (
-
-            role.position >=
-            interaction.guild.members.me.roles.highest.position
-
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ No puedo otorgar ese rol porque está por encima de mi jerarquía.",
-
-                flags: 64
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // EMBED CONFIRMACION
+        // EMBED
         //////////////////////////////////////////////////
 
         const embed =
 
             new EmbedBuilder()
 
-                .setColor(
-                    role.color || "#8A2BE2"
-                )
+                .setColor("#8A2BE2")
 
                 .setTitle(
-                    "🛒 Confirmar compra"
+                    "🛒 Tienda de Roles"
                 )
 
                 .setDescription(
 
-                    `🎭 Rol: ${role}\n\n` +
+                    `👛 Tu balance actual:\n` +
 
-                    `💰 Precio: ` +
+                    `> **${userData.wallet.toLocaleString()} monedas**\n\n` +
 
-                    `**${item.price.toLocaleString()} monedas**\n\n` +
-
-                    `⚠️ Esta compra no puede reembolsarse.`
+                    `Selecciona un rol para comprarlo.`
                 )
 
                 .setThumbnail(
 
-                    interaction.user.displayAvatarURL({
+                    interaction.guild.iconURL({
 
-                        dynamic: true,
-                        size: 1024
+                        dynamic: true
                     })
-                )
-
-                .setImage(
-                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
                 )
 
                 .setFooter({
 
                     text:
-                        "Tienes 30 segundos para responder"
+                        "Bryant's Economy"
                 })
 
                 .setTimestamp();
 
         //////////////////////////////////////////////////
-        // BOTONES
+        // OPTIONS
+        //////////////////////////////////////////////////
+
+        const options =
+            items.slice(0, 25).map(item => {
+
+                //////////////////////////////////////////////////
+                // ROLE
+                //////////////////////////////////////////////////
+
+                const role =
+                    interaction.guild.roles.cache.get(
+                        item.roleId
+                    );
+
+                //////////////////////////////////////////////////
+
+                return {
+
+                    label:
+                        role?.name || "Rol eliminado",
+
+                    description:
+                        `${item.price.toLocaleString()} monedas • ${item.description}`,
+
+                    value:
+                        item.roleId,
+
+                    emoji:
+                        item.emoji || "🛒"
+                };
+            });
+
+        //////////////////////////////////////////////////
+        // SELECT MENU
+        //////////////////////////////////////////////////
+
+        const menu =
+
+            new StringSelectMenuBuilder()
+
+                .setCustomId(
+                    "shop_select"
+                )
+
+                .setPlaceholder(
+                    "Selecciona un rol"
+                )
+
+                .addOptions(options);
+
         //////////////////////////////////////////////////
 
         const row =
-
             new ActionRowBuilder()
 
-                .addComponents(
+                .addComponents(menu);
 
-                    new ButtonBuilder()
-
-                        .setCustomId(
-                            "buy_confirm"
-                        )
-
-                        .setLabel(
-                            "Comprar"
-                        )
-
-                        .setEmoji("🛒")
-
-                        .setStyle(
-                            ButtonStyle.Secondary
-                        ),
-
-                    new ButtonBuilder()
-
-                        .setCustomId(
-                            "buy_cancel"
-                        )
-
-                        .setLabel(
-                            "Cancelar"
-                        )
-
-                        .setEmoji("❌")
-
-                        .setStyle(
-                            ButtonStyle.Secondary
-                        )
-                );
-
-        //////////////////////////////////////////////////
-        // SEND
         //////////////////////////////////////////////////
 
         const msg =
@@ -258,11 +197,9 @@ module.exports = {
 
             msg.createMessageComponentCollector({
 
-                time: 30000
+                time: 60000
             });
 
-        //////////////////////////////////////////////////
-        // COLLECT
         //////////////////////////////////////////////////
 
         collector.on(
@@ -272,7 +209,7 @@ module.exports = {
             async i => {
 
                 ////////////////////////////////////////////////
-                // SOLO AUTOR
+                // USER ONLY
                 ////////////////////////////////////////////////
 
                 if (
@@ -285,53 +222,160 @@ module.exports = {
                     return i.reply({
 
                         content:
-                            "❌ No puedes usar estos botones.",
+                            "❌ No puedes usar este menú.",
 
                         flags: 64
                     });
                 }
 
                 ////////////////////////////////////////////////
-                // CANCELAR
+                // SELECT
                 ////////////////////////////////////////////////
 
                 if (
-
-                    i.customId ===
-                    "buy_cancel"
-
+                    i.isStringSelectMenu()
                 ) {
 
-                    collector.stop();
+                    //////////////////////////////////////////////////
+                    // ITEM
+                    //////////////////////////////////////////////////
 
-                    return i.update({
+                    const item =
+                        await ShopItem.findOne({
 
-                        content:
-                            "❌ Compra cancelada.",
+                            guildId:
+                                interaction.guild.id,
 
-                        embeds: [],
+                            roleId:
+                                i.values[0]
+                        });
 
-                        components: []
+                    //////////////////////////////////////////////////
+
+                    if (!item)
+                        return;
+
+                    //////////////////////////////////////////////////
+                    // ROLE
+                    //////////////////////////////////////////////////
+
+                    const role =
+                        interaction.guild.roles.cache.get(
+                            item.roleId
+                        );
+
+                    //////////////////////////////////////////////////
+
+                    if (!role) {
+
+                        return i.reply({
+
+                            content:
+                                "❌ Ese rol ya no existe.",
+
+                            flags: 64
+                        });
+                    }
+
+                    //////////////////////////////////////////////////
+                    // CONFIRM EMBED
+                    //////////////////////////////////////////////////
+
+                    const confirmEmbed =
+
+                        new EmbedBuilder()
+
+                            .setColor(
+                                role.color || "#8A2BE2"
+                            )
+
+                            .setTitle(
+                                "🛒 Confirmar compra"
+                            )
+
+                            .setDescription(
+
+                                `¿Deseas comprar ${role}?\n\n` +
+
+                                `${item.emoji} ${item.description}\n\n` +
+
+                                `💰 Precio:\n` +
+
+                                `> ${item.price.toLocaleString()} monedas`
+                            )
+
+                            .setTimestamp();
+
+                    //////////////////////////////////////////////////
+                    // BUTTONS
+                    //////////////////////////////////////////////////
+
+                    const buttons =
+
+                        new ActionRowBuilder()
+
+                            .addComponents(
+
+                                new ButtonBuilder()
+
+                                    .setCustomId(
+                                        `buy_${role.id}`
+                                    )
+
+                                    .setLabel(
+                                        "Comprar"
+                                    )
+
+                                    .setEmoji("✅")
+
+                                    .setStyle(
+                                        ButtonStyle.Secondary
+                                    ),
+
+                                new ButtonBuilder()
+
+                                    .setCustomId(
+                                        "cancel_buy"
+                                    )
+
+                                    .setLabel(
+                                        "Cancelar"
+                                    )
+
+                                    .setEmoji("❌")
+
+                                    .setStyle(
+                                        ButtonStyle.Secondary
+                                    )
+                            );
+
+                    //////////////////////////////////////////////////
+
+                    await i.update({
+
+                        embeds: [confirmEmbed],
+
+                        components: [buttons]
                     });
                 }
 
                 ////////////////////////////////////////////////
-                // CONFIRMAR
+                // BUTTONS
                 ////////////////////////////////////////////////
 
                 if (
-
-                    i.customId ===
-                    "buy_confirm"
-
+                    i.isButton()
                 ) {
 
-                    //////////////////////////////////////////////////
-                    // VALIDAR DINERO OTRA VEZ
-                    //////////////////////////////////////////////////
+                    ////////////////////////////////////////////////
+                    // CANCEL
+                    ////////////////////////////////////////////////
 
                     if (
-                        user.wallet < item.price
+
+                        i.customId ===
+                        "cancel_buy"
+
                     ) {
 
                         collector.stop();
@@ -339,7 +383,7 @@ module.exports = {
                         return i.update({
 
                             content:
-                                "❌ Ya no tienes suficiente dinero.",
+                                "❌ Compra cancelada.",
 
                             embeds: [],
 
@@ -347,90 +391,173 @@ module.exports = {
                         });
                     }
 
-                    //////////////////////////////////////////////////
-                    // COMPRAR
-                    //////////////////////////////////////////////////
+                    ////////////////////////////////////////////////
+                    // BUY
+                    ////////////////////////////////////////////////
 
-                    user.wallet -= item.price;
+                    if (
 
-                    //////////////////////////////////////////////////
+                        i.customId.startsWith(
+                            "buy_"
+                        )
 
-                    await user.save();
+                    ) {
 
-                    //////////////////////////////////////////////////
+                        //////////////////////////////////////////////////
+                        // ROLE ID
+                        //////////////////////////////////////////////////
 
-                    await interaction.member.roles
-                        .add(role)
-                        .catch(() => {});
+                        const roleId =
+                            i.customId.split("_")[1];
 
-                    //////////////////////////////////////////////////
-                    // EMBED SUCCESS
-                    //////////////////////////////////////////////////
+                        //////////////////////////////////////////////////
+                        // ITEM
+                        //////////////////////////////////////////////////
 
-                    const successEmbed =
+                        const item =
+                            await ShopItem.findOne({
 
-                        new EmbedBuilder()
+                                guildId:
+                                    interaction.guild.id,
 
-                            .setColor(
-                                role.color || "#00ff99"
+                                roleId
+                            });
+
+                        //////////////////////////////////////////////////
+
+                        if (!item)
+                            return;
+
+                        //////////////////////////////////////////////////
+                        // ROLE
+                        //////////////////////////////////////////////////
+
+                        const role =
+                            interaction.guild.roles.cache.get(
+                                roleId
+                            );
+
+                        //////////////////////////////////////////////////
+
+                        if (!role) {
+
+                            return i.reply({
+
+                                content:
+                                    "❌ Rol inexistente.",
+
+                                flags: 64
+                            });
+                        }
+
+                        //////////////////////////////////////////////////
+                        // ALREADY OWNED
+                        //////////////////////////////////////////////////
+
+                        if (
+
+                            interaction.member.roles.cache.has(
+                                role.id
                             )
 
-                            .setTitle(
-                                "🎉 Compra realizada"
-                            )
+                        ) {
 
-                            .setDescription(
+                            return i.reply({
 
-                                `✅ Has comprado el rol ${role}\n\n` +
+                                content:
+                                    "❌ Ya tienes este rol.",
 
-                                `💸 Precio pagado: ` +
+                                flags: 64
+                            });
+                        }
 
-                                `**${item.price.toLocaleString()} monedas**\n\n` +
+                        //////////////////////////////////////////////////
+                        // MONEY
+                        //////////////////////////////////////////////////
 
-                                `💵 Wallet restante: ` +
+                        if (
 
-                                `**${user.wallet.toLocaleString()} monedas**`
-                            )
+                            userData.wallet <
+                            item.price
 
-                            .setThumbnail(
+                        ) {
 
-                                interaction.user.displayAvatarURL({
+                            return i.reply({
 
-                                    dynamic: true,
-                                    size: 1024
-                                })
-                            )
+                                content:
+                                    "❌ No tienes suficiente dinero.",
 
-                            .setImage(
-                                "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
-                            )
+                                flags: 64
+                            });
+                        }
 
-                            .setFooter({
+                        //////////////////////////////////////////////////
+                        // REMOVE MONEY
+                        //////////////////////////////////////////////////
 
-                                text:
-                                    "Bryant's Economy System"
-                            })
+                        userData.wallet -=
+                            item.price;
 
-                            .setTimestamp();
+                        //////////////////////////////////////////////////
 
-                    //////////////////////////////////////////////////
+                        await userData.save();
 
-                    collector.stop();
+                        //////////////////////////////////////////////////
+                        // GIVE ROLE
+                        //////////////////////////////////////////////////
 
-                    //////////////////////////////////////////////////
+                        await interaction.member.roles.add(
+                            role
+                        );
 
-                    return i.update({
+                        //////////////////////////////////////////////////
+                        // SUCCESS
+                        //////////////////////////////////////////////////
 
-                        embeds: [successEmbed],
+                        const successEmbed =
 
-                        components: []
-                    });
+                            new EmbedBuilder()
+
+                                .setColor("#00ff99")
+
+                                .setTitle(
+                                    "✅ Compra completada"
+                                )
+
+                                .setDescription(
+
+                                    `Has comprado ${role}\n\n` +
+
+                                    `💰 Precio pagado:\n` +
+
+                                    `> ${item.price.toLocaleString()} monedas\n\n` +
+
+                                    `👛 Balance restante:\n` +
+
+                                    `> ${userData.wallet.toLocaleString()} monedas`
+                                )
+
+                                .setTimestamp();
+
+                        //////////////////////////////////////////////////
+
+                        collector.stop();
+
+                        //////////////////////////////////////////////////
+
+                        return i.update({
+
+                            embeds: [successEmbed],
+
+                            components: []
+                        });
+                    }
                 }
             }
         );
 
         //////////////////////////////////////////////////
-        // TIMEOUT
+        // END
         //////////////////////////////////////////////////
 
         collector.on(

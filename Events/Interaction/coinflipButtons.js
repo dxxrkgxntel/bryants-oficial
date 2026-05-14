@@ -5,6 +5,9 @@ const {
 const EconomyUser =
     require("../../Models/EconomyUser");
 
+const CasinoStats =
+    require("../../Models/CasinoStats");
+
 module.exports = {
 
     name: "interactionCreate",
@@ -41,8 +44,12 @@ module.exports = {
             const authorId =
                 args[1];
 
+            //////////////////////////////////////////////////
+
             const targetId =
                 args[2];
+
+            //////////////////////////////////////////////////
 
             const amount =
                 parseInt(args[3]);
@@ -262,8 +269,109 @@ module.exports = {
             if (authorData.wallet < 0)
                 authorData.wallet = 0;
 
+            //////////////////////////////////////////////////
+
             if (targetData.wallet < 0)
                 targetData.wallet = 0;
+
+            //////////////////////////////////////////////////
+            // CASINO STATS WINNER
+            //////////////////////////////////////////////////
+
+            let winnerStats =
+
+                await CasinoStats.findOne({
+
+                    guildId:
+                        interaction.guild.id,
+
+                    userId:
+                        winnerId
+                });
+
+            //////////////////////////////////////////////////
+
+            if (!winnerStats) {
+
+                winnerStats =
+                    await CasinoStats.create({
+
+                        guildId:
+                            interaction.guild.id,
+
+                        userId:
+                            winnerId
+                    });
+            }
+
+            //////////////////////////////////////////////////
+            // CASINO STATS LOSER
+            //////////////////////////////////////////////////
+
+            let loserStats =
+
+                await CasinoStats.findOne({
+
+                    guildId:
+                        interaction.guild.id,
+
+                    userId:
+                        loserId
+                });
+
+            //////////////////////////////////////////////////
+
+            if (!loserStats) {
+
+                loserStats =
+                    await CasinoStats.create({
+
+                        guildId:
+                            interaction.guild.id,
+
+                        userId:
+                            loserId
+                    });
+            }
+
+            //////////////////////////////////////////////////
+            // WINNER STATS
+            //////////////////////////////////////////////////
+
+            winnerStats.totalGames += 1;
+
+            winnerStats.totalWins += 1;
+
+            winnerStats.moneyWon += totalPrize;
+
+            winnerStats.currentStreak += 1;
+
+            winnerStats.coinflipWins += 1;
+
+            //////////////////////////////////////////////////
+
+            if (
+
+                totalPrize >
+                winnerStats.biggestWin
+
+            ) {
+
+                winnerStats.biggestWin =
+                    totalPrize;
+            }
+
+            //////////////////////////////////////////////////
+            // LOSER STATS
+            //////////////////////////////////////////////////
+
+            loserStats.totalGames += 1;
+
+            loserStats.totalLosses += 1;
+
+            loserStats.moneyLost += amount;
+
+            loserStats.currentStreak = 0;
 
             //////////////////////////////////////////////////
             // SAVE
@@ -272,6 +380,14 @@ module.exports = {
             await authorData.save();
 
             await targetData.save();
+
+            //////////////////////////////////////////////////
+            // SAVE STATS
+            //////////////////////////////////////////////////
+
+            await winnerStats.save();
+
+            await loserStats.save();
 
             //////////////////////////////////////////////////
             // USER

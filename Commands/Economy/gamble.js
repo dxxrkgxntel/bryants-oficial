@@ -12,6 +12,9 @@ const getUser =
 const getConfig =
     require("../../utils/getConfig");
 
+const CasinoStats =
+    require("../../Models/CasinoStats");
+
 //////////////////////////////////////////////////
 // ANTI SPAM
 //////////////////////////////////////////////////
@@ -382,49 +385,49 @@ module.exports = {
 
             const loadingEmbed =
 
-    new EmbedBuilder()
+                new EmbedBuilder()
 
-        .setColor("#8A2BE2")
+                    .setColor("#8A2BE2")
 
-        .setTitle(
-            "🎰 Bryant's Casino"
-        )
+                    .setTitle(
+                        "🎰 Bryant's Casino"
+                    )
 
-        .setDescription(
+                    .setDescription(
 
-            `## 🎲 Girando tragamonedas...\n\n` +
+                        `## 🎲 Girando tragamonedas...\n\n` +
 
-            `💸 Apostando **${amount.toLocaleString()} monedas**\n\n` +
+                        `💸 Apostando **${amount.toLocaleString()} monedas**\n\n` +
 
-            `🍀 La suerte está siendo decidida...`
-        )
+                        `🍀 La suerte está siendo decidida...`
+                    )
 
-        .setThumbnail(
+                    .setThumbnail(
 
-            interaction.user.displayAvatarURL({
+                        interaction.user.displayAvatarURL({
 
-                dynamic: true
-            })
-        )
+                            dynamic: true
+                        })
+                    )
 
-        .setFooter({
+                    .setFooter({
 
-            text:
-                "Bryant's Casino"
-        })
+                        text:
+                            "Bryant's Casino"
+                    })
 
-        .setTimestamp();
+                    .setTimestamp();
 
-//////////////////////////////////////////////////
+            //////////////////////////////////////////////////
 
-await interaction.editReply({
+            await interaction.editReply({
 
-    content: null,
+                content: null,
 
-    embeds: [loadingEmbed],
+                embeds: [loadingEmbed],
 
-    components: []
-});
+                components: []
+            });
 
             //////////////////////////////////////////////////
             // DELAY
@@ -445,6 +448,36 @@ await interaction.editReply({
                     interaction.guild.id,
                     interaction.user.id
                 );
+
+            //////////////////////////////////////////////////
+            // CASINO STATS
+            //////////////////////////////////////////////////
+
+            let stats =
+
+                await CasinoStats.findOne({
+
+                    guildId:
+                        interaction.guild.id,
+
+                    userId:
+                        interaction.user.id
+                });
+
+            //////////////////////////////////////////////////
+
+            if (!stats) {
+
+                stats =
+                    await CasinoStats.create({
+
+                        guildId:
+                            interaction.guild.id,
+
+                        userId:
+                            interaction.user.id
+                    });
+            }
 
             //////////////////////////////////////////////////
             // VALIDAR OTRA VEZ
@@ -601,12 +634,26 @@ await interaction.editReply({
                     winnings;
 
                 //////////////////////////////////////////////////
-                // STATS
+                // STATS USER
                 //////////////////////////////////////////////////
 
                 freshUser.gamblesWon += 1;
 
                 freshUser.gambleStreak += 1;
+
+                //////////////////////////////////////////////////
+                // GLOBAL STATS
+                //////////////////////////////////////////////////
+
+                stats.totalGames += 1;
+
+                stats.totalWins += 1;
+
+                stats.moneyWon += winnings;
+
+                stats.currentStreak += 1;
+
+                stats.gambleWins += 1;
 
                 //////////////////////////////////////////////////
 
@@ -623,14 +670,31 @@ await interaction.editReply({
 
                 //////////////////////////////////////////////////
 
+                if (
+
+                    winnings >
+                    stats.biggestWin
+
+                ) {
+
+                    stats.biggestWin =
+                        winnings;
+                }
+
+                //////////////////////////////////////////////////
+
                 if (jackpot) {
 
                     freshUser.jackpots += 1;
+
+                    stats.jackpots += 1;
                 }
 
                 //////////////////////////////////////////////////
 
                 await freshUser.save();
+
+                await stats.save();
 
                 //////////////////////////////////////////////////
                 // EMBED
@@ -717,7 +781,9 @@ await interaction.editReply({
 
                             null,
 
-                    embeds: [embed]
+                    embeds: [embed],
+
+                    components: []
                 });
             }
 
@@ -739,8 +805,22 @@ await interaction.editReply({
                 freshUser.gambleStreak = 0;
 
                 //////////////////////////////////////////////////
+                // GLOBAL STATS
+                //////////////////////////////////////////////////
+
+                stats.totalGames += 1;
+
+                stats.totalLosses += 1;
+
+                stats.moneyLost += amount;
+
+                stats.currentStreak = 0;
+
+                //////////////////////////////////////////////////
 
                 await freshUser.save();
+
+                await stats.save();
 
                 //////////////////////////////////////////////////
 
@@ -791,12 +871,12 @@ await interaction.editReply({
 
                 return interaction.editReply({
 
-    content: null,
+                    content: null,
 
-    embeds: [embed],
+                    embeds: [embed],
 
-    components: []
-});
+                    components: []
+                });
             }
 
         } catch (err) {

@@ -11,6 +11,9 @@ const {
 const EconomyUser =
     require("../../Models/EconomyUser");
 
+const CasinoStats =
+    require("../../Models/CasinoStats");
+
 module.exports = {
 
     data:

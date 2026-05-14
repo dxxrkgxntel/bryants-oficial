@@ -3,8 +3,8 @@ const {
     EmbedBuilder
 } = require("discord.js");
 
-const EconomyUser =
-    require("../../Models/EconomyUser");
+const CasinoStats =
+    require("../../Models/CasinoStats");
 
 module.exports = {
 
@@ -25,7 +25,8 @@ module.exports = {
         // USER
         //////////////////////////////////////////////////
 
-        const target = interaction.user;
+        const target =
+            interaction.user;
 
         //////////////////////////////////////////////////
         // DATA
@@ -33,7 +34,7 @@ module.exports = {
 
         const data =
 
-            await EconomyUser.findOne({
+            await CasinoStats.findOne({
 
                 guildId:
                     interaction.guild.id,
@@ -56,13 +57,39 @@ module.exports = {
         }
 
         //////////////////////////////////////////////////
+        // FIX OLD DATA
+        //////////////////////////////////////////////////
+
+        data.totalGames ??= 0;
+
+        data.totalWins ??= 0;
+
+        data.totalLosses ??= 0;
+
+        data.moneyWon ??= 0;
+
+        data.moneyLost ??= 0;
+
+        data.jackpots ??= 0;
+
+        data.currentStreak ??= 0;
+
+        data.biggestWin ??= 0;
+
+        data.slotsWins ??= 0;
+
+        data.rouletteWins ??= 0;
+
+        data.gambleWins ??= 0;
+
+        data.coinflipWins ??= 0;
+
+        //////////////////////////////////////////////////
         // TOTAL GAMES
         //////////////////////////////////////////////////
 
         const totalGames =
-
-            data.gamblesWon +
-            data.gamblesLost;
+            data.totalGames;
 
         //////////////////////////////////////////////////
         // WINRATE
@@ -75,7 +102,10 @@ module.exports = {
                 ?
 
                 (
-                    (data.gamblesWon / totalGames) * 100
+                    (
+                        data.totalWins /
+                        totalGames
+                    ) * 100
                 ).toFixed(1)
 
                 :
@@ -100,19 +130,33 @@ module.exports = {
 
                     `## 👤 ${target.username}\n\n` +
 
-                    `> 🎉 Ganadas: **${data.gamblesWon.toLocaleString()}**\n` +
+                    `> 🎉 Victorias: **${data.totalWins.toLocaleString()}**\n` +
 
-                    `> 💥 Perdidas: **${data.gamblesLost.toLocaleString()}**\n` +
+                    `> 💥 Derrotas: **${data.totalLosses.toLocaleString()}**\n` +
 
                     `> 📈 Winrate: **${winrate}%**\n\n` +
 
+                    `> 💰 Dinero ganado: **${data.moneyWon.toLocaleString()}**\n` +
+
+                    `> 💸 Dinero perdido: **${data.moneyLost.toLocaleString()}**\n\n` +
+
                     `> 🌟 Jackpots: **${data.jackpots.toLocaleString()}**\n` +
 
-                    `> 🔥 Racha actual: **${data.gambleStreak.toLocaleString()}**\n` +
+                    `> 🔥 Racha actual: **${data.currentStreak.toLocaleString()}**\n` +
 
                     `> 💎 Mayor victoria: **${data.biggestWin.toLocaleString()} monedas**\n\n` +
 
-                    `> 🎲 Total apuestas: **${totalGames.toLocaleString()}**`
+                    `> 🎲 Total partidas: **${data.totalGames.toLocaleString()}**\n\n` +
+
+                    `### 🎮 Juegos\n\n` +
+
+                    `🎰 Slots ganados: **${data.slotsWins.toLocaleString()}**\n` +
+
+                    `🎡 Ruletas ganadas: **${data.rouletteWins.toLocaleString()}**\n` +
+
+                    `🎲 Apuestas ganadas: **${data.gambleWins.toLocaleString()}**\n` +
+
+                    `🪙 Coinflip ganados: **${data.coinflipWins.toLocaleString()}**`
                 )
 
                 .setThumbnail(

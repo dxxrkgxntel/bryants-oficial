@@ -9,6 +9,9 @@ const {
 const EconomyUser =
     require("../../Models/EconomyUser");
 
+const CasinoStats =
+    require("../../Models/CasinoStats");
+
 //////////////////////////////////////////////////
 // EMOJIS
 //////////////////////////////////////////////////
@@ -90,6 +93,36 @@ module.exports = {
 
                 flags: 64
             });
+        }
+
+        //////////////////////////////////////////////////
+        // CASINO STATS
+        //////////////////////////////////////////////////
+
+        let stats =
+
+            await CasinoStats.findOne({
+
+                guildId:
+                    interaction.guild.id,
+
+                userId:
+                    interaction.user.id
+            });
+
+        //////////////////////////////////////////////////
+
+        if (!stats) {
+
+            stats =
+                await CasinoStats.create({
+
+                    guildId:
+                        interaction.guild.id,
+
+                    userId:
+                        interaction.user.id
+                });
         }
 
         //////////////////////////////////////////////////
@@ -300,16 +333,10 @@ module.exports = {
 
             return data.map((row, index) => {
 
-                //////////////////////////////////////////////////
-                // LINEA CENTRAL
-                //////////////////////////////////////////////////
-
                 if (index === 1) {
 
                     return `${row.join(" │ ")} <`;
                 }
-
-                //////////////////////////////////////////////////
 
                 return `${row.join(" │ ")}`;
 
@@ -385,6 +412,8 @@ module.exports = {
 
             resultText =
                 "👑 JACKPOT x15";
+
+            stats.jackpots += 1;
         }
 
         //////////////////////////////////////////////////
@@ -441,10 +470,44 @@ module.exports = {
             userData.wallet +=
                 profit;
 
+            //////////////////////////////////////////////////
+            // STATS
+            //////////////////////////////////////////////////
+
+            stats.totalGames += 1;
+
+            stats.totalWins += 1;
+
+            stats.moneyWon += winnings;
+
+            stats.currentStreak += 1;
+
+            stats.slotsWins += 1;
+
+            //////////////////////////////////////////////////
+
+            if (winnings > stats.biggestWin) {
+
+                stats.biggestWin =
+                    winnings;
+            }
+
         } else {
 
             userData.wallet -=
                 amount;
+
+            //////////////////////////////////////////////////
+            // STATS
+            //////////////////////////////////////////////////
+
+            stats.totalGames += 1;
+
+            stats.totalLosses += 1;
+
+            stats.moneyLost += amount;
+
+            stats.currentStreak = 0;
         }
 
         //////////////////////////////////////////////////
@@ -452,6 +515,8 @@ module.exports = {
         //////////////////////////////////////////////////
 
         await userData.save();
+
+        await stats.save();
 
         //////////////////////////////////////////////////
         // EMBED FINAL
