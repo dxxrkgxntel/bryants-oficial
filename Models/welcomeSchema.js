@@ -7,6 +7,7 @@ let welcomeSchema = new Schema({
     MessageDes: String,
     Channel: String,
     Guild: String,
+    Title: String,
 })
 
 module.exports = model("welcome", welcomeSchema)
