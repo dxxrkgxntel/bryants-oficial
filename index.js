@@ -5,6 +5,7 @@ const { loadEvents } = require('./Handlers/eventHandler');
 const { loadCommands } = require('./Handlers/commandHandler');
 const { loadInteractions } = require('./Handlers/interactionHandler');
 const { startWatcher } = require('./Handlers/watcher');
+const autoPollEnd = require("./Functions/autoPollEnd");
 
 const client = new Client({
   intents: Object.values(GatewayIntentBits),
@@ -31,6 +32,7 @@ client.login(config.token).then(() => {
   loadEvents(client);
   loadCommands(client);
   loadInteractions(client);
+  autoPollEnd(client);
 
 });
 
