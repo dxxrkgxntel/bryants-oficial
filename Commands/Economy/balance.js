@@ -9,6 +9,9 @@ const getUser =
 const applyBankBonus =
     require("../../utils/applyBankBonus");
 
+const updateDebt =
+    require("../../utils/updateDebt");
+
 module.exports = {
 
     data:
@@ -28,7 +31,8 @@ module.exports = {
         // USER
         //////////////////////////////////////////////////
 
-        const target = interaction.user;
+        const target =
+            interaction.user;
 
         //////////////////////////////////////////////////
         // DATA
@@ -43,7 +47,7 @@ module.exports = {
             );
 
         //////////////////////////////////////////////////
-        // BONUS
+        // BONUS BANCARIO
         //////////////////////////////////////////////////
 
         const bonus =
@@ -57,6 +61,15 @@ module.exports = {
         await userData.save();
 
         //////////////////////////////////////////////////
+        // ACTUALIZAR DEUDA
+        //////////////////////////////////////////////////
+
+        const addedDebt =
+            await updateDebt(
+                userData
+            );
+
+        //////////////////////////////////////////////////
         // TOTAL
         //////////////////////////////////////////////////
 
@@ -66,22 +79,48 @@ module.exports = {
             userData.bank;
 
         //////////////////////////////////////////////////
-// MEMBER
-//////////////////////////////////////////////////
+        // MEMBER
+        //////////////////////////////////////////////////
 
-const member =
-    await interaction.guild.members
-        .fetch(target.id)
-        .catch(() => null);
+        const member =
+            await interaction.guild.members
 
-//////////////////////////////////////////////////
-// DISPLAY NAME
-//////////////////////////////////////////////////
+                .fetch(target.id)
 
-const displayName =
+                .catch(() => null);
 
-    member?.displayName ||
-    target.username;
+        //////////////////////////////////////////////////
+        // DISPLAY NAME
+        //////////////////////////////////////////////////
+
+        const displayName =
+
+            member?.displayName ||
+
+            target.username;
+
+        //////////////////////////////////////////////////
+        // ESTADO FINANCIERO
+        //////////////////////////////////////////////////
+
+        let financialStatus =
+            "🟢 Estable";
+
+        //////////////////////////////////////////////////
+
+        if (userData.debt > 0) {
+
+            financialStatus =
+                "🔴 Endeudado";
+        }
+
+        //////////////////////////////////////////////////
+
+        if (userData.debt >= 100000) {
+
+            financialStatus =
+                "⚠️ Deuda elevada";
+        }
 
         //////////////////////////////////////////////////
         // EMBED
@@ -101,49 +140,70 @@ const displayName =
 
                     {
                         name: "💵 Wallet",
+
                         value:
                             `${userData.wallet.toLocaleString()} monedas`,
+
                         inline: true
                     },
 
                     {
                         name: "🏦 Banco",
+
                         value:
                             `${userData.bank.toLocaleString()} monedas`,
+
                         inline: true
                     },
 
                     {
                         name: "📊 Total",
+
                         value:
                             `${total.toLocaleString()} monedas`,
+
+                        inline: true
+                    },
+
+                    {
+                        name: "📉 Deuda",
+
+                        value:
+                            `${userData.debt.toLocaleString()} monedas`,
+
+                        inline: true
+                    },
+
+                    {
+                        name: "🏛️ Estado financiero",
+
+                        value:
+                            financialStatus,
+
                         inline: true
                     }
-                )
-
-                //////////////////////////////////////////////////
-                // BONUS SOLO SI EXISTE
-                //////////////////////////////////////////////////
-
-                .setThumbnail(
-
-                    target.displayAvatarURL({
-
-                        dynamic: true,
-                        size: 1024
-                    })
-                )
-
-                .setFooter({
-
-                    text:
-                        interaction.guild.name
-                })
-
-                .setTimestamp();
+                );
 
         //////////////////////////////////////////////////
-        // BONUS FIELD
+        // INTERESES ACUMULADOS
+        //////////////////////////////////////////////////
+
+        if (addedDebt > 0) {
+
+            embed.addFields({
+
+                name:
+                    "📈 Intereses acumulados",
+
+                value:
+                    `+${addedDebt.toLocaleString()} monedas añadidas a tu deuda`,
+
+                inline: false
+            });
+        }
+
+        //////////////////////////////////////////////////
+        // BONUS BANCARIO
         //////////////////////////////////////////////////
 
         if (bonus > 0) {
@@ -159,6 +219,39 @@ const displayName =
                 inline: false
             });
         }
+
+        //////////////////////////////////////////////////
+        // THUMBNAIL
+        //////////////////////////////////////////////////
+
+        embed.setThumbnail(
+
+            target.displayAvatarURL({
+
+                dynamic: true,
+                size: 1024
+            })
+        );
+
+        //////////////////////////////////////////////////
+        // IMAGE
+        //////////////////////////////////////////////////
+
+        embed.setImage(
+            "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
+        );
+
+        //////////////////////////////////////////////////
+
+        embed.setFooter({
+
+            text:
+                interaction.guild.name
+        });
+
+        //////////////////////////////////////////////////
+
+        embed.setTimestamp();
 
         //////////////////////////////////////////////////
 

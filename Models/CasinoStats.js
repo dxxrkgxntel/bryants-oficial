@@ -99,6 +99,12 @@ const casinoStatsSchema =
 
             type: Number,
             default: 0
+        },
+
+        blackjackWins: {
+
+            type: Number,
+            default: 0
         }
     });
 

@@ -1,6 +1,14 @@
-const Level = require("../../Models/Level");
-const LevelConfig = require("../../Models/LevelConfig");
-const LevelReward = require("../../Models/LevelReward");
+const Level =
+    require("../../Models/Level");
+
+const LevelConfig =
+    require("../../Models/LevelConfig");
+
+const LevelReward =
+    require("../../Models/LevelReward");
+
+const EconomyUser =
+    require("../../Models/EconomyUser");
 
 //////////////////////////////////////////////////
 // CONFIG
@@ -39,10 +47,11 @@ module.exports = {
         setInterval(async () => {
 
             //////////////////////////////////////////////////
-            // RECORRER SERVERS
+            // GUILDS
             //////////////////////////////////////////////////
 
             client.guilds.cache.forEach(
+
                 async (guild) => {
 
                     //////////////////////////////////////////////////
@@ -50,6 +59,7 @@ module.exports = {
                     //////////////////////////////////////////////////
 
                     const voiceChannels =
+
                         guild.channels.cache.filter(
 
                             c =>
@@ -59,15 +69,18 @@ module.exports = {
                     //////////////////////////////////////////////////
 
                     for (
+
                         const channel
                         of voiceChannels.values()
+
                     ) {
 
                         //////////////////////////////////////////////////
-                        // FILTRAR USERS VALIDOS
+                        // MEMBERS
                         //////////////////////////////////////////////////
 
                         const members =
+
                             channel.members.filter(
 
                                 member =>
@@ -92,8 +105,10 @@ module.exports = {
                         //////////////////////////////////////////////////
 
                         for (
+
                             const member
                             of members.values()
+
                         ) {
 
                             //////////////////////////////////////////////////
@@ -102,6 +117,8 @@ module.exports = {
 
                             const key =
                                 `${guild.id}_${member.id}`;
+
+                            //////////////////////////////////////////////////
 
                             if (
                                 voiceCooldown.has(key)
@@ -113,9 +130,7 @@ module.exports = {
 
                             setTimeout(() => {
 
-                                voiceCooldown.delete(
-                                    key
-                                );
+                                voiceCooldown.delete(key);
 
                             }, VOICE_COOLDOWN);
 
@@ -124,6 +139,7 @@ module.exports = {
                             //////////////////////////////////////////////////
 
                             let data =
+
                                 await Level.findOne({
 
                                     userId:
@@ -133,6 +149,8 @@ module.exports = {
                                         guild.id
                                 });
 
+                            //////////////////////////////////////////////////
+                            // CREATE
                             //////////////////////////////////////////////////
 
                             if (!data) {
@@ -158,35 +176,96 @@ module.exports = {
                             }
 
                             //////////////////////////////////////////////////
-                            // XP NECESARIA
+                            // XP NEEDED
                             //////////////////////////////////////////////////
 
-                            const xpNeeded =
+                            let xpNeeded =
+
                                 (data.level + 1) * 100;
 
                             //////////////////////////////////////////////////
-                            // LEVEL UP
+                            // MULTI LEVEL UP
                             //////////////////////////////////////////////////
 
-                            if (data.xp >= xpNeeded) {
+                            while (
+
+                                data.xp >= xpNeeded
+
+                            ) {
 
                                 //////////////////////////////////////////////////
-                                // SUBIR NIVEL
+                                // LEVEL UP
                                 //////////////////////////////////////////////////
 
                                 data.level += 1;
 
                                 //////////////////////////////////////////////////
-                                // XP SOBRANTE
+                                // REMOVE XP
                                 //////////////////////////////////////////////////
 
                                 data.xp -= xpNeeded;
+
+                                //////////////////////////////////////////////////
+                                // NEW XP NEEDED
+                                //////////////////////////////////////////////////
+
+                                xpNeeded =
+
+                                    (data.level + 1) * 100;
+
+                                //////////////////////////////////////////////////
+                                // ECONOMY
+                                //////////////////////////////////////////////////
+
+                                let economy =
+
+                                    await EconomyUser.findOne({
+
+                                        guildId:
+                                            guild.id,
+
+                                        userId:
+                                            member.id
+                                    });
+
+                                //////////////////////////////////////////////////
+
+                                if (!economy) {
+
+                                    economy =
+                                        new EconomyUser({
+
+                                            guildId:
+                                                guild.id,
+
+                                            userId:
+                                                member.id,
+
+                                            wallet: 0,
+
+                                            bank: 0
+                                        });
+                                }
+
+                                //////////////////////////////////////////////////
+                                // REWARD
+                                //////////////////////////////////////////////////
+
+                                const reward =
+                                    data.level * 100;
+
+                                //////////////////////////////////////////////////
+
+                                economy.wallet += reward;
+
+                                await economy.save();
 
                                 //////////////////////////////////////////////////
                                 // CONFIG
                                 //////////////////////////////////////////////////
 
                                 const levelConfig =
+
                                     await LevelConfig.findOne({
 
                                         guildId:
@@ -194,17 +273,18 @@ module.exports = {
                                     });
 
                                 //////////////////////////////////////////////////
-                                // CANAL
+                                // CHANNEL
                                 //////////////////////////////////////////////////
 
                                 const levelChannel =
+
                                     guild.channels.cache.get(
 
                                         levelConfig?.levelChannel
                                     );
 
                                 //////////////////////////////////////////////////
-                                // MENSAJE LEVEL UP
+                                // LEVEL UP MESSAGE
                                 //////////////////////////////////////////////////
 
                                 if (levelChannel) {
@@ -214,15 +294,17 @@ module.exports = {
                                         embeds: [{
 
                                             title:
-                                                "🎉 Subida de nivel en voz",
+                                                "🎉 Subiste de nivel",
 
                                             description:
 
-                                                `🎊 ¡Felicidades ${member}!\n\n` +
+                                                `✨ ¡Felicidades ${member}!\n\n` +
 
-                                                `Has alcanzado el nivel **${data.level}** gracias a tu actividad en los canales de voz.\n\n` +
+                                                `Has alcanzado el nivel **${data.level}** gracias a tu actividad y participación dentro del servidor.\n\n` +
 
-                                                `🔥 Sigue participando, hablando y manteniéndote activo para continuar subiendo de nivel y desbloquear nuevas recompensas dentro del servidor.`,
+                                                `💰 Recompensa recibida: **${reward} coins**\n\n` +
+
+                                                `🔥 Sigue participando y manteniéndote activo para desbloquear más recompensas.`,
 
                                             color: 0x8A2BE2,
 
@@ -240,53 +322,115 @@ module.exports = {
                                             image: {
 
                                                 url:
-                                                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png?ex=6a0032f4&is=69fee174&hm=54a509859dcee24cd6a637b9e0373e1821b6ab3898eccd77a59591b6e6d55e3a&=&format=webp&quality=lossless&width=1288&height=515"
+                                                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
                                             }
                                         }]
                                     }).catch(() => {});
                                 }
 
                                 //////////////////////////////////////////////////
-                                // ROLES POR NIVEL
+                                // LEVEL REWARD
                                 //////////////////////////////////////////////////
 
-                                const LevelReward =
-                                    require("../../Models/LevelReward");
+                                const rewardData =
 
-                                const reward =
                                     await LevelReward.findOne({
 
-                                    guildId: guild.id,
+                                        guildId:
+                                            guild.id,
 
-                                    level: data.level
-                                });
-
-                                const roleId =
-                                    reward?.roleId;
+                                        level:
+                                            data.level
+                                    });
 
                                 //////////////////////////////////////////////////
-                                // SI EXISTE ROL
+
+                                const roleId =
+                                    rewardData?.roleId;
+
+                                //////////////////////////////////////////////////
+                                // ROLE
                                 //////////////////////////////////////////////////
 
                                 if (roleId) {
 
                                     const role =
+
                                         guild.roles.cache.get(
                                             roleId
                                         );
 
                                     //////////////////////////////////////////////////
-                                    // DAR ROL
-                                    //////////////////////////////////////////////////
 
-                                    if (role) {
+                                    if (
+
+                                        role &&
+
+                                        !member.roles.cache.has(
+                                            role.id
+                                        )
+
+                                    ) {
+
+                                        //////////////////////////////////////////////////
+                                        // OBTENER TODOS LOS ROLES
+                                        //////////////////////////////////////////////////
+
+                                        const allRewards =
+
+                                            await LevelReward.find({
+
+                                                guildId:
+                                                    guild.id
+                                            });
+
+                                        //////////////////////////////////////////////////
+                                        // REMOVER ROLES ANTERIORES
+                                        //////////////////////////////////////////////////
+
+                                        for (
+
+                                            const rewardRole
+                                            of allRewards
+
+                                        ) {
+
+                                            //////////////////////////////////////////////////
+
+                                            if (
+                                                rewardRole.roleId === role.id
+                                            ) continue;
+
+                                            //////////////////////////////////////////////////
+
+                                            if (
+
+                                                member.roles.cache.has(
+                                                    rewardRole.roleId
+                                                )
+
+                                            ) {
+
+                                                await member.roles
+
+                                                    .remove(
+                                                        rewardRole.roleId
+                                                    )
+
+                                                    .catch(() => {});
+                                            }
+                                        }
+
+                                        //////////////////////////////////////////////////
+                                        // DAR NUEVO ROL
+                                        //////////////////////////////////////////////////
 
                                         await member.roles
                                             .add(role)
                                             .catch(() => {});
 
                                         //////////////////////////////////////////////////
-                                        // MENSAJE ROL
+                                        // ROLE MESSAGE
                                         //////////////////////////////////////////////////
 
                                         if (levelChannel) {
@@ -302,9 +446,7 @@ module.exports = {
 
                                                         `✨ ¡Felicidades ${member}!\n\n` +
 
-                                                        `Has desbloqueado el rol **${role.name}** gracias a tu actividad en canales de voz.\n\n` +
-
-                                                        `🎤 Sigue participando en voz para continuar obteniendo recompensas exclusivas.`,
+                                                        `Has desbloqueado el rol **${role.name}** gracias a tu progreso dentro del servidor.`,
 
                                                     color: 0x00ff99,
 
@@ -322,7 +464,7 @@ module.exports = {
                                                     image: {
 
                                                         url:
-                                                            "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png?ex=6a0032f4&is=69fee174&hm=54a509859dcee24cd6a637b9e0373e1821b6ab3898eccd77a59591b6e6d55e3a&=&format=webp&quality=lossless&width=1288&height=515"
+                                                            "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
                                                     }
                                                 }]
                                             }).catch(() => {});

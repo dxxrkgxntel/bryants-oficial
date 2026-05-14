@@ -55,7 +55,7 @@ module.exports = {
         // PAGINAS
         //////////////////////////////////////////////////////
 
-        const itemsPerPage = 10;
+        const itemsPerPage = 5;
 
         let currentPage = 0;
 

@@ -84,6 +84,8 @@ module.exports = {
 
         data.coinflipWins ??= 0;
 
+        data.blackjackWins ??= 0;
+
         //////////////////////////////////////////////////
         // TOTAL GAMES
         //////////////////////////////////////////////////
@@ -156,7 +158,9 @@ module.exports = {
 
                     `🎲 Apuestas ganadas: **${data.gambleWins.toLocaleString()}**\n` +
 
-                    `🪙 Coinflip ganados: **${data.coinflipWins.toLocaleString()}**`
+                    `🪙 Coinflip ganados: **${data.coinflipWins.toLocaleString()}**\n` +
+
+                    `🃏 Blackjacks ganados: **${data.blackjackWins.toLocaleString()}**`
                 )
 
                 .setThumbnail(

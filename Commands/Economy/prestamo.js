@@ -12,53 +12,38 @@ const getUser =
 const GlobalBank =
     require("../../Models/GlobalBank");
 
+const updateDebt =
+    require("../../utils/updateDebt");
+
 module.exports = {
 
     data:
         new SlashCommandBuilder()
 
-            .setName("transferir")
+            .setName("prestamo")
 
             .setDescription(
-                "Transfiere dinero a otro usuario"
+                "Solicita un préstamo al banco"
             )
 
-            .addUserOption(o =>
+            .addIntegerOption(option =>
 
-                o.setName("usuario")
+                option
 
-                    .setDescription(
-                        "Usuario destinatario"
-                    )
-
-                    .setRequired(true)
-            )
-
-            .addIntegerOption(o =>
-
-                o.setName("cantidad")
+                    .setName("cantidad")
 
                     .setDescription(
-                        "Cantidad a transferir"
+                        "Cantidad a solicitar"
                     )
 
                     .setRequired(true)
 
-                    .setMinValue(1)
+                    .setMinValue(1000)
             ),
 
     //////////////////////////////////////////////////
 
     async execute(interaction) {
-
-        //////////////////////////////////////////////////
-        // TARGET
-        //////////////////////////////////////////////////
-
-        const target =
-            interaction.options.getUser(
-                "usuario"
-            );
 
         //////////////////////////////////////////////////
         // AMOUNT
@@ -70,27 +55,10 @@ module.exports = {
             );
 
         //////////////////////////////////////////////////
-        // SELF
+        // USER
         //////////////////////////////////////////////////
 
-        if (
-            target.id === interaction.user.id
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ No puedes transferirte a ti mismo.",
-
-                flags: 64
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // USERS
-        //////////////////////////////////////////////////
-
-        const sender =
+        const userData =
 
             await getUser(
 
@@ -99,55 +67,104 @@ module.exports = {
             );
 
         //////////////////////////////////////////////////
-
-        const receiver =
-
-            await getUser(
-
-                interaction.guild.id,
-                target.id
-            );
-
-        //////////////////////////////////////////////////
-        // DINERO TOTAL
+        // ACTUALIZAR DEUDA
         //////////////////////////////////////////////////
 
-        const totalMoney =
-
-            sender.wallet +
-            sender.bank;
+        await updateDebt(
+            userData
+        );
 
         //////////////////////////////////////////////////
-        // VALIDAR
+        // GLOBAL BANK
+        //////////////////////////////////////////////////
+
+        let globalBank =
+            await GlobalBank.findOne();
+
+        //////////////////////////////////////////////////
+
+        if (!globalBank) {
+
+            globalBank =
+                new GlobalBank({
+
+                    balance: 0
+                });
+        }
+
+        //////////////////////////////////////////////////
+        // MAXIMO
+        //////////////////////////////////////////////////
+
+        const maxLoan =
+            500000;
+
+        //////////////////////////////////////////////////
+        // VALIDAR MAXIMO
         //////////////////////////////////////////////////
 
         if (
-            totalMoney < amount
+            amount > maxLoan
         ) {
 
             return interaction.reply({
 
                 content:
-                    "❌ No tienes suficiente dinero entre wallet y banco.",
+                    `❌ El préstamo máximo es de ${maxLoan.toLocaleString()} monedas.`,
 
                 flags: 64
             });
         }
 
         //////////////////////////////////////////////////
-        // COMISION
+        // YA TIENE DEUDA
         //////////////////////////////////////////////////
 
-        const tax =
-            Math.floor(amount * 0.05);
+        if (
+            userData.debt > 0 ||
+            userData.loanTaken
+        ) {
+
+            return interaction.reply({
+
+                content:
+                    `❌ Ya tienes una deuda activa de ${userData.debt.toLocaleString()} monedas.\n\nDebes pagarla antes de solicitar otro préstamo.`,
+
+                flags: 64
+            });
+        }
+
+        //////////////////////////////////////////////////
+        // FONDOS DEL BANCO
+        //////////////////////////////////////////////////
+
+        if (
+            globalBank.balance < amount
+        ) {
+
+            return interaction.reply({
+
+                content:
+                    "❌ El banco global no tiene suficientes fondos actualmente.",
+
+                flags: 64
+            });
+        }
+
+        //////////////////////////////////////////////////
+        // INTERES BASE
+        //////////////////////////////////////////////////
+
+        const interest =
+            Math.floor(amount * 0.20);
 
         //////////////////////////////////////////////////
 
-        const finalAmount =
-            amount - tax;
+        const finalDebt =
+            amount + interest;
 
         //////////////////////////////////////////////////
-        // EMBED CONFIRMACION
+        // EMBED
         //////////////////////////////////////////////////
 
         const embed =
@@ -157,40 +174,41 @@ module.exports = {
                 .setColor("#8A2BE2")
 
                 .setTitle(
-                    "💸 Confirmar transferencia"
+                    "🏦 Solicitud de préstamo"
                 )
 
                 .setDescription(
 
-                    `⚠️ ¿Realmente deseas transferir ` +
+                    `💰 Cantidad solicitada:\n` +
 
-                    `**${amount.toLocaleString()} monedas** a ${target}?\n\n` +
+                    `**${amount.toLocaleString()} monedas**\n\n` +
 
-                    `🏦 Comisión bancaria: ` +
+                    `📈 Interés inicial:\n` +
 
-                    `**${tax.toLocaleString()} monedas**\n\n` +
+                    `**${interest.toLocaleString()} monedas (20%)**\n\n` +
 
-                    `📥 El usuario recibirá: ` +
+                    `📉 Deuda inicial:\n` +
 
-                    `**${finalAmount.toLocaleString()} monedas**\n\n` +
+                    `**${finalDebt.toLocaleString()} monedas**\n\n` +
 
-                    `💵 Wallet: ` +
+                    `⚠️ Mientras más tardes en pagar, más intereses se acumularán automáticamente.\n\n` +
 
-                    `**${sender.wallet.toLocaleString()}**\n` +
-
-                    `🏦 Banco: ` +
-
-                    `**${sender.bank.toLocaleString()}**`
+                    `¿Deseas continuar?`
                 )
+
+                //////////////////////////////////////////////////
+                // THUMBNAIL
+                //////////////////////////////////////////////////
 
                 .setThumbnail(
 
-                    target.displayAvatarURL({
+                    interaction.user.displayAvatarURL({
 
-                        dynamic: true,
-                        size: 1024
+                        dynamic: true
                     })
                 )
+
+                //////////////////////////////////////////////////
 
                 .setFooter({
 
@@ -213,11 +231,11 @@ module.exports = {
                     new ButtonBuilder()
 
                         .setCustomId(
-                            "transfer_confirm"
+                            "loan_accept"
                         )
 
                         .setLabel(
-                            "Confirmar"
+                            "Aceptar"
                         )
 
                         .setEmoji("✅")
@@ -229,7 +247,7 @@ module.exports = {
                     new ButtonBuilder()
 
                         .setCustomId(
-                            "transfer_cancel"
+                            "loan_cancel"
                         )
 
                         .setLabel(
@@ -244,21 +262,16 @@ module.exports = {
                 );
 
         //////////////////////////////////////////////////
-        // SEND
-        //////////////////////////////////////////////////
 
-        const msg =
-            await interaction.reply({
+        await interaction.reply({
 
-                embeds: [embed],
+            embeds: [embed],
 
-                components: [row],
+            components: [row],
 
-                withResponse: true
-            });
+            withResponse: true
+        });
 
-        //////////////////////////////////////////////////
-        // MESSAGE
         //////////////////////////////////////////////////
 
         const response =
@@ -312,7 +325,7 @@ module.exports = {
                 if (
 
                     i.customId ===
-                    "transfer_cancel"
+                    "loan_cancel"
 
                 ) {
 
@@ -321,7 +334,7 @@ module.exports = {
                     return i.update({
 
                         content:
-                            "❌ Transferencia cancelada.",
+                            "❌ Solicitud cancelada.",
 
                         embeds: [],
 
@@ -330,84 +343,57 @@ module.exports = {
                 }
 
                 ////////////////////////////////////////////////
-                // CONFIRMAR
+                // ACEPTAR
                 ////////////////////////////////////////////////
 
                 if (
 
                     i.customId ===
-                    "transfer_confirm"
+                    "loan_accept"
 
                 ) {
 
                     //////////////////////////////////////////////////
-                    // USAR WALLET PRIMERO
+                    // DAR DINERO
                     //////////////////////////////////////////////////
 
-                    if (
-                        sender.wallet >= amount
-                    ) {
-
-                        sender.wallet -= amount;
-
-                    } else {
-
-                        //////////////////////////////////////////////////
-                        // RESTANTE
-                        //////////////////////////////////////////////////
-
-                        const remaining =
-
-                            amount -
-                            sender.wallet;
-
-                        //////////////////////////////////////////////////
-
-                        sender.wallet = 0;
-
-                        sender.bank -= remaining;
-                    }
+                    userData.wallet += amount;
 
                     //////////////////////////////////////////////////
-                    // RECIBIR
+                    // DEUDA
                     //////////////////////////////////////////////////
 
-                    receiver.wallet += finalAmount;
-
-                    //////////////////////////////////////////////////
-                    // GLOBAL BANK
-                    //////////////////////////////////////////////////
-
-                    let globalBank =
-                        await GlobalBank.findOne();
+                    userData.debt =
+                        finalDebt;
 
                     //////////////////////////////////////////////////
 
-                    if (!globalBank) {
-
-                        globalBank =
-                            new GlobalBank({
-
-                                balance: 0
-                            });
-                    }
+                    userData.loanTaken =
+                        true;
 
                     //////////////////////////////////////////////////
+                    // FECHA PRESTAMO
+                    //////////////////////////////////////////////////
 
-                    globalBank.balance += tax;
+                    userData.loanDate =
+                        new Date();
+
+                    //////////////////////////////////////////////////
+                    // BANCO GLOBAL
+                    //////////////////////////////////////////////////
+
+                    globalBank.balance -= amount;
 
                     //////////////////////////////////////////////////
                     // SAVE
                     //////////////////////////////////////////////////
 
-                    await sender.save();
-
-                    await receiver.save();
+                    await userData.save();
 
                     await globalBank.save();
 
                     //////////////////////////////////////////////////
-                    // SUCCESS EMBED
+                    // SUCCESS
                     //////////////////////////////////////////////////
 
                     const successEmbed =
@@ -417,49 +403,50 @@ module.exports = {
                             .setColor("#00ff99")
 
                             .setTitle(
-                                "🔁 Transferencia realizada"
+                                "🏦 Préstamo aprobado"
                             )
 
                             .setDescription(
 
-                                `💸 Has transferido ` +
+                                `💰 Has recibido:\n` +
 
-                                `**${amount.toLocaleString()} monedas** a ${target}.\n\n` +
+                                `**${amount.toLocaleString()} monedas**\n\n` +
 
-                                `🏦 Comisión bancaria: ` +
+                                `📉 Deuda inicial:\n` +
 
-                                `**${tax.toLocaleString()} monedas**\n\n` +
+                                `**${finalDebt.toLocaleString()} monedas**\n\n` +
 
-                                `📥 El usuario recibió: ` +
+                                `📈 Tu deuda aumentará automáticamente con el tiempo hasta que sea pagada.\n\n` +
 
-                                `**${finalAmount.toLocaleString()} monedas**\n\n` +
-
-                                `💵 **Wallet:** ` +
-
-                                `${sender.wallet.toLocaleString()}\n` +
-
-                                `🏦 **Banco:** ` +
-
-                                `${sender.bank.toLocaleString()}`
+                                `⚠️ Usa \`/pagar-deuda\` para reducirla antes de que siga creciendo.`
                             )
+
+                            //////////////////////////////////////////////////
+                            // THUMBNAIL
+                            //////////////////////////////////////////////////
 
                             .setThumbnail(
 
-                                target.displayAvatarURL({
+                                interaction.user.displayAvatarURL({
 
-                                    dynamic: true,
-                                    size: 1024
+                                    dynamic: true
                                 })
                             )
+
+                            //////////////////////////////////////////////////
+                            // IMAGE
+                            //////////////////////////////////////////////////
 
                             .setImage(
                                 "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
                             )
 
+                            //////////////////////////////////////////////////
+
                             .setFooter({
 
                                 text:
-                                    "Bryant's Economy System"
+                                    "Bryant's Bank System"
                             })
 
                             .setTimestamp();

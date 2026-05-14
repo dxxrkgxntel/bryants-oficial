@@ -246,20 +246,20 @@ module.exports = {
             // ROLES POR NIVEL
             ////////////////////////////////////////
 
-            const LevelReward =
+            const levelReward =
                 await LevelReward.findOne({
 
-            guildId:
-                message.guild.id,
+                    guildId:
+                        message.guild.id,
 
-            level:
-                data.level
-            });
+                    level:
+                        data.level
+                });
 
             //////////////////////////////////////////////////
 
             const roleId =
-                LevelReward?.roleId;
+                levelReward?.roleId;
 
             ////////////////////////////////////////
             // SI EXISTE ROL
@@ -285,6 +285,59 @@ module.exports = {
                     )
 
                 ) {
+
+                    //////////////////////////////////////////////////
+                    // OBTENER TODOS LOS ROLES
+                    //////////////////////////////////////////////////
+
+                    const allRewards =
+
+                        await LevelReward.find({
+
+                            guildId:
+                                message.guild.id
+                        });
+
+                    //////////////////////////////////////////////////
+                    // REMOVER ROLES ANTERIORES
+                    //////////////////////////////////////////////////
+
+                    for (
+
+                        const rewardRole
+                        of allRewards
+
+                    ) {
+
+                        //////////////////////////////////////////////////
+
+                        if (
+                            rewardRole.roleId === role.id
+                        ) continue;
+
+                        //////////////////////////////////////////////////
+
+                        if (
+
+                            message.member.roles.cache.has(
+                                rewardRole.roleId
+                            )
+
+                        ) {
+
+                            await message.member.roles
+
+                                .remove(
+                                    rewardRole.roleId
+                                )
+
+                                .catch(() => {});
+                        }
+                    }
+
+                    //////////////////////////////////////////////////
+                    // DAR NUEVO ROL
+                    //////////////////////////////////////////////////
 
                     await message.member.roles
                         .add(role)
