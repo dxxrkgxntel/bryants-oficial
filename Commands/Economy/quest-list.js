@@ -11,7 +11,7 @@ module.exports = {
 
     data: new SlashCommandBuilder()
 
-        .setName("misiones")
+        .setName("mision-list")
 
         .setDescription(
             "Mira las misiones activas."
@@ -33,7 +33,7 @@ module.exports = {
                 content:
                     "❌ no hay misiones en función.",
 
-                ephemeral: true
+                flags: 64
 
             });
 
@@ -100,8 +100,12 @@ Recompensa: 💰 ${quest.reward.coins}
 
 
         interaction.reply({
-            embeds: [embed]
-        });
+
+    embeds: [embed],
+
+    flags: 64
+
+});
 
     }
 
