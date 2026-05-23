@@ -6,6 +6,7 @@ const { loadCommands } = require('./Handlers/commandHandler');
 const { loadInteractions } = require('./Handlers/interactionHandler');
 const { startWatcher } = require('./Handlers/watcher');
 const autoPollEnd = require("./Functions/autoPollEnd");
+const { loadScamDomains } = require("./Utils/antiscam/scamCache");
 
 const client = new Client({
   intents: Object.values(GatewayIntentBits),
@@ -25,6 +26,7 @@ client.setMaxListeners(20);
 
 // 🔁 WATCHER
 startWatcher(client);
+loadScamDomains();
 
 // 🔐 LOGIN
 client.login(config.token).then(() => {
