@@ -358,6 +358,10 @@ module.exports = {
 
                     .setColor("#8A2BE2")
 
+                    .setImage('https://i.imgur.com/8S7hAyl.png')
+
+                    .setThumbnail('https://i.imgur.com/qdErcJF.png')
+
                     .setTitle(
                         "🔗 Configuración AntiLinks"
                     )

@@ -90,7 +90,7 @@ module.exports = {
 
                 content: "❌ Misión no encontrada.",
 
-                ephemeral: true
+                flags: 64
 
             });
 

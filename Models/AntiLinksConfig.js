@@ -10,18 +10,47 @@ module.exports =
 
             guildId: String,
 
-            allowedChannels: {
-
-                type: [String],
-
-                default: []
-            },
+            /*
+            =========================
+            ESTADO
+            =========================
+            */
 
             enabled: {
 
                 type: Boolean,
 
                 default: true
+
+            },
+
+            /*
+            =========================
+            CANALES PERMITIDOS
+            =========================
+            */
+
+            allowedChannels: {
+
+                type: [String],
+
+                default: []
+
+            },
+
+            /*
+            =========================
+            CANAL LOGS
+            =========================
+            */
+
+            logsChannel: {
+
+                type: String,
+
+                default: null
+
             }
+
         })
     );

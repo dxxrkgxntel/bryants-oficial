@@ -446,6 +446,6 @@ module.exports = (client) => {
     //////////////////////////////////////////////////
 
     console.log(
-        "🎂 Sistema de cumpleaños cargado..."
+        "[BIRTHDAY] Cargado correctamente."
     );
 };

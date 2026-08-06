@@ -4,7 +4,8 @@ const {
     ChannelType
 } = require('discord.js');
 
-const welcomeSchema = require('../../Models/welcomeSchema');
+const welcomeSchema =
+require('../../Models/welcomeSchema');
 
 module.exports = {
 
@@ -12,201 +13,315 @@ module.exports = {
 
         .setName('bienvenida-setup')
 
-        .setDescription('Crea un sistema de bienvenidas al servidor')
+        .setDescription(
+            'Crea un sistema de bienvenidas al servidor'
+        )
 
         .setDefaultMemberPermissions(
             PermissionFlagsBits.Administrator
         )
 
+        /*
+        =========================
+        CANAL
+        =========================
+        */
+
         .addChannelOption(option =>
             option
+
                 .setName('channel')
-                .setDescription('Canal de bienvenida')
-                .addChannelTypes(ChannelType.GuildText)
-                .setRequired(true)
-        )
 
-        .addStringOption(option =>
-            option
-                .setName('color')
-                .setDescription('Color del embed')
-                .addChoices(
-                    { name: 'Rojo', value: '#FF0000' },
-                    { name: 'Blanco', value: '#FFFFFF' },
-                    { name: 'Negro', value: '#000000' },
-                    { name: 'Morado', value: '#8A2BE2' }
+                .setDescription(
+                    'Canal de bienvenida'
                 )
+
+                .addChannelTypes(
+                    ChannelType.GuildText
+                )
+
                 .setRequired(true)
         )
 
+        /*
+        =========================
+        COLOR
+        =========================
+        */
+
         .addStringOption(option =>
             option
+
+                .setName('color')
+
+                .setDescription(
+                    'Color del embed'
+                )
+
+                .addChoices(
+
+                    {
+                        name: 'Rojo',
+                        value: '#FF0000'
+                    },
+
+                    {
+                        name: 'Blanco',
+                        value: '#FFFFFF'
+                    },
+
+                    {
+                        name: 'Negro',
+                        value: '#000000'
+                    },
+
+                    {
+                        name: 'Morado',
+                        value: '#8A2BE2'
+                    }
+
+                )
+
+                .setRequired(true)
+        )
+
+        /*
+        =========================
+        DESCRIPCION
+        =========================
+        */
+
+        .addStringOption(option =>
+            option
+
                 .setName('descripcion')
-                .setDescription('Descripción del mensaje')
+
+                .setDescription(
+                    'Descripción del mensaje'
+                )
         )
 
-        .addAttachmentOption(option =>
+        /*
+        =========================
+        IMAGE URL
+        =========================
+        */
+
+        .addStringOption(option =>
             option
+
                 .setName('image')
-                .setDescription('Imagen principal')
+
+                .setDescription(
+                    'URL de la imagen principal'
+                )
         )
 
-        .addAttachmentOption(option =>
+        /*
+        =========================
+        THUMBNAIL URL
+        =========================
+        */
+
+        .addStringOption(option =>
             option
+
                 .setName('thumbnail')
-                .setDescription('Thumbnail del embed')
+
+                .setDescription(
+                    'URL de la thumbnail'
+                )
         ),
 
     async execute(interaction) {
 
         try {
 
-            //////////////////////////////////////////////////
-            // VALIDAR ADMIN
-            //////////////////////////////////////////////////
+            /*
+            =========================
+            VALIDAR ADMIN
+            =========================
+            */
 
             if (
+
                 !interaction.member.permissions.has(
                     PermissionFlagsBits.Administrator
                 )
+
             ) {
 
                 return interaction.reply({
 
                     content:
-                        '❌ Solo administradores pueden usar este comando.',
+                    '❌ Solo administradores pueden usar este comando.',
 
                     flags: 64
+
                 });
+
             }
 
-            //////////////////////////////////////////////////
-            // OPCIONES
-            //////////////////////////////////////////////////
+            /*
+            =========================
+            OPCIONES
+            =========================
+            */
 
             const { options } = interaction;
 
             const channel =
-                options.getChannel('channel');
+            options.getChannel('channel');
 
             const color =
-                options.getString('color');
+            options.getString('color');
 
             const description =
-                options.getString('descripcion') ||
-                'Pasala muy bien';
-
-            const image =
-                options.getAttachment('image');
-
-            const thumbnail =
-                options.getAttachment('thumbnail');
-
-            //////////////////////////////////////////////////
-            // VALIDAR CANAL
-            //////////////////////////////////////////////////
-
-            if (!channel || channel.type !== ChannelType.GuildText) {
-
-                return interaction.reply({
-
-                    content:
-                        '❌ Debes seleccionar un canal de texto válido.',
-
-                    flags: 64
-                });
-            }
-
-            //////////////////////////////////////////////////
-            // VALIDAR IMAGENES
-            //////////////////////////////////////////////////
-
-            if (
-                image &&
-                !image.contentType?.startsWith('image/')
-            ) {
-
-                return interaction.reply({
-
-                    content:
-                        '❌ La imagen principal no es válida.',
-
-                    flags: 64
-                });
-            }
-
-            //////////////////////////////////////////////////
-
-            if (
-                thumbnail &&
-                !thumbnail.contentType?.startsWith('image/')
-            ) {
-
-                return interaction.reply({
-
-                    content:
-                        '❌ La thumbnail no es válida.',
-
-                    flags: 64
-                });
-            }
-
-            //////////////////////////////////////////////////
-            // URLs
-            //////////////////////////////////////////////////
+            options.getString('descripcion') ||
+            'Pasala muy bien';
 
             const imageURL =
-                image?.url || null;
+            options.getString('image');
 
             const thumbnailURL =
-                thumbnail?.url || null;
+            options.getString('thumbnail');
 
-            //////////////////////////////////////////////////
-            // GUARDAR DB
-            //////////////////////////////////////////////////
+            /*
+            =========================
+            VALIDAR CANAL
+            =========================
+            */
+
+            if (
+
+                !channel ||
+
+                channel.type !==
+                ChannelType.GuildText
+
+            ) {
+
+                return interaction.reply({
+
+                    content:
+                    '❌ Debes seleccionar un canal de texto válido.',
+
+                    flags: 64
+
+                });
+
+            }
+
+            /*
+            =========================
+            VALIDAR URL IMAGE
+            =========================
+            */
+
+            if (
+
+                imageURL &&
+
+                !imageURL.startsWith('http')
+
+            ) {
+
+                return interaction.reply({
+
+                    content:
+                    '❌ La URL de la imagen no es válida.',
+
+                    flags: 64
+
+                });
+
+            }
+
+            /*
+            =========================
+            VALIDAR URL THUMBNAIL
+            =========================
+            */
+
+            if (
+
+                thumbnailURL &&
+
+                !thumbnailURL.startsWith('http')
+
+            ) {
+
+                return interaction.reply({
+
+                    content:
+                    '❌ La URL de la thumbnail no es válida.',
+
+                    flags: 64
+
+                });
+
+            }
+
+            /*
+            =========================
+            GUARDAR DB
+            =========================
+            */
 
             await welcomeSchema.findOneAndUpdate(
 
                 {
-                    Guild: interaction.guild.id
+
+                    Guild:
+                    interaction.guild.id
+
                 },
 
                 {
+
                     $set: {
 
                         Channel:
-                            channel.id,
+                        channel.id,
 
                         MessageDes:
-                            description,
+                        description,
 
                         ImagenDesc:
-                            imageURL,
+                        imageURL || null,
 
                         Thumbnail:
-                            thumbnailURL,
+                        thumbnailURL || null,
 
                         Color:
-                            color
+                        color
+
                     }
+
                 },
 
                 {
+
                     upsert: true,
                     new: true
+
                 }
+
             );
 
-            //////////////////////////////////////////////////
-            // RESPUESTA
-            //////////////////////////////////////////////////
+            /*
+            =========================
+            RESPUESTA
+            =========================
+            */
 
             return interaction.reply({
 
                 content:
-                    '✅ Sistema de bienvenidas configurado correctamente.',
+                '✅ Sistema de bienvenidas configurado correctamente.',
 
                 flags: 64
+
             });
 
         } catch (error) {
@@ -216,10 +331,14 @@ module.exports = {
             return interaction.reply({
 
                 content:
-                    '❌ Ocurrió un error al configurar el sistema de bienvenidas.',
+                '❌ Ocurrió un error al configurar el sistema de bienvenidas.',
 
                 flags: 64
+
             });
+
         }
+
     }
+
 };

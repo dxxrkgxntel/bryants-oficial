@@ -32,13 +32,13 @@ function loadScamDomains() {
         }
 
         console.log(
-            `[AntiScam] ${scamDomains.size} dominios cargados.`
+            `[ANTISCAM] ${scamDomains.size} dominios cargados.`
         );
 
     } catch (err) {
 
         console.error(
-            "[AntiScam] Error cargando dominios:",
+            "[ANTISCAM] Error cargando dominios:",
             err
         );
 

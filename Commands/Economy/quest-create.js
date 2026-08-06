@@ -161,7 +161,7 @@ module.exports = {
                 content:
                     "❌ Ya existe una misión con este ID.",
 
-                ephemeral: true
+                flags: 64
 
             });
 

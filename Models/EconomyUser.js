@@ -22,6 +22,7 @@ const economyUser = new Schema({
   bankDonated: {type: Number, default: 0},
   diceWins: {type: Number, default: 0},
   diceLosses: {type: Number, default: 0},
+  activeBoosts: {type: Array, default: []},
 });
 
 economyUser.index({ guildId: 1, userId: 1 }, { unique: true });

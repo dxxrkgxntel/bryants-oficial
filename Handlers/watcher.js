@@ -3,10 +3,10 @@ const { reloadCommand } = require('./commandHandler');
 const { reloadEvent } = require('./eventHandler');
 const { loadInteractions } = require('./interactionHandler');
 
-console.log('👀 Watcher iniciado...');
+console.log("[WATCHER] Iniciado correctamente.");
 
 async function startWatcher(client) {
-    console.log('📡 Observando cambios...');
+    console.log('[WATCHER] Observando cambios.');
 
     const chokidar = (await import('chokidar')).default;
 

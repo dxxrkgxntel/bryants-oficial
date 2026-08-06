@@ -322,7 +322,7 @@ module.exports = {
                                             image: {
 
                                                 url:
-                                                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
+                                                    "https://i.imgur.com/KCMdEyQ.png"
                                             }
                                         }]
                                     }).catch(() => {});
@@ -464,7 +464,7 @@ module.exports = {
                                                     image: {
 
                                                         url:
-                                                            "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
+                                                            "https://i.imgur.com/KCMdEyQ.png"
                                                     }
                                                 }]
                                             }).catch(() => {});
