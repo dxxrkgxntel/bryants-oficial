@@ -1,0 +1,461 @@
+const {
+
+    SlashCommandBuilder,
+    PermissionFlagsBits,
+    EmbedBuilder,
+    ActionRowBuilder,
+    StringSelectMenuBuilder
+
+} = require("discord.js");
+
+const reactionRolesSchema =
+    require("../../Models/reactionRolesSchema");
+
+//////////////////////////////////////////////////
+// COMMAND
+//////////////////////////////////////////////////
+
+const data =
+    new SlashCommandBuilder()
+
+        .setName("rr-setup")
+
+        .setDescription(
+            "Crear panel de reaction roles"
+        )
+
+        .setDefaultMemberPermissions(
+            PermissionFlagsBits.Administrator
+        )
+
+        //////////////////////////////////////////////////
+        // PANEL ID
+        //////////////////////////////////////////////////
+
+        .addStringOption(option =>
+
+            option
+
+                .setName("panelid")
+
+                .setDescription(
+                    "ID único del panel"
+                )
+
+                .setRequired(true)
+        )
+
+        //////////////////////////////////////////////////
+        // PERSONALIZACIÓN
+        //////////////////////////////////////////////////
+
+        .addStringOption(option =>
+
+            option
+
+                .setName("titulo")
+
+                .setDescription(
+                    "Título del embed"
+                )
+        )
+
+        .addStringOption(option =>
+
+            option
+
+                .setName("descripcion")
+
+                .setDescription(
+                    "Descripción del embed"
+                )
+        )
+
+        .addStringOption(option =>
+
+            option
+
+                .setName("placeholder")
+
+                .setDescription(
+                    "Texto del menú"
+                )
+        )
+
+        .addStringOption(option =>
+
+            option
+
+                .setName("color")
+
+                .setDescription(
+                    "Color HEX del embed"
+                )
+        )
+
+        //////////////////////////////////////////////////
+        // IMÁGENES
+        //////////////////////////////////////////////////
+
+        .addAttachmentOption(option =>
+
+            option
+
+                .setName("imagen")
+
+                .setDescription(
+                    "Imagen principal del embed"
+                )
+        )
+
+        .addAttachmentOption(option =>
+
+            option
+
+                .setName("thumbnail")
+
+                .setDescription(
+                    "Thumbnail del embed"
+                )
+        );
+
+//////////////////////////////////////////////////
+// 18 ROLES
+//////////////////////////////////////////////////
+
+for (let i = 1; i <= 18; i++) {
+
+    data.addRoleOption(option =>
+
+        option
+
+            .setName(`role${i}`)
+
+            .setDescription(
+                `Rol ${i}`
+            )
+    );
+}
+
+//////////////////////////////////////////////////
+
+module.exports = {
+
+    data,
+
+    //////////////////////////////////////////////////
+
+    async execute(interaction) {
+
+        //////////////////////////////////////////////////
+        // PANEL ID
+        //////////////////////////////////////////////////
+
+        const panelId =
+            interaction.options.getString(
+                "panelid"
+            );
+
+        //////////////////////////////////////////////////
+        // VALIDAR PANEL
+        //////////////////////////////////////////////////
+
+        const existingPanel =
+            await reactionRolesSchema.findOne({
+
+                guildId:
+                    interaction.guild.id,
+
+                panelId
+            });
+
+        //////////////////////////////////////////////////
+
+        if (existingPanel) {
+
+            return interaction.reply({
+
+                content:
+                    "❌ Ya existe un panel con ese ID.",
+
+                flags: 64
+            });
+        }
+
+        //////////////////////////////////////////////////
+        // PERSONALIZACIÓN
+        //////////////////////////////////////////////////
+
+        const title =
+            interaction.options.getString(
+                "titulo"
+            ) ||
+
+            "✨ Reaction Roles";
+
+        //////////////////////////////////////////////////
+
+        const description =
+            interaction.options
+
+                .getString("descripcion")
+
+                ?.replace(/\\n/g, "\n")
+
+            ||
+
+            "Selecciona los roles que deseas obtener.";
+
+        //////////////////////////////////////////////////
+
+        const placeholder =
+            interaction.options.getString(
+                "placeholder"
+            ) ||
+
+            "✨ Selecciona tus roles";
+
+        //////////////////////////////////////////////////
+
+        const color =
+            interaction.options.getString(
+                "color"
+            ) ||
+
+            "#8A2BE2";
+
+        //////////////////////////////////////////////////
+        // IMÁGENES
+        //////////////////////////////////////////////////
+
+        const imagen =
+            interaction.options.getAttachment(
+                "imagen"
+            );
+
+        //////////////////////////////////////////////////
+
+        const thumbnail =
+            interaction.options.getAttachment(
+                "thumbnail"
+            );
+
+        //////////////////////////////////////////////////
+        // VALIDAR IMÁGENES
+        //////////////////////////////////////////////////
+
+        if (
+            imagen &&
+            !imagen.contentType?.startsWith(
+                "image"
+            )
+        ) {
+
+            return interaction.reply({
+
+                content:
+                    "❌ El archivo imagen debe ser una imagen.",
+
+                flags: 64
+            });
+        }
+
+        //////////////////////////////////////////////////
+
+        if (
+            thumbnail &&
+            !thumbnail.contentType?.startsWith(
+                "image"
+            )
+        ) {
+
+            return interaction.reply({
+
+                content:
+                    "❌ El thumbnail debe ser una imagen.",
+
+                flags: 64
+            });
+        }
+
+        //////////////////////////////////////////////////
+
+        const imageURL =
+            imagen?.url || null;
+
+        //////////////////////////////////////////////////
+
+        const thumbnailURL =
+            thumbnail?.url || null;
+
+        //////////////////////////////////////////////////
+        // ROLES
+        //////////////////////////////////////////////////
+
+        const roles = [];
+
+        //////////////////////////////////////////////////
+
+        for (let i = 1; i <= 18; i++) {
+
+            const role =
+                interaction.options.getRole(
+                    `role${i}`
+                );
+
+            //////////////////////////////////////////////////
+
+            if (role) {
+
+                roles.push(role);
+            }
+        }
+
+        //////////////////////////////////////////////////
+        // VALIDAR
+        //////////////////////////////////////////////////
+
+        if (roles.length < 2) {
+
+            return interaction.reply({
+
+                content:
+                    "❌ Debes añadir mínimo 2 roles.",
+
+                flags: 64
+            });
+        }
+
+        //////////////////////////////////////////////////
+        // CUSTOM ID
+        //////////////////////////////////////////////////
+
+        const customId =
+            `rr_${Date.now()}`;
+
+        //////////////////////////////////////////////////
+        // MENU
+        //////////////////////////////////////////////////
+
+        const menu =
+            new StringSelectMenuBuilder()
+
+                .setCustomId(customId)
+
+                .setPlaceholder(
+                    placeholder
+                )
+
+                .setMinValues(0)
+
+                .setMaxValues(1)
+
+                .addOptions(
+
+                    roles.map(role => ({
+
+                        label:
+                            role.name
+                                .slice(0, 100),
+
+                        value:
+                            role.id,
+
+                        description:
+                            `Obtener ${role.name}`
+                                .slice(0, 100)
+                    }))
+                );
+
+        //////////////////////////////////////////////////
+        // ROW
+        //////////////////////////////////////////////////
+
+        const row =
+            new ActionRowBuilder()
+
+                .addComponents(menu);
+
+        //////////////////////////////////////////////////
+        // EMBED
+        //////////////////////////////////////////////////
+
+        const embed =
+            new EmbedBuilder()
+
+                .setColor(color)
+
+                .setTitle(title)
+
+                .setDescription(description)
+
+                .setImage(imageURL)
+
+                .setThumbnail(thumbnailURL)
+
+        //////////////////////////////////////////////////
+        // SEND
+        //////////////////////////////////////////////////
+
+        const msg =
+            await interaction.channel.send({
+
+                embeds: [embed],
+
+                components: [row]
+            });
+
+        //////////////////////////////////////////////////
+        // SAVE DB
+        //////////////////////////////////////////////////
+
+        await reactionRolesSchema.create({
+
+            guildId:
+                interaction.guild.id,
+
+            panelId,
+
+            channelId:
+                interaction.channel.id,
+
+            messageId:
+                msg.id,
+
+            customId,
+
+            title,
+
+            description,
+
+            placeholder,
+
+            color,
+
+            image:
+                imageURL,
+
+            thumbnail:
+                thumbnailURL,
+
+            roles: roles.map(role => ({
+
+                roleId:
+                    role.id,
+
+                label:
+                    role.name
+            }))
+        });
+
+        //////////////////////////////////////////////////
+
+        await interaction.reply({
+
+            content:
+                `✅ Panel \`${panelId}\` creado correctamente.`,
+
+            flags: 64
+        });
+    }
+};
