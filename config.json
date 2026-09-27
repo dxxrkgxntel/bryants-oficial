@@ -1,0 +1,4 @@
+{
+  "token":"MTQ5Nzk3MzEyNjU2OTY1NjU0MA.GtiIQY.jhN8aTDxMVYRkHOi0OvKiJAQ4BkE86dxBfdZPI",
+  "dataBaseURL":"mongodb://test:lilbryant1@ac-twy7f9b-shard-00-00.aad2q4o.mongodb.net:27017,ac-twy7f9b-shard-00-01.aad2q4o.mongodb.net:27017,ac-twy7f9b-shard-00-02.aad2q4o.mongodb.net:27017/?ssl=true&replicaSet=atlas-bbl4u6-shard-0&authSource=admin&appName=test"
+}
