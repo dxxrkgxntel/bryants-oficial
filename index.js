@@ -29,7 +29,7 @@ startWatcher(client);
 loadScamDomains();
 
 // 🔐 LOGIN
-client.login(config.token).then(() => {
+client.login(process.env.DISCORD_TOKEN || config.token).then(() => {
 
   loadEvents(client);
   loadCommands(client);
