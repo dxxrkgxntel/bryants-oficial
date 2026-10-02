@@ -7,7 +7,7 @@ const {
 } = require("discord.js");
 
 const getUser =
-    require("../../utils/getUser");
+    require("../../Utils/getUser");
 
 const EconomyUser =
     require("../../Models/EconomyUser");
