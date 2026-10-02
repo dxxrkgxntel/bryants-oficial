@@ -8,7 +8,7 @@ const {
 } = require("discord.js");
 
 const getUser =
-    require("../../utils/getUser");
+    require("../../Utils/getUser");
 
 module.exports = {
 
