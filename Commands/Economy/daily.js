@@ -4,10 +4,10 @@ const {
 } = require("discord.js");
 
 const getUser =
-    require("../../utils/getUser");
+    require("../../Utils/getUser");
 
 const getConfig =
-    require("../../utils/getConfig");
+    require("../../Utils/getConfig");
 
 //////////////////////////////////////////////////
 
