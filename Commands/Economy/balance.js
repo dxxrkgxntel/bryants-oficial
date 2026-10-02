@@ -4,13 +4,13 @@ const {
 } = require("discord.js");
 
 const getUser =
-    require("../../utils/getUser");
+    require("../../Utils/getUser");
 
 const applyBankBonus =
-    require("../../utils/applyBankBonus");
+    require("../../Utils/applyBankBonus");
 
 const updateDebt =
-    require("../../utils/updateDebt");
+    require("../../Utils/updateDebt");
 
 module.exports = {
 
