@@ -562,7 +562,7 @@ module.exports = {
                                 role.id,
 
                             description:
-                                `Obtener ${role.name}`
+                                `Selecciona ${role.name}`
                                     .slice(0, 100)
                         }))
                     );
@@ -576,6 +576,16 @@ module.exports = {
 
             //////////////////////////////////////////////////
 
+            const rolesList =
+                roles.map(role =>
+                    `➜ ${role}`
+                ).join("\n");
+
+            const panelDescription =
+                `${description}\n\n` +
+                `${rolesList}\n\n` +
+                `Selecciona del menú siguiente para gestionar tus roles en · **${title}**`;
+
             const embed =
                 new EmbedBuilder()
 
@@ -583,11 +593,11 @@ module.exports = {
 
                     .setTitle(title)
 
-                    .setDescription(description)
+                    .setDescription(panelDescription);
 
-                    .setImage(imageURL)
-
-                    .setThumbnail(thumbnailURL);
+            if (imageURL) {
+                embed.setImage(imageURL);
+            }
 
             //////////////////////////////////////////////////
 
@@ -727,7 +737,7 @@ module.exports = {
                             description:
                                 role.description ||
 
-                                `Obtener ${role.label}`
+                                `Selecciona ${role.label}`
 
                         }))
 
@@ -754,7 +764,9 @@ module.exports = {
                     )
 
                     .setDescription(
-                        data.description
+                        `${data.description}\n\n` +
+                        `${data.roles.map(role => `➜ <@&${role.roleId}>`).join("\\n")}\n\n` +
+                        `Selecciona del menú siguiente para gestionar tus roles en · **${data.title}**`
                     );
 
             //////////////////////////////////////////////////
@@ -769,13 +781,7 @@ module.exports = {
 
             //////////////////////////////////////////////////
 
-            if (data.thumbnail) {
-
-                embed.setThumbnail(
-                    data.thumbnail
-                );
-
-            }
+            
 
             //////////////////////////////////////////////////
 
@@ -1021,7 +1027,7 @@ module.exports = {
                             description:
                                 role.description ||
 
-                                `Obtener ${role.label}`
+                                `Selecciona ${role.label}`
 
                         }))
 
@@ -1043,7 +1049,11 @@ module.exports = {
 
                     .setTitle(title)
 
-                    .setDescription(description);
+                    .setDescription(
+                        `${description}\n\n` +
+                        `${data.roles.map(role => `➜ <@&${role.roleId}>`).join("\\n")}\n\n` +
+                        `Selecciona del menú siguiente para gestionar tus roles en · **${title}**`
+                    );
 
             //////////////////////////////////////////////////
 
@@ -1057,13 +1067,7 @@ module.exports = {
 
             //////////////////////////////////////////////////
 
-            if (thumbnailURL) {
-
-                embed.setThumbnail(
-                    thumbnailURL
-                );
-
-            }
+            
 
             //////////////////////////////////////////////////
 
