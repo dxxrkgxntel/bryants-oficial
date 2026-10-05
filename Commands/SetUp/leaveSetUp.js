@@ -61,33 +61,17 @@ module.exports = {
 
         /*
         =========================
-        IMAGE URL
+        BANNER URL
         =========================
         */
 
         .addStringOption(option =>
             option
 
-                .setName('image')
+                .setName('banner')
 
                 .setDescription(
-                    'URL de la imagen del embed'
-                )
-        )
-
-        /*
-        =========================
-        THUMBNAIL URL
-        =========================
-        */
-
-        .addStringOption(option =>
-            option
-
-                .setName('thumbnail')
-
-                .setDescription(
-                    'URL de la thumbnail'
+                    'URL del banner superior'
                 )
         ),
 
@@ -107,11 +91,8 @@ module.exports = {
         const description =
         options.getString('descripcion') || ' ';
 
-        const imageURL =
-        options.getString('image');
-
-        const thumbnailURL =
-        options.getString('thumbnail');
+        const bannerURL =
+        options.getString('banner');
 
         /*
         =========================
@@ -166,51 +147,30 @@ module.exports = {
 
         /*
         =========================
-        VALIDAR URL IMAGE
+        VALIDAR URL BANNER
         =========================
         */
 
         if (
 
-            imageURL &&
+            bannerURL &&
 
-            !imageURL.startsWith('http')
+            !bannerURL.startsWith('http')
 
         ) {
 
             return interaction.reply({
 
                 content:
-                '❌ La URL de la imagen no es válida.',
+                '❌ La URL del banner no es válida.',
 
                 flags: 64
 
             });
 
-        }
+        });
 
-        /*
-        =========================
-        VALIDAR URL THUMBNAIL
-        =========================
-        */
-
-        if (
-
-            thumbnailURL &&
-
-            !thumbnailURL.startsWith('http')
-
-        ) {
-
-            return interaction.reply({
-
-                content:
-                '❌ La URL de la thumbnail no es válida.',
-
-                flags: 64
-
-            });
+        });
 
         }
 
@@ -241,11 +201,8 @@ module.exports = {
                         MessageDes:
                         description,
 
-                        ImagenDesc:
-                        imageURL || null,
-
-                        Thumbnail:
-                        thumbnailURL || null
+                        Banner:
+                        bannerURL || null
 
                     }
 
