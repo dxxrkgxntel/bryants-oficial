@@ -120,22 +120,6 @@ module.exports = {
                     )
             );
 
-            if (data.ImagenDesc) {
-                panel.addSeparatorComponents(
-                    new SeparatorBuilder()
-                        .setDivider(true)
-                        .setSpacing(SeparatorSpacingSize.Small)
-                );
-
-                panel.addMediaGalleryComponents(
-                    new MediaGalleryBuilder()
-                        .addItems(
-                            new MediaGalleryItemBuilder()
-                                .setURL(data.ImagenDesc)
-                        )
-                );
-            }
-
             const row =
                 new ActionRowBuilder()
                     .addComponents(
