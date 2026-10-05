@@ -759,7 +759,8 @@ module.exports = {
                     .addOptions(
 
                         data.roles.map(role => {
-                            const visual = getRoleVisual(role.label);
+                            const currentRole = interaction.guild.roles.cache.get(role.roleId);
+                            const visual = getRoleVisual(currentRole?.name || role.label);
                             return {
                                 label: visual.label.slice(0, 100),
                                 value: role.roleId,
@@ -792,7 +793,8 @@ module.exports = {
 
                     .setDescription(
                         `${data.description}\n\n` +
-                        `${data.roles.map(role => { const visual = getRoleVisual(role.label); return `${role.emoji || visual.emoji} · <@&${role.roleId}>  **${visual.label.replace(/^[A-Z]{2} · /, "")}**`; }).join("\n")}\n\n` +
+                        `${data.roles.map(role => { const currentRole = interaction.guild.roles.cache.get(role.roleId);
+                            const visual = getRoleVisual(currentRole?.name || role.label); return `${role.emoji || visual.emoji} · <@&${role.roleId}>  **${visual.label.replace(/^[A-Z]{2} · /, "")}**`; }).join("\n")}\n\n` +
                         `Selecciona del menú siguiente para gestionar tus roles en · **${data.title}**`
                     );
 
@@ -1044,7 +1046,8 @@ module.exports = {
                     .addOptions(
 
                         data.roles.map(role => {
-                            const visual = getRoleVisual(role.label);
+                            const currentRole = interaction.guild.roles.cache.get(role.roleId);
+                            const visual = getRoleVisual(currentRole?.name || role.label);
                             return {
                                 label: visual.label.slice(0, 100),
                                 value: role.roleId,
@@ -1073,7 +1076,8 @@ module.exports = {
 
                     .setDescription(
                         `${description}\n\n` +
-                        `${data.roles.map(role => { const visual = getRoleVisual(role.label); return `${role.emoji || visual.emoji} · <@&${role.roleId}>  **${visual.label.replace(/^[A-Z]{2} · /, "")}**`; }).join("\n")}\n\n` +
+                        `${data.roles.map(role => { const currentRole = interaction.guild.roles.cache.get(role.roleId);
+                            const visual = getRoleVisual(currentRole?.name || role.label); return `${role.emoji || visual.emoji} · <@&${role.roleId}>  **${visual.label.replace(/^[A-Z]{2} · /, "")}**`; }).join("\n")}\n\n` +
                         `Selecciona del menú siguiente para gestionar tus roles en · **${title}**`
                     );
 
