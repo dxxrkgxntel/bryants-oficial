@@ -30,22 +30,31 @@ const ROLE_VISUALS = {
 
 function getRoleVisual(name = "") {
     const normalized = name.trim();
-    const codeMatch = normalized.match(/(?:^|[^A-Z])(?:@)?(DO|PR|CU|PA|CO|US|CL|HN|ES|MX|PE|AR|VE)(?:[^A-Z]|$)/i);
-    const code = codeMatch?.[1]?.toUpperCase();
 
-    if (code && ROLE_VISUALS[code]) return ROLE_VISUALS[code];
+    // Los roles del servidor usan formatos como:
+    // "🇩🇴 | DO | Rep. Dom." o "DO | Rep. Dom."
+    // Extraemos el código ISO de 2 letras de cualquier segmento separado por "|".
+    const segments = normalized
+        .split("|")
+        .map(part => part.trim().replace(/[^A-Za-z]/g, "").toUpperCase())
+        .filter(Boolean);
+
+    const code = segments.find(part => ROLE_VISUALS[part]);
+
+    if (code) return ROLE_VISUALS[code];
 
     const lower = normalized.toLowerCase();
+
     if (lower.includes("hombre") || lower.includes("mascul")) {
         return { emoji: "👨", label: "Hombre" };
     }
+
     if (lower.includes("mujer") || lower.includes("femen")) {
         return { emoji: "👩", label: "Mujer" };
     }
 
     return { emoji: "✨", label: normalized.slice(0, 100) };
 }
-
 
 module.exports = {
 
