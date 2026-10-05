@@ -765,7 +765,7 @@ module.exports = {
 
                     .setDescription(
                         `${data.description}\n\n` +
-                        `${data.roles.map(role => `➜ <@&${role.roleId}>`).join("\\n")}\n\n` +
+                        `${data.roles.map(role => `➜ <@&${role.roleId}>`).join("\n")}\n\n` +
                         `Selecciona del menú siguiente para gestionar tus roles en · **${data.title}**`
                     );
 
@@ -1051,7 +1051,7 @@ module.exports = {
 
                     .setDescription(
                         `${description}\n\n` +
-                        `${data.roles.map(role => `➜ <@&${role.roleId}>`).join("\\n")}\n\n` +
+                        `${data.roles.map(role => `➜ <@&${role.roleId}>`).join("\n")}\n\n` +
                         `Selecciona del menú siguiente para gestionar tus roles en · **${title}**`
                     );
 
