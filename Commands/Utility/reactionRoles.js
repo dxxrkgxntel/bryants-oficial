@@ -12,36 +12,58 @@ const {
 const reactionRolesSchema =
 require("../../Models/reactionRolesSchema");
 
-const ROLE_VISUALS = {
-    DO: { emoji: "🇩🇴", label: "DO · Dominicano" },
-    PR: { emoji: "🇵🇷", label: "PR · Puertorriqueño" },
-    CU: { emoji: "🇨🇺", label: "CU · Cubano" },
-    PA: { emoji: "🇵🇦", label: "PA · Panameño" },
-    CO: { emoji: "🇨🇴", label: "CO · Colombiano" },
-    US: { emoji: "🇺🇸", label: "US · Estadounidense" },
-    CL: { emoji: "🇨🇱", label: "CL · Chileno" },
-    HN: { emoji: "🇭🇳", label: "HN · Hondureño" },
-    ES: { emoji: "🇪🇸", label: "ES · Español" },
-    MX: { emoji: "🇲🇽", label: "MX · Mexicano" },
-    PE: { emoji: "🇵🇪", label: "PE · Peruano" },
-    AR: { emoji: "🇦🇷", label: "AR · Argentino" },
-    VE: { emoji: "🇻🇪", label: "VE · Venezolano" }
-};
-
 function getRoleVisual(name = "") {
     const normalized = name.trim();
 
-    // New generic format: the Discord role name is the visual source of truth.
-    // Example: "🇩🇴 DO · Dominicano"
-    const leadingEmoji = normalized.match(/^(\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}]{2})/u)?.[0] || null;
-    const label = leadingEmoji
-        ? normalized.slice(leadingEmoji.length).trim()
-        : normalized;
+    // Formato recomendado del rol: "🇩🇴 DO · Dominicano".
+    // El emoji se usa en el select; el resto del nombre se usa como label.
+    const flag = normalized.match(/^[\u{1F1E6}-\u{1F1FF}]{2}/u)?.[0] || null;
+    const pictographic = normalized.match(/^\p{Extended_Pictographic}/u)?.[0] || null;
+    const emoji = flag || pictographic;
+    const label = emoji ? normalized.slice(emoji.length).trim() : normalized;
 
     return {
-        emoji: leadingEmoji,
-        label: label || normalized
+        emoji,
+        label: (label || normalized).slice(0, 100)
     };
+}
+
+function buildRoleOptions(interaction, roles) {
+    return roles
+        .map(savedRole => {
+            const roleId = savedRole.roleId || savedRole.id;
+            const discordRole = interaction.guild.roles.cache.get(roleId);
+            if (!discordRole) return null;
+
+            const visual = getRoleVisual(discordRole.name);
+
+            return {
+                label: visual.label,
+                value: discordRole.id,
+                ...(visual.emoji ? { emoji: visual.emoji } : {})
+            };
+        })
+        .filter(Boolean);
+}
+
+function buildPanelDescription(interaction, roles, title) {
+    const roleLines = roles
+        .map(savedRole => {
+            const roleId = savedRole.roleId || savedRole.id;
+            const discordRole = interaction.guild.roles.cache.get(roleId);
+            if (!discordRole) return null;
+
+            const visual = getRoleVisual(discordRole.name);
+            const suffix = visual.label.includes("·")
+                ? visual.label.split("·").slice(1).join("·").trim()
+                : "";
+
+            return `${visual.emoji ? `${visual.emoji} ➜ ` : "➜ "}<@&${discordRole.id}>${suffix ? `  **${suffix}**` : ""}`;
+        })
+        .filter(Boolean)
+        .join("\n");
+
+    return `${roleLines}\n\nSelecciona del menú siguiente para gestionar tus roles en · **${title}**`;
 }
 
 
@@ -584,14 +606,12 @@ module.exports = {
                     .setMaxValues(1)
 
                     .addOptions(
-
                         roles.map(role => {
                             const visual = getRoleVisual(role.name);
                             return {
-                                label: visual.label.slice(0, 100),
+                                label: visual.label,
                                 value: role.id,
-                                ...(visual.emoji ? { emoji: visual.emoji } : {}),
-                                description: `Obtener el rol ${visual.label}`.slice(0, 100)
+                                ...(visual.emoji ? { emoji: visual.emoji } : {})
                             };
                         })
                     );
@@ -605,24 +625,17 @@ module.exports = {
 
             //////////////////////////////////////////////////
 
-            const rolesList =
-                roles.map(role => {
-                    const visual = getRoleVisual(role.name);
-                    return `${role}`;
-                }).join("\n");
-
             const panelDescription =
-                `${description}\n\n` +
-                `${rolesList}\n\n` +
-                `Selecciona del menú siguiente para gestionar tus roles en · **${title}**`;
+                buildPanelDescription(
+                    interaction,
+                    roles,
+                    title
+                );
 
             const embed =
                 new EmbedBuilder()
-
                     .setColor(color)
-
                     .setTitle(title)
-
                     .setDescription(panelDescription);
 
             if (imageURL) {
@@ -755,18 +768,7 @@ module.exports = {
                     .setMaxValues(1)
 
                     .addOptions(
-
-                        data.roles.map(role => {
-                            const currentRole = interaction.guild.roles.cache.get(role.roleId);
-                            const visual = getRoleVisual(currentRole?.name || role.label);
-                            return {
-                                label: visual.label.slice(0, 100),
-                                value: role.roleId,
-                                ...((role.emoji || visual.emoji) ? { emoji: role.emoji || visual.emoji } : {}),
-                                description: (role.description || `Obtener el rol ${visual.label}`).slice(0, 100)
-                            };
-                        })
-
+                        buildRoleOptions(interaction, data.roles)
                     );
 
             //////////////////////////////////////////////////
@@ -790,8 +792,12 @@ module.exports = {
                     )
 
                     .setDescription(
-                        `${data.description}\n\n` +
-                        `${data.roles.map(role => { const currentRole = interaction.guild.roles.cache.get(role.roleId);
+                        buildPanelDescription(
+                            interaction,
+                            data.roles,
+                            data.title
+                        )
+                    );
                             const visual = getRoleVisual(currentRole?.name || role.label); return `<@&${role.roleId}>`; }).join("\n")}\n\n` +
                         `Selecciona del menú siguiente para gestionar tus roles en · **${data.title}**`
                     );
@@ -1042,18 +1048,7 @@ module.exports = {
                     .setMaxValues(1)
 
                     .addOptions(
-
-                        data.roles.map(role => {
-                            const currentRole = interaction.guild.roles.cache.get(role.roleId);
-                            const visual = getRoleVisual(currentRole?.name || role.label);
-                            return {
-                                label: visual.label.slice(0, 100),
-                                value: role.roleId,
-                                ...((role.emoji || visual.emoji) ? { emoji: role.emoji || visual.emoji } : {}),
-                                description: (role.description || `Obtener el rol ${visual.label}`).slice(0, 100)
-                            };
-                        })
-
+                        buildRoleOptions(interaction, data.roles)
                     );
 
             //////////////////////////////////////////////////
@@ -1073,8 +1068,12 @@ module.exports = {
                     .setTitle(title)
 
                     .setDescription(
-                        `${description}\n\n` +
-                        `${data.roles.map(role => { const currentRole = interaction.guild.roles.cache.get(role.roleId);
+                        buildPanelDescription(
+                            interaction,
+                            data.roles,
+                            title
+                        )
+                    );
                             const visual = getRoleVisual(currentRole?.name || role.label); return `<@&${role.roleId}>`; }).join("\n")}\n\n` +
                         `Selecciona del menú siguiente para gestionar tus roles en · **${title}**`
                     );
