@@ -1,625 +1,121 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+ SlashCommandBuilder, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder,
+ MediaGalleryBuilder, MediaGalleryItemBuilder, MessageFlags, SeparatorSpacingSize
+} = require("discord.js");
 const getUser = require("../../Utils/getUser");
 const applyBankBonus = require("../../Utils/applyBankBonus");
 const updateDebt = require("../../Utils/updateDebt");
 const getConfig = require("../../Utils/getConfig");
+
+const ECONOMY_BANNER = "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png";
+
+function economyPanel(title, content, color = 0x8A2BE2) {
+ const panel = new ContainerBuilder().setAccentColor(color);
+ panel.addMediaGalleryComponents(
+  new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(ECONOMY_BANNER))
+ );
+ panel.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}`));
+ panel.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small));
+ panel.addTextDisplayComponents(new TextDisplayBuilder().setContent(content));
+ return panel;
+}
+
+async function replyV2(interaction, title, content, color = 0x8A2BE2, ephemeral = false) {
+ return interaction.reply({
+  components: [economyPanel(title, content, color)],
+  flags: ephemeral ? MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral : MessageFlags.IsComponentsV2
+ });
+}
 
 const jobs = [
 "💻 Programador","🍕 Repartidor","🚕 Taxista","🎨 Diseñador","🎵 Productor musical","🛠️ Mecánico","🎮 Streamer","📦 Empaquetador","🏪 Cajero","☕ Barista","🎬 Editor de video","📸 Fotógrafo","🧹 Conserje","🍔 Cocinero","🚚 Transportista"
 ];
 
 async function runBalance(interaction) {
-
-        //////////////////////////////////////////////////
-        // USER
-        //////////////////////////////////////////////////
-
-        const target =
-            interaction.user;
-
-        //////////////////////////////////////////////////
-        // DATA
-        //////////////////////////////////////////////////
-
-        const userData =
-
-            await getUser(
-
-                interaction.guild.id,
-                target.id
-            );
-
-        //////////////////////////////////////////////////
-        // BONUS BANCARIO
-        //////////////////////////////////////////////////
-
-        const bonus =
-
-            await applyBankBonus(
-                userData
-            );
-
-        //////////////////////////////////////////////////
-
-        await userData.save();
-
-        //////////////////////////////////////////////////
-        // ACTUALIZAR DEUDA
-        //////////////////////////////////////////////////
-
-        const addedDebt =
-            await updateDebt(
-                userData
-            );
-
-        //////////////////////////////////////////////////
-        // TOTAL
-        //////////////////////////////////////////////////
-
-        const total =
-
-            userData.wallet +
-            userData.bank;
-
-        //////////////////////////////////////////////////
-        // MEMBER
-        //////////////////////////////////////////////////
-
-        const member =
-            await interaction.guild.members
-
-                .fetch(target.id)
-
-                .catch(() => null);
-
-        //////////////////////////////////////////////////
-        // DISPLAY NAME
-        //////////////////////////////////////////////////
-
-        const displayName =
-
-            member?.displayName ||
-
-            target.username;
-
-        //////////////////////////////////////////////////
-        // ESTADO FINANCIERO
-        //////////////////////////////////////////////////
-
-        let financialStatus =
-            "🟢 Estable";
-
-        //////////////////////////////////////////////////
-
-        if (userData.debt > 0) {
-
-            financialStatus =
-                "🔴 Endeudado";
-        }
-
-        //////////////////////////////////////////////////
-
-        if (userData.debt >= 100000) {
-
-            financialStatus =
-                "⚠️ Deuda elevada";
-        }
-
-        //////////////////////////////////////////////////
-        // EMBED
-        //////////////////////////////////////////////////
-
-        const embed =
-
-            new EmbedBuilder()
-
-                .setColor("#8A2BE2")
-
-                .setTitle(
-                    `💰 Balance de ${displayName}`
-                )
-
-                .addFields(
-
-                    {
-                        name: "💵 Wallet",
-
-                        value:
-                            `${userData.wallet.toLocaleString()} monedas`,
-
-                        inline: true
-                    },
-
-                    {
-                        name: "🏦 Banco",
-
-                        value:
-                            `${userData.bank.toLocaleString()} monedas`,
-
-                        inline: true
-                    },
-
-                    {
-                        name: "📊 Total",
-
-                        value:
-                            `${total.toLocaleString()} monedas`,
-
-                        inline: true
-                    },
-
-                    {
-                        name: "📉 Deuda",
-
-                        value:
-                            `${userData.debt.toLocaleString()} monedas`,
-
-                        inline: true
-                    },
-
-                    {
-                        name: "🏛️ Estado financiero",
-
-                        value:
-                            financialStatus,
-
-                        inline: true
-                    }
-                );
-
-        //////////////////////////////////////////////////
-        // INTERESES ACUMULADOS
-        //////////////////////////////////////////////////
-
-        if (addedDebt > 0) {
-
-            embed.addFields({
-
-                name:
-                    "📈 Intereses acumulados",
-
-                value:
-                    `+${addedDebt.toLocaleString()} monedas añadidas a tu deuda`,
-
-                inline: false
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // BONUS BANCARIO
-        //////////////////////////////////////////////////
-
-        if (bonus > 0) {
-
-            embed.addFields({
-
-                name:
-                    "🏦 Bonus Bancario",
-
-                value:
-                    `+${bonus.toLocaleString()} monedas generadas`,
-
-                inline: false
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // THUMBNAIL
-        //////////////////////////////////////////////////
-
-        embed.setThumbnail(
-
-            target.displayAvatarURL({
-
-                dynamic: true,
-                size: 1024
-            })
-        );
-
-        //////////////////////////////////////////////////
-        // IMAGE
-        //////////////////////////////////////////////////
-
-        embed.setImage(
-            "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
-        );
-
-        //////////////////////////////////////////////////
-
-        embed.setFooter({
-
-            text:
-                interaction.guild.name
-        });
-
-        //////////////////////////////////////////////////
-
-        embed.setTimestamp();
-
-        //////////////////////////////////////////////////
-
-        await interaction.reply({
-
-            embeds: [embed]
-        });
-    
+ const target = interaction.user;
+ const userData = await getUser(interaction.guild.id, target.id);
+ const bonus = await applyBankBonus(userData);
+ await userData.save();
+ const addedDebt = await updateDebt(userData);
+ const total = userData.wallet + userData.bank;
+ const member = await interaction.guild.members.fetch(target.id).catch(() => null);
+ const displayName = member?.displayName || target.username;
+ let financialStatus = "🟢 Estable";
+ if (userData.debt > 0) financialStatus = "🔴 Endeudado";
+ if (userData.debt >= 100000) financialStatus = "⚠️ Deuda elevada";
+
+ let text =
+  `💵 **Wallet:** ${userData.wallet.toLocaleString()} monedas\n` +
+  `🏦 **Banco:** ${userData.bank.toLocaleString()} monedas\n` +
+  `📊 **Total:** ${total.toLocaleString()} monedas\n` +
+  `📉 **Deuda:** ${userData.debt.toLocaleString()} monedas\n` +
+  `🏛️ **Estado financiero:** ${financialStatus}`;
+
+ if (addedDebt > 0) text += `\n\n📈 **Intereses acumulados:** +${addedDebt.toLocaleString()} monedas`;
+ if (bonus > 0) text += `\n🏦 **Bonus Bancario:** +${bonus.toLocaleString()} monedas`;
+
+ return replyV2(interaction, `💰 Balance de ${displayName}`, text);
 }
 async function runDaily(interaction) {
-
-        //////////////////////////////////////////////////
-        // USER
-        //////////////////////////////////////////////////
-
-        const user =
-            await getUser(
-
-                interaction.guild.id,
-                interaction.user.id
-            );
-
-        //////////////////////////////////////////////////
-        // CONFIG
-        //////////////////////////////////////////////////
-
-        const config =
-            await getConfig(
-
-                interaction.guild.id
-            );
-
-        //////////////////////////////////////////////////
-        // TIME
-        //////////////////////////////////////////////////
-
-        const now = Date.now();
-
-        const cooldown =
-            config.dailyCooldown;
-
-        //////////////////////////////////////////////////
-        // COOLDOWN
-        //////////////////////////////////////////////////
-
-        if (
-            now - user.lastDaily < cooldown
-        ) {
-
-            const remaining =
-                cooldown -
-                (now - user.lastDaily);
-
-            const hours =
-                Math.ceil(
-                    remaining / 3600000
-                );
-
-            return interaction.reply({
-
-                embeds: [
-
-                    new EmbedBuilder()
-
-                        .setColor("#ff0000")
-
-                        .setTitle(
-                            "⏳ Daily ya reclamado"
-                        )
-
-                        .setDescription(
-
-                            `Ya reclamaste tu recompensa diaria.\n\n` +
-
-                            `🕒 Vuelve en ` +
-
-                            `**${hours} horas**.`
-                        )
-                ],
-
-                flags: 64
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // STREAK
-        //////////////////////////////////////////////////
-
-        const today =
-
-            new Date()
-                .toDateString();
-
-        //////////////////////////////////////////////////
-
-        const yesterday =
-
-            new Date(
-                Date.now() - 86400000
-            ).toDateString();
-
-        //////////////////////////////////////////////////
-
-        if (
-            user.lastDailyDate === yesterday
-        ) {
-
-            user.dailyStreak += 1;
-
-        } else if (
-            user.lastDailyDate !== today
-        ) {
-
-            user.dailyStreak = 1;
-        }
-
-        //////////////////////////////////////////////////
-        // BONUS
-        //////////////////////////////////////////////////
-
-        const streakBonus =
-
-            user.dailyStreak * 100;
-
-        //////////////////////////////////////////////////
-
-        const totalReward =
-
-            config.dailyAmount +
-            streakBonus;
-
-        //////////////////////////////////////////////////
-        // SUMAR
-        //////////////////////////////////////////////////
-
-        user.wallet += totalReward;
-
-        user.lastDaily = now;
-
-        user.lastDailyDate = today;
-
-        //////////////////////////////////////////////////
-
-        await user.save();
-
-        //////////////////////////////////////////////////
-        // EMBED
-        //////////////////////////////////////////////////
-
-        const embed =
-
-            new EmbedBuilder()
-
-                .setColor("#FFD700")
-
-                .setTitle(
-                    "🎁 Recompensa diaria reclamada"
-                )
-
-                .setDescription(
-
-                    `✨ Has reclamado tu recompensa diaria correctamente.\n\n` +
-
-                    `💰 **Recompensa base**\n` +
-                    `> +${config.dailyAmount.toLocaleString()} monedas\n\n` +
-
-                    `🔥 **Bonus por streak**\n` +
-                    `> +${streakBonus.toLocaleString()} monedas\n\n` +
-
-                    `📆 **Racha actual**\n` +
-                    `> ${user.dailyStreak} días\n\n` +
-
-                    `🏦 **Total recibido**\n` +
-                    `> +${totalReward.toLocaleString()} monedas`
-                )
-
-                .setThumbnail(
-
-                    interaction.user.displayAvatarURL({
-
-                        dynamic: true,
-                        size: 1024
-                    })
-                )
-
-                .setImage(
-                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
-                )
-
-                .setFooter({
-
-                    text:
-                        "No pierdas tu streak diario 🔥"
-                })
-
-                .setTimestamp();
-
-        //////////////////////////////////////////////////
-
-        await interaction.reply({
-
-            embeds: [embed]
-        });
-    
+ const user = await getUser(interaction.guild.id, interaction.user.id);
+ const config = await getConfig(interaction.guild.id);
+ const now = Date.now();
+ const cooldown = config.dailyCooldown;
+
+ if (now - user.lastDaily < cooldown) {
+  const hours = Math.ceil((cooldown - (now - user.lastDaily)) / 3600000);
+  return replyV2(interaction, "⏳ Daily ya reclamado",
+   `Ya reclamaste tu recompensa diaria.\n\n🕒 Vuelve en **${hours} horas**.`, 0xFF0000, true);
+ }
+
+ const today = new Date().toDateString();
+ const yesterday = new Date(Date.now() - 86400000).toDateString();
+ if (user.lastDailyDate === yesterday) user.dailyStreak += 1;
+ else if (user.lastDailyDate !== today) user.dailyStreak = 1;
+
+ const streakBonus = user.dailyStreak * 100;
+ const totalReward = config.dailyAmount + streakBonus;
+ user.wallet += totalReward;
+ user.lastDaily = now;
+ user.lastDailyDate = today;
+ await user.save();
+
+ const text =
+  `✨ Has reclamado tu recompensa diaria correctamente.\n\n` +
+  `💰 **Recompensa base**\n> +${config.dailyAmount.toLocaleString()} monedas\n\n` +
+  `🔥 **Bonus por streak**\n> +${streakBonus.toLocaleString()} monedas\n\n` +
+  `📆 **Racha actual**\n> ${user.dailyStreak} días\n\n` +
+  `🏦 **Total recibido**\n> +${totalReward.toLocaleString()} monedas\n\n` +
+  `🔥 No pierdas tu streak diario.`;
+
+ return replyV2(interaction, "🎁 Recompensa diaria reclamada", text, 0xFFD700);
 }
 async function runWork(interaction) {
+ const user = await getUser(interaction.guild.id, interaction.user.id);
+ const config = await getConfig(interaction.guild.id);
+ const now = Date.now();
+ const cooldown = config.workCooldown;
 
-        //////////////////////////////////////////////////
-        // USER
-        //////////////////////////////////////////////////
+ if (now - user.lastWork < cooldown) {
+  const minutes = Math.ceil((cooldown - (now - user.lastWork)) / 60000);
+  return replyV2(interaction, "😴 Estás cansado",
+   `Has trabajado demasiado por hoy.\n\n⏳ Podrás volver a trabajar en **${minutes} minutos**.`, 0xFF0000, true);
+ }
 
-        const user =
-            await getUser(
+ const amount = Math.floor(Math.random() * (config.workMax - config.workMin + 1)) + config.workMin;
+ const randomJob = jobs[Math.floor(Math.random() * jobs.length)];
+ user.wallet += amount;
+ user.lastWork = now;
+ await user.save();
 
-                interaction.guild.id,
-                interaction.user.id
-            );
+ const text =
+  `✨ ${interaction.user} trabajó como:\n> ${randomJob}\n\n` +
+  `💰 **Ganancias obtenidas**\n> +${amount.toLocaleString()} monedas\n\n` +
+  `🏦 **Balance actual**\n> ${user.wallet.toLocaleString()} monedas\n\n` +
+  `📈 Continúa trabajando para aumentar tu fortuna dentro del servidor.`;
 
-        //////////////////////////////////////////////////
-        // CONFIG
-        //////////////////////////////////////////////////
-
-        const config =
-            await getConfig(
-
-                interaction.guild.id
-            );
-
-        //////////////////////////////////////////////////
-        // TIME
-        //////////////////////////////////////////////////
-
-        const now = Date.now();
-
-        const cooldown =
-            config.workCooldown;
-
-        //////////////////////////////////////////////////
-        // COOLDOWN
-        //////////////////////////////////////////////////
-
-        if (
-            now - user.lastWork < cooldown
-        ) {
-
-            const remaining =
-                cooldown -
-                (now - user.lastWork);
-
-            const minutes =
-                Math.ceil(
-                    remaining / 60000
-                );
-
-            return interaction.reply({
-
-                embeds: [
-
-                    new EmbedBuilder()
-
-                        .setColor("#ff0000")
-
-                        .setTitle(
-                            "😴 Estás cansado"
-                        )
-
-                        .setDescription(
-
-                            `Has trabajado demasiado por hoy.\n\n` +
-
-                            `⏳ Podrás volver a trabajar en ` +
-
-                            `**${minutes} minutos**.`
-                        )
-                ],
-
-                flags: 64
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // DINERO
-        //////////////////////////////////////////////////
-
-        const amount =
-
-            Math.floor(
-
-                Math.random() *
-
-                (
-                    config.workMax -
-                    config.workMin + 1
-                )
-
-            ) +
-
-            config.workMin;
-
-        //////////////////////////////////////////////////
-        // TRABAJO RANDOM
-        //////////////////////////////////////////////////
-
-        const randomJob =
-
-            jobs[
-                Math.floor(
-                    Math.random() *
-                    jobs.length
-                )
-            ];
-
-        //////////////////////////////////////////////////
-        // SUMAR
-        //////////////////////////////////////////////////
-
-        user.wallet += amount;
-
-        user.lastWork = now;
-
-        //////////////////////////////////////////////////
-
-        await user.save();
-
-        //////////////////////////////////////////////////
-        // EMBED
-        //////////////////////////////////////////////////
-
-        const embed =
-
-            new EmbedBuilder()
-
-                .setColor("#8A2BE2")
-
-                .setTitle(
-                    "💼 Jornada completada"
-                )
-
-                .setDescription(
-
-                    `✨ ${interaction.user} trabajó como:\n` +
-
-                    `> ${randomJob}\n\n` +
-
-                    `💰 **Ganancias obtenidas**\n` +
-
-                    `> +${amount.toLocaleString()} monedas\n\n` +
-
-                    `🏦 **Balance actual**\n` +
-
-                    `> ${user.wallet.toLocaleString()} monedas\n\n` +
-
-                    `📈 Continúa trabajando para aumentar tu fortuna dentro del servidor.`
-                )
-
-                .setThumbnail(
-
-                    interaction.user.displayAvatarURL({
-
-                        dynamic: true,
-                        size: 1024
-                    })
-                )
-
-                .setImage(
-                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
-                )
-
-                .setFooter({
-
-                    text:
-                        "Bryant's Economy System"
-                })
-
-                .setTimestamp();
-
-        //////////////////////////////////////////////////
-
-        await interaction.reply({
-
-            embeds: [embed]
-        });
-    
+ return replyV2(interaction, "💼 Jornada completada", text);
 }
-
 module.exports = {
  data: new SlashCommandBuilder()
   .setName("economy")
