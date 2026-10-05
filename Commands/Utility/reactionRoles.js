@@ -596,15 +596,11 @@ module.exports = {
 
                     .addOptions(
 
-                        roles.map(role => {
-                            const visual = getRoleVisual(role.name);
-                            return {
-                                label: visual.label.slice(0, 100),
-                                value: role.id,
-                                emoji: visual.emoji,
-                                description: `Obtener el rol ${visual.label}`.slice(0, 100)
-                            };
-                        })
+                        roles.map(role => ({
+                            label: role.name.slice(0, 100),
+                            value: role.id,
+                            description: `Obtener ${role.name}`.slice(0, 100)
+                        }))
                     );
 
             //////////////////////////////////////////////////
@@ -617,10 +613,9 @@ module.exports = {
             //////////////////////////////////////////////////
 
             const rolesList =
-                roles.map(role => {
-                    const visual = getRoleVisual(role.name);
-                    return `${visual.emoji} · ${role}  **${visual.label.replace(/^[A-Z]{2} · /, "")}**`;
-                }).join("\n");
+                roles.map(role =>
+                    `➜ ${role}`
+                ).join("\n");
 
             const panelDescription =
                 `${description}\n\n` +
@@ -769,12 +764,11 @@ module.exports = {
 
                         data.roles.map(role => {
                             const currentRole = interaction.guild.roles.cache.get(role.roleId);
-                            const visual = getRoleVisual(currentRole?.name || role.label);
+                            const currentName = currentRole?.name || role.label;
                             return {
-                                label: visual.label.slice(0, 100),
+                                label: currentName.slice(0, 100),
                                 value: role.roleId,
-                                emoji: role.emoji || visual.emoji,
-                                description: (role.description || `Obtener el rol ${visual.label}`).slice(0, 100)
+                                description: `Obtener ${currentName}`.slice(0, 100)
                             };
                         })
 
@@ -802,266 +796,13 @@ module.exports = {
 
                     .setDescription(
                         `${data.description}\n\n` +
-                        `${data.roles.map(role => { const currentRole = interaction.guild.roles.cache.get(role.roleId);
-                            const visual = getRoleVisual(currentRole?.name || role.label); return `${role.emoji || visual.emoji} · <@&${role.roleId}>  **${visual.label.replace(/^[A-Z]{2} · /, "")}**`; }).join("\n")}\n\n` +
-                        `Selecciona del menú siguiente para gestionar tus roles en · **${data.title}**`
-                    );
-
-            //////////////////////////////////////////////////
-
-            if (data.image) {
-
-                embed.setImage(
-                    data.image
-                );
-
-            }
-
-            //////////////////////////////////////////////////
-
-            
-
-            //////////////////////////////////////////////////
-
-            const msg =
-                await channel.send({
-
-                    embeds: [embed],
-
-                    components: [row]
-
-                });
-
-            //////////////////////////////////////////////////
-
-            data.messageId =
-                msg.id;
-
-            data.channelId =
-                channel.id;
-
-            //////////////////////////////////////////////////
-
-            await data.save();
-
-            //////////////////////////////////////////////////
-
-            return interaction.reply({
-
-                content:
-                    `✅ Panel \`${panelId}\` enviado correctamente.`,
-
-                flags: 64
-
-            });
-
-        }
-
-        //////////////////////////////////////////////////
-        // EDIT
-        //////////////////////////////////////////////////
-
-        if (subcommand === "edit") {
-
-            const panelId =
-                interaction.options.getString(
-                    "panelid"
-                );
-
-            //////////////////////////////////////////////////
-
-            const data =
-                await reactionRolesSchema.findOne({
-
-                    guildId:
-                        interaction.guild.id,
-
-                    panelId
-
-                });
-
-            //////////////////////////////////////////////////
-
-            if (!data) {
-
-                return interaction.reply({
-
-                    content:
-                        "❌ No encontré ese panel.",
-
-                    flags: 64
-
-                });
-
-            }
-
-            //////////////////////////////////////////////////
-
-            const title =
-                interaction.options.getString(
-                    "titulo"
-                ) ||
-
-                data.title;
-
-            //////////////////////////////////////////////////
-
-            const description =
-                interaction.options
-
-                    .getString("descripcion")
-
-                    ?.replace(/\\n/g, "\n")
-
-                ||
-
-                data.description;
-
-            //////////////////////////////////////////////////
-
-            const placeholder =
-                interaction.options.getString(
-                    "placeholder"
-                ) ||
-
-                data.placeholder;
-
-            //////////////////////////////////////////////////
-
-            const color =
-                interaction.options.getString(
-                    "color"
-                ) ||
-
-                data.color;
-
-            //////////////////////////////////////////////////
-
-            const imagen =
-                interaction.options.getAttachment(
-                    "imagen"
-                );
-
-            //////////////////////////////////////////////////
-
-            const thumbnail =
-                interaction.options.getAttachment(
-                    "thumbnail"
-                );
-
-            //////////////////////////////////////////////////
-
-            const imageURL =
-                imagen?.url ||
-
-                data.image ||
-
-                null;
-
-            //////////////////////////////////////////////////
-
-            const thumbnailURL =
-                thumbnail?.url ||
-
-                data.thumbnail ||
-
-                null;
-
-            //////////////////////////////////////////////////
-
-            data.title =
-                title;
-
-            data.description =
-                description;
-
-            data.placeholder =
-                placeholder;
-
-            data.color =
-                color;
-
-            data.image =
-                imageURL;
-
-            data.thumbnail =
-                thumbnailURL;
-
-            //////////////////////////////////////////////////
-
-            await data.save();
-
-            //////////////////////////////////////////////////
-
-            const channel =
-                interaction.guild.channels.cache.get(
-                    data.channelId
-                );
-
-            //////////////////////////////////////////////////
-
-            if (!channel) {
-
-                return interaction.reply({
-
-                    content:
-                        "❌ No encontré el canal.",
-
-                    flags: 64
-
-                });
-
-            }
-
-            //////////////////////////////////////////////////
-
-            const msg =
-                await channel.messages.fetch(
-                    data.messageId
-                ).catch(() => null);
-
-            //////////////////////////////////////////////////
-
-            if (!msg) {
-
-                return interaction.reply({
-
-                    content:
-                        "❌ No encontré el mensaje.",
-
-                    flags: 64
-
-                });
-
-            }
-
-            //////////////////////////////////////////////////
-
-            const menu =
-                new StringSelectMenuBuilder()
-
-                    .setCustomId(
-                        data.customId
-                    )
-
-                    .setPlaceholder(
-                        placeholder
-                    )
-
-                    .setMinValues(0)
-
-                    .setMaxValues(1)
-
-                    .addOptions(
-
-                        data.roles.map(role => {
+                        `${data.roles.map(role => {
                             const currentRole = interaction.guild.roles.cache.get(role.roleId);
-                            const visual = getRoleVisual(currentRole?.name || role.label);
+                            const currentName = currentRole?.name || role.label;
                             return {
-                                label: visual.label.slice(0, 100),
+                                label: currentName.slice(0, 100),
                                 value: role.roleId,
-                                emoji: role.emoji || visual.emoji,
-                                description: (role.description || `Obtener el rol ${visual.label}`).slice(0, 100)
+                                description: `Obtener ${currentName}`.slice(0, 100)
                             };
                         })
 
