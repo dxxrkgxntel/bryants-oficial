@@ -362,7 +362,7 @@ module.exports = {
                             role.id,
 
                         description:
-                            `Obtener ${role.name}`
+                            `Selecciona ${role.name}`
                                 .slice(0, 100)
                     }))
                 );
@@ -380,6 +380,16 @@ module.exports = {
         // EMBED
         //////////////////////////////////////////////////
 
+        const rolesList =
+            roles.map(role =>
+                `➜ ${role}`
+            ).join("\n");
+
+        const panelDescription =
+            `${description}\n\n` +
+            `${rolesList}\n\n` +
+            `Selecciona del menú siguiente para gestionar tus roles en · **${title}**`;
+
         const embed =
             new EmbedBuilder()
 
@@ -387,11 +397,11 @@ module.exports = {
 
                 .setTitle(title)
 
-                .setDescription(description)
+                .setDescription(panelDescription);
 
-                .setImage(imageURL)
-
-                .setThumbnail(thumbnailURL)
+        if (imageURL) {
+            embed.setImage(imageURL);
+        }
 
         //////////////////////////////////////////////////
         // SEND
