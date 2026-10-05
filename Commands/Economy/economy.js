@@ -12,6 +12,9 @@ const GlobalBank = require("../../Models/GlobalBank");
 const BALANCE_BANNER = "https://i.imgur.com/IXKXRHL.png";
 const WORK_BANNER = "https://i.imgur.com/X7jFa3S.png";
 const DAILY_BANNER = "https://i.imgur.com/chBdO1Z.png";
+const DEPOSIT_BANNER = "https://i.imgur.com/Mv7sPGH.png";
+const WITHDRAW_BANNER = "https://i.imgur.com/emQw94y.png";
+const TRANSFER_BANNER = "https://i.imgur.com/D0RzS0Q.png";
 const ECONOMY_BANNER = "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png";
 
 function economyPanel(title, content, color = 0x8A2BE2, banner = ECONOMY_BANNER) {
@@ -137,7 +140,7 @@ async function runDeposit(interaction) {
 
  if (user.wallet < amount) {
   return replyV2(interaction, "❌ Fondos insuficientes",
-   "No tienes suficiente dinero en tu wallet para realizar este depósito.", 0xFF0000, true);
+   "No tienes suficiente dinero en tu wallet para realizar este depósito.", 0xFF0000, true, DEPOSIT_BANNER);
  }
 
  const row = new ActionRowBuilder().addComponents(
@@ -146,8 +149,7 @@ async function runDeposit(interaction) {
  );
 
  const panel = transactionPanel("🏦 Confirmar depósito",
-  `⚠️ ¿Realmente deseas depositar **${amount.toLocaleString()} monedas** en el banco?\n\n💵 **Wallet actual:** ${user.wallet.toLocaleString()} monedas\n\n⏱️ Tienes **30 segundos** para responder.`,
-  row);
+  `⚠️ ¿Realmente deseas depositar **${amount.toLocaleString()} monedas** en el banco?\n\n💵 **Wallet actual:** ${user.wallet.toLocaleString()} monedas\n\n⏱️ Tienes **30 segundos** para responder.`, row, 0x8A2BE2, DEPOSIT_BANNER);
 
  const response = await interaction.reply({
   components: [panel],
@@ -163,7 +165,7 @@ async function runDeposit(interaction) {
   }
   if (i.customId === "deposit_cancel") {
    collector.stop("cancelled");
-   return i.update({ components: [transactionPanel("❌ Depósito cancelado", "La operación fue cancelada.", null, 0xFF0000)] });
+   return i.update({ components: [transactionPanel("❌ Depósito cancelado", "La operación fue cancelada.", null, 0xFF0000, DEPOSIT_BANNER)] });
   }
   if (i.customId === "deposit_confirm") {
    user.wallet -= amount;
@@ -171,13 +173,13 @@ async function runDeposit(interaction) {
    await user.save();
    collector.stop("confirmed");
    return i.update({ components: [transactionPanel("🏦 Depósito realizado",
-    `💸 Has depositado **${amount.toLocaleString()} monedas** en tu banco.\n\n💵 **Wallet:** ${user.wallet.toLocaleString()}\n🏦 **Banco:** ${user.bank.toLocaleString()}`, null, 0x00FF99)] });
+    `💸 Has depositado **${amount.toLocaleString()} monedas** en tu banco.\n\n💵 **Wallet:** ${user.wallet.toLocaleString()}\n🏦 **Banco:** ${user.bank.toLocaleString()}`, null, 0x00FF99, DEPOSIT_BANNER)] });
   }
  });
 
  collector.on("end", async (_, reason) => {
   if (reason === "time") {
-   await msg.edit({ components: [transactionPanel("⌛ Tiempo agotado", "No confirmaste el depósito dentro de los 30 segundos.", null, 0xFF0000)] }).catch(() => {});
+   await msg.edit({ components: [transactionPanel("⌛ Tiempo agotado", "No confirmaste el depósito dentro de los 30 segundos.", null, 0xFF0000, DEPOSIT_BANNER)] }).catch(() => {});
   }
  });
 }
@@ -188,7 +190,7 @@ async function runWithdraw(interaction) {
 
  if (user.bank < amount) {
   return replyV2(interaction, "❌ Fondos insuficientes",
-   "No tienes suficiente dinero en el banco para realizar este retiro.", 0xFF0000, true);
+   "No tienes suficiente dinero en el banco para realizar este retiro.", 0xFF0000, true, WITHDRAW_BANNER);
  }
 
  const fee = Math.floor(amount * 0.05);
@@ -199,8 +201,7 @@ async function runWithdraw(interaction) {
  );
 
  const panel = transactionPanel("🏦 Confirmar retiro",
-  `⚠️ ¿Realmente deseas retirar **${amount.toLocaleString()} monedas**?\n\n💸 **Comisión bancaria:** ${fee.toLocaleString()} monedas\n✅ **Recibirás:** ${finalAmount.toLocaleString()} monedas\n\n⏱️ Tienes **30 segundos** para responder.`,
-  row);
+  `⚠️ ¿Realmente deseas retirar **${amount.toLocaleString()} monedas**?\n\n💸 **Comisión bancaria:** ${fee.toLocaleString()} monedas\n✅ **Recibirás:** ${finalAmount.toLocaleString()} monedas\n\n⏱️ Tienes **30 segundos** para responder.`, row, 0x8A2BE2, WITHDRAW_BANNER);
 
  const response = await interaction.reply({ components: [panel], flags: MessageFlags.IsComponentsV2, withResponse: true });
  const msg = response.resource?.message || await interaction.fetchReply();
@@ -212,7 +213,7 @@ async function runWithdraw(interaction) {
   }
   if (i.customId === "withdraw_cancel") {
    collector.stop("cancelled");
-   return i.update({ components: [transactionPanel("❌ Retiro cancelado", "La operación fue cancelada.", null, 0xFF0000)] });
+   return i.update({ components: [transactionPanel("❌ Retiro cancelado", "La operación fue cancelada.", null, 0xFF0000, WITHDRAW_BANNER)] });
   }
   if (i.customId === "withdraw_confirm") {
    user.bank -= amount;
@@ -225,13 +226,13 @@ async function runWithdraw(interaction) {
    await globalBank.save();
    collector.stop("confirmed");
    return i.update({ components: [transactionPanel("💸 Retiro realizado",
-    `🏦 Has retirado **${amount.toLocaleString()} monedas**.\n\n💸 **Comisión:** ${fee.toLocaleString()} monedas\n✅ **Recibido:** ${finalAmount.toLocaleString()} monedas\n\n💵 **Wallet:** ${user.wallet.toLocaleString()}\n🏦 **Banco:** ${user.bank.toLocaleString()}`, null, 0x00FF99)] });
+    `🏦 Has retirado **${amount.toLocaleString()} monedas**.\n\n💸 **Comisión:** ${fee.toLocaleString()} monedas\n✅ **Recibido:** ${finalAmount.toLocaleString()} monedas\n\n💵 **Wallet:** ${user.wallet.toLocaleString()}\n🏦 **Banco:** ${user.bank.toLocaleString()}`, null, 0x00FF99, WITHDRAW_BANNER)] });
   }
  });
 
  collector.on("end", async (_, reason) => {
   if (reason === "time") {
-   await msg.edit({ components: [transactionPanel("⌛ Tiempo agotado", "No confirmaste el retiro dentro de los 30 segundos.", null, 0xFF0000)] }).catch(() => {});
+   await msg.edit({ components: [transactionPanel("⌛ Tiempo agotado", "No confirmaste el retiro dentro de los 30 segundos.", null, 0xFF0000, WITHDRAW_BANNER)] }).catch(() => {});
   }
  });
 }
@@ -241,7 +242,7 @@ async function runTransfer(interaction) {
  const amount = interaction.options.getInteger("cantidad");
 
  if (target.id === interaction.user.id) {
-  return replyV2(interaction, "❌ Transferencia inválida", "No puedes transferirte dinero a ti mismo.", 0xFF0000, true);
+  return replyV2(interaction, "❌ Transferencia inválida", "No puedes transferirte dinero a ti mismo.", 0xFF0000, true, TRANSFER_BANNER);
  }
 
  const sender = await getUser(interaction.guild.id, interaction.user.id);
@@ -250,7 +251,7 @@ async function runTransfer(interaction) {
 
  if (totalMoney < amount) {
   return replyV2(interaction, "❌ Fondos insuficientes",
-   "No tienes suficiente dinero entre wallet y banco para realizar esta transferencia.", 0xFF0000, true);
+   "No tienes suficiente dinero entre wallet y banco para realizar esta transferencia.", 0xFF0000, true, TRANSFER_BANNER);
  }
 
  const tax = Math.floor(amount * 0.05);
@@ -261,8 +262,7 @@ async function runTransfer(interaction) {
  );
 
  const panel = transactionPanel("💸 Confirmar transferencia",
-  `⚠️ ¿Realmente deseas transferir **${amount.toLocaleString()} monedas** a ${target}?\n\n🏦 **Comisión bancaria:** ${tax.toLocaleString()} monedas\n📥 **El usuario recibirá:** ${finalAmount.toLocaleString()} monedas\n\n💵 **Wallet:** ${sender.wallet.toLocaleString()}\n🏦 **Banco:** ${sender.bank.toLocaleString()}\n\n⏱️ Tienes **30 segundos** para responder.`,
-  row);
+  `⚠️ ¿Realmente deseas transferir **${amount.toLocaleString()} monedas** a ${target}?\n\n🏦 **Comisión bancaria:** ${tax.toLocaleString()} monedas\n📥 **El usuario recibirá:** ${finalAmount.toLocaleString()} monedas\n\n💵 **Wallet:** ${sender.wallet.toLocaleString()}\n🏦 **Banco:** ${sender.bank.toLocaleString()}\n\n⏱️ Tienes **30 segundos** para responder.`, row, 0x8A2BE2, TRANSFER_BANNER);
 
  const response = await interaction.reply({ components: [panel], flags: MessageFlags.IsComponentsV2, withResponse: true });
  const msg = response.resource?.message || await interaction.fetchReply();
@@ -274,7 +274,7 @@ async function runTransfer(interaction) {
   }
   if (i.customId === "transfer_cancel") {
    collector.stop("cancelled");
-   return i.update({ components: [transactionPanel("❌ Transferencia cancelada", "La operación fue cancelada.", null, 0xFF0000)] });
+   return i.update({ components: [transactionPanel("❌ Transferencia cancelada", "La operación fue cancelada.", null, 0xFF0000, TRANSFER_BANNER)] });
   }
   if (i.customId === "transfer_confirm") {
    if (sender.wallet >= amount) sender.wallet -= amount;
@@ -293,13 +293,13 @@ async function runTransfer(interaction) {
    await globalBank.save();
    collector.stop("confirmed");
    return i.update({ components: [transactionPanel("🔁 Transferencia realizada",
-    `💸 Has transferido **${amount.toLocaleString()} monedas** a ${target}.\n\n🏦 **Comisión:** ${tax.toLocaleString()} monedas\n📥 **Recibido por el usuario:** ${finalAmount.toLocaleString()} monedas\n\n💵 **Wallet:** ${sender.wallet.toLocaleString()}\n🏦 **Banco:** ${sender.bank.toLocaleString()}`, null, 0x00FF99)] });
+    `💸 Has transferido **${amount.toLocaleString()} monedas** a ${target}.\n\n🏦 **Comisión:** ${tax.toLocaleString()} monedas\n📥 **Recibido por el usuario:** ${finalAmount.toLocaleString()} monedas\n\n💵 **Wallet:** ${sender.wallet.toLocaleString()}\n🏦 **Banco:** ${sender.bank.toLocaleString()}`, null, 0x00FF99, TRANSFER_BANNER)] });
   }
  });
 
  collector.on("end", async (_, reason) => {
   if (reason === "time") {
-   await msg.edit({ components: [transactionPanel("⌛ Tiempo agotado", "No confirmaste la transferencia dentro de los 30 segundos.", null, 0xFF0000)] }).catch(() => {});
+   await msg.edit({ components: [transactionPanel("⌛ Tiempo agotado", "No confirmaste la transferencia dentro de los 30 segundos.", null, 0xFF0000, TRANSFER_BANNER)] }).catch(() => {});
   }
  });
 }
