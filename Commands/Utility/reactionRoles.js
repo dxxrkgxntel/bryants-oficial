@@ -12,6 +12,41 @@ const {
 const reactionRolesSchema =
 require("../../Models/reactionRolesSchema");
 
+const ROLE_VISUALS = {
+    DO: { emoji: "🇩🇴", label: "DO · Dominicano" },
+    PR: { emoji: "🇵🇷", label: "PR · Puertorriqueño" },
+    CU: { emoji: "🇨🇺", label: "CU · Cubano" },
+    PA: { emoji: "🇵🇦", label: "PA · Panameño" },
+    CO: { emoji: "🇨🇴", label: "CO · Colombiano" },
+    US: { emoji: "🇺🇸", label: "US · Estadounidense" },
+    CL: { emoji: "🇨🇱", label: "CL · Chileno" },
+    HN: { emoji: "🇭🇳", label: "HN · Hondureño" },
+    ES: { emoji: "🇪🇸", label: "ES · Español" },
+    MX: { emoji: "🇲🇽", label: "MX · Mexicano" },
+    PE: { emoji: "🇵🇪", label: "PE · Peruano" },
+    AR: { emoji: "🇦🇷", label: "AR · Argentino" },
+    VE: { emoji: "🇻🇪", label: "VE · Venezolano" }
+};
+
+function getRoleVisual(name = "") {
+    const normalized = name.trim();
+    const codeMatch = normalized.match(/(?:^|[^A-Z])(?:@)?(DO|PR|CU|PA|CO|US|CL|HN|ES|MX|PE|AR|VE)(?:[^A-Z]|$)/i);
+    const code = codeMatch?.[1]?.toUpperCase();
+
+    if (code && ROLE_VISUALS[code]) return ROLE_VISUALS[code];
+
+    const lower = normalized.toLowerCase();
+    if (lower.includes("hombre") || lower.includes("mascul")) {
+        return { emoji: "👨", label: "Hombre" };
+    }
+    if (lower.includes("mujer") || lower.includes("femen")) {
+        return { emoji: "👩", label: "Mujer" };
+    }
+
+    return { emoji: "✨", label: normalized.slice(0, 100) };
+}
+
+
 module.exports = {
 
     data:
@@ -552,19 +587,15 @@ module.exports = {
 
                     .addOptions(
 
-                        roles.map(role => ({
-
-                            label:
-                                role.name
-                                    .slice(0, 100),
-
-                            value:
-                                role.id,
-
-                            description:
-                                `Selecciona ${role.name}`
-                                    .slice(0, 100)
-                        }))
+                        roles.map(role => {
+                            const visual = getRoleVisual(role.name);
+                            return {
+                                label: visual.label.slice(0, 100),
+                                value: role.id,
+                                emoji: visual.emoji,
+                                description: `Obtener el rol ${visual.label}`.slice(0, 100)
+                            };
+                        })
                     );
 
             //////////////////////////////////////////////////
@@ -577,9 +608,10 @@ module.exports = {
             //////////////////////////////////////////////////
 
             const rolesList =
-                roles.map(role =>
-                    `➜ ${role}`
-                ).join("\n");
+                roles.map(role => {
+                    const visual = getRoleVisual(role.name);
+                    return `${visual.emoji} · ${role}  **${visual.label.replace(/^[A-Z]{2} · /, "")}**`;
+                }).join("\n");
 
             const panelDescription =
                 `${description}\n\n` +
@@ -726,20 +758,15 @@ module.exports = {
 
                     .addOptions(
 
-                        data.roles.map(role => ({
-
-                            label:
-                                role.label,
-
-                            value:
-                                role.roleId,
-
-                            description:
-                                role.description ||
-
-                                `Selecciona ${role.label}`
-
-                        }))
+                        data.roles.map(role => {
+                            const visual = getRoleVisual(role.label);
+                            return {
+                                label: visual.label.slice(0, 100),
+                                value: role.roleId,
+                                emoji: role.emoji || visual.emoji,
+                                description: (role.description || `Obtener el rol ${visual.label}`).slice(0, 100)
+                            };
+                        })
 
                     );
 
@@ -765,7 +792,7 @@ module.exports = {
 
                     .setDescription(
                         `${data.description}\n\n` +
-                        `${data.roles.map(role => `➜ <@&${role.roleId}>`).join("\n")}\n\n` +
+                        `${data.roles.map(role => { const visual = getRoleVisual(role.label); return `${role.emoji || visual.emoji} · <@&${role.roleId}>  **${visual.label.replace(/^[A-Z]{2} · /, "")}**`; }).join("\n")}\n\n` +
                         `Selecciona del menú siguiente para gestionar tus roles en · **${data.title}**`
                     );
 
@@ -1016,20 +1043,15 @@ module.exports = {
 
                     .addOptions(
 
-                        data.roles.map(role => ({
-
-                            label:
-                                role.label,
-
-                            value:
-                                role.roleId,
-
-                            description:
-                                role.description ||
-
-                                `Selecciona ${role.label}`
-
-                        }))
+                        data.roles.map(role => {
+                            const visual = getRoleVisual(role.label);
+                            return {
+                                label: visual.label.slice(0, 100),
+                                value: role.roleId,
+                                emoji: role.emoji || visual.emoji,
+                                description: (role.description || `Obtener el rol ${visual.label}`).slice(0, 100)
+                            };
+                        })
 
                     );
 
@@ -1051,7 +1073,7 @@ module.exports = {
 
                     .setDescription(
                         `${description}\n\n` +
-                        `${data.roles.map(role => `➜ <@&${role.roleId}>`).join("\n")}\n\n` +
+                        `${data.roles.map(role => { const visual = getRoleVisual(role.label); return `${role.emoji || visual.emoji} · <@&${role.roleId}>  **${visual.label.replace(/^[A-Z]{2} · /, "")}**`; }).join("\n")}\n\n` +
                         `Selecciona del menú siguiente para gestionar tus roles en · **${title}**`
                     );
 
