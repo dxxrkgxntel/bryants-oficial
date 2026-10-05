@@ -10,6 +10,7 @@ const getConfig = require("../../Utils/getConfig");
 const GlobalBank = require("../../Models/GlobalBank");
 const EconomyUser = require("../../Models/EconomyUser");
 const RobCooldown = require("../../Models/RobCooldown");
+const { runGlobalBank, runDonate, runLoan, runPayDebt, runDistribute } = require("./economyBankHandlers");
 
 const BALANCE_BANNER = "https://i.imgur.com/IXKXRHL.png";
 const WORK_BANNER = "https://i.imgur.com/X7jFa3S.png";
@@ -550,6 +551,16 @@ module.exports = {
   .addSubcommand(s=>s.setName("removemoney").setDescription("Quita dinero a un usuario (Administrador)")
    .addUserOption(o=>o.setName("usuario").setDescription("Usuario").setRequired(true))
    .addIntegerOption(o=>o.setName("cantidad").setDescription("Cantidad").setRequired(true).setMinValue(1)))
+  .addSubcommand(s=>s.setName("bank").setDescription("Muestra el banco global del servidor"))
+  .addSubcommand(s=>s.setName("donate").setDescription("Dona dinero al banco global")
+   .addIntegerOption(o=>o.setName("cantidad").setDescription("Cantidad a donar").setRequired(true).setMinValue(1)))
+  .addSubcommand(s=>s.setName("loan").setDescription("Solicita un préstamo al banco")
+   .addIntegerOption(o=>o.setName("cantidad").setDescription("Cantidad a solicitar").setRequired(true).setMinValue(1000)))
+  .addSubcommand(s=>s.setName("paydebt").setDescription("Paga tu deuda con el banco")
+   .addIntegerOption(o=>o.setName("cantidad").setDescription("Cantidad a pagar").setRequired(true).setMinValue(1)))
+  .addSubcommand(s=>s.setName("distribute").setDescription("Entrega dinero desde el banco global (Administrador)")
+   .addUserOption(o=>o.setName("usuario").setDescription("Usuario beneficiado").setRequired(true))
+   .addIntegerOption(o=>o.setName("cantidad").setDescription("Cantidad a entregar").setRequired(true).setMinValue(1)))
   .addSubcommand(s=>s.setName("config").setDescription("Configura el sistema de economía (Administrador)")
    .addStringOption(o=>o.setName("opcion").setDescription("Qué deseas cambiar").setRequired(true).addChoices(
     {name:"daily",value:"dailyAmount"},{name:"work-min",value:"workMin"},{name:"work-max",value:"workMax"},
@@ -566,6 +577,11 @@ module.exports = {
   if(sub==="transfer") return runTransfer(interaction);
   if(sub==="rob") return runRob(interaction);
   if(sub==="leaderboard") return runLeaderboard(interaction);
+  if(sub==="bank") return runGlobalBank(interaction);
+  if(sub==="donate") return runDonate(interaction);
+  if(sub==="loan") return runLoan(interaction);
+  if(sub==="paydebt") return runPayDebt(interaction);
+  if(sub==="distribute") return runDistribute(interaction);
   if(sub==="addmoney") return runAddMoney(interaction);
   if(sub==="removemoney") return runRemoveMoney(interaction);
   if(sub==="config") return runConfig(interaction);
