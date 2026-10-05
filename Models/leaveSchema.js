@@ -4,8 +4,7 @@ let leaveSchema = new Schema({
     Guild:String,
     Channel: String,
     MessageDes:String,
-    ImagenDesc:String,
-    Thumbnail: String
+    Banner: String
 })
 
 module.exports = model("leave", leaveSchema)
