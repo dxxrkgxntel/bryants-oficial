@@ -273,27 +273,42 @@ async function runTransfer(interaction) {
    return i.reply({ content: "❌ No puedes usar estos botones.", flags: MessageFlags.Ephemeral });
   }
   if (i.customId === "transfer_cancel") {
+   await i.deferUpdate();
    collector.stop("cancelled");
-   return i.update({ components: [transactionPanel("❌ Transferencia cancelada", "La operación fue cancelada.", null, 0xFF0000, TRANSFER_BANNER)] });
+   return interaction.editReply({ components: [transactionPanel("❌ Transferencia cancelada", "La operación fue cancelada.", null, 0xFF0000, TRANSFER_BANNER)] });
   }
   if (i.customId === "transfer_confirm") {
-   if (sender.wallet >= amount) sender.wallet -= amount;
-   else {
-    const remaining = amount - sender.wallet;
-    sender.wallet = 0;
-    sender.bank -= remaining;
+   await i.deferUpdate();
+
+   // Volvemos a consultar los saldos al confirmar para evitar usar datos obsoletos.
+   const freshSender = await getUser(interaction.guild.id, interaction.user.id);
+   const freshReceiver = await getUser(interaction.guild.id, target.id);
+   const freshTotal = freshSender.wallet + freshSender.bank;
+
+   if (freshTotal < amount) {
+    collector.stop("insufficient");
+    return interaction.editReply({
+     components: [transactionPanel("❌ Fondos insuficientes", "Tu saldo cambió y ya no tienes fondos suficientes para completar la transferencia.", null, 0xFF0000, TRANSFER_BANNER)]
+    });
    }
-   receiver.wallet += finalAmount;
+
+   if (freshSender.wallet >= amount) freshSender.wallet -= amount;
+   else {
+    const remaining = amount - freshSender.wallet;
+    freshSender.wallet = 0;
+    freshSender.bank -= remaining;
+   }
+   freshReceiver.wallet += finalAmount;
    let globalBank = await GlobalBank.findOne({ guildId: interaction.guild.id });
    if (!globalBank) globalBank = new GlobalBank({ guildId: interaction.guild.id, balance: 0 });
    globalBank.balance += tax;
    if (typeof globalBank.totalCollected === "number") globalBank.totalCollected += tax;
-   await sender.save();
-   await receiver.save();
+   await freshSender.save();
+   await freshReceiver.save();
    await globalBank.save();
    collector.stop("confirmed");
-   return i.update({ components: [transactionPanel("🔁 Transferencia realizada",
-    `💸 Has transferido **${amount.toLocaleString()} monedas** a ${target}.\n\n🏦 **Comisión:** ${tax.toLocaleString()} monedas\n📥 **Recibido por el usuario:** ${finalAmount.toLocaleString()} monedas\n\n💵 **Wallet:** ${sender.wallet.toLocaleString()}\n🏦 **Banco:** ${sender.bank.toLocaleString()}`, null, 0x00FF99, TRANSFER_BANNER)] });
+   return interaction.editReply({ components: [transactionPanel("🔁 Transferencia realizada",
+    `💸 Has transferido **${amount.toLocaleString()} monedas** a ${target}.\n\n🏦 **Comisión:** ${tax.toLocaleString()} monedas\n📥 **Recibido por el usuario:** ${finalAmount.toLocaleString()} monedas\n\n💵 **Wallet:** ${freshSender.wallet.toLocaleString()}\n🏦 **Banco:** ${freshSender.bank.toLocaleString()}`, null, 0x00FF99, TRANSFER_BANNER)] });
   }
  });
 
