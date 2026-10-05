@@ -2,6 +2,7 @@ const {
 
     SlashCommandBuilder,
     PermissionFlagsBits,
+    EmbedBuilder,
     ActionRowBuilder,
     StringSelectMenuBuilder,
     ChannelType,
@@ -52,18 +53,6 @@ function buildRoleOptions(interaction, roles) {
         .filter(Boolean);
 }
 
-function getPanelCategory(title = "") {
-    const cleaned = title
-        .replace(/[👀✨🎭🌎🌍🌏]/gu, "")
-        .replace(/[¿?]/g, "")
-        .trim();
-
-    const match = cleaned.match(/(?:rol(?:es)?\s+de(?:l|\s+la)?|de(?:l|\s+la)?)\s+(.+)$/i);
-    const category = (match?.[1] || cleaned || "Roles").trim();
-
-    return category.charAt(0).toUpperCase() + category.slice(1);
-}
-
 function buildPanelDescription(interaction, roles, title) {
     const roleLines = roles
         .map(savedRole => {
@@ -81,9 +70,20 @@ function buildPanelDescription(interaction, roles, title) {
         .filter(Boolean)
         .join("\n");
 
-    const category = getPanelCategory(title);
+    return `${roleLines}\n\nSelecciona del menú siguiente para gestionar tus roles en · **${title}**`;
+}
 
-    return `${roleLines}\n\nSelecciona del menú siguiente para gestionar tus roles en · **¿ ${category} ?**`;
+
+function getPanelCategory(title = "") {
+    const cleaned = title
+        .replace(/[👀✨🎭🌎🌍🌏]/gu, "")
+        .replace(/[¿?]/g, "")
+        .trim();
+
+    const match = cleaned.match(/(?:rol(?:es)?\s+de(?:l|\s+la)?|de(?:l|\s+la)?)\s+(.+)$/i);
+    const category = (match?.[1] || cleaned || "Roles").trim();
+
+    return category.charAt(0).toUpperCase() + category.slice(1);
 }
 
 function hexToInt(color = "#8A2BE2") {
@@ -92,27 +92,22 @@ function hexToInt(color = "#8A2BE2") {
 }
 
 function buildPanelContainer(interaction, roles, title, placeholder, customId, color, imageURL) {
-    const container =
-        new ContainerBuilder()
-            .setAccentColor(hexToInt(color));
+    const panel = new ContainerBuilder()
+        .setAccentColor(hexToInt(color));
 
     if (imageURL) {
-        const gallery =
-            new MediaGalleryBuilder()
-                .addItems(
-                    new MediaGalleryItemBuilder()
-                        .setURL(imageURL)
-                );
-
-        container.addMediaGalleryComponents(gallery);
+        panel.addMediaGalleryComponents(
+            new MediaGalleryBuilder().addItems(
+                new MediaGalleryItemBuilder().setURL(imageURL)
+            )
+        );
     }
 
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder()
-            .setContent(`## ${title}`)
+    panel.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(`## ${title}`)
     );
 
-    container.addSeparatorComponents(
+    panel.addSeparatorComponents(
         new SeparatorBuilder()
             .setDivider(true)
             .setSpacing(SeparatorSpacingSize.Small)
@@ -134,12 +129,11 @@ function buildPanelContainer(interaction, roles, title, placeholder, customId, c
         .filter(Boolean)
         .join("\n");
 
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder()
-            .setContent(roleLines || "No hay roles disponibles.")
+    panel.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(roleLines || "No hay roles disponibles.")
     );
 
-    container.addSeparatorComponents(
+    panel.addSeparatorComponents(
         new SeparatorBuilder()
             .setDivider(true)
             .setSpacing(SeparatorSpacingSize.Small)
@@ -147,12 +141,554 @@ function buildPanelContainer(interaction, roles, title, placeholder, customId, c
 
     const category = getPanelCategory(title);
 
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder()
-            .setContent(`Selecciona del menú siguiente para gestionar tus roles en · **¿ ${category} ?**`)
+    panel.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+            `Selecciona del menú siguiente para gestionar tus roles en · **¿ ${category} ?**`
+        )
     );
 
-    const container =
+    const menu = new StringSelectMenuBuilder()
+        .setCustomId(customId)
+        .setPlaceholder(placeholder)
+        .setMinValues(0)
+        .setMaxValues(1)
+        .addOptions(buildRoleOptions(interaction, roles));
+
+    panel.addActionRowComponents(
+        new ActionRowBuilder().addComponents(menu)
+    );
+
+    return panel;
+}
+
+
+
+module.exports = {
+
+    data:
+        new SlashCommandBuilder()
+
+            .setName("reactionrole")
+
+            .setDescription(
+                "Sistema de reaction roles"
+            )
+
+            .setDefaultMemberPermissions(
+                PermissionFlagsBits.Administrator
+            )
+
+            //////////////////////////////////////////////////
+            // SETUP
+            //////////////////////////////////////////////////
+
+            .addSubcommand(sub => {
+
+                sub
+
+                    .setName("setup")
+
+                    .setDescription(
+                        "Crear panel de reaction roles"
+                    )
+
+                    //////////////////////////////////////////////////
+                    // PANEL ID
+                    //////////////////////////////////////////////////
+
+                    .addStringOption(option =>
+
+                        option
+
+                            .setName("panelid")
+
+                            .setDescription(
+                                "ID único del panel"
+                            )
+
+                            .setRequired(true)
+                    )
+
+                    //////////////////////////////////////////////////
+                    // PERSONALIZACIÓN
+                    //////////////////////////////////////////////////
+
+                    .addStringOption(option =>
+
+                        option
+
+                            .setName("titulo")
+
+                            .setDescription(
+                                "Título del embed"
+                            )
+                    )
+
+                    .addStringOption(option =>
+
+                        option
+
+                            .setName("descripcion")
+
+                            .setDescription(
+                                "Descripción del embed"
+                            )
+                    )
+
+                    .addStringOption(option =>
+
+                        option
+
+                            .setName("placeholder")
+
+                            .setDescription(
+                                "Texto del menú"
+                            )
+                    )
+
+                    .addStringOption(option =>
+
+                        option
+
+                            .setName("color")
+
+                            .setDescription(
+                                "Color HEX del embed"
+                            )
+                    )
+
+                    //////////////////////////////////////////////////
+                    // IMÁGENES
+                    //////////////////////////////////////////////////
+
+                    .addAttachmentOption(option =>
+
+                        option
+
+                            .setName("imagen")
+
+                            .setDescription(
+                                "Imagen principal del embed"
+                            )
+                    )
+
+                    .addAttachmentOption(option =>
+
+                        option
+
+                            .setName("thumbnail")
+
+                            .setDescription(
+                                "Thumbnail del embed"
+                            )
+                    );
+
+                //////////////////////////////////////////////////
+                // 18 ROLES
+                //////////////////////////////////////////////////
+
+                for (let i = 1; i <= 18; i++) {
+
+                    sub.addRoleOption(option =>
+
+                        option
+
+                            .setName(`role${i}`)
+
+                            .setDescription(
+                                `Rol ${i}`
+                            )
+
+                    );
+
+                }
+
+                //////////////////////////////////////////////////
+
+                return sub;
+
+            })
+
+            //////////////////////////////////////////////////
+            // SEND
+            //////////////////////////////////////////////////
+
+            .addSubcommand(sub =>
+
+                sub
+
+                    .setName("send")
+
+                    .setDescription(
+                        "Reenviar un panel"
+                    )
+
+                    .addStringOption(option =>
+
+                        option
+
+                            .setName("panelid")
+
+                            .setDescription(
+                                "ID del panel"
+                            )
+
+                            .setRequired(true)
+
+                    )
+
+                    .addChannelOption(option =>
+
+                        option
+
+                            .setName("channel")
+
+                            .setDescription(
+                                "Canal donde enviar"
+                            )
+
+                            .addChannelTypes(
+                                ChannelType.GuildText
+                            )
+
+                    )
+
+            )
+
+            //////////////////////////////////////////////////
+            // EDIT
+            //////////////////////////////////////////////////
+
+            .addSubcommand(sub =>
+
+                sub
+
+                    .setName("edit")
+
+                    .setDescription(
+                        "Editar un panel"
+                    )
+
+                    .addStringOption(option =>
+
+                        option
+
+                            .setName("panelid")
+
+                            .setDescription(
+                                "ID del panel"
+                            )
+
+                            .setRequired(true)
+
+                    )
+
+                    .addStringOption(option =>
+
+                        option
+
+                            .setName("titulo")
+
+                            .setDescription(
+                                "Nuevo título"
+                            )
+
+                    )
+
+                    .addStringOption(option =>
+
+                        option
+
+                            .setName("descripcion")
+
+                            .setDescription(
+                                "Nueva descripción"
+                            )
+
+                    )
+
+                    .addStringOption(option =>
+
+                        option
+
+                            .setName("placeholder")
+
+                            .setDescription(
+                                "Nuevo placeholder"
+                            )
+
+                    )
+
+                    .addStringOption(option =>
+
+                        option
+
+                            .setName("color")
+
+                            .setDescription(
+                                "Nuevo color HEX"
+                            )
+
+                    )
+
+                    .addAttachmentOption(option =>
+
+                        option
+
+                            .setName("imagen")
+
+                            .setDescription(
+                                "Nueva imagen"
+                            )
+
+                    )
+
+                    .addAttachmentOption(option =>
+
+                        option
+
+                            .setName("thumbnail")
+
+                            .setDescription(
+                                "Nuevo thumbnail"
+                            )
+
+                    )
+
+            )
+
+            //////////////////////////////////////////////////
+            // DELETE
+            //////////////////////////////////////////////////
+
+            .addSubcommand(sub =>
+
+                sub
+
+                    .setName("delete")
+
+                    .setDescription(
+                        "Eliminar un panel"
+                    )
+
+                    .addStringOption(option =>
+
+                        option
+
+                            .setName("panelid")
+
+                            .setDescription(
+                                "ID del panel"
+                            )
+
+                            .setRequired(true)
+
+                    )
+
+            )
+
+            //////////////////////////////////////////////////
+            // LIST
+            //////////////////////////////////////////////////
+
+            .addSubcommand(sub =>
+
+                sub
+
+                    .setName("list")
+
+                    .setDescription(
+                        "Ver todos los panels"
+                    )
+
+            ),
+
+    //////////////////////////////////////////////////
+    // EXECUTE
+    //////////////////////////////////////////////////
+
+    async execute(interaction) {
+
+        const subcommand =
+            interaction.options.getSubcommand();
+
+        //////////////////////////////////////////////////
+        // SETUP
+        //////////////////////////////////////////////////
+
+        if (subcommand === "setup") {
+
+            const panelId =
+                interaction.options.getString(
+                    "panelid"
+                );
+
+            //////////////////////////////////////////////////
+
+            const existingPanel =
+                await reactionRolesSchema.findOne({
+
+                    guildId:
+                        interaction.guild.id,
+
+                    panelId
+                });
+
+            //////////////////////////////////////////////////
+
+            if (existingPanel) {
+
+                return interaction.reply({
+
+                    content:
+                        "❌ Ya existe un panel con ese ID.",
+
+                    flags: 64
+                });
+            }
+
+            //////////////////////////////////////////////////
+
+            const title =
+                interaction.options.getString(
+                    "titulo"
+                ) ||
+
+                "✨ Reaction Roles";
+
+            //////////////////////////////////////////////////
+
+            const description =
+                interaction.options
+
+                    .getString("descripcion")
+
+                    ?.replace(/\\n/g, "\n")
+
+                ||
+
+                "Selecciona los roles que deseas obtener.";
+
+            //////////////////////////////////////////////////
+
+            const placeholder =
+                interaction.options.getString(
+                    "placeholder"
+                ) ||
+
+                "✨ Selecciona tus roles";
+
+            //////////////////////////////////////////////////
+
+            const color =
+                interaction.options.getString(
+                    "color"
+                ) ||
+
+                "#8A2BE2";
+
+            //////////////////////////////////////////////////
+
+            const imagen =
+                interaction.options.getAttachment(
+                    "imagen"
+                );
+
+            //////////////////////////////////////////////////
+
+            const thumbnail =
+                interaction.options.getAttachment(
+                    "thumbnail"
+                );
+
+            //////////////////////////////////////////////////
+
+            if (
+                imagen &&
+                !imagen.contentType?.startsWith(
+                    "image"
+                )
+            ) {
+
+                return interaction.reply({
+
+                    content:
+                        "❌ El archivo imagen debe ser una imagen.",
+
+                    flags: 64
+                });
+            }
+
+            //////////////////////////////////////////////////
+
+            if (
+                thumbnail &&
+                !thumbnail.contentType?.startsWith(
+                    "image"
+                )
+            ) {
+
+                return interaction.reply({
+
+                    content:
+                        "❌ El thumbnail debe ser una imagen.",
+
+                    flags: 64
+                });
+            }
+
+            //////////////////////////////////////////////////
+
+            const imageURL =
+                imagen?.url || null;
+
+            //////////////////////////////////////////////////
+
+            const thumbnailURL =
+                thumbnail?.url || null;
+
+            //////////////////////////////////////////////////
+
+            const roles = [];
+
+            //////////////////////////////////////////////////
+
+            for (let i = 1; i <= 18; i++) {
+
+                const role =
+                    interaction.options.getRole(
+                        `role${i}`
+                    );
+
+                //////////////////////////////////////////////////
+
+                if (role) {
+
+                    roles.push(role);
+                }
+            }
+
+            //////////////////////////////////////////////////
+
+            if (roles.length < 2) {
+
+                return interaction.reply({
+
+                    content:
+                        "❌ Debes añadir mínimo 2 roles.",
+
+                    flags: 64
+                });
+            }
+
+            //////////////////////////////////////////////////
+
+            const customId =
+                `rr_${Date.now()}`;
+
+            //////////////////////////////////////////////////
+
+            const panel =
                 buildPanelContainer(
                     interaction,
                     roles,
@@ -167,7 +703,7 @@ function buildPanelContainer(interaction, roles, title, placeholder, customId, c
 
             const msg =
                 await interaction.channel.send({
-                    components: [container],
+                    components: [panel],
                     flags: MessageFlags.IsComponentsV2
                 });
 
@@ -271,7 +807,7 @@ function buildPanelContainer(interaction, roles, title, placeholder, customId, c
 
             //////////////////////////////////////////////////
 
-            const container =
+            const panel =
                 buildPanelContainer(
                     interaction,
                     data.roles,
@@ -286,7 +822,7 @@ function buildPanelContainer(interaction, roles, title, placeholder, customId, c
 
             const msg =
                 await channel.send({
-                    components: [container],
+                    components: [panel],
                     flags: MessageFlags.IsComponentsV2
                 });
 
@@ -495,7 +1031,7 @@ function buildPanelContainer(interaction, roles, title, placeholder, customId, c
 
             //////////////////////////////////////////////////
 
-            const container =
+            const panel =
                 buildPanelContainer(
                     interaction,
                     data.roles,
@@ -509,7 +1045,7 @@ function buildPanelContainer(interaction, roles, title, placeholder, customId, c
             //////////////////////////////////////////////////
 
             await msg.edit({
-                components: [container],
+                components: [panel],
                 flags: MessageFlags.IsComponentsV2
             });
 
