@@ -2,10 +2,16 @@ const {
 
     SlashCommandBuilder,
     PermissionFlagsBits,
-    EmbedBuilder,
     ActionRowBuilder,
     StringSelectMenuBuilder,
-    ChannelType
+    ChannelType,
+    ContainerBuilder,
+    TextDisplayBuilder,
+    SeparatorBuilder,
+    MediaGalleryBuilder,
+    MediaGalleryItemBuilder,
+    MessageFlags,
+    SeparatorSpacingSize
 
 } = require("discord.js");
 
@@ -80,598 +86,80 @@ function buildPanelDescription(interaction, roles, title) {
     return `${roleLines}\n\nSelecciona del menú siguiente para gestionar tus roles en · **¿ ${category} ?**`;
 }
 
-function buildPanelEmbeds(color, title, description, imageURL) {
-    const embeds = [];
-
-    if (imageURL) {
-        embeds.push(
-            new EmbedBuilder()
-                .setColor(color)
-                .setImage(imageURL)
-        );
-    }
-
-    embeds.push(
-        new EmbedBuilder()
-            .setColor(color)
-            .setTitle(title)
-            .setDescription(description)
-    );
-
-    return embeds;
+function hexToInt(color = "#8A2BE2") {
+    const parsed = Number.parseInt(String(color).replace("#", ""), 16);
+    return Number.isFinite(parsed) ? parsed : 0x8A2BE2;
 }
 
-
-module.exports = {
-
-    data:
-        new SlashCommandBuilder()
-
-            .setName("reactionrole")
-
-            .setDescription(
-                "Sistema de reaction roles"
-            )
-
-            .setDefaultMemberPermissions(
-                PermissionFlagsBits.Administrator
-            )
-
-            //////////////////////////////////////////////////
-            // SETUP
-            //////////////////////////////////////////////////
-
-            .addSubcommand(sub => {
-
-                sub
-
-                    .setName("setup")
-
-                    .setDescription(
-                        "Crear panel de reaction roles"
-                    )
-
-                    //////////////////////////////////////////////////
-                    // PANEL ID
-                    //////////////////////////////////////////////////
-
-                    .addStringOption(option =>
-
-                        option
-
-                            .setName("panelid")
-
-                            .setDescription(
-                                "ID único del panel"
-                            )
-
-                            .setRequired(true)
-                    )
-
-                    //////////////////////////////////////////////////
-                    // PERSONALIZACIÓN
-                    //////////////////////////////////////////////////
-
-                    .addStringOption(option =>
-
-                        option
-
-                            .setName("titulo")
-
-                            .setDescription(
-                                "Título del embed"
-                            )
-                    )
-
-                    .addStringOption(option =>
-
-                        option
-
-                            .setName("descripcion")
-
-                            .setDescription(
-                                "Descripción del embed"
-                            )
-                    )
-
-                    .addStringOption(option =>
-
-                        option
-
-                            .setName("placeholder")
-
-                            .setDescription(
-                                "Texto del menú"
-                            )
-                    )
-
-                    .addStringOption(option =>
-
-                        option
-
-                            .setName("color")
-
-                            .setDescription(
-                                "Color HEX del embed"
-                            )
-                    )
-
-                    //////////////////////////////////////////////////
-                    // IMÁGENES
-                    //////////////////////////////////////////////////
-
-                    .addAttachmentOption(option =>
-
-                        option
-
-                            .setName("imagen")
-
-                            .setDescription(
-                                "Imagen principal del embed"
-                            )
-                    )
-
-                    .addAttachmentOption(option =>
-
-                        option
-
-                            .setName("thumbnail")
-
-                            .setDescription(
-                                "Thumbnail del embed"
-                            )
-                    );
-
-                //////////////////////////////////////////////////
-                // 18 ROLES
-                //////////////////////////////////////////////////
-
-                for (let i = 1; i <= 18; i++) {
-
-                    sub.addRoleOption(option =>
-
-                        option
-
-                            .setName(`role${i}`)
-
-                            .setDescription(
-                                `Rol ${i}`
-                            )
-
-                    );
-
-                }
-
-                //////////////////////////////////////////////////
-
-                return sub;
-
-            })
-
-            //////////////////////////////////////////////////
-            // SEND
-            //////////////////////////////////////////////////
-
-            .addSubcommand(sub =>
-
-                sub
-
-                    .setName("send")
-
-                    .setDescription(
-                        "Reenviar un panel"
-                    )
-
-                    .addStringOption(option =>
-
-                        option
-
-                            .setName("panelid")
-
-                            .setDescription(
-                                "ID del panel"
-                            )
-
-                            .setRequired(true)
-
-                    )
-
-                    .addChannelOption(option =>
-
-                        option
-
-                            .setName("channel")
-
-                            .setDescription(
-                                "Canal donde enviar"
-                            )
-
-                            .addChannelTypes(
-                                ChannelType.GuildText
-                            )
-
-                    )
-
-            )
-
-            //////////////////////////////////////////////////
-            // EDIT
-            //////////////////////////////////////////////////
-
-            .addSubcommand(sub =>
-
-                sub
-
-                    .setName("edit")
-
-                    .setDescription(
-                        "Editar un panel"
-                    )
-
-                    .addStringOption(option =>
-
-                        option
-
-                            .setName("panelid")
-
-                            .setDescription(
-                                "ID del panel"
-                            )
-
-                            .setRequired(true)
-
-                    )
-
-                    .addStringOption(option =>
-
-                        option
-
-                            .setName("titulo")
-
-                            .setDescription(
-                                "Nuevo título"
-                            )
-
-                    )
-
-                    .addStringOption(option =>
-
-                        option
-
-                            .setName("descripcion")
-
-                            .setDescription(
-                                "Nueva descripción"
-                            )
-
-                    )
-
-                    .addStringOption(option =>
-
-                        option
-
-                            .setName("placeholder")
-
-                            .setDescription(
-                                "Nuevo placeholder"
-                            )
-
-                    )
-
-                    .addStringOption(option =>
-
-                        option
-
-                            .setName("color")
-
-                            .setDescription(
-                                "Nuevo color HEX"
-                            )
-
-                    )
-
-                    .addAttachmentOption(option =>
-
-                        option
-
-                            .setName("imagen")
-
-                            .setDescription(
-                                "Nueva imagen"
-                            )
-
-                    )
-
-                    .addAttachmentOption(option =>
-
-                        option
-
-                            .setName("thumbnail")
-
-                            .setDescription(
-                                "Nuevo thumbnail"
-                            )
-
-                    )
-
-            )
-
-            //////////////////////////////////////////////////
-            // DELETE
-            //////////////////////////////////////////////////
-
-            .addSubcommand(sub =>
-
-                sub
-
-                    .setName("delete")
-
-                    .setDescription(
-                        "Eliminar un panel"
-                    )
-
-                    .addStringOption(option =>
-
-                        option
-
-                            .setName("panelid")
-
-                            .setDescription(
-                                "ID del panel"
-                            )
-
-                            .setRequired(true)
-
-                    )
-
-            )
-
-            //////////////////////////////////////////////////
-            // LIST
-            //////////////////////////////////////////////////
-
-            .addSubcommand(sub =>
-
-                sub
-
-                    .setName("list")
-
-                    .setDescription(
-                        "Ver todos los panels"
-                    )
-
-            ),
-
-    //////////////////////////////////////////////////
-    // EXECUTE
-    //////////////////////////////////////////////////
-
-    async execute(interaction) {
-
-        const subcommand =
-            interaction.options.getSubcommand();
-
-        //////////////////////////////////////////////////
-        // SETUP
-        //////////////////////////////////////////////////
-
-        if (subcommand === "setup") {
-
-            const panelId =
-                interaction.options.getString(
-                    "panelid"
+function buildPanelContainer(interaction, roles, title, placeholder, customId, color, imageURL) {
+    const container =
+        new ContainerBuilder()
+            .setAccentColor(hexToInt(color));
+
+    if (imageURL) {
+        const gallery =
+            new MediaGalleryBuilder()
+                .addItems(
+                    new MediaGalleryItemBuilder()
+                        .setURL(imageURL)
                 );
 
-            //////////////////////////////////////////////////
-
-            const existingPanel =
-                await reactionRolesSchema.findOne({
-
-                    guildId:
-                        interaction.guild.id,
-
-                    panelId
-                });
-
-            //////////////////////////////////////////////////
-
-            if (existingPanel) {
-
-                return interaction.reply({
-
-                    content:
-                        "❌ Ya existe un panel con ese ID.",
-
-                    flags: 64
-                });
-            }
-
-            //////////////////////////////////////////////////
-
-            const title =
-                interaction.options.getString(
-                    "titulo"
-                ) ||
-
-                "✨ Reaction Roles";
-
-            //////////////////////////////////////////////////
-
-            const description =
-                interaction.options
-
-                    .getString("descripcion")
-
-                    ?.replace(/\\n/g, "\n")
-
-                ||
-
-                "Selecciona los roles que deseas obtener.";
-
-            //////////////////////////////////////////////////
-
-            const placeholder =
-                interaction.options.getString(
-                    "placeholder"
-                ) ||
-
-                "✨ Selecciona tus roles";
-
-            //////////////////////////////////////////////////
-
-            const color =
-                interaction.options.getString(
-                    "color"
-                ) ||
-
-                "#8A2BE2";
-
-            //////////////////////////////////////////////////
-
-            const imagen =
-                interaction.options.getAttachment(
-                    "imagen"
-                );
-
-            //////////////////////////////////////////////////
-
-            const thumbnail =
-                interaction.options.getAttachment(
-                    "thumbnail"
-                );
-
-            //////////////////////////////////////////////////
-
-            if (
-                imagen &&
-                !imagen.contentType?.startsWith(
-                    "image"
-                )
-            ) {
-
-                return interaction.reply({
-
-                    content:
-                        "❌ El archivo imagen debe ser una imagen.",
-
-                    flags: 64
-                });
-            }
-
-            //////////////////////////////////////////////////
-
-            if (
-                thumbnail &&
-                !thumbnail.contentType?.startsWith(
-                    "image"
-                )
-            ) {
-
-                return interaction.reply({
-
-                    content:
-                        "❌ El thumbnail debe ser una imagen.",
-
-                    flags: 64
-                });
-            }
-
-            //////////////////////////////////////////////////
-
-            const imageURL =
-                imagen?.url || null;
-
-            //////////////////////////////////////////////////
-
-            const thumbnailURL =
-                thumbnail?.url || null;
-
-            //////////////////////////////////////////////////
-
-            const roles = [];
-
-            //////////////////////////////////////////////////
-
-            for (let i = 1; i <= 18; i++) {
-
-                const role =
-                    interaction.options.getRole(
-                        `role${i}`
-                    );
-
-                //////////////////////////////////////////////////
-
-                if (role) {
-
-                    roles.push(role);
-                }
-            }
-
-            //////////////////////////////////////////////////
-
-            if (roles.length < 2) {
-
-                return interaction.reply({
-
-                    content:
-                        "❌ Debes añadir mínimo 2 roles.",
-
-                    flags: 64
-                });
-            }
-
-            //////////////////////////////////////////////////
-
-            const customId =
-                `rr_${Date.now()}`;
-
-            //////////////////////////////////////////////////
-
-            const menu =
-                new StringSelectMenuBuilder()
-
-                    .setCustomId(customId)
-
-                    .setPlaceholder(
-                        placeholder
-                    )
-
-                    .setMinValues(0)
-
-                    .setMaxValues(1)
-
-                    .addOptions(
-                        roles.map(role => {
-                            const visual = getRoleVisual(role.name);
-                            return {
-                                label: visual.label,
-                                value: role.id,
-                                ...(visual.emoji ? { emoji: visual.emoji } : {})
-                            };
-                        })
-                    );
-
-            //////////////////////////////////////////////////
-
-            const row =
-                new ActionRowBuilder()
-
-                    .addComponents(menu);
-
-            //////////////////////////////////////////////////
-
-            const panelDescription =
-                buildPanelDescription(
+        container.addMediaGalleryComponents(gallery);
+    }
+
+    container.addTextDisplayComponents(
+        new TextDisplayBuilder()
+            .setContent(`## ${title}`)
+    );
+
+    container.addSeparatorComponents(
+        new SeparatorBuilder()
+            .setDivider(true)
+            .setSpacing(SeparatorSpacingSize.Small)
+    );
+
+    const roleLines = roles
+        .map(savedRole => {
+            const roleId = savedRole.roleId || savedRole.id;
+            const discordRole = interaction.guild.roles.cache.get(roleId);
+            if (!discordRole) return null;
+
+            const visual = getRoleVisual(discordRole.name);
+            const suffix = visual.label.includes("·")
+                ? visual.label.split("·").slice(1).join("·").trim()
+                : "";
+
+            return `${visual.emoji ? `${visual.emoji} ➜ ` : "➜ "}<@&${discordRole.id}>${suffix ? `  **${suffix}**` : ""}`;
+        })
+        .filter(Boolean)
+        .join("\n");
+
+    container.addTextDisplayComponents(
+        new TextDisplayBuilder()
+            .setContent(roleLines || "No hay roles disponibles.")
+    );
+
+    container.addSeparatorComponents(
+        new SeparatorBuilder()
+            .setDivider(true)
+            .setSpacing(SeparatorSpacingSize.Small)
+    );
+
+    const category = getPanelCategory(title);
+
+    container.addTextDisplayComponents(
+        new TextDisplayBuilder()
+            .setContent(`Selecciona del menú siguiente para gestionar tus roles en · **¿ ${category} ?**`)
+    );
+
+    const container =
+                buildPanelContainer(
                     interaction,
                     roles,
-                    title
-                );
-
-            const embeds =
-                buildPanelEmbeds(
-                    color,
                     title,
-                    panelDescription,
+                    placeholder,
+                    customId,
+                    color,
                     imageURL
                 );
 
@@ -679,9 +167,8 @@ module.exports = {
 
             const msg =
                 await interaction.channel.send({
-
-                    embeds,
-                    components: [row]
+                    components: [container],
+                    flags: MessageFlags.IsComponentsV2
                 });
 
             //////////////////////////////////////////////////
@@ -784,62 +271,23 @@ module.exports = {
 
             //////////////////////////////////////////////////
 
-            const menu =
-                new StringSelectMenuBuilder()
-
-                    .setCustomId(
-                        data.customId
-                    )
-
-                    .setPlaceholder(
-                        data.placeholder
-                    )
-
-                    .setMinValues(0)
-
-                    .setMaxValues(1)
-
-                    .addOptions(
-                        buildRoleOptions(interaction, data.roles)
-                    );
-
-            //////////////////////////////////////////////////
-
-            const row =
-                new ActionRowBuilder()
-
-                    .addComponents(menu);
-
-            //////////////////////////////////////////////////
-
-            const panelDescription =
-                buildPanelDescription(
+            const container =
+                buildPanelContainer(
                     interaction,
                     data.roles,
-                    data.title
-                );
-
-            const embeds =
-                buildPanelEmbeds(
-                    data.color,
                     data.title,
-                    panelDescription,
+                    data.placeholder,
+                    data.customId,
+                    data.color,
                     data.image
                 );
 
             //////////////////////////////////////////////////
 
-            
-
-            //////////////////////////////////////////////////
-
             const msg =
                 await channel.send({
-
-                    embeds,
-
-                    components: [row]
-
+                    components: [container],
+                    flags: MessageFlags.IsComponentsV2
                 });
 
             //////////////////////////////////////////////////
@@ -1047,61 +495,22 @@ module.exports = {
 
             //////////////////////////////////////////////////
 
-            const menu =
-                new StringSelectMenuBuilder()
-
-                    .setCustomId(
-                        data.customId
-                    )
-
-                    .setPlaceholder(
-                        placeholder
-                    )
-
-                    .setMinValues(0)
-
-                    .setMaxValues(1)
-
-                    .addOptions(
-                        buildRoleOptions(interaction, data.roles)
-                    );
-
-            //////////////////////////////////////////////////
-
-            const row =
-                new ActionRowBuilder()
-
-                    .addComponents(menu);
-
-            //////////////////////////////////////////////////
-
-            const panelDescription =
-                buildPanelDescription(
+            const container =
+                buildPanelContainer(
                     interaction,
                     data.roles,
-                    title
-                );
-
-            const embeds =
-                buildPanelEmbeds(
-                    color,
                     title,
-                    panelDescription,
+                    placeholder,
+                    data.customId,
+                    color,
                     imageURL
                 );
 
             //////////////////////////////////////////////////
 
-            
-
-            //////////////////////////////////////////////////
-
             await msg.edit({
-
-                embeds,
-
-                components: [row]
-
+                components: [container],
+                flags: MessageFlags.IsComponentsV2
             });
 
             //////////////////////////////////////////////////
