@@ -103,7 +103,23 @@ module.exports = {
 
         /*
         =========================
-        IMAGE URL
+        BANNER URL
+        =========================
+        */
+
+        .addStringOption(option =>
+            option
+
+                .setName('banner')
+
+                .setDescription(
+                    'URL del banner superior'
+                )
+        )
+
+        /*
+        =========================
+        IMAGE / GIF URL
         =========================
         */
 
@@ -113,7 +129,7 @@ module.exports = {
                 .setName('image')
 
                 .setDescription(
-                    'URL de la imagen principal'
+                    'URL de la imagen o GIF inferior'
                 )
         )
 
@@ -180,6 +196,9 @@ module.exports = {
             options.getString('descripcion') ||
             'Pasala muy bien';
 
+            const bannerURL =
+            options.getString('banner');
+
             const imageURL =
             options.getString('image');
 
@@ -205,6 +224,31 @@ module.exports = {
 
                     content:
                     '❌ Debes seleccionar un canal de texto válido.',
+
+                    flags: 64
+
+                });
+
+            }
+
+            /*
+            =========================
+            VALIDAR URL BANNER
+            =========================
+            */
+
+            if (
+
+                bannerURL &&
+
+                !bannerURL.startsWith('http')
+
+            ) {
+
+                return interaction.reply({
+
+                    content:
+                    '❌ La URL del banner no es válida.',
 
                     flags: 64
 
@@ -286,6 +330,9 @@ module.exports = {
 
                         MessageDes:
                         description,
+
+                        Banner:
+                        bannerURL || null,
 
                         ImagenDesc:
                         imageURL || null,
