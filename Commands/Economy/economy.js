@@ -7,12 +7,13 @@ const applyBankBonus = require("../../Utils/applyBankBonus");
 const updateDebt = require("../../Utils/updateDebt");
 const getConfig = require("../../Utils/getConfig");
 
+const BALANCE_BANNER = "https://i.imgur.com/IXKXRHL.png";
 const ECONOMY_BANNER = "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png";
 
-function economyPanel(title, content, color = 0x8A2BE2) {
+function economyPanel(title, content, color = 0x8A2BE2, banner = ECONOMY_BANNER) {
  const panel = new ContainerBuilder().setAccentColor(color);
  panel.addMediaGalleryComponents(
-  new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(ECONOMY_BANNER))
+  new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(banner))
  );
  panel.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}`));
  panel.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small));
@@ -20,9 +21,9 @@ function economyPanel(title, content, color = 0x8A2BE2) {
  return panel;
 }
 
-async function replyV2(interaction, title, content, color = 0x8A2BE2, ephemeral = false) {
+async function replyV2(interaction, title, content, color = 0x8A2BE2, ephemeral = false, banner = ECONOMY_BANNER) {
  return interaction.reply({
-  components: [economyPanel(title, content, color)],
+  components: [economyPanel(title, content, color, banner)],
   flags: ephemeral ? MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral : MessageFlags.IsComponentsV2
  });
 }
@@ -54,7 +55,7 @@ async function runBalance(interaction) {
  if (addedDebt > 0) text += `\n\n📈 **Intereses acumulados:** +${addedDebt.toLocaleString()} monedas`;
  if (bonus > 0) text += `\n🏦 **Bonus Bancario:** +${bonus.toLocaleString()} monedas`;
 
- return replyV2(interaction, `💰 Balance de ${displayName}`, text);
+ return replyV2(interaction, `💰 Balance de ${displayName}`, text, 0x8A2BE2, false, BALANCE_BANNER);
 }
 async function runDaily(interaction) {
  const user = await getUser(interaction.guild.id, interaction.user.id);
