@@ -11,6 +11,30 @@ const {
 const reactionRolesSchema =
     require("../../Models/reactionRolesSchema");
 
+const ROLE_VISUALS = {
+    DO: { emoji: "🇩🇴", label: "DO · Dominicano" },
+    PR: { emoji: "🇵🇷", label: "PR · Puertorriqueño" },
+    CU: { emoji: "🇨🇺", label: "CU · Cubano" },
+    PA: { emoji: "🇵🇦", label: "PA · Panameño" },
+    CO: { emoji: "🇨🇴", label: "CO · Colombiano" },
+    US: { emoji: "🇺🇸", label: "US · Estadounidense" },
+    CL: { emoji: "🇨🇱", label: "CL · Chileno" },
+    HN: { emoji: "🇭🇳", label: "HN · Hondureño" },
+    ES: { emoji: "🇪🇸", label: "ES · Español" },
+    MX: { emoji: "🇲🇽", label: "MX · Mexicano" },
+    PE: { emoji: "🇵🇪", label: "PE · Peruano" },
+    AR: { emoji: "🇦🇷", label: "AR · Argentino" },
+    VE: { emoji: "🇻🇪", label: "VE · Venezolano" }
+};
+
+function getRoleVisual(name = "") {
+    const codeMatch = name.trim().match(/(?:^|[^A-Z])(?:@)?(DO|PR|CU|PA|CO|US|CL|HN|ES|MX|PE|AR|VE)(?:[^A-Z]|$)/i);
+    const code = codeMatch?.[1]?.toUpperCase();
+    if (code && ROLE_VISUALS[code]) return ROLE_VISUALS[code];
+    return { emoji: "✨", label: name.trim().slice(0, 100) };
+}
+
+
 //////////////////////////////////////////////////
 // COMMAND
 //////////////////////////////////////////////////
@@ -352,19 +376,15 @@ module.exports = {
 
                 .addOptions(
 
-                    roles.map(role => ({
-
-                        label:
-                            role.name
-                                .slice(0, 100),
-
-                        value:
-                            role.id,
-
-                        description:
-                            `Selecciona ${role.name}`
-                                .slice(0, 100)
-                    }))
+                    roles.map(role => {
+                        const visual = getRoleVisual(role.name);
+                        return {
+                            label: visual.label.slice(0, 100),
+                            value: role.id,
+                            emoji: visual.emoji,
+                            description: `Obtener el rol ${visual.label}`.slice(0, 100)
+                        };
+                    })
                 );
 
         //////////////////////////////////////////////////
@@ -381,9 +401,10 @@ module.exports = {
         //////////////////////////////////////////////////
 
         const rolesList =
-            roles.map(role =>
-                `➜ ${role}`
-            ).join("\n");
+            roles.map(role => {
+                const visual = getRoleVisual(role.name);
+                return `${visual.emoji} · ${role}  **${visual.label.replace(/^[A-Z]{2} · /, "")}**`;
+            }).join("\n");
 
         const panelDescription =
             `${description}\n\n` +
