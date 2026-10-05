@@ -156,9 +156,14 @@ module.exports = {
 
             panel.addActionRowComponents(row);
 
+            panel.addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        `🎉 ¡Bienvenido ${member}, llegaste al mejor server ${member.guild.name}!`
+                    )
+            );
+
             await channel.send({
-                content:
-                    `🎉 ¡Bienvenido ${member}, llegaste al mejor server ${member.guild.name}!`,
                 components: [panel],
                 flags: MessageFlags.IsComponentsV2
             });
