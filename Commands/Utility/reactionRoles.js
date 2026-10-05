@@ -261,14 +261,14 @@ module.exports = {
                     // IMÁGENES
                     //////////////////////////////////////////////////
 
-                    .addAttachmentOption(option =>
+                    .addStringOption(option =>
 
                         option
 
                             .setName("imagen")
 
                             .setDescription(
-                                "Imagen principal del embed"
+                                "URL del banner"
                             )
                     )
 
@@ -431,14 +431,14 @@ module.exports = {
 
                     )
 
-                    .addAttachmentOption(option =>
+                    .addStringOption(option =>
 
                         option
 
                             .setName("imagen")
 
                             .setDescription(
-                                "Nueva imagen"
+                                "Nueva URL del banner"
                             )
 
                     )
@@ -590,7 +590,7 @@ module.exports = {
             //////////////////////////////////////////////////
 
             const imagen =
-                interaction.options.getAttachment(
+                interaction.options.getString(
                     "imagen"
                 );
 
@@ -602,22 +602,6 @@ module.exports = {
                 );
 
             //////////////////////////////////////////////////
-
-            if (
-                imagen &&
-                !imagen.contentType?.startsWith(
-                    "image"
-                )
-            ) {
-
-                return interaction.reply({
-
-                    content:
-                        "❌ El archivo imagen debe ser una imagen.",
-
-                    flags: 64
-                });
-            }
 
             //////////////////////////////////////////////////
 
@@ -640,7 +624,7 @@ module.exports = {
             //////////////////////////////////////////////////
 
             const imageURL =
-                imagen?.url || null;
+                imagen || null;
 
             //////////////////////////////////////////////////
 
@@ -932,7 +916,7 @@ module.exports = {
             //////////////////////////////////////////////////
 
             const imagen =
-                interaction.options.getAttachment(
+                interaction.options.getString(
                     "imagen"
                 );
 
@@ -946,7 +930,7 @@ module.exports = {
             //////////////////////////////////////////////////
 
             const imageURL =
-                imagen?.url ||
+                imagen ||
 
                 data.image ||
 
