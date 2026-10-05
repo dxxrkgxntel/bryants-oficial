@@ -1,7 +1,7 @@
 const {
  SlashCommandBuilder, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder,
  MediaGalleryBuilder, MediaGalleryItemBuilder, MessageFlags, SeparatorSpacingSize,
- ActionRowBuilder, ButtonBuilder, ButtonStyle
+ ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits
 } = require("discord.js");
 const getUser = require("../../Utils/getUser");
 const applyBankBonus = require("../../Utils/applyBankBonus");
@@ -19,6 +19,9 @@ const WITHDRAW_BANNER = "https://i.imgur.com/emQw94y.png";
 const TRANSFER_BANNER = "https://i.imgur.com/D0RzS0Q.png";
 const ROB_BANNER = "https://i.imgur.com/qVeU3os.png";
 const LEADERBOARD_BANNER = "https://i.imgur.com/rHeU2b6.png";
+const ADDMONEY_BANNER = "https://i.imgur.com/BaeMyEP.png";
+const REMOVEMONEY_BANNER = "https://i.imgur.com/LRdF0mj.png";
+const CONFIG_BANNER = "https://i.imgur.com/zGMsUYR.png";
 const ECONOMY_BANNER = "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png";
 
 function economyPanel(title, content, color = 0x8A2BE2, banner = ECONOMY_BANNER) {
@@ -421,6 +424,109 @@ async function runLeaderboard(interaction) {
  collector.on("end",async()=>interaction.editReply({components:[makePanel(currentPage,true)]}).catch(()=>{}));
 }
 
+
+async function runAddMoney(interaction) {
+ if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator))
+  return replyV2(interaction, "❌ Sin permisos", "Necesitas permisos de **Administrador** para utilizar este subcomando.", 0xFF0000, true, ADDMONEY_BANNER);
+
+ const target=interaction.options.getUser("usuario");
+ const amount=interaction.options.getInteger("cantidad");
+ const row=new ActionRowBuilder().addComponents(
+  new ButtonBuilder().setCustomId("addmoney_confirm").setLabel("Confirmar").setEmoji("✅").setStyle(ButtonStyle.Secondary),
+  new ButtonBuilder().setCustomId("addmoney_cancel").setLabel("Cancelar").setEmoji("❌").setStyle(ButtonStyle.Secondary)
+ );
+ const initial=await getUser(interaction.guild.id,target.id);
+ const response=await interaction.reply({
+  components:[transactionPanel("💰 Confirmar añadir dinero",
+   `⚠️ ¿Deseas añadir **${amount.toLocaleString()} monedas** a ${target}?\n\n💵 **Wallet actual:** ${initial.wallet.toLocaleString()} monedas\n\n⏱️ Tienes **30 segundos** para responder.`,
+   row,0x8A2BE2,ADDMONEY_BANNER)],
+  flags:MessageFlags.IsComponentsV2,withResponse:true
+ });
+ const msg=response.resource?.message || await interaction.fetchReply();
+ const collector=msg.createMessageComponentCollector({time:30000});
+ collector.on("collect",async i=>{
+  if(i.user.id!==interaction.user.id) return i.reply({content:"❌ No puedes usar estos botones.",flags:MessageFlags.Ephemeral});
+  await i.deferUpdate();
+  if(i.customId==="addmoney_cancel"){
+   collector.stop("cancelled");
+   return interaction.editReply({components:[transactionPanel("❌ Operación cancelada","No se realizó ningún cambio.",null,0xFF0000,ADDMONEY_BANNER)]});
+  }
+  if(i.customId==="addmoney_confirm"){
+   const fresh=await getUser(interaction.guild.id,target.id);
+   fresh.wallet+=amount;
+   await fresh.save();
+   collector.stop("confirmed");
+   return interaction.editReply({components:[transactionPanel("💰 Dinero añadido",
+    `✅ Se añadieron **${amount.toLocaleString()} monedas** a ${target}.\n\n💵 **Wallet actual:** ${fresh.wallet.toLocaleString()} monedas\n👮 **Acción realizada por:** ${interaction.user}`,
+    null,0x00FF99,ADDMONEY_BANNER)]});
+  }
+ });
+ collector.on("end",async(_,reason)=>{
+  if(reason==="time") await interaction.editReply({components:[transactionPanel("⌛ Tiempo agotado","No confirmaste la operación dentro de los 30 segundos.",null,0xFF0000,ADDMONEY_BANNER)]}).catch(()=>{});
+ });
+}
+
+async function runRemoveMoney(interaction) {
+ if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator))
+  return replyV2(interaction, "❌ Sin permisos", "Necesitas permisos de **Administrador** para utilizar este subcomando.", 0xFF0000, true, REMOVEMONEY_BANNER);
+
+ const target=interaction.options.getUser("usuario");
+ const amount=interaction.options.getInteger("cantidad");
+ const initial=await getUser(interaction.guild.id,target.id);
+ if(initial.wallet<amount) return replyV2(interaction,"❌ Fondos insuficientes",
+  "El usuario no tiene suficiente dinero en su wallet.",0xFF0000,true,REMOVEMONEY_BANNER);
+
+ const row=new ActionRowBuilder().addComponents(
+  new ButtonBuilder().setCustomId("removemoney_confirm").setLabel("Confirmar").setEmoji("✅").setStyle(ButtonStyle.Secondary),
+  new ButtonBuilder().setCustomId("removemoney_cancel").setLabel("Cancelar").setEmoji("❌").setStyle(ButtonStyle.Secondary)
+ );
+ const response=await interaction.reply({
+  components:[transactionPanel("💸 Confirmar quitar dinero",
+   `⚠️ ¿Deseas quitar **${amount.toLocaleString()} monedas** a ${target}?\n\n💵 **Wallet actual:** ${initial.wallet.toLocaleString()} monedas\n\n⏱️ Tienes **30 segundos** para responder.`,
+   row,0x8A2BE2,REMOVEMONEY_BANNER)],
+  flags:MessageFlags.IsComponentsV2,withResponse:true
+ });
+ const msg=response.resource?.message || await interaction.fetchReply();
+ const collector=msg.createMessageComponentCollector({time:30000});
+ collector.on("collect",async i=>{
+  if(i.user.id!==interaction.user.id) return i.reply({content:"❌ No puedes usar estos botones.",flags:MessageFlags.Ephemeral});
+  await i.deferUpdate();
+  if(i.customId==="removemoney_cancel"){
+   collector.stop("cancelled");
+   return interaction.editReply({components:[transactionPanel("❌ Operación cancelada","No se realizó ningún cambio.",null,0xFF0000,REMOVEMONEY_BANNER)]});
+  }
+  if(i.customId==="removemoney_confirm"){
+   const fresh=await getUser(interaction.guild.id,target.id);
+   if(fresh.wallet<amount){
+    collector.stop("insufficient");
+    return interaction.editReply({components:[transactionPanel("❌ Fondos insuficientes","El saldo del usuario cambió y ya no tiene suficiente dinero.",null,0xFF0000,REMOVEMONEY_BANNER)]});
+   }
+   fresh.wallet-=amount;
+   await fresh.save();
+   collector.stop("confirmed");
+   return interaction.editReply({components:[transactionPanel("💸 Dinero removido",
+    `❌ Se quitaron **${amount.toLocaleString()} monedas** a ${target}.\n\n💵 **Wallet actual:** ${fresh.wallet.toLocaleString()} monedas\n👮 **Acción realizada por:** ${interaction.user}`,
+    null,0xFF0000,REMOVEMONEY_BANNER)]});
+  }
+ });
+ collector.on("end",async(_,reason)=>{
+  if(reason==="time") await interaction.editReply({components:[transactionPanel("⌛ Tiempo agotado","No confirmaste la operación dentro de los 30 segundos.",null,0xFF0000,REMOVEMONEY_BANNER)]}).catch(()=>{});
+ });
+}
+
+async function runConfig(interaction) {
+ if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator))
+  return replyV2(interaction, "❌ Sin permisos", "Necesitas permisos de **Administrador** para utilizar este subcomando.", 0xFF0000, true, CONFIG_BANNER);
+ const option=interaction.options.getString("opcion");
+ const value=interaction.options.getNumber("valor");
+ const config=await getConfig(interaction.guild.id);
+ config[option]=value;
+ await config.save();
+ return replyV2(interaction,"⚙️ Configuración actualizada",
+  `**Parámetro:** ${option}\n**Nuevo valor:** ${value}\n\n✅ La configuración de economía fue guardada correctamente.`,
+  0x8A2BE2,false,CONFIG_BANNER);
+}
+
 module.exports = {
  data: new SlashCommandBuilder()
   .setName("economy")
@@ -437,7 +543,19 @@ module.exports = {
    .addIntegerOption(o=>o.setName("cantidad").setDescription("Cantidad a transferir").setRequired(true).setMinValue(1)))
   .addSubcommand(s=>s.setName("rob").setDescription("Intenta robarle coins a otro usuario")
    .addUserOption(o=>o.setName("usuario").setDescription("Usuario a robar").setRequired(true)))
-  .addSubcommand(s=>s.setName("leaderboard").setDescription("Muestra el top de usuarios más ricos")),
+  .addSubcommand(s=>s.setName("leaderboard").setDescription("Muestra el top de usuarios más ricos"))
+  .addSubcommand(s=>s.setName("addmoney").setDescription("Añade dinero a un usuario (Administrador)")
+   .addUserOption(o=>o.setName("usuario").setDescription("Usuario").setRequired(true))
+   .addIntegerOption(o=>o.setName("cantidad").setDescription("Cantidad").setRequired(true).setMinValue(1)))
+  .addSubcommand(s=>s.setName("removemoney").setDescription("Quita dinero a un usuario (Administrador)")
+   .addUserOption(o=>o.setName("usuario").setDescription("Usuario").setRequired(true))
+   .addIntegerOption(o=>o.setName("cantidad").setDescription("Cantidad").setRequired(true).setMinValue(1)))
+  .addSubcommand(s=>s.setName("config").setDescription("Configura el sistema de economía (Administrador)")
+   .addStringOption(o=>o.setName("opcion").setDescription("Qué deseas cambiar").setRequired(true).addChoices(
+    {name:"daily",value:"dailyAmount"},{name:"work-min",value:"workMin"},{name:"work-max",value:"workMax"},
+    {name:"interes-banco",value:"bankInterest"},{name:"comision-banco",value:"bankFee"},
+    {name:"gamble-min",value:"gambleMin"},{name:"gamble-max",value:"gambleMax"}))
+   .addNumberOption(o=>o.setName("valor").setDescription("Nuevo valor").setRequired(true))),
  async execute(interaction) {
   const sub=interaction.options.getSubcommand();
   if(sub==="balance") return runBalance(interaction);
@@ -448,5 +566,8 @@ module.exports = {
   if(sub==="transfer") return runTransfer(interaction);
   if(sub==="rob") return runRob(interaction);
   if(sub==="leaderboard") return runLeaderboard(interaction);
+  if(sub==="addmoney") return runAddMoney(interaction);
+  if(sub==="removemoney") return runRemoveMoney(interaction);
+  if(sub==="config") return runConfig(interaction);
  }
 };
