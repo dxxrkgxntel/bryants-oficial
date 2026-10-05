@@ -119,22 +119,6 @@ module.exports = {
 
         /*
         =========================
-        IMAGE / GIF URL
-        =========================
-        */
-
-        .addStringOption(option =>
-            option
-
-                .setName('image')
-
-                .setDescription(
-                    'URL de la imagen o GIF inferior'
-                )
-        )
-
-        /*
-        =========================
         THUMBNAIL URL
         =========================
         */
@@ -199,9 +183,6 @@ module.exports = {
             const bannerURL =
             options.getString('banner');
 
-            const imageURL =
-            options.getString('image');
-
             const thumbnailURL =
             options.getString('thumbnail');
 
@@ -254,30 +235,7 @@ module.exports = {
 
                 });
 
-            }
-
-            /*
-            =========================
-            VALIDAR URL IMAGE
-            =========================
-            */
-
-            if (
-
-                imageURL &&
-
-                !imageURL.startsWith('http')
-
-            ) {
-
-                return interaction.reply({
-
-                    content:
-                    '❌ La URL de la imagen no es válida.',
-
-                    flags: 64
-
-                });
+            });
 
             }
 
@@ -333,9 +291,6 @@ module.exports = {
 
                         Banner:
                         bannerURL || null,
-
-                        ImagenDesc:
-                        imageURL || null,
 
                         Thumbnail:
                         thumbnailURL || null,
