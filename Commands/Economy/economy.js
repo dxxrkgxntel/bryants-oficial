@@ -17,6 +17,8 @@ const DAILY_BANNER = "https://i.imgur.com/chBdO1Z.png";
 const DEPOSIT_BANNER = "https://i.imgur.com/Mv7sPGH.png";
 const WITHDRAW_BANNER = "https://i.imgur.com/emQw94y.png";
 const TRANSFER_BANNER = "https://i.imgur.com/D0RzS0Q.png";
+const ROB_BANNER = "https://i.imgur.com/qVeU3os.png";
+const LEADERBOARD_BANNER = "https://i.imgur.com/rHeU2b6.png";
 const ECONOMY_BANNER = "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png";
 
 function economyPanel(title, content, color = 0x8A2BE2, banner = ECONOMY_BANNER) {
@@ -324,13 +326,13 @@ async function runTransfer(interaction) {
 
 async function runRob(interaction) {
  const target = interaction.options.getUser("usuario");
- if (target.bot) return replyV2(interaction, "❌ Robo inválido", "No puedes robar bots.", 0xFF0000, true);
- if (target.id === interaction.user.id) return replyV2(interaction, "❌ Robo inválido", "No puedes robarte a ti mismo.", 0xFF0000, true);
+ if (target.bot) return replyV2(interaction, "❌ Robo inválido", "No puedes robar bots.", 0xFF0000, true, ROB_BANNER);
+ if (target.id === interaction.user.id) return replyV2(interaction, "❌ Robo inválido", "No puedes robarte a ti mismo.", 0xFF0000, true, ROB_BANNER);
 
  const cooldown = await RobCooldown.findOne({ guildId: interaction.guild.id, userId: interaction.user.id });
  if (cooldown && cooldown.expiresAt > new Date()) {
   return replyV2(interaction, "⏳ Robo en cooldown",
-   `Ya robaste recientemente.\n\nVuelve a intentarlo <t:${Math.floor(cooldown.expiresAt.getTime()/1000)}:R>.`, 0xFF0000, true);
+   `Ya robaste recientemente.\n\nVuelve a intentarlo <t:${Math.floor(cooldown.expiresAt.getTime()/1000)}:R>.`, 0xFF0000, true, ROB_BANNER);
  }
 
  let robberData = await EconomyUser.findOne({ guildId: interaction.guild.id, userId: interaction.user.id });
@@ -340,7 +342,7 @@ async function runRob(interaction) {
  robberData.wallet = Number(robberData.wallet) || 0;
  targetData.wallet = Number(targetData.wallet) || 0;
 
- if (targetData.wallet < 5000) return replyV2(interaction, "❌ Objetivo no disponible", "Ese usuario tiene muy poco efectivo para robar.", 0xFF0000, true);
+ if (targetData.wallet < 5000) return replyV2(interaction, "❌ Objetivo no disponible", "Ese usuario tiene muy poco efectivo para robar.", 0xFF0000, true, ROB_BANNER);
 
  const success = Math.random() < 0.55;
  if (!success) {
@@ -354,13 +356,13 @@ async function runRob(interaction) {
    { expiresAt: new Date(Date.now() + 30 * 60 * 1000) }, { upsert: true }
   );
   return replyV2(interaction, "🚔 Robo fallido",
-   `Intentaste robar a ${target}, pero te atraparon.\n\n💸 **Multa:** ${fine.toLocaleString()} coins`, 0xFF0000);
+   `Intentaste robar a ${target}, pero te atraparon.\n\n💸 **Multa:** ${fine.toLocaleString()} coins`, 0xFF0000, false, ROB_BANNER);
  }
 
  let amount = Math.floor(targetData.wallet * (Math.random() * 0.09 + 0.03));
  amount = Math.max(250, Math.min(50000, amount, targetData.wallet));
  amount = Number(amount) || 0;
- if (amount <= 0) return replyV2(interaction, "❌ Robo fallido", "No se pudo completar el robo.", 0xFF0000, true);
+ if (amount <= 0) return replyV2(interaction, "❌ Robo fallido", "No se pudo completar el robo.", 0xFF0000, true, ROB_BANNER);
 
  targetData.wallet = Math.max(0, targetData.wallet - amount);
  robberData.wallet += amount;
@@ -371,7 +373,7 @@ async function runRob(interaction) {
   { expiresAt: new Date(Date.now() + 30 * 60 * 1000) }, { upsert: true }
  );
  return replyV2(interaction, "🦹 Robo exitoso",
-  `Robaste exitosamente a ${target}.\n\n💰 **Cantidad robada:** ${amount.toLocaleString()} coins\n👛 **Dinero restante de la víctima:** ${targetData.wallet.toLocaleString()} coins`);
+  `Robaste exitosamente a ${target}.\n\n💰 **Cantidad robada:** ${amount.toLocaleString()} coins\n👛 **Dinero restante de la víctima:** ${targetData.wallet.toLocaleString()} coins`, 0x8A2BE2, false, ROB_BANNER);
 }
 
 async function runLeaderboard(interaction) {
@@ -382,7 +384,7 @@ async function runLeaderboard(interaction) {
   { $addFields: { totalMoney: { $add: ["$wallet", "$bank"] } } },
   { $sort: { totalMoney: -1 } }
  ]);
- if (!leaderboard.length) return replyV2(interaction, "💰 Ranking económico", "❌ No hay datos de economía aún.", 0xFF0000, true);
+ if (!leaderboard.length) return replyV2(interaction, "💰 Ranking económico", "❌ No hay datos de economía aún.", 0xFF0000, true, LEADERBOARD_BANNER);
 
  const totalPages = Math.ceil(leaderboard.length / pageSize);
  const totalMoney = leaderboard.reduce((acc,u)=>acc + u.wallet + u.bank, 0);
