@@ -1,13 +1,24 @@
 const {
-    EmbedBuilder,
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle,
-    PermissionFlagsBits
+    PermissionFlagsBits,
+    ContainerBuilder,
+    TextDisplayBuilder,
+    SeparatorBuilder,
+    MediaGalleryBuilder,
+    MediaGalleryItemBuilder,
+    MessageFlags,
+    SeparatorSpacingSize
 } = require("discord.js");
 
 const welcomeSchema =
     require("../../Models/welcomeSchema");
+
+function hexToInt(color = "#8A2BE2") {
+    const parsed = Number.parseInt(String(color).replace("#", ""), 16);
+    return Number.isFinite(parsed) ? parsed : 0x8A2BE2;
+}
 
 module.exports = {
 
@@ -17,63 +28,36 @@ module.exports = {
 
         try {
 
-            //////////////////////////////////////////////////
-            // BUSCAR DATA
-            //////////////////////////////////////////////////
-
             const data =
                 await welcomeSchema.findOne({
-
                     Guild: member.guild.id
                 });
 
-            //////////////////////////////////////////////////
-
             if (!data) return;
-
-            //////////////////////////////////////////////////
-            // OBTENER CANAL
-            //////////////////////////////////////////////////
 
             const channel =
                 member.guild.channels.cache.get(
                     data.Channel
                 );
 
-            //////////////////////////////////////////////////
-
             if (!channel) {
-
                 console.log(
                     `❌ Canal de bienvenida no encontrado en ${member.guild.name}`
                 );
-
                 return;
             }
-
-            //////////////////////////////////////////////////
-            // VALIDAR PERMISOS
-            //////////////////////////////////////////////////
 
             const botMember =
                 member.guild.members.me;
 
             if (
                 !channel.permissionsFor(botMember)
-                    .has([
-                        PermissionFlagsBits.SendMessages,
-                        PermissionFlagsBits.EmbedLinks
-                    ])
+                    .has(PermissionFlagsBits.SendMessages)
             ) {
-
                 return console.log(
                     `❌ Sin permisos en ${channel.name}`
                 );
             }
-
-            //////////////////////////////////////////////////
-            // DATOS
-            //////////////////////////////////////////////////
 
             const created =
                 Math.floor(
@@ -83,96 +67,100 @@ module.exports = {
             const memberCount =
                 member.guild.memberCount;
 
-            //////////////////////////////////////////////////
-            // EMBED
-            //////////////////////////////////////////////////
+            const panel =
+                new ContainerBuilder()
+                    .setAccentColor(
+                        hexToInt(data.Color || "#8A2BE2")
+                    );
 
-            const embed =
-                new EmbedBuilder()
+            if (data.Banner) {
+                panel.addMediaGalleryComponents(
+                    new MediaGalleryBuilder()
+                        .addItems(
+                            new MediaGalleryItemBuilder()
+                                .setURL(data.Banner)
+                        )
+                );
+            }
 
-                    .setColor(
-                        data.Color || "#8A2BE2"
+            panel.addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        `## ✨・Bienvenido/a a ${member.guild.name}`
                     )
+            );
 
-                    .setTitle(
-                        `✨ Bienvenido/a a ${member.guild.name}`
-                    )
+            panel.addSeparatorComponents(
+                new SeparatorBuilder()
+                    .setDivider(true)
+                    .setSpacing(SeparatorSpacingSize.Small)
+            );
 
-                    .setDescription(
-
+            panel.addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
                         `${data.MessageDes || "Esperamos que disfrutes tu estadía en el servidor."}\n\n` +
-
-                        `👤 Usuario: ${member}\n` +
-
-                        `🆔 ID: \`${member.id}\`\n` +
-
-                        `📅 Cuenta creada: <t:${created}:R>\n` +
-
-                        `👥 Miembro número: **#${memberCount}**\n\n` +
-
-                        '💜 Esperamos que disfrutes tu estadía participes en los chats y formes parte de esta increíble comunidad.'
+                        `👤 **Usuario:** ${member}\n` +
+                        `🆔 **ID:** \`${member.id}\`\n` +
+                        `📅 **Cuenta creada:** <t:${created}:R>\n` +
+                        `👥 **Miembro número:** **#${memberCount}**`
                     )
+            );
 
-                    .setThumbnail(
+            panel.addSeparatorComponents(
+                new SeparatorBuilder()
+                    .setDivider(true)
+                    .setSpacing(SeparatorSpacingSize.Small)
+            );
 
-                        data.Thumbnail ||
-
-                        member.guild.iconURL({
-                            dynamic: true,
-                            size: 1024
-                        })
+            panel.addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        "💜 Esperamos que disfrutes tu estadía, participes en los chats y formes parte de esta increíble comunidad."
                     )
+            );
 
-                    .setImage(
-                        data.ImagenDesc || null
-                    )
+            if (data.ImagenDesc) {
+                panel.addSeparatorComponents(
+                    new SeparatorBuilder()
+                        .setDivider(true)
+                        .setSpacing(SeparatorSpacingSize.Small)
+                );
 
-                    .setFooter({
-
-                        text:
-                            `${member.guild.name} • Sistema de Bienvenidas`,
-
-                        iconURL:
-                            member.user.displayAvatarURL({
-                                dynamic: true
-                            })
-                    })
-
-                    .setTimestamp();
-
-            //////////////////////////////////////////////////
-            // BOTONES (OPCIONAL)
-            //////////////////////////////////////////////////
+                panel.addMediaGalleryComponents(
+                    new MediaGalleryBuilder()
+                        .addItems(
+                            new MediaGalleryItemBuilder()
+                                .setURL(data.ImagenDesc)
+                        )
+                );
+            }
 
             const row =
                 new ActionRowBuilder()
                     .addComponents(
-
                         new ButtonBuilder()
-
                             .setLabel("Invitar Bot")
-
                             .setEmoji("🚀")
-
                             .setStyle(ButtonStyle.Link)
-
                             .setURL(
                                 "https://discord.com/oauth2/authorize?client_id=1497973126569656540&permissions=8&scope=bot%20applications.commands"
                             )
                     );
 
-            //////////////////////////////////////////////////
-            // ENVIAR
-            //////////////////////////////////////////////////
+            panel.addSeparatorComponents(
+                new SeparatorBuilder()
+                    .setDivider(true)
+                    .setSpacing(SeparatorSpacingSize.Small)
+            );
+
+            panel.addActionRowComponents(row);
 
             await channel.send({
-
                 content:
-                    `🎉 ¡Bienvenido ${member} llegaste al mejor server ${member.guild.name}!`,
-
-                embeds: [embed],
-
-                components: [row]
+                    `🎉 ¡Bienvenido ${member}, llegaste al mejor server ${member.guild.name}!`,
+                components: [panel],
+                flags: MessageFlags.IsComponentsV2
             });
 
         } catch (error) {
