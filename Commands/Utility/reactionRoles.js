@@ -77,7 +77,9 @@ function buildPanelDescription(interaction, roles, title) {
 function getPanelCategory(title = "") {
     const cleaned = title
         .replace(/[👀✨🎭🌎🌍🌏]/gu, "")
+        .replace(/[*_~`>|#]/g, "")
         .replace(/[¿?]/g, "")
+        .replace(/^[·・\-–—:\s]+|[·・\-–—:\s]+$/g, "")
         .trim();
 
     const match = cleaned.match(/(?:rol(?:es)?\s+de(?:l|\s+la)?|de(?:l|\s+la)?)\s+(.+)$/i);
