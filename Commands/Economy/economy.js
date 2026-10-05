@@ -8,6 +8,7 @@ const updateDebt = require("../../Utils/updateDebt");
 const getConfig = require("../../Utils/getConfig");
 
 const BALANCE_BANNER = "https://i.imgur.com/IXKXRHL.png";
+const WORK_BANNER = "https://i.imgur.com/X7jFa3S.png";
 const ECONOMY_BANNER = "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png";
 
 function economyPanel(title, content, color = 0x8A2BE2, banner = ECONOMY_BANNER) {
@@ -115,7 +116,7 @@ async function runWork(interaction) {
   `🏦 **Balance actual**\n> ${user.wallet.toLocaleString()} monedas\n\n` +
   `📈 Continúa trabajando para aumentar tu fortuna dentro del servidor.`;
 
- return replyV2(interaction, "💼 Jornada completada", text);
+ return replyV2(interaction, "💼 Jornada completada", text, 0x8A2BE2, false, WORK_BANNER);
 }
 module.exports = {
  data: new SlashCommandBuilder()
