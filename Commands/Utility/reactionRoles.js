@@ -31,30 +31,19 @@ const ROLE_VISUALS = {
 function getRoleVisual(name = "") {
     const normalized = name.trim();
 
-    // Los roles del servidor usan formatos como:
-    // "🇩🇴 | DO | Rep. Dom." o "DO | Rep. Dom."
-    // Extraemos el código ISO de 2 letras de cualquier segmento separado por "|".
-    const segments = normalized
-        .split("|")
-        .map(part => part.trim().replace(/[^A-Za-z]/g, "").toUpperCase())
-        .filter(Boolean);
+    // New generic format: the Discord role name is the visual source of truth.
+    // Example: "🇩🇴 DO · Dominicano"
+    const leadingEmoji = normalized.match(/^(\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}]{2})/u)?.[0] || null;
+    const label = leadingEmoji
+        ? normalized.slice(leadingEmoji.length).trim()
+        : normalized;
 
-    const code = segments.find(part => ROLE_VISUALS[part]);
-
-    if (code) return ROLE_VISUALS[code];
-
-    const lower = normalized.toLowerCase();
-
-    if (lower.includes("hombre") || lower.includes("mascul")) {
-        return { emoji: "👨", label: "Hombre" };
-    }
-
-    if (lower.includes("mujer") || lower.includes("femen")) {
-        return { emoji: "👩", label: "Mujer" };
-    }
-
-    return { emoji: "✨", label: normalized.slice(0, 100) };
+    return {
+        emoji: leadingEmoji,
+        label: label || normalized
+    };
 }
+
 
 module.exports = {
 
@@ -596,11 +585,15 @@ module.exports = {
 
                     .addOptions(
 
-                        roles.map(role => ({
-                            label: role.name.slice(0, 100),
-                            value: role.id,
-                            description: `Obtener ${role.name}`.slice(0, 100)
-                        }))
+                        roles.map(role => {
+                            const visual = getRoleVisual(role.name);
+                            return {
+                                label: visual.label.slice(0, 100),
+                                value: role.id,
+                                ...(visual.emoji ? { emoji: visual.emoji } : {}),
+                                description: `Obtener el rol ${visual.label}`.slice(0, 100)
+                            };
+                        })
                     );
 
             //////////////////////////////////////////////////
@@ -613,9 +606,10 @@ module.exports = {
             //////////////////////////////////////////////////
 
             const rolesList =
-                roles.map(role =>
-                    `➜ ${role}`
-                ).join("\n");
+                roles.map(role => {
+                    const visual = getRoleVisual(role.name);
+                    return `${role}`;
+                }).join("\n");
 
             const panelDescription =
                 `${description}\n\n` +
@@ -764,11 +758,12 @@ module.exports = {
 
                         data.roles.map(role => {
                             const currentRole = interaction.guild.roles.cache.get(role.roleId);
-                            const currentName = currentRole?.name || role.label;
+                            const visual = getRoleVisual(currentRole?.name || role.label);
                             return {
-                                label: currentName.slice(0, 100),
+                                label: visual.label.slice(0, 100),
                                 value: role.roleId,
-                                description: `Obtener ${currentName}`.slice(0, 100)
+                                ...((role.emoji || visual.emoji) ? { emoji: role.emoji || visual.emoji } : {}),
+                                description: (role.description || `Obtener el rol ${visual.label}`).slice(0, 100)
                             };
                         })
 
@@ -796,13 +791,266 @@ module.exports = {
 
                     .setDescription(
                         `${data.description}\n\n` +
-                        `${data.roles.map(role => {
+                        `${data.roles.map(role => { const currentRole = interaction.guild.roles.cache.get(role.roleId);
+                            const visual = getRoleVisual(currentRole?.name || role.label); return `<@&${role.roleId}>`; }).join("\n")}\n\n` +
+                        `Selecciona del menú siguiente para gestionar tus roles en · **${data.title}**`
+                    );
+
+            //////////////////////////////////////////////////
+
+            if (data.image) {
+
+                embed.setImage(
+                    data.image
+                );
+
+            }
+
+            //////////////////////////////////////////////////
+
+            
+
+            //////////////////////////////////////////////////
+
+            const msg =
+                await channel.send({
+
+                    embeds: [embed],
+
+                    components: [row]
+
+                });
+
+            //////////////////////////////////////////////////
+
+            data.messageId =
+                msg.id;
+
+            data.channelId =
+                channel.id;
+
+            //////////////////////////////////////////////////
+
+            await data.save();
+
+            //////////////////////////////////////////////////
+
+            return interaction.reply({
+
+                content:
+                    `✅ Panel \`${panelId}\` enviado correctamente.`,
+
+                flags: 64
+
+            });
+
+        }
+
+        //////////////////////////////////////////////////
+        // EDIT
+        //////////////////////////////////////////////////
+
+        if (subcommand === "edit") {
+
+            const panelId =
+                interaction.options.getString(
+                    "panelid"
+                );
+
+            //////////////////////////////////////////////////
+
+            const data =
+                await reactionRolesSchema.findOne({
+
+                    guildId:
+                        interaction.guild.id,
+
+                    panelId
+
+                });
+
+            //////////////////////////////////////////////////
+
+            if (!data) {
+
+                return interaction.reply({
+
+                    content:
+                        "❌ No encontré ese panel.",
+
+                    flags: 64
+
+                });
+
+            }
+
+            //////////////////////////////////////////////////
+
+            const title =
+                interaction.options.getString(
+                    "titulo"
+                ) ||
+
+                data.title;
+
+            //////////////////////////////////////////////////
+
+            const description =
+                interaction.options
+
+                    .getString("descripcion")
+
+                    ?.replace(/\\n/g, "\n")
+
+                ||
+
+                data.description;
+
+            //////////////////////////////////////////////////
+
+            const placeholder =
+                interaction.options.getString(
+                    "placeholder"
+                ) ||
+
+                data.placeholder;
+
+            //////////////////////////////////////////////////
+
+            const color =
+                interaction.options.getString(
+                    "color"
+                ) ||
+
+                data.color;
+
+            //////////////////////////////////////////////////
+
+            const imagen =
+                interaction.options.getAttachment(
+                    "imagen"
+                );
+
+            //////////////////////////////////////////////////
+
+            const thumbnail =
+                interaction.options.getAttachment(
+                    "thumbnail"
+                );
+
+            //////////////////////////////////////////////////
+
+            const imageURL =
+                imagen?.url ||
+
+                data.image ||
+
+                null;
+
+            //////////////////////////////////////////////////
+
+            const thumbnailURL =
+                thumbnail?.url ||
+
+                data.thumbnail ||
+
+                null;
+
+            //////////////////////////////////////////////////
+
+            data.title =
+                title;
+
+            data.description =
+                description;
+
+            data.placeholder =
+                placeholder;
+
+            data.color =
+                color;
+
+            data.image =
+                imageURL;
+
+            data.thumbnail =
+                thumbnailURL;
+
+            //////////////////////////////////////////////////
+
+            await data.save();
+
+            //////////////////////////////////////////////////
+
+            const channel =
+                interaction.guild.channels.cache.get(
+                    data.channelId
+                );
+
+            //////////////////////////////////////////////////
+
+            if (!channel) {
+
+                return interaction.reply({
+
+                    content:
+                        "❌ No encontré el canal.",
+
+                    flags: 64
+
+                });
+
+            }
+
+            //////////////////////////////////////////////////
+
+            const msg =
+                await channel.messages.fetch(
+                    data.messageId
+                ).catch(() => null);
+
+            //////////////////////////////////////////////////
+
+            if (!msg) {
+
+                return interaction.reply({
+
+                    content:
+                        "❌ No encontré el mensaje.",
+
+                    flags: 64
+
+                });
+
+            }
+
+            //////////////////////////////////////////////////
+
+            const menu =
+                new StringSelectMenuBuilder()
+
+                    .setCustomId(
+                        data.customId
+                    )
+
+                    .setPlaceholder(
+                        placeholder
+                    )
+
+                    .setMinValues(0)
+
+                    .setMaxValues(1)
+
+                    .addOptions(
+
+                        data.roles.map(role => {
                             const currentRole = interaction.guild.roles.cache.get(role.roleId);
-                            const currentName = currentRole?.name || role.label;
+                            const visual = getRoleVisual(currentRole?.name || role.label);
                             return {
-                                label: currentName.slice(0, 100),
+                                label: visual.label.slice(0, 100),
                                 value: role.roleId,
-                                description: `Obtener ${currentName}`.slice(0, 100)
+                                ...((role.emoji || visual.emoji) ? { emoji: role.emoji || visual.emoji } : {}),
+                                description: (role.description || `Obtener el rol ${visual.label}`).slice(0, 100)
                             };
                         })
 
@@ -827,7 +1075,7 @@ module.exports = {
                     .setDescription(
                         `${description}\n\n` +
                         `${data.roles.map(role => { const currentRole = interaction.guild.roles.cache.get(role.roleId);
-                            const visual = getRoleVisual(currentRole?.name || role.label); return `${role.emoji || visual.emoji} · <@&${role.roleId}>  **${visual.label.replace(/^[A-Z]{2} · /, "")}**`; }).join("\n")}\n\n` +
+                            const visual = getRoleVisual(currentRole?.name || role.label); return `<@&${role.roleId}>`; }).join("\n")}\n\n` +
                         `Selecciona del menú siguiente para gestionar tus roles en · **${title}**`
                     );
 
