@@ -46,6 +46,18 @@ function buildRoleOptions(interaction, roles) {
         .filter(Boolean);
 }
 
+function getPanelCategory(title = "") {
+    const cleaned = title
+        .replace(/[👀✨🎭🌎🌍🌏]/gu, "")
+        .replace(/[¿?]/g, "")
+        .trim();
+
+    const match = cleaned.match(/(?:rol(?:es)?\s+de(?:l|\s+la)?|de(?:l|\s+la)?)\s+(.+)$/i);
+    const category = (match?.[1] || cleaned || "Roles").trim();
+
+    return category.charAt(0).toUpperCase() + category.slice(1);
+}
+
 function buildPanelDescription(interaction, roles, title) {
     const roleLines = roles
         .map(savedRole => {
@@ -63,7 +75,30 @@ function buildPanelDescription(interaction, roles, title) {
         .filter(Boolean)
         .join("\n");
 
-    return `${roleLines}\n\nSelecciona del menú siguiente para gestionar tus roles en · **${title}**`;
+    const category = getPanelCategory(title);
+
+    return `${roleLines}\n\nSelecciona del menú siguiente para gestionar tus roles en · **¿ ${category} ?**`;
+}
+
+function buildPanelEmbeds(color, title, description, imageURL) {
+    const embeds = [];
+
+    if (imageURL) {
+        embeds.push(
+            new EmbedBuilder()
+                .setColor(color)
+                .setImage(imageURL)
+        );
+    }
+
+    embeds.push(
+        new EmbedBuilder()
+            .setColor(color)
+            .setTitle(title)
+            .setDescription(description)
+    );
+
+    return embeds;
 }
 
 
@@ -632,23 +667,20 @@ module.exports = {
                     title
                 );
 
-            const embed =
-                new EmbedBuilder()
-                    .setColor(color)
-                    .setTitle(title)
-                    .setDescription(panelDescription);
-
-            if (imageURL) {
-                embed.setImage(imageURL);
-            }
+            const embeds =
+                buildPanelEmbeds(
+                    color,
+                    title,
+                    panelDescription,
+                    imageURL
+                );
 
             //////////////////////////////////////////////////
 
             const msg =
                 await interaction.channel.send({
 
-                    embeds: [embed],
-
+                    embeds,
                     components: [row]
                 });
 
@@ -780,34 +812,20 @@ module.exports = {
 
             //////////////////////////////////////////////////
 
-            const embed =
-                new EmbedBuilder()
-
-                    .setColor(
-                        data.color
-                    )
-
-                    .setTitle(
-                        data.title
-                    )
-
-                    .setDescription(
-                        buildPanelDescription(
-                            interaction,
-                            data.roles,
-                            data.title
-                        )
-                    );
-
-            //////////////////////////////////////////////////
-
-            if (data.image) {
-
-                embed.setImage(
-                    data.image
+            const panelDescription =
+                buildPanelDescription(
+                    interaction,
+                    data.roles,
+                    data.title
                 );
 
-            }
+            const embeds =
+                buildPanelEmbeds(
+                    data.color,
+                    data.title,
+                    panelDescription,
+                    data.image
+                );
 
             //////////////////////////////////////////////////
 
@@ -818,7 +836,7 @@ module.exports = {
             const msg =
                 await channel.send({
 
-                    embeds: [embed],
+                    embeds,
 
                     components: [row]
 
@@ -1057,31 +1075,20 @@ module.exports = {
 
             //////////////////////////////////////////////////
 
-            const embed =
-                new EmbedBuilder()
-
-                    .setColor(color)
-
-                    .setTitle(title)
-
-                    .setDescription(
-                        buildPanelDescription(
-                            interaction,
-                            data.roles,
-                            title
-                        )
-                    );
-
-
-            //////////////////////////////////////////////////
-
-            if (imageURL) {
-
-                embed.setImage(
-                    imageURL
+            const panelDescription =
+                buildPanelDescription(
+                    interaction,
+                    data.roles,
+                    title
                 );
 
-            }
+            const embeds =
+                buildPanelEmbeds(
+                    color,
+                    title,
+                    panelDescription,
+                    imageURL
+                );
 
             //////////////////////////////////////////////////
 
@@ -1091,7 +1098,7 @@ module.exports = {
 
             await msg.edit({
 
-                embeds: [embed],
+                embeds,
 
                 components: [row]
 
