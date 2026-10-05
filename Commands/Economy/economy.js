@@ -8,6 +8,8 @@ const applyBankBonus = require("../../Utils/applyBankBonus");
 const updateDebt = require("../../Utils/updateDebt");
 const getConfig = require("../../Utils/getConfig");
 const GlobalBank = require("../../Models/GlobalBank");
+const EconomyUser = require("../../Models/EconomyUser");
+const RobCooldown = require("../../Models/RobCooldown");
 
 const BALANCE_BANNER = "https://i.imgur.com/IXKXRHL.png";
 const WORK_BANNER = "https://i.imgur.com/X7jFa3S.png";
@@ -319,6 +321,104 @@ async function runTransfer(interaction) {
  });
 }
 
+
+async function runRob(interaction) {
+ const target = interaction.options.getUser("usuario");
+ if (target.bot) return replyV2(interaction, "❌ Robo inválido", "No puedes robar bots.", 0xFF0000, true);
+ if (target.id === interaction.user.id) return replyV2(interaction, "❌ Robo inválido", "No puedes robarte a ti mismo.", 0xFF0000, true);
+
+ const cooldown = await RobCooldown.findOne({ guildId: interaction.guild.id, userId: interaction.user.id });
+ if (cooldown && cooldown.expiresAt > new Date()) {
+  return replyV2(interaction, "⏳ Robo en cooldown",
+   `Ya robaste recientemente.\n\nVuelve a intentarlo <t:${Math.floor(cooldown.expiresAt.getTime()/1000)}:R>.`, 0xFF0000, true);
+ }
+
+ let robberData = await EconomyUser.findOne({ guildId: interaction.guild.id, userId: interaction.user.id });
+ let targetData = await EconomyUser.findOne({ guildId: interaction.guild.id, userId: target.id });
+ if (!robberData) robberData = await EconomyUser.create({ guildId: interaction.guild.id, userId: interaction.user.id, wallet: 0, bank: 0 });
+ if (!targetData) targetData = await EconomyUser.create({ guildId: interaction.guild.id, userId: target.id, wallet: 0, bank: 0 });
+ robberData.wallet = Number(robberData.wallet) || 0;
+ targetData.wallet = Number(targetData.wallet) || 0;
+
+ if (targetData.wallet < 5000) return replyV2(interaction, "❌ Objetivo no disponible", "Ese usuario tiene muy poco efectivo para robar.", 0xFF0000, true);
+
+ const success = Math.random() < 0.55;
+ if (!success) {
+  let fine = Math.floor(robberData.wallet * (Math.random() * 0.04 + 0.01));
+  if (fine < 250) fine = 250;
+  if (fine > robberData.wallet) fine = robberData.wallet;
+  robberData.wallet = Math.max(0, robberData.wallet - fine);
+  await robberData.save();
+  await RobCooldown.findOneAndUpdate(
+   { guildId: interaction.guild.id, userId: interaction.user.id },
+   { expiresAt: new Date(Date.now() + 30 * 60 * 1000) }, { upsert: true }
+  );
+  return replyV2(interaction, "🚔 Robo fallido",
+   `Intentaste robar a ${target}, pero te atraparon.\n\n💸 **Multa:** ${fine.toLocaleString()} coins`, 0xFF0000);
+ }
+
+ let amount = Math.floor(targetData.wallet * (Math.random() * 0.09 + 0.03));
+ amount = Math.max(250, Math.min(50000, amount, targetData.wallet));
+ amount = Number(amount) || 0;
+ if (amount <= 0) return replyV2(interaction, "❌ Robo fallido", "No se pudo completar el robo.", 0xFF0000, true);
+
+ targetData.wallet = Math.max(0, targetData.wallet - amount);
+ robberData.wallet += amount;
+ await targetData.save();
+ await robberData.save();
+ await RobCooldown.findOneAndUpdate(
+  { guildId: interaction.guild.id, userId: interaction.user.id },
+  { expiresAt: new Date(Date.now() + 30 * 60 * 1000) }, { upsert: true }
+ );
+ return replyV2(interaction, "🦹 Robo exitoso",
+  `Robaste exitosamente a ${target}.\n\n💰 **Cantidad robada:** ${amount.toLocaleString()} coins\n👛 **Dinero restante de la víctima:** ${targetData.wallet.toLocaleString()} coins`);
+}
+
+async function runLeaderboard(interaction) {
+ const pageSize = 5;
+ let currentPage = 0;
+ const leaderboard = await EconomyUser.aggregate([
+  { $match: { guildId: interaction.guild.id } },
+  { $addFields: { totalMoney: { $add: ["$wallet", "$bank"] } } },
+  { $sort: { totalMoney: -1 } }
+ ]);
+ if (!leaderboard.length) return replyV2(interaction, "💰 Ranking económico", "❌ No hay datos de economía aún.", 0xFF0000, true);
+
+ const totalPages = Math.ceil(leaderboard.length / pageSize);
+ const totalMoney = leaderboard.reduce((acc,u)=>acc + u.wallet + u.bank, 0);
+ const userPosition = leaderboard.findIndex(u=>u.userId===interaction.user.id)+1;
+
+ const makePanel = (page, disabled=false) => {
+  const start=page*pageSize;
+  const users=leaderboard.slice(start,start+pageSize);
+  const description=users.map((u,i)=>{
+   const position=start+i+1, total=u.wallet+u.bank;
+   const percent=totalMoney ? ((total/totalMoney)*100).toFixed(1) : "0.0";
+   const medal=position===1?"🥇":position===2?"🥈":position===3?"🥉":"💠";
+   return `${medal} **#${position}** <@${u.userId}>\n> 👛 Wallet: **${u.wallet.toLocaleString()}**\n> 🏦 Banco: **${u.bank.toLocaleString()}**\n> 💎 Total: **${total.toLocaleString()}**\n> 📈 Riqueza global: **${percent}%**`;
+  }).join("\n\n");
+  const row=new ActionRowBuilder().addComponents(
+   new ButtonBuilder().setCustomId("leaderboard_previous").setEmoji("⬅️").setStyle(ButtonStyle.Secondary).setDisabled(disabled||page===0),
+   new ButtonBuilder().setCustomId("leaderboard_next").setEmoji("➡️").setStyle(ButtonStyle.Secondary).setDisabled(disabled||page===totalPages-1)
+  );
+  return transactionPanel("🏦 Elite Financiera",
+   `### 💰 Top usuarios más ricos\n\n${description}\n\n📍 **Tu posición:** #${userPosition || "Sin ranking"}\n📄 **Página:** ${page+1}/${totalPages}`, row);
+ };
+
+ const response=await interaction.reply({components:[makePanel(currentPage)],flags:MessageFlags.IsComponentsV2,withResponse:true});
+ const message=response.resource?.message || await interaction.fetchReply();
+ const collector=message.createMessageComponentCollector({time:120000});
+
+ collector.on("collect",async btn=>{
+  if(btn.user.id!==interaction.user.id) return btn.reply({content:"❌ No puedes usar estos botones.",flags:MessageFlags.Ephemeral});
+  await btn.deferUpdate();
+  if(btn.customId==="leaderboard_previous" && currentPage>0) currentPage--;
+  else if(btn.customId==="leaderboard_next" && currentPage<totalPages-1) currentPage++;
+  await interaction.editReply({components:[makePanel(currentPage)]});
+ });
+ collector.on("end",async()=>interaction.editReply({components:[makePanel(currentPage,true)]}).catch(()=>{}));
+}
+
 module.exports = {
  data: new SlashCommandBuilder()
   .setName("economy")
@@ -332,7 +432,10 @@ module.exports = {
    .addIntegerOption(o=>o.setName("cantidad").setDescription("Cantidad a retirar").setRequired(true).setMinValue(1)))
   .addSubcommand(s=>s.setName("transfer").setDescription("Transfiere dinero a otro usuario")
    .addUserOption(o=>o.setName("usuario").setDescription("Usuario destinatario").setRequired(true))
-   .addIntegerOption(o=>o.setName("cantidad").setDescription("Cantidad a transferir").setRequired(true).setMinValue(1))),
+   .addIntegerOption(o=>o.setName("cantidad").setDescription("Cantidad a transferir").setRequired(true).setMinValue(1)))
+  .addSubcommand(s=>s.setName("rob").setDescription("Intenta robarle coins a otro usuario")
+   .addUserOption(o=>o.setName("usuario").setDescription("Usuario a robar").setRequired(true)))
+  .addSubcommand(s=>s.setName("leaderboard").setDescription("Muestra el top de usuarios más ricos")),
  async execute(interaction) {
   const sub=interaction.options.getSubcommand();
   if(sub==="balance") return runBalance(interaction);
@@ -341,5 +444,7 @@ module.exports = {
   if(sub==="deposit") return runDeposit(interaction);
   if(sub==="withdraw") return runWithdraw(interaction);
   if(sub==="transfer") return runTransfer(interaction);
+  if(sub==="rob") return runRob(interaction);
+  if(sub==="leaderboard") return runLeaderboard(interaction);
  }
 };
