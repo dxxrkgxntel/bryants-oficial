@@ -9,6 +9,7 @@ const getConfig = require("../../Utils/getConfig");
 
 const BALANCE_BANNER = "https://i.imgur.com/IXKXRHL.png";
 const WORK_BANNER = "https://i.imgur.com/X7jFa3S.png";
+const DAILY_BANNER = "https://i.imgur.com/chBdO1Z.png";
 const ECONOMY_BANNER = "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png";
 
 function economyPanel(title, content, color = 0x8A2BE2, banner = ECONOMY_BANNER) {
@@ -90,7 +91,7 @@ async function runDaily(interaction) {
   `🏦 **Total recibido**\n> +${totalReward.toLocaleString()} monedas\n\n` +
   `🔥 No pierdas tu streak diario.`;
 
- return replyV2(interaction, "🎁 Recompensa diaria reclamada", text, 0xFFD700);
+ return replyV2(interaction, "🎁 Recompensa diaria reclamada", text, 0xFFD700, false, DAILY_BANNER);
 }
 async function runWork(interaction) {
  const user = await getUser(interaction.guild.id, interaction.user.id);
