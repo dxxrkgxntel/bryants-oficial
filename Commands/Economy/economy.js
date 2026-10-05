@@ -68,7 +68,7 @@ async function runDaily(interaction) {
  if (now - user.lastDaily < cooldown) {
   const hours = Math.ceil((cooldown - (now - user.lastDaily)) / 3600000);
   return replyV2(interaction, "⏳ Daily ya reclamado",
-   `Ya reclamaste tu recompensa diaria.\n\n🕒 Vuelve en **${hours} horas**.`, 0xFF0000, true);
+   `Ya reclamaste tu recompensa diaria.\n\n🕒 Vuelve en **${hours} horas**.`, 0xFF0000, true, DAILY_BANNER);
  }
 
  const today = new Date().toDateString();
@@ -102,7 +102,7 @@ async function runWork(interaction) {
  if (now - user.lastWork < cooldown) {
   const minutes = Math.ceil((cooldown - (now - user.lastWork)) / 60000);
   return replyV2(interaction, "😴 Estás cansado",
-   `Has trabajado demasiado por hoy.\n\n⏳ Podrás volver a trabajar en **${minutes} minutos**.`, 0xFF0000, true);
+   `Has trabajado demasiado por hoy.\n\n⏳ Podrás volver a trabajar en **${minutes} minutos**.`, 0xFF0000, true, WORK_BANNER);
  }
 
  const amount = Math.floor(Math.random() * (config.workMax - config.workMin + 1)) + config.workMin;
