@@ -3,10 +3,10 @@ const {
  MediaGalleryItemBuilder, MessageFlags, SeparatorSpacingSize,
  ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits
 } = require("discord.js");
-const getUser = require("../../Utils/getUser");
-const updateDebt = require("../../Utils/updateDebt");
-const GlobalBank = require("../../Models/GlobalBank");
-const BankDonorRole = require("../../Models/BankDonorRoles");
+const getUser = require("./getUser");
+const updateDebt = require("./updateDebt");
+const GlobalBank = require("../Models/GlobalBank");
+const BankDonorRole = require("../Models/BankDonorRoles");
 
 const BANK_BANNER = "https://i.imgur.com/jzy7Lhn.png";
 const DONATE_BANNER = "https://i.imgur.com/BI516It.png";
