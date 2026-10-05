@@ -1071,9 +1071,7 @@ module.exports = {
                             title
                         )
                     );
-                            const visual = getRoleVisual(currentRole?.name || role.label); return `<@&${role.roleId}>`; }).join("\n")}\n\n` +
-                        `Selecciona del menú siguiente para gestionar tus roles en · **${title}**`
-                    );
+
 
             //////////////////////////////////////////////////
 
