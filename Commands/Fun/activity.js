@@ -52,8 +52,22 @@ async function runBanana(interaction) {
 async function runGay(interaction) {
     const user = interaction.options.getUser("usuario") || interaction.user;
     const pct = (Math.floor(Math.random() * 20) + 1) * 5;
-    return interaction.reply({ embeds: [new EmbedBuilder().setColor("#8A2BE2").setTitle("Porcentaje de Gay").setDescription(`**Usuario:** ${user.username}\n**Te ha tocado:** ${pct}% gay 🏳️‍🌈`).setFooter({text:`Solicitado por ${interaction.user.username}`})] });
+
+    return interaction.reply({
+        flags: MessageFlags.IsComponentsV2,
+        components: [{
+            type: 17,
+            accent_color: 0x8A2BE2,
+            components: [
+                { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
+                { type: 10, content: "## 🏳️‍🌈 BF Gay Meter\n### 🎯 Porcentaje aleatorio\n\n👤 Usuario: <@" + user.id + ">\n🌈 Resultado: **" + pct + "% gay**" },
+                { type: 14, divider: true, spacing: 1 },
+                { type: 10, content: "🎲 **Resultado generado al azar por BF Activity**\n👤 Solicitado por <@" + interaction.user.id + ">" }
+            ]
+        }]
+    });
 }
+
 async function runJoke(interaction) {
     const joke = jokes[Math.floor(Math.random() * jokes.length)];
     return interaction.reply({ embeds: [new EmbedBuilder().setColor("#8A2BE2").setTitle("😂 Joke").setDescription(`\`\`\`${joke}\`\`\``).setTimestamp()] });
