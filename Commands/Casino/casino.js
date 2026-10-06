@@ -131,181 +131,50 @@ async function run_stats(interaction) {
 }
 
 async function run_coinflip(interaction) {
-
-        //////////////////////////////////////////////////
-        // DATA
-        //////////////////////////////////////////////////
-
-        const target =
-
-            interaction.options.getUser(
-                "usuario"
-            );
-
-        //////////////////////////////////////////////////
-
-        const amount =
-
-            interaction.options.getInteger(
-                "cantidad"
-            );
-
-        //////////////////////////////////////////////////
-        // VALIDACIONES
-        //////////////////////////////////////////////////
-
-        if (
-
-            target.bot ||
-
-            target.id === interaction.user.id
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ Usuario inválido.",
-
-                flags: 64
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // USERS
-        //////////////////////////////////////////////////
-
-        const authorData =
-
-            await EconomyUser.findOne({
-
-                guildId:
-                    interaction.guild.id,
-
-                userId:
-                    interaction.user.id
-            });
-
-        //////////////////////////////////////////////////
-
-        const targetData =
-
-            await EconomyUser.findOne({
-
-                guildId:
-                    interaction.guild.id,
-
-                userId:
-                    target.id
-            });
-
-        //////////////////////////////////////////////////
-
-        if (
-
-            !authorData ||
-
-            authorData.wallet < amount
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ No tienes suficiente dinero.",
-
-                flags: 64
-            });
-        }
-
-        //////////////////////////////////////////////////
-
-        if (
-
-            !targetData ||
-
-            targetData.wallet < amount
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ Ese usuario no tiene suficiente dinero.",
-
-                flags: 64
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // EMBED
-        //////////////////////////////////////////////////
-
-        const embed =
-
-            new EmbedBuilder()
-
-                .setColor("#8A2BE2")
-
-                .setTitle("🪙 Desafío Coinflip")
-
-                .setDescription(
-
-                    `🎰 ${interaction.user} desafió a ${target}\n\n` +
-
-                    `💰 Apuesta: **${amount.toLocaleString()} monedas**\n\n` +
-
-                    `🪙 El ganador se llevará todo el dinero.`
-                )
-
-                .setThumbnail(
-
-                    interaction.user.displayAvatarURL({
-
-                        dynamic: true
-                    })
-                )
-
-                .setFooter({
-
-                    text:
-                        "Bryant's Casino"
-                });
-
-        //////////////////////////////////////////////////
-        // BUTTON
-        //////////////////////////////////////////////////
-
-        const row =
-
-            new ActionRowBuilder()
-
-                .addComponents(
-
-                    new ButtonBuilder()
-
-                        .setCustomId(
-
-                            `coinflip_${interaction.user.id}_${target.id}_${amount}`
-                        )
-
-                        .setLabel(
-                            "Aceptar apuesta"
-                        )
-
-                        .setEmoji("🪙")
-
-                        .setStyle(
-                            ButtonStyle.Secondary
-                        )
-                );
-
-        //////////////////////////////////////////////////
-
-        await interaction.reply({
-
-            embeds: [embed],
-
-            components: [row]
-        });
-    
+    await interaction.deferReply();
+
+    const target = interaction.options.getUser("usuario");
+    const amount = interaction.options.getInteger("cantidad");
+
+    const errorPanel = (message) => ({
+        flags: MessageFlags.IsComponentsV2,
+        components: [{ type: 17, accent_color: 0x8A2BE2, components: [
+            { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+            { type: 10, content: `## 🪙 Coinflip\n❌ ${message}` }
+        ]}]
+    });
+
+    if (target.bot || target.id === interaction.user.id)
+        return interaction.editReply(errorPanel("Debes desafiar a otro usuario que no sea un bot."));
+
+    const [authorData, targetData] = await Promise.all([
+        EconomyUser.findOne({ guildId: interaction.guild.id, userId: interaction.user.id }),
+        EconomyUser.findOne({ guildId: interaction.guild.id, userId: target.id })
+    ]);
+
+    if (!authorData || authorData.wallet < amount)
+        return interaction.editReply(errorPanel("No tienes suficiente dinero para realizar esta apuesta."));
+
+    if (!targetData || targetData.wallet < amount)
+        return interaction.editReply(errorPanel("El usuario desafiado no tiene suficiente dinero para aceptar la apuesta."));
+
+    const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId(`coinflip_${interaction.user.id}_${target.id}_${amount}`)
+            .setLabel("Aceptar apuesta")
+            .setEmoji("🪙")
+            .setStyle(ButtonStyle.Secondary)
+    );
+
+    return interaction.editReply({
+        flags: MessageFlags.IsComponentsV2,
+        components: [{ type: 17, accent_color: 0x8A2BE2, components: [
+            { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+            { type: 10, content: `## 🪙 Desafío Coinflip\n🎰 <@${interaction.user.id}> desafió a <@${target.id}>.\n\n💰 Apuesta por jugador: **${amount.toLocaleString()} monedas**\n🏆 Premio total: **${(amount * 2).toLocaleString()} monedas**\n\n<@${target.id}>, pulsa **Aceptar apuesta** para jugar.` },
+            { type: 14, divider: true, spacing: 1 },
+            row.toJSON()
+        ]}]
+    });
 }
 
 async function run_dados(interaction) {
