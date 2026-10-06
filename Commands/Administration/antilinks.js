@@ -1,12 +1,14 @@
 const {
  SlashCommandBuilder, PermissionFlagsBits, ChannelType,
- ContainerBuilder, TextDisplayBuilder, SeparatorBuilder,
+ ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MediaGalleryBuilder, MediaGalleryItemBuilder,
  SeparatorSpacingSize, MessageFlags
 } = require("discord.js");
 const AntiLinksConfig=require("../../Models/AntiLinksConfig");
+const ANTILINKS_BANNER="https://i.imgur.com/IPpC16h.png";
 
 function panel(title,text,color=0x8A2BE2){
  return new ContainerBuilder().setAccentColor(color)
+  .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(ANTILINKS_BANNER)))
   .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}`))
   .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small))
   .addTextDisplayComponents(new TextDisplayBuilder().setContent(text));
