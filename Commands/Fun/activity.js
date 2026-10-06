@@ -80,21 +80,92 @@ async function runPpt(interaction) {
     col.on("end",async(_,reason)=>{if(reason!=="played") await interaction.editReply({content:"⌛ No elegiste tu ataque.",embeds:[],components:[]}).catch(()=>{});});
 }
 async function runCalculator(interaction) {
-    const prefix="activity_calc";
-    const mk=(label,id)=>new ButtonBuilder().setLabel(label).setCustomId(prefix+"_"+id).setStyle(ButtonStyle.Secondary);
-    const rows=[
-        new ActionRowBuilder().addComponents(mk("Limpiar","clear"),mk("(","("),mk(")",")"),mk("<=","backspace")),
-        new ActionRowBuilder().addComponents(mk("1","1"),mk("2","2"),mk("3","3"),mk("/","/")),
-        new ActionRowBuilder().addComponents(mk("4","4"),mk("5","5"),mk("6","6"),mk("*","*")),
-        new ActionRowBuilder().addComponents(mk("7","7"),mk("8","8"),mk("9","9"),mk("-","-")),
-        new ActionRowBuilder().addComponents(mk("0","0"),mk(".","."),mk("=","="),mk("+","+"))
+    const prefix = "activity_calc";
+    const mk = (label, id, style = ButtonStyle.Secondary) =>
+        new ButtonBuilder().setLabel(label).setCustomId(prefix + "_" + id).setStyle(style);
+
+    const rows = [
+        new ActionRowBuilder().addComponents(mk("Limpiar","clear",ButtonStyle.Danger),mk("(","("),mk(")",")"),mk("⌫","backspace")),
+        new ActionRowBuilder().addComponents(mk("1","1"),mk("2","2"),mk("3","3"),mk("÷","/")),
+        new ActionRowBuilder().addComponents(mk("4","4"),mk("5","5"),mk("6","6"),mk("×","*")),
+        new ActionRowBuilder().addComponents(mk("7","7"),mk("8","8"),mk("9","9"),mk("−","-")),
+        new ActionRowBuilder().addComponents(mk("0","0"),mk(".","."),mk("=","=",ButtonStyle.Success),mk("+","+"))
     ];
-    const msg=await interaction.reply({embeds:[new EmbedBuilder().setColor("#8A2BE2").setDescription("\`\`\`\nEmpieza a usar la calculadora\n\`\`\`")],components:rows});
-    let data="";
-    const col=msg.createMessageComponentCollector({filter:i=>i.user.id===interaction.user.id,time:600000});
-    col.on("collect",async i=>{await i.deferUpdate();const value=i.customId.slice((prefix+"_").length);let extra="";if(value==="="){try{data=math.evaluate(data.replace(/[^0-9+*/(). -]/g,"")).toString();}catch{data="";extra="Error";}}else if(value==="clear"){data="";extra="Empieza";}else if(value==="backspace"){data=data.slice(0,-1);}else{const lc=data[data.length-1];data+=`${((parseInt(value)==value||value===".")&&(lc==parseInt(lc)||lc==="."))||data.length===0?"":" "}${value}`;}await interaction.editReply({embeds:[new EmbedBuilder().setColor("#8A2BE2").setDescription(`\`\`\`\n${data||extra}\n\`\`\``)],components:rows});});
-    col.on("end",async()=>{await interaction.editReply({components:[]}).catch(()=>{});});
+
+    const calculatorPanel = (display, status = "Introduce una operación usando los botones.") => ({
+        flags: MessageFlags.IsComponentsV2,
+        components: [{
+            type: 17,
+            accent_color: 0x8A2BE2,
+            components: [
+                { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
+                { type: 10, content: "## 🧮 BF Calculator\n### 🖥️ Pantalla\n```\n" + (display || "0") + "\n```\n" + status },
+                { type: 14, divider: true, spacing: 1 },
+                ...rows.map(row => row.toJSON())
+            ]
+        }]
+    });
+
+    const response = await interaction.reply({ ...calculatorPanel("0"), withResponse: true });
+    const msg = response.resource?.message || await interaction.fetchReply();
+    let data = "";
+
+    const col = msg.createMessageComponentCollector({
+        componentType: ComponentType.Button,
+        filter: i => i.user.id === interaction.user.id && i.customId.startsWith(prefix + "_"),
+        time: 600000
+    });
+
+    col.on("collect", async i => {
+        await i.deferUpdate();
+        const value = i.customId.slice((prefix + "_").length);
+        let status = "Introduce una operación usando los botones.";
+
+        if (value === "=") {
+            if (!data.trim()) {
+                status = "⚠️ Introduce una operación antes de calcular.";
+            } else {
+                try {
+                    const clean = data.replace(/[^0-9+*/(). -]/g, "");
+                    const result = math.evaluate(clean);
+                    if (typeof result !== "number" || !Number.isFinite(result)) throw new Error("Resultado inválido");
+                    data = String(result);
+                    status = "✅ Resultado calculado.";
+                } catch {
+                    status = "❌ Operación inválida.";
+                }
+            }
+        } else if (value === "clear") {
+            data = "";
+            status = "🧹 Pantalla limpiada.";
+        } else if (value === "backspace") {
+            data = data.slice(0, -1);
+        } else {
+            if (data.length >= 100) {
+                status = "⚠️ Has alcanzado el límite de 100 caracteres.";
+            } else {
+                data += value;
+            }
+        }
+
+        await interaction.editReply(calculatorPanel(data || "0", status));
+    });
+
+    col.on("end", async () => {
+        await interaction.editReply({
+            flags: MessageFlags.IsComponentsV2,
+            components: [{
+                type: 17,
+                accent_color: 0x8A2BE2,
+                components: [
+                    { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
+                    { type: 10, content: "## 🧮 BF Calculator\n### 🖥️ Pantalla\n```\n" + (data || "0") + "\n```\n⌛ **La calculadora se cerró por inactividad.**" }
+                ]
+            }]
+        }).catch(() => {});
+    });
 }
+
 async function runShitpost(interaction) {
     await interaction.deferReply();
     try { const response=await fetch("https://www.reddit.com/r/ShitpostESP/random/.json");const data=await response.json();const post=data?.[0]?.data?.children?.[0]?.data;if(!post?.url)return interaction.editReply("❌ No pude obtener un shitpost con imagen.");return interaction.editReply({embeds:[new EmbedBuilder().setColor("#8A2BE2").setImage(post.url).setURL(post.url)]}); } catch(err){console.log(err);return interaction.editReply("❌ Ocurrió un error obteniendo el shitpost.");}
