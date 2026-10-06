@@ -88,13 +88,71 @@ async function runJoke(interaction) {
 
 async function runKiss(interaction) {
     const user = interaction.options.getUser("usuario");
-    if (user.id === interaction.user.id) return interaction.reply({content:"❌ No puedes besarte a ti mismo.",ephemeral:true});
-    let data = await kissData.findOne({guildId:interaction.guild.id,userId:user.id});
-    if (!data) data = new kissData({guildId:interaction.guild.id,userId:user.id,kissCount:0});
-    data.kissCount += 1; await data.save();
-    const gif = kissLinks[Math.floor(Math.random()*kissLinks.length)];
-    return interaction.reply({content:`Te dieron un beso <@${user.id}>`,embeds:[new EmbedBuilder().setColor("#8A2BE2").setTitle("💋 Nuevo beso").setDescription(`<@${interaction.user.id}> acaba de besar a <@${user.id}>\n\n<@${user.id}> tiene **${data.kissCount}** besos en total.`).setImage(gif).setTimestamp()]});
+
+    if (user.id === interaction.user.id) {
+        return interaction.reply({
+            flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+            components: [{
+                type: 17,
+                accent_color: 0xED4245,
+                components: [
+                    { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
+                    { type: 10, content: "## 💋 BF Kiss\n❌ No puedes besarte a ti mismo." }
+                ]
+            }]
+        });
+    }
+
+    if (user.bot) {
+        return interaction.reply({
+            flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+            components: [{
+                type: 17,
+                accent_color: 0xED4245,
+                components: [
+                    { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
+                    { type: 10, content: "## 💋 BF Kiss\n🤖 Los bots no participan en el contador de besos." }
+                ]
+            }]
+        });
+    }
+
+    await interaction.deferReply();
+
+    let data = await kissData.findOne({
+        guildId: interaction.guild.id,
+        userId: user.id
+    });
+
+    if (!data) {
+        data = new kissData({
+            guildId: interaction.guild.id,
+            userId: user.id,
+            kissCount: 0
+        });
+    }
+
+    data.kissCount += 1;
+    await data.save();
+
+    const gif = kissLinks[Math.floor(Math.random() * kissLinks.length)];
+
+    return interaction.editReply({
+        flags: MessageFlags.IsComponentsV2,
+        components: [{
+            type: 17,
+            accent_color: 0x8A2BE2,
+            components: [
+                { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
+                { type: 10, content: "## 💋 BF Kiss\n### ❤️ ¡Nuevo beso!\n\n<@" + interaction.user.id + "> acaba de besar a <@" + user.id + ">." },
+                { type: 12, items: [{ media: { url: gif } }] },
+                { type: 14, divider: true, spacing: 1 },
+                { type: 10, content: "💞 <@" + user.id + "> ha recibido **" + data.kissCount.toLocaleString() + " beso" + (data.kissCount === 1 ? "" : "s") + "** en total." }
+            ]
+        }]
+    });
 }
+
 async function runPpt(interaction) {
     const choices=["piedra","papel","tijeras"], bot=choices[Math.floor(Math.random()*3)];
     const row=new ActionRowBuilder().addComponents(
