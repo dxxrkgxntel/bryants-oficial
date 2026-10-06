@@ -1,7 +1,8 @@
 const {
     SlashCommandBuilder,
     PermissionFlagsBits,
-    ChannelType
+    ChannelType,
+    MessageFlags
 } = require("discord.js");
 
 const boostSchema = require("../../Models/boostSchema");
@@ -92,23 +93,25 @@ module.exports = {
                 { upsert: true, new: true }
             );
 
-            const embed = new EmbedBuilder()
-                .setColor("#8A2BE2")
-                .setTitle("🚀 Sistema Booster Configurado")
-                .setDescription(
-                    `✅ Configuración guardada correctamente.\n\n` +
-                    `💜 Booster: ${boosterRole}\n` +
-                    `🚀 Booster VIP: ${boosterVipRole}\n` +
-                    `👑 Booster Legend: ${boosterLegendRole}\n` +
-                    `📢 Canal: ${boostChannel}\n\n` +
-                    `📝 Descripción: ${boostDescription ? "Actualizada" : existing?.boostDescription ? "Se conserva la anterior" : "Predeterminada"}\n` +
-                    `🖼️ Thumbnail: ${boostThumbnail ? "Actualizado" : existing?.boostThumbnail ? "Se conserva el anterior" : "Sin configurar"}\n` +
-                    `🌄 Banner: ${boostImage ? "Actualizado" : existing?.boostImage ? "Se conserva el anterior" : "Sin configurar"}`
-                )
-                .setFooter({ text: `${interaction.guild.name} • Booster System` })
-                .setTimestamp();
+            const status =
+                `## 🚀 Sistema Booster Configurado\n` +
+                `✅ Configuración guardada correctamente.\n\n` +
+                `💜 **Booster:** ${boosterRole}\n` +
+                `🚀 **Booster VIP:** ${boosterVipRole}\n` +
+                `👑 **Booster Legend:** ${boosterLegendRole}\n` +
+                `📢 **Canal:** ${boostChannel}\n\n` +
+                `📝 **Descripción:** ${boostDescription ? "Actualizada" : existing?.boostDescription ? "Se conserva la anterior" : "Predeterminada"}\n` +
+                `🖼️ **Thumbnail:** ${boostThumbnail ? "Actualizado" : existing?.boostThumbnail ? "Se conserva el anterior" : "Sin configurar"}\n` +
+                `🌄 **Banner:** ${boostImage ? "Actualizado" : existing?.boostImage ? "Se conserva el anterior" : "Sin configurar"}`;
 
-            await interaction.reply({ embeds: [embed], flags: 64 });
+            await interaction.reply({
+                flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+                components: [{
+                    type: 17,
+                    accent_color: 0x8A2BE2,
+                    components: [{ type: 10, content: status }]
+                }]
+            });
         } catch (error) {
             console.log("❌ Error en boost-setup:", error);
             const payload = { content: "❌ Ocurrió un error al configurar el sistema Booster.", flags: 64 };
