@@ -393,73 +393,15 @@ module.exports = {
 
         if (subcommand === "ban") {
 
-            const user =
-            interaction.options.getMember(
-                "usuario"
-            );
+            const user = interaction.options.getMember("usuario");
+            const reason = interaction.options.getString("razon") || "No especificada";
 
-            const reason =
-            interaction.options.getString(
-                "razon"
-            ) ||
+            if (!user) return moderationReply(interaction, "❌ Usuario inválido", "No pude encontrar a ese miembro en el servidor.", 0xFF0000);
+            if (user.id === interaction.user.id) return moderationReply(interaction, "⚠️ Acción inválida", "No puedes banearte a ti mismo.", 0xFFD700);
+            if (!user.bannable) return moderationReply(interaction, "⛔ No puedo banearlo", "Revisa la jerarquía de roles y los permisos del bot.", 0xFF0000);
 
-            "No especificada";
-
-            //////////////////////////////////////////////////
-
-            if (!user) {
-
-                return errReply(
-
-                    interaction,
-
-                    "❌ Usuario inválido.",
-
-                    true
-
-                );
-
-            }
-
-            //////////////////////////////////////////////////
-
-            await user.ban({
-
-                reason
-
-            });
-
-            //////////////////////////////////////////////////
-
-            const embed =
-            new EmbedBuilder()
-
-                .setColor("#8A2BE2")
-
-                .setTitle(
-                    "🔨 Usuario baneado"
-                )
-
-                .setDescription(
-
-                    `👤 Usuario: ${user}\n` +
-
-                    `🛡️ Moderador: ${interaction.user}\n` +
-
-                    `📝 Razón: ${reason}`
-
-                )
-
-                .setTimestamp();
-
-            //////////////////////////////////////////////////
-
-            return interaction.reply({
-
-                embeds: [embed]
-
-            });
-
+            await user.ban({ reason });
+            return moderationReply(interaction, "🔨 Usuario baneado", "**Usuario:** " + user + "\n**Moderador:** " + interaction.user + "\n**Razón:** " + reason, 0x8A2BE2);
         }
 
         //////////////////////////////////////////////////
