@@ -1,13 +1,19 @@
 const {
     SlashCommandBuilder,
     PermissionFlagsBits,
-    EmbedBuilder,
+    ContainerBuilder,
+    TextDisplayBuilder,
+    SeparatorBuilder,
+    SeparatorSpacingSize,
+    MediaGalleryBuilder,
+    MediaGalleryItemBuilder,
+    MessageFlags,
+    ComponentType,
     ActionRowBuilder,
     StringSelectMenuBuilder
 } = require("discord.js");
 
-const BankDonorRole =
-require("../../Models/BankDonorRoles");
+const BankDonorRole =\nrequire("../../Models/BankDonorRoles");\n\nconst BANK_BANNER = "https://i.imgur.com/fHtidQP.png";
 
 module.exports = {
 
