@@ -93,7 +93,7 @@ module.exports = async (
 
                 if (economy) {
 
-                    economy.coins +=
+                    economy.wallet +=
                         quest.reward.coins;
 
                     await economy.save();
