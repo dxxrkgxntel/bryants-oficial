@@ -303,12 +303,7 @@ module.exports = {
 
             }
 
-            await interaction.reply({
-
-                content:
-                "🪙 Ejecutando drop semanal..."
-
-            });
+            await weeklyReply(interaction, "🪙 WeeklyDrop", "Ejecutando drop semanal...", 0x8A2BE2);
 
             const members =
             await interaction.guild.members.fetch();
@@ -380,7 +375,7 @@ module.exports = {
                         userId:
                         member.id,
 
-                        balance: 0
+                        wallet: 0
 
                     });
 
@@ -392,7 +387,7 @@ module.exports = {
                 =========================
                 */
 
-                userData.balance += amount;
+                userData.wallet = Number(userData.wallet || 0) + amount;
 
                 await userData.save();
 
