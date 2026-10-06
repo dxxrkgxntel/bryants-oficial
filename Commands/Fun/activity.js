@@ -33,8 +33,22 @@ async function run8ball(interaction) {
 async function runBanana(interaction) {
     const user = interaction.options.getUser("usuario") || interaction.user;
     const banana = Math.floor(Math.random() * 22);
-    return interaction.reply({ embeds: [new EmbedBuilder().setColor("#8A2BE2").setDescription(`**La banana de ${user.username} mide ${banana} cm.**`)] });
+
+    return interaction.reply({
+        flags: MessageFlags.IsComponentsV2,
+        components: [{
+            type: 17,
+            accent_color: 0x8A2BE2,
+            components: [
+                { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
+                { type: 10, content: "## 🍌 BF Banana\n### 📏 Medición aleatoria\n\n👤 Usuario: <@" + user.id + ">\n🍌 Tamaño: **" + banana + " cm**" },
+                { type: 14, divider: true, spacing: 1 },
+                { type: 10, content: "🎲 **Resultado generado al azar por BF Activity**\n👤 Solicitado por <@" + interaction.user.id + ">" }
+            ]
+        }]
+    });
 }
+
 async function runGay(interaction) {
     const user = interaction.options.getUser("usuario") || interaction.user;
     const pct = (Math.floor(Math.random() * 20) + 1) * 5;
