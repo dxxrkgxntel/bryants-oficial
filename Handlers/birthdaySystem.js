@@ -214,50 +214,7 @@ module.exports = (client) => {
                         // EMBED
                         //////////////////////////////////////////////////
 
-                        const embed =
-
-                            new EmbedBuilder()
-
-                                .setColor("#ff69b4")
-
-                                .setTitle(
-                                    "🎉 Feliz Cumpleaños"
-                                )
-
-                                .setDescription(
-
-                                    `🎂 ¡Feliz cumpleaños ${member}!\n\n` +
-
-                                    `🥳 Esperamos que tengas un día increíble lleno de felicidad y regalos.\n\n` +
-
-                                    `🎁 Has recibido **${reward.toLocaleString()} monedas** por tu cumpleaños.`
-                                )
-
-                                .setThumbnail(
-
-                                    member.user.displayAvatarURL({
-
-                                        dynamic: true
-                                    })
-                                )
-
-                                .setFooter({
-
-                                    text:
-                                        guild.name
-                                })
-
-                                .setTimestamp();
-
-                        //////////////////////////////////////////////////
-
-                        await channel.send({
-
-                            content:
-                                `🎉 ¡Hoy celebramos el cumpleaños de ${member}!`,
-
-                            embeds: [embed]
-                        });
+                        await channel.send({\n                            flags: MessageFlags.IsComponentsV2,\n                            components: [{ type: 17, accent_color: 0x8A2BE2, components: [\n                                { type: 12, items: [{ media: { url: BIRTHDAY_BANNER } }] },\n                                { type: 10, content: "## 🎉 ¡Feliz Cumpleaños!\\n🎂 ¡Feliz cumpleaños " + member + "!\\n\\n🥳 Esperamos que tengas un día increíble lleno de felicidad y regalos.\\n\\n🎁 Has recibido **" + reward.toLocaleString() + " monedas** por tu cumpleaños." }\n                            ] }]\n                        });
 
                     } catch (err) {
 
