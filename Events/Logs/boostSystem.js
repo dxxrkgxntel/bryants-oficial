@@ -1,8 +1,8 @@
 const {
-    EmbedBuilder,
     ActionRowBuilder,
     ButtonBuilder,
-    ButtonStyle
+    ButtonStyle,
+    MessageFlags
 } = require("discord.js");
 
 const boostSchema = require("../../Models/boostSchema");
@@ -12,7 +12,6 @@ module.exports = {
 
     async execute(oldMember, newMember) {
         try {
-            // Detectar cuando el miembro comienza a boostear.
             if (oldMember.premiumSince || !newMember.premiumSince) return;
 
             const data = await boostSchema.findOne({ guildId: newMember.guild.id });
@@ -38,13 +37,27 @@ module.exports = {
 
             const description = replaceVariables(data.boostDescription || defaultDescription);
 
-            const embed = new EmbedBuilder()
-                .setColor("#8A2BE2")
-                .setTitle("🚀 - Nuevo Boost")
-                .setDescription(description);
+            const containerComponents = [
+                {
+                    type: 10,
+                    content: `## 🚀 Nuevo Boost\n${description}`
+                }
+            ];
 
-            if (data.boostThumbnail) embed.setThumbnail(data.boostThumbnail);
-            if (data.boostImage) embed.setImage(data.boostImage);
+            if (data.boostThumbnail) {
+                containerComponents.push({
+                    type: 9,
+                    components: [{ type: 10, content: "### 💜 Nuevo miembro de la familia Booster" }],
+                    accessory: { type: 11, media: { url: data.boostThumbnail } }
+                });
+            }
+
+            if (data.boostImage) {
+                containerComponents.push({
+                    type: 12,
+                    items: [{ media: { url: data.boostImage } }]
+                });
+            }
 
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
@@ -64,10 +77,16 @@ module.exports = {
                     .setStyle(ButtonStyle.Secondary)
             );
 
+            containerComponents.push({ type: 14 });
+            containerComponents.push(row.toJSON());
+
             await channel.send({
-                content: `💜 ¡Gracias por boostear ${newMember}!`,
-                embeds: [embed],
-                components: [row]
+                flags: MessageFlags.IsComponentsV2,
+                components: [{
+                    type: 17,
+                    accent_color: 0x8A2BE2,
+                    components: containerComponents
+                }]
             });
         } catch (error) {
             console.log("❌ Error en boostSystem:", error);
