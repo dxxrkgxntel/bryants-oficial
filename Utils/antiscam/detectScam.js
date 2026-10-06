@@ -10,9 +10,7 @@ const suspiciousWords = [
     "free gift",
     "discord reward",
     "verify account",
-    "free steam",
-    "@everyone",
-    "@here"
+    "free steam"
 
 ];
 
