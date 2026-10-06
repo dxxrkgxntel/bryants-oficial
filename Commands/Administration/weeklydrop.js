@@ -245,18 +245,11 @@ module.exports = {
         */
 
         if (sub === "enable") {
-
+            if (data.enabled) return weeklyReply(interaction, "🪙 WeeklyDrop", "El sistema ya está activado.", 0xFFD700);
             data.enabled = true;
-
+            if (!data.nextDrop) data.nextDrop = new Date(Date.now() + 604800000);
             await data.save();
-
-            return interaction.reply({
-
-                content:
-                "✅ Sistema WeeklyDrop activado."
-
-            });
-
+            return weeklyReply(interaction, "✅ WeeklyDrop activado", "El sistema quedó activado.\n**Próximo drop:** <t:" + Math.floor(data.nextDrop.getTime() / 1000) + ":R>", 0x00FF99);
         }
 
         /*
