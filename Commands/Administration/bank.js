@@ -356,102 +356,37 @@ module.exports = {
 
             if (subcommand === "list") {
 
-                const roles =
-                await BankDonorRole.find({
-
-                    guildId:
-                        interaction.guild.id
-
-                })
-
-                .sort({
-
-                    requiredAmount: 1
-
-                });
-
-                //////////////////////////////////////////////////
+                const roles = await BankDonorRole.find({
+                    guildId: interaction.guild.id
+                }).sort({ requiredAmount: 1 });
 
                 if (!roles.length) {
-
-                    return interaction.reply({
-
-                        content:
-                            "❌ No hay roles de donadores configurados.",
-
-                        flags: 64
-
-                    });
-
+                    return bankReply(interaction, "🏦 Roles de Donadores", "No hay roles de donadores configurados.", 0xFFD700);
                 }
 
-                //////////////////////////////////////////////////
-
-                let description =
-                "";
-
-                //////////////////////////////////////////////////
+                const valid = [];
+                let stale = 0;
 
                 for (const data of roles) {
-
-                    const role =
-                    interaction.guild.roles.cache.get(
-                        data.roleId
-                    );
-
-                    //////////////////////////////////////////////////
-
-                    if (!role)
+                    const role = interaction.guild.roles.cache.get(data.roleId);
+                    if (!role) {
+                        stale++;
                         continue;
-
-                    //////////////////////////////////////////////////
-
-                    description +=
-
-                        `🎭 Rol: ${role}\n` +
-
-                        `💰 Requiere: ` +
-
-`**${data.requiredAmount.toLocaleString()} monedas**\n\n`;
-
+                    }
+                    valid.push(role + " — **" + data.requiredAmount.toLocaleString() + " monedas**");
                 }
 
-                //////////////////////////////////////////////////
+                let description = valid.length
+                    ? valid.join("\n")
+                    : "No hay roles válidos actualmente.";
 
-                const embed =
-                new EmbedBuilder()
+                description += "\n\n**Total:** " + valid.length;
 
-                    .setColor("#00ff99")
+                if (stale) {
+                    description += "\n⚠️ **Registros de roles eliminados:** " + stale;
+                }
 
-                    .setTitle(
-                        "🏦 Roles de Donadores"
-                    )
-
-                    .setDescription(
-                        description
-                    )
-
-                    .setImage(
-                        "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
-                    )
-
-                    .setFooter({
-
-                        text:
-                            interaction.guild.name
-
-                    })
-
-                    .setTimestamp();
-
-                //////////////////////////////////////////////////
-
-                return interaction.reply({
-
-                    embeds: [embed]
-
-                });
-
+                return bankReply(interaction, "🏦 Roles de Donadores", description, 0x00FF99);
             }
 
         }
