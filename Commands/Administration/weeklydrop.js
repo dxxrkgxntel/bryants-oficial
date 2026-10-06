@@ -289,226 +289,43 @@ module.exports = {
         */
 
         if (sub === "force") {
-
-            if (!data.enabled) {
-
-                return interaction.reply({
-
-                    content:
-                    "❌ El sistema no está activado.",
-
-                    flags: 64
-
-                });
-
+            if (!data.enabled) return weeklyReply(interaction, "⛔ WeeklyDrop desactivado", "Activa el sistema antes de ejecutar un drop.", 0xFF5555);
+            if (!Number.isFinite(data.minAmount) || !Number.isFinite(data.maxAmount) || data.minAmount < 1 || data.minAmount >= data.maxAmount) {
+                return weeklyReply(interaction, "⚠️ Configuración inválida", "Ejecuta `/weeklydrop setup` antes de forzar un drop.", 0xFFD700);
             }
-
             await weeklyReply(interaction, "🪙 WeeklyDrop", "Ejecutando drop semanal...", 0x8A2BE2);
-
-            const members =
-            await interaction.guild.members.fetch();
-
-            let totalDistributed = 0;
-
-            let rewardedUsers = 0;
-
-            for (const member of members.values()) {
-
-                /*
-                =========================
-                IGNORAR BOTS
-                =========================
-                */
-
-                if (member.user.bot)
-                    continue;
-
-                /*
-                =========================
-                RANDOM AMOUNT
-                =========================
-                */
-
-                const amount =
-                    Math.floor(
-
-                        Math.random() *
-
-                        (
-                            data.maxAmount -
-                            data.minAmount + 1
-                        )
-
-                    ) + data.minAmount;
-
-                /*
-                =========================
-                BUSCAR USUARIO
-                =========================
-                */
-
-                let userData =
-                await Economy.findOne({
-
-                    guildId:
-                    interaction.guild.id,
-
-                    userId:
-                    member.id
-
+            try {
+                const members = await interaction.guild.members.fetch();
+                const humans = [...members.values()].filter(member => !member.user.bot);
+                let totalDistributed = 0;
+                const operations = humans.map(member => {
+                    const amount = Math.floor(Math.random() * (data.maxAmount - data.minAmount + 1)) + data.minAmount;
+                    totalDistributed += amount;
+                    return {
+                        updateOne: {
+                            filter: { guildId: interaction.guild.id, userId: member.id },
+                            update: { $inc: { wallet: amount }, $setOnInsert: { guildId: interaction.guild.id, userId: member.id } },
+                            upsert: true
+                        }
+                    };
                 });
-
-                /*
-                =========================
-                CREAR SI NO EXISTE
-                =========================
-                */
-
-                if (!userData) {
-
-                    userData =
-                    await Economy.create({
-
-                        guildId:
-                        interaction.guild.id,
-
-                        userId:
-                        member.id,
-
-                        wallet: 0
-
-                    });
-
+                if (operations.length) await Economy.bulkWrite(operations, { ordered: false });
+                data.lastDrop = new Date();
+                data.nextDrop = new Date(Date.now() + 604800000);
+                await data.save();
+                const summary = "**Usuarios recompensados:** " + humans.length + "\n**Total distribuido:** " + totalDistributed.toLocaleString() + " coins\n**Rango:** " + data.minAmount.toLocaleString() + " - " + data.maxAmount.toLocaleString() + "\n**Próximo drop:** <t:" + Math.floor(data.nextDrop.getTime() / 1000) + ":R>";
+                if (data.logChannelId) {
+                    const channel = interaction.guild.channels.cache.get(data.logChannelId);
+                    if (channel && channel.isTextBased()) {
+                        await channel.send(weeklyPayload("🪙 Drop semanal ejecutado", summary, 0xFFD700)).catch(error => console.error("[WeeklyDrop Log]", error));
+                    }
                 }
-
-                /*
-                =========================
-                AÑADIR DINERO
-                =========================
-                */
-
-                userData.wallet = Number(userData.wallet || 0) + amount;
-
-                await userData.save();
-
-                totalDistributed += amount;
-
-                rewardedUsers++;
-
+                return weeklyReply(interaction, "✅ Drop semanal completado", summary, 0x00FF99);
+            } catch (error) {
+                console.error("[WeeklyDrop Force]", error);
+                return weeklyReply(interaction, "❌ Error en WeeklyDrop", "No se pudo completar el drop. No se actualizará la fecha hasta que la operación termine correctamente.", 0xFF0000);
             }
-
-            /*
-            =========================
-            ACTUALIZAR FECHAS
-            =========================
-            */
-
-            data.lastDrop =
-            new Date();
-
-            data.nextDrop =
-            new Date(
-
-                Date.now() +
-
-                7 * 24 * 60 * 60 * 1000
-
-            );
-
-            await data.save();
-
-            /*
-            =========================
-            LOG CHANNEL
-            =========================
-            */
-
-            if (data.logChannelId) {
-
-                const channel =
-                interaction.guild.channels.cache.get(
-                    data.logChannelId
-                );
-
-                if (channel) {
-
-                    const logEmbed =
-                    new EmbedBuilder()
-
-                        .setColor("Gold")
-
-                        .setTitle(
-                            "🪙 Drop Semanal Ejecutado"
-                        )
-
-                        .setDescription(
-
-`✅ Usuarios recompensados:
-**${rewardedUsers}**
-
-💰 Total distribuido:
-**${totalDistributed.toLocaleString()}** coins
-
-⏳ Próximo drop:
-<t:${Math.floor(data.nextDrop.getTime() / 1000)}:R>`
-
-                        )
-
-                        .setFooter({
-
-                            text:
-                            `Servidor: ${interaction.guild.name}`
-
-                        })
-
-                        .setTimestamp();
-
-                    await channel.send({
-
-                        embeds: [logEmbed]
-
-                    });
-
-                }
-
-            }
-
-            /*
-            =========================
-            RESPUESTA FINAL
-            =========================
-            */
-
-            return interaction.followUp({
-
-                embeds: [
-
-                    new EmbedBuilder()
-
-                        .setColor("Green")
-
-                        .setTitle(
-                            "✅ Drop semanal completado"
-                        )
-
-                        .setDescription(
-
-`🪙 Usuarios recompensados:
-**${rewardedUsers}**
-
-💰 Coins distribuidas:
-**${totalDistributed.toLocaleString()}**`
-
-                        )
-
-                        .setTimestamp()
-
-                ]
-
-            });
-
         }
-
     }
 
 };
