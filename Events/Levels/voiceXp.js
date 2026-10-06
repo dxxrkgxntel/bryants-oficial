@@ -10,6 +10,9 @@ const LevelReward =
 const EconomyUser =
     require("../../Models/EconomyUser");
 
+const questHandler =
+    require("../../Functions/questHandler");
+
 //////////////////////////////////////////////////
 // CONFIG
 //////////////////////////////////////////////////
@@ -478,6 +481,14 @@ module.exports = {
                             //////////////////////////////////////////////////
 
                             await data.save();
+
+                            // QUESTS DE VOZ: cada ciclo valido equivale a 5 minutos.
+                            await questHandler(
+                                member.id,
+                                guild.id,
+                                "voice",
+                                5
+                            );
                         }
                     }
                 }
