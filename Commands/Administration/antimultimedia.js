@@ -1,12 +1,14 @@
 const {
  SlashCommandBuilder, PermissionFlagsBits, ChannelType,
- ContainerBuilder, TextDisplayBuilder, SeparatorBuilder,
+ ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MediaGalleryBuilder, MediaGalleryItemBuilder,
  SeparatorSpacingSize, MessageFlags
 }=require("discord.js");
 const ImageConfig=require("../../Models/ImageConfig");
+const ANTIMULTIMEDIA_BANNER="https://i.imgur.com/5xvoEat.png";
 
 function panel(title,text,color=0x8A2BE2){
  return new ContainerBuilder().setAccentColor(color)
+  .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(ANTIMULTIMEDIA_BANNER)))
   .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}`))
   .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small))
   .addTextDisplayComponents(new TextDisplayBuilder().setContent(text));
