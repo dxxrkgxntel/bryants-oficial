@@ -13,7 +13,10 @@ function panel(title,text,color=0x8A2BE2){
   .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small))
   .addTextDisplayComponents(new TextDisplayBuilder().setContent(text));
 }
-function reply(i,title,text,color=0x8A2BE2){return i.reply({components:[panel(title,text,color)],flags:MessageFlags.IsComponentsV2|MessageFlags.Ephemeral});}
+function reply(i,title,text,color=0x8A2BE2){
+ const payload={components:[panel(title,text,color)],flags:MessageFlags.IsComponentsV2};
+ return i.deferred||i.replied?i.editReply(payload):i.reply({...payload,flags:payload.flags|MessageFlags.Ephemeral});
+}
 async function getConfig(guildId){
  let data=await AntiLinksConfig.findOne({guildId});
  if(!data)data=await AntiLinksConfig.create({guildId,enabled:false,allowedChannels:[],logsChannel:null});
@@ -33,6 +36,7 @@ module.exports={
   .addSubcommand(s=>s.setName("logs").setDescription("Configurar canal de logs")
    .addChannelOption(o=>o.setName("canal").setDescription("Canal de logs").setRequired(true).addChannelTypes(ChannelType.GuildText))),
  async execute(i){
+  await i.deferReply({flags:MessageFlags.Ephemeral});
   const sub=i.options.getSubcommand();
   const data=await getConfig(i.guild.id);
 
