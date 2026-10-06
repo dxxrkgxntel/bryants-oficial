@@ -121,11 +121,11 @@ async function run_stats(interaction) {
         flags: MessageFlags.IsComponentsV2,
         components: [{ type: 17, accent_color: 0x8A2BE2, components: [
             { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
-            { type: 10, content: \`## 🎰 Estadísticas de BF Casino\n### 👤 \${target.username}\n\n🎉 Victorias: **\${data.totalWins.toLocaleString()}**\n💥 Derrotas: **\${data.totalLosses.toLocaleString()}**\n📈 Winrate: **\${winrate}%**\n🎲 Partidas: **\${data.totalGames.toLocaleString()}**\` },
+            { type: 10, content: `## 🎰 Estadísticas de BF Casino\n### 👤 ${target.username}\n\n🎉 Victorias: **${data.totalWins.toLocaleString()}**\n💥 Derrotas: **${data.totalLosses.toLocaleString()}**\n📈 Winrate: **${winrate}%**\n🎲 Partidas: **${data.totalGames.toLocaleString()}**` },
             { type: 14, divider: true, spacing: 1 },
-            { type: 10, content: \`### 💰 Rendimiento\n💵 Dinero ganado: **\${data.moneyWon.toLocaleString()}**\n💸 Dinero perdido: **\${data.moneyLost.toLocaleString()}**\n💎 Mayor victoria: **\${data.biggestWin.toLocaleString()} monedas**\n🌟 Jackpots: **\${data.jackpots.toLocaleString()}**\n🔥 Racha actual: **\${data.currentStreak.toLocaleString()}**\` },
+            { type: 10, content: `### 💰 Rendimiento\n💵 Dinero ganado: **${data.moneyWon.toLocaleString()}**\n💸 Dinero perdido: **${data.moneyLost.toLocaleString()}**\n💎 Mayor victoria: **${data.biggestWin.toLocaleString()} monedas**\n🌟 Jackpots: **${data.jackpots.toLocaleString()}**\n🔥 Racha actual: **${data.currentStreak.toLocaleString()}**` },
             { type: 14, divider: true, spacing: 1 },
-            { type: 10, content: \`### 🎮 Victorias por juego\n🎰 Slots: **\${data.slotsWins.toLocaleString()}**\n🎡 Ruleta: **\${data.rouletteWins.toLocaleString()}**\n🎲 Gamble: **\${data.gambleWins.toLocaleString()}**\n🪙 Coinflip: **\${data.coinflipWins.toLocaleString()}**\n🃏 Blackjack: **\${data.blackjackWins.toLocaleString()}**\` }
+            { type: 10, content: `### 🎮 Victorias por juego\n🎰 Slots: **${data.slotsWins.toLocaleString()}**\n🎡 Ruleta: **${data.rouletteWins.toLocaleString()}**\n🎲 Gamble: **${data.gambleWins.toLocaleString()}**\n🪙 Coinflip: **${data.coinflipWins.toLocaleString()}**\n🃏 Blackjack: **${data.blackjackWins.toLocaleString()}**` }
         ]}]
     });
 }
