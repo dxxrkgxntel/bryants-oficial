@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, MessageFlags } = require("discord.js");
 const math = require("mathjs");
 const ms = require("ms");
 const translate = require("translate-google");
@@ -14,8 +14,22 @@ const kissLinks = ["https://media.giphy.com/media/G3va31oEEnIkM/giphy.gif","http
 async function run8ball(interaction) {
     const question = interaction.options.getString("pregunta");
     const answer = responses8ball[Math.floor(Math.random() * responses8ball.length)];
-    return interaction.reply({ embeds: [new EmbedBuilder().setColor("#8A2BE2").setTitle("🎱 8Ball").addFields({name:"Pregunta",value:`\`\`\`${question}\`\`\``},{name:"Respuesta",value:`\`\`\`${answer}\`\`\``}).setTimestamp()] });
+
+    return interaction.reply({
+        flags: MessageFlags.IsComponentsV2,
+        components: [{
+            type: 17,
+            accent_color: 0x8A2BE2,
+            components: [
+                { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
+                { type: 10, content: "## 🎱 BF 8Ball\n### ❓ Pregunta\n" + question },
+                { type: 14, divider: true, spacing: 1 },
+                { type: 10, content: "### 🔮 Respuesta\n**" + answer + "**\n\n👤 Preguntado por <@" + interaction.user.id + ">" }
+            ]
+        }]
+    });
 }
+
 async function runBanana(interaction) {
     const user = interaction.options.getUser("usuario") || interaction.user;
     const banana = Math.floor(Math.random() * 22);
