@@ -2,6 +2,9 @@ const Level = require("../../Models/Level");
 const LevelReward = require("../../Models/LevelReward");
 const LevelConfig = require("../../Models/LevelConfig");
 const EconomyUser = require("../../Models/EconomyUser");
+const { MessageFlags } = require("discord.js");
+
+const LEVEL_UP_BANNER = "https://i.imgur.com/IyrUtlE.png";
 
 //////////////////////////////////////////////////
 // COOLDOWN
@@ -206,39 +209,47 @@ module.exports = {
 
             await targetChannel.send({
 
-                embeds: [{
+                flags: MessageFlags.IsComponentsV2,
 
-                    title:
-                        "🎉 Subiste de nivel",
+                components: [{
 
-                    description:
+                    type: 17,
 
-                        `✨ ¡Felicidades ${message.author}!\n\n` +
+                    accent_color: 0x8A2BE2,
 
-                        `Has alcanzado el nivel **${data.level}** gracias a tu actividad y participación dentro del servidor.\n\n` +
+                    components: [
 
-                        `💰 Recompensa recibida: **${reward} coins**\n\n` +
+                        {
+                            type: 12,
 
-                        `🔥 Sigue enviando mensajes, participando y manteniéndote activo para desbloquear más recompensas y subir aún más rápido.`,
+                            items: [{
 
-                    color: 0x8000ff,
+                                media: {
 
-                    thumbnail: {
+                                    url:
+                                        LEVEL_UP_BANNER
+                                }
+                            }]
+                        },
 
-                        url:
-                            message.author.displayAvatarURL({
+                        {
+                            type: 10,
 
-                                dynamic: true,
+                            content:
 
-                                size: 1024
-                            })
-                    },
+                                `## 🎉 ¡SUBISTE DE NIVEL!\n` +
 
-                    image: {
+                                `### ✨ ¡Felicidades ${message.author}!\n\n` +
 
-                        url:
-                            "https://i.imgur.com/KCMdEyQ.png"
-                    }
+                                `Has alcanzado el **nivel ${data.level}** gracias a tu actividad y participación dentro del servidor.\n\n` +
+
+                                `💰 **Recompensa recibida:** ${reward.toLocaleString()} coins\n` +
+
+                                `⭐ **Nivel actual:** ${data.level}\n\n` +
+
+                                `🔥 Sigue participando para desbloquear más recompensas y nuevos roles.`
+                        }
+                    ]
                 }]
             });
 
@@ -349,37 +360,43 @@ module.exports = {
 
                     await targetChannel.send({
 
-                        embeds: [{
+                        flags: MessageFlags.IsComponentsV2,
 
-                            title:
-                                "🎭 Nuevo Rol Desbloqueado",
+                        components: [{
 
-                            description:
+                            type: 17,
 
-                                `✨ ¡Felicidades ${message.author}!\n\n` +
+                            accent_color: 0x57F287,
 
-                                `Has desbloqueado el rol **${role.name}** gracias a tu actividad y progreso dentro del servidor.\n\n` +
+                            components: [
 
-                                `🏆 Continúa participando, subiendo de nivel y manteniéndote activo para obtener aún más beneficios y recompensas exclusivas.`,
+                                {
+                                    type: 12,
 
-                            color: 0x00ff99,
+                                    items: [{
 
-                            thumbnail: {
+                                        media: {
 
-                                url:
-                                    message.author.displayAvatarURL({
+                                            url:
+                                                LEVEL_UP_BANNER
+                                        }
+                                    }]
+                                },
 
-                                        dynamic: true,
+                                {
+                                    type: 10,
 
-                                        size: 1024
-                                    })
-                            },
+                                    content:
 
-                            image: {
+                                        `## 🎭 NUEVO ROL DESBLOQUEADO\n` +
 
-                                url:
-                                    "https://i.imgur.com/KCMdEyQ.png"
-                            }
+                                        `### ✨ ¡Felicidades ${message.author}!\n\n` +
+
+                                        `Has desbloqueado el rol **${role.name}** al alcanzar el **nivel ${data.level}**.\n\n` +
+
+                                        `🏆 Continúa participando para seguir avanzando en el sistema de niveles.`
+                                }
+                            ]
                         }]
                     });
                 }
