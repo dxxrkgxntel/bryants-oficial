@@ -22,7 +22,7 @@ async function getConfig(guildId){
 }
 
 module.exports={
- data:new SlashCommandBuilder().setName("img").setDescription("Sistema de imágenes")
+ data:new SlashCommandBuilder().setName("antimultimedia").setDescription("Sistema AntiMultimedia")
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .addSubcommand(s=>s.setName("add").setDescription("Permitir imágenes en un canal")
    .addChannelOption(o=>o.setName("canal").setDescription("Canal").setRequired(true).addChannelTypes(ChannelType.GuildText)))
