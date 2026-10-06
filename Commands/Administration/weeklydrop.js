@@ -259,18 +259,10 @@ module.exports = {
         */
 
         if (sub === "disable") {
-
+            if (!data.enabled) return weeklyReply(interaction, "🪙 WeeklyDrop", "El sistema ya está desactivado.", 0xFFD700);
             data.enabled = false;
-
             await data.save();
-
-            return interaction.reply({
-
-                content:
-                "❌ Sistema WeeklyDrop desactivado."
-
-            });
-
+            return weeklyReply(interaction, "⛔ WeeklyDrop desactivado", "El sistema de recompensas semanales quedó desactivado.", 0xFF5555);
         }
 
         /*
