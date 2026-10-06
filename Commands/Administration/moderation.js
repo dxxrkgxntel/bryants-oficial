@@ -478,166 +478,47 @@ module.exports = {
         //////////////////////////////////////////////////
 
         if (subcommand === "purge") {
+            const amount = interaction.options.getInteger("amount");
+            const user = interaction.options.getUser("user");
+            const bots = interaction.options.getBoolean("bots");
+            const deleteAll = interaction.options.getBoolean("all");
 
-            const amount =
-            interaction.options.getInteger(
-                "amount"
-            );
+            if (!interaction.channel || !interaction.channel.isTextBased()) return moderationReply(interaction, "❌ Canal inválido", "Este comando necesita un canal de texto.", 0xFF0000);
 
-            const user =
-            interaction.options.getUser(
-                "user"
-            );
-
-            const bots =
-            interaction.options.getBoolean(
-                "bots"
-            );
-
-            const deleteAll =
-            interaction.options.getBoolean(
-                "all"
-            );
-
-            //////////////////////////////////////////////////
-
-            //////////////////////////////////////////////////
-            // DELETE ALL
-            //////////////////////////////////////////////////
-
-            if (deleteAll) {
-
-                let deleted = 0;
-                let fetched;
-
-                do {
-
-                    fetched =
-                    await interaction.channel.messages.fetch({
-
-                        limit: 100
-
-                    });
-
-                    //////////////////////////////////////////////////
-
-                    const filtered =
-                    fetched.filter(msg =>
-
-                        Date.now() - msg.createdTimestamp
-                        <
-                        1209600000
-
-                    );
-
-                    //////////////////////////////////////////////////
-
-                    if (filtered.size === 0)
-                    break;
-
-                    //////////////////////////////////////////////////
-
-                    await interaction.channel.bulkDelete(
-
-                        filtered,
-
-                        true
-
-                    );
-
-                    //////////////////////////////////////////////////
-
-                    deleted += filtered.size;
-
+            try {
+                if (deleteAll) {
+                    let deleted = 0;
+                    while (true) {
+                        const fetched = await interaction.channel.messages.fetch({ limit: 100 });
+                        const recent = fetched.filter(msg => Date.now() - msg.createdTimestamp < 1209600000);
+                        if (!recent.size) break;
+                        const result = await interaction.channel.bulkDelete(recent, true).catch(error => {
+                            if (error && error.code === 10008) return null;
+                            throw error;
+                        });
+                        if (result) deleted += result.size;
+                        if (fetched.size < 100 || !result || result.size === 0) break;
+                    }
+                    return moderationReply(interaction, "🧹 Limpieza completada", "**" + deleted + " mensajes** eliminados.", 0x00FF99);
                 }
 
-                while (fetched.size >= 2);
-
-                //////////////////////////////////////////////////
-
-                return interaction.editReply({
-
-                    content:
-                    `✅ ${deleted} mensajes eliminados.`
-
+                const fetched = await interaction.channel.messages.fetch({ limit: amount || 100 });
+                let filtered = fetched;
+                if (user) filtered = filtered.filter(msg => msg.author.id === user.id);
+                if (bots) filtered = filtered.filter(msg => msg.author.bot);
+                filtered = filtered.filter(msg => Date.now() - msg.createdTimestamp < 1209600000);
+                if (!filtered.size) return moderationReply(interaction, "🧹 Sin mensajes", "No encontré mensajes recientes que coincidan con los filtros.", 0xFFD700);
+                const deleted = await interaction.channel.bulkDelete(filtered, true).catch(error => {
+                    if (error && error.code === 10008) return null;
+                    throw error;
                 });
-
+                if (!deleted) return moderationReply(interaction, "⚠️ Mensajes modificados", "Algunos mensajes desaparecieron durante la limpieza. Ejecuta el comando nuevamente para continuar.", 0xFFD700);
+                return moderationReply(interaction, "🧹 Limpieza completada", "**" + deleted.size + " mensajes** eliminados.", 0x00FF99);
+            } catch (error) {
+                console.error("[Moderation Purge]", error);
+                return moderationReply(interaction, "❌ Error al limpiar", "No se pudo completar la limpieza. Revisa los permisos del bot e inténtalo nuevamente.", 0xFF0000);
             }
-
-            //////////////////////////////////////////////////
-
-            const fetched =
-            await interaction.channel.messages.fetch({
-
-                limit: amount || 100
-
-            });
-
-            //////////////////////////////////////////////////
-
-            let filtered = fetched;
-
-            //////////////////////////////////////////////////
-
-            if (user) {
-
-                filtered =
-                filtered.filter(
-
-                    msg =>
-                    msg.author.id === user.id
-
-                );
-
-            }
-
-            //////////////////////////////////////////////////
-
-            if (bots) {
-
-                filtered =
-                filtered.filter(
-
-                    msg =>
-                    msg.author.bot
-
-                );
-
-            }
-
-            //////////////////////////////////////////////////
-
-            filtered =
-            filtered.filter(msg =>
-
-                Date.now() - msg.createdTimestamp
-                <
-                1209600000
-
-            );
-
-            //////////////////////////////////////////////////
-
-            const deleted =
-            await interaction.channel.bulkDelete(
-
-                filtered,
-
-                true
-
-            );
-
-            //////////////////////////////////////////////////
-
-            return interaction.editReply({
-
-                content:
-                `✅ ${deleted.size} mensajes eliminados.`
-
-            });
-
         }
-
     }
 
 };
