@@ -18,7 +18,12 @@ module.exports = {
         .setName("public")
         .setDescription("Comandos públicos de Bryant's Oficial")
         .addSubcommand(s=>s.setName("botinfo").setDescription("Información sobre el bot"))
-        .addSubcommand(s=>s.setName("confesiones").setDescription("Envía una confesión").addStringOption(o=>o.setName("description").setDescription("Qué deseas confesar").setRequired(true)))
+        .addSubcommand(s=>s.setName("confesiones").setDescription("Envía una confesión")
+            .addStringOption(o=>o.setName("description").setDescription("Qué confesión deseas realizar").setMaxLength(2048).setRequired(true))
+            .addStringOption(o=>o.setName("elegir").setDescription("Deseas que sea pública o privada").addChoices(
+                { name: "Público", value: "p" },
+                { name: "Privado", value: "c" }
+            ).setRequired(true)))
         .addSubcommand(s=>s.setName("embed").setDescription("Crea un embed personalizado")
             .addStringOption(o=>o.setName("color").setDescription("Color hexadecimal").setRequired(false))
             .addStringOption(o=>o.setName("title").setDescription("Título").setRequired(false))
