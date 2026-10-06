@@ -757,569 +757,111 @@ async function run_gamble(interaction) {
 }
 
 async function run_ruleta(interaction) {
-
-        //////////////////////////////////////////////////
-        // OPTIONS
-        //////////////////////////////////////////////////
-
-        const type =
-            interaction.options.getString(
-                "tipo"
-            );
-
-        //////////////////////////////////////////////////
-
-        const bet =
-            interaction.options
-                .getString("apuesta")
-                .toLowerCase();
-
-        //////////////////////////////////////////////////
-
-        const amount =
-            interaction.options.getInteger(
-                "cantidad"
-            );
-
-        //////////////////////////////////////////////////
-        // USER
-        //////////////////////////////////////////////////
-
-        const userData =
-
-            await EconomyUser.findOne({
-
-                guildId:
-                    interaction.guild.id,
-
-                userId:
-                    interaction.user.id
-            });
-
-        //////////////////////////////////////////////////
-
-        if (!userData) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ No tienes datos económicos.",
-
-                flags: 64
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // CASINO STATS
-        //////////////////////////////////////////////////
-
-        let stats =
-
-            await CasinoStats.findOne({
-
-                guildId:
-                    interaction.guild.id,
-
-                userId:
-                    interaction.user.id
-            });
-
-        //////////////////////////////////////////////////
-
-        if (!stats) {
-
-            stats =
-                await CasinoStats.create({
-
-                    guildId:
-                        interaction.guild.id,
-
-                    userId:
-                        interaction.user.id
-                });
-        }
-
-        //////////////////////////////////////////////////
-        // DINERO
-        //////////////////////////////////////////////////
-
-        if (
-            userData.wallet < amount
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ No tienes suficiente dinero.",
-
-                flags: 64
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // CONFIRM EMBED
-        //////////////////////////////////////////////////
-
-        const confirmEmbed =
-
-            new EmbedBuilder()
-
-                .setColor("#8A2BE2")
-
-                .setTitle(
-                    "🎡 Confirmar apuesta"
-                )
-
-                .setDescription(
-
-                    `🎲 Tipo:\n` +
-                    `> **${type}**\n` +
-
-                    `📌 Apuesta:\n` +
-                    `> **${bet}**\n` +
-
-                    `💰 Cantidad:\n` +
-                    `> **${amount.toLocaleString()} monedas**\n\n` +
-
-                    `👛 Wallet actual:\n` +
-                    `> **${userData.wallet.toLocaleString()} monedas**\n\n` +
-
-                    `❓ ¿Deseas continuar?`
-                )
-
-                .setThumbnail(
-
-                    interaction.user.displayAvatarURL({
-
-                        dynamic: true
-                    })
-                )
-
-                .setFooter({
-
-                    text:
-                        "Bryant's Casino"
-                })
-
-                .setTimestamp();
-
-        //////////////////////////////////////////////////
-        // BUTTONS
-        //////////////////////////////////////////////////
-
-        const row =
-
-            new ActionRowBuilder()
-
-                .addComponents(
-
-                    new ButtonBuilder()
-
-                        .setCustomId(
-                            "roulette_confirm"
-                        )
-
-                        .setLabel(
-                            "Confirmar"
-                        )
-
-                        .setEmoji("✅")
-
-                        .setStyle(
-                            ButtonStyle.Secondary
-                        ),
-
-                    new ButtonBuilder()
-
-                        .setCustomId(
-                            "roulette_cancel"
-                        )
-
-                        .setLabel(
-                            "Cancelar"
-                        )
-
-                        .setEmoji("❌")
-
-                        .setStyle(
-                            ButtonStyle.Secondary
-                        )
-                );
-
-        //////////////////////////////////////////////////
-
-        await interaction.reply({
-
-            embeds: [confirmEmbed],
-
-            components: [row]
-        });
-
-        //////////////////////////////////////////////////
-        // MESSAGE
-        //////////////////////////////////////////////////
-
-        const message =
-            await interaction.fetchReply();
-
-        //////////////////////////////////////////////////
-        // BUTTON RESPONSE
-        //////////////////////////////////////////////////
-
-        const response =
-
-            await message.awaitMessageComponent({
-
-                filter: i =>
-
-                    i.user.id === interaction.user.id,
-
-                time: 30000
-            }).catch(() => null);
-
-        //////////////////////////////////////////////////
-        // TIMEOUT
-        //////////////////////////////////////////////////
-
-        if (!response) {
-
-            return interaction.editReply({
-
-                content:
-                    "⌛ La apuesta expiró.",
-
-                embeds: [],
-
-                components: []
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // CANCEL
-        //////////////////////////////////////////////////
-
-        if (
-
-            response.customId ===
-            "roulette_cancel"
-
-        ) {
-
-            return response.update({
-
-                content:
-                    "❌ Apuesta cancelada.",
-
-                embeds: [],
-
-                components: []
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // DEFER BUTTON
-        //////////////////////////////////////////////////
-
+    await interaction.deferReply();
+
+    const type = interaction.options.getString("tipo");
+    const bet = interaction.options.getString("apuesta").toLowerCase().trim();
+    const amount = interaction.options.getInteger("cantidad");
+
+    const panel = (text, row = null, accent = 0x8A2BE2) => {
+        const components = [
+            { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+            { type: 10, content: text }
+        ];
+        if (row) components.push({ type: 14, divider: true, spacing: 1 }, row.toJSON());
+        return { flags: MessageFlags.IsComponentsV2, components: [{ type: 17, accent_color: accent, components }] };
+    };
+
+    if (type === "color" && !["rojo", "negro", "verde"].includes(bet))
+        return interaction.editReply(panel("## 🎡 Ruleta\n❌ Para una apuesta de color utiliza **rojo**, **negro** o **verde**.", null, 0xED4245));
+
+    if (type === "numero" && (!/^\\d+$/.test(bet) || Number(bet) < 0 || Number(bet) > 36))
+        return interaction.editReply(panel("## 🎡 Ruleta\n❌ El número debe estar entre **0 y 36**.", null, 0xED4245));
+
+    const [userData, foundStats] = await Promise.all([
+        EconomyUser.findOne({ guildId: interaction.guild.id, userId: interaction.user.id }),
+        CasinoStats.findOne({ guildId: interaction.guild.id, userId: interaction.user.id })
+    ]);
+
+    if (!userData)
+        return interaction.editReply(panel("## 🎡 Ruleta\n❌ No tienes datos económicos.", null, 0xED4245));
+    if (userData.wallet < amount)
+        return interaction.editReply(panel(`## 🎡 Ruleta — Dinero insuficiente\n❌ Necesitas **${amount.toLocaleString()} monedas** y tienes **${userData.wallet.toLocaleString()}**.`, null, 0xED4245));
+
+    const stats = foundStats || new CasinoStats({ guildId: interaction.guild.id, userId: interaction.user.id });
+    const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId("roulette_confirm").setLabel("Confirmar").setEmoji("✅").setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId("roulette_cancel").setLabel("Cancelar").setEmoji("❌").setStyle(ButtonStyle.Secondary)
+    );
+
+    await interaction.editReply(panel(
+        `## 🎡 Confirmar apuesta\n🎲 Tipo: **${type === "numero" ? "Número" : "Color"}**\n📌 Apuesta: **${bet}**\n💰 Cantidad: **${amount.toLocaleString()} monedas**\n👛 Wallet: **${userData.wallet.toLocaleString()} monedas**\n\n❓ ¿Deseas girar la ruleta?`,
+        row
+    ));
+
+    const message = await interaction.fetchReply();
+    const response = await message.awaitMessageComponent({
+        filter: i => i.user.id === interaction.user.id,
+        time: 30000
+    }).catch(() => null);
+
+    if (!response)
+        return interaction.editReply(panel("## 🎡 Ruleta\n⌛ La apuesta expiró. No se descontaron monedas."));
+
+    if (response.customId === "roulette_cancel") {
         await response.deferUpdate();
-
-        //////////////////////////////////////////////////
-        // GIRANDO RULETA
-        //////////////////////////////////////////////////
-
-        await interaction.editReply({
-
-            embeds: [
-
-                new EmbedBuilder()
-
-                    .setColor("#8A2BE2")
-
-                    .setTitle(
-                        "🎡 Bryant's Roulette"
-                    )
-
-                    .setDescription(
-
-                        `🎲 Girando la ruleta...\n\n` +
-
-                        `💰 Apostando **${amount.toLocaleString()} monedas**`
-                    )
-            ],
-
-            components: []
-        });
-
-        //////////////////////////////////////////////////
-        // DELAY
-        //////////////////////////////////////////////////
-
-        await new Promise(resolve =>
-
-            setTimeout(resolve, 3000)
-        );
-
-        //////////////////////////////////////////////////
-        // RANDOM NUMBER
-        //////////////////////////////////////////////////
-
-        const rolledNumber =
-
-            Math.floor(
-                Math.random() * 37
-            );
-
-        //////////////////////////////////////////////////
-        // COLOR
-        //////////////////////////////////////////////////
-
-        let rolledColor = "negro";
-
-        //////////////////////////////////////////////////
-
-        if (rolledNumber === 0) {
-
-            rolledColor = "verde";
-
-        } else if (
-
-            redNumbers.includes(
-                rolledNumber
-            )
-
-        ) {
-
-            rolledColor = "rojo";
-        }
-
-        //////////////////////////////////////////////////
-        // WIN
-        //////////////////////////////////////////////////
-
-        let won = false;
-
-        let multiplier = 0;
-
-        //////////////////////////////////////////////////
-        // APUESTA COLOR
-        //////////////////////////////////////////////////
-
-        if (type === "color") {
-
-            if (bet === rolledColor) {
-
-                won = true;
-
-                //////////////////////////////////////////////////
-
-                if (bet === "verde") {
-
-                    multiplier = 14;
-
-                } else {
-
-                    multiplier = 2;
-                }
-            }
-        }
-
-        //////////////////////////////////////////////////
-        // APUESTA NUMERO
-        //////////////////////////////////////////////////
-
-        if (type === "numero") {
-
-            if (
-                parseInt(bet) === rolledNumber
-            ) {
-
-                won = true;
-
-                multiplier = 35;
-            }
-        }
-
-        //////////////////////////////////////////////////
-        // CALCULAR
-        //////////////////////////////////////////////////
-
-        let winnings = 0;
-
-        //////////////////////////////////////////////////
-
-        if (won) {
-
-            winnings =
-                amount * multiplier;
-
-            //////////////////////////////////////////////////
-
-            const profit =
-                winnings - amount;
-
-            //////////////////////////////////////////////////
-
-            userData.wallet += profit;
-
-            //////////////////////////////////////////////////
-            // STATS
-            //////////////////////////////////////////////////
-
-            stats.totalGames += 1;
-
-            stats.totalWins += 1;
-
-            stats.moneyWon += winnings;
-
-            stats.currentStreak += 1;
-
-            stats.rouletteWins += 1;
-
-            //////////////////////////////////////////////////
-
-            if (winnings > stats.biggestWin) {
-
-                stats.biggestWin =
-                    winnings;
-            }
-
-            //////////////////////////////////////////////////
-            // JACKPOT
-            //////////////////////////////////////////////////
-
-            if (
-
-                multiplier >= 14
-
-            ) {
-
-                stats.jackpots += 1;
-            }
-
-        } else {
-
-            //////////////////////////////////////////////////
-
-            userData.wallet -= amount;
-
-            //////////////////////////////////////////////////
-            // STATS
-            //////////////////////////////////////////////////
-
-            stats.totalGames += 1;
-
-            stats.totalLosses += 1;
-
-            stats.moneyLost += amount;
-
-            stats.currentStreak = 0;
-        }
-
-        //////////////////////////////////////////////////
-        // SAVE
-        //////////////////////////////////////////////////
-
-        await userData.save();
-
-        await stats.save();
-
-        //////////////////////////////////////////////////
-        // RESULTADO
-        //////////////////////////////////////////////////
-
-        const colorEmoji =
-
-            rolledColor === "rojo"
-
-                ?
-
-                "🔴"
-
-                :
-
-                rolledColor === "negro"
-
-                    ?
-
-                    "⚫"
-
-                    :
-
-                    "🟢";
-
-        //////////////////////////////////////////////////
-        // EMBED
-        //////////////////////////////////////////////////
-
-        const embed =
-
-            new EmbedBuilder()
-
-                .setColor(
-
-                    won
-
-                        ?
-
-                        "#00ff99"
-
-                        :
-
-                        "#ff0000"
-                )
-
-                .setTitle(
-                    "🎡 Bryant's Casino"
-                )
-
-                .setDescription(
-
-                    `# ${colorEmoji} ${rolledColor.toUpperCase()} ${rolledNumber}\n\n` +
-
-                    (
-
-                        won
-
-                            ?
-
-                            `🎉 Ganaste **${winnings.toLocaleString()} monedas**`
-
-                            :
-
-                            `💸 Perdiste **${amount.toLocaleString()} monedas**`
-                    ) +
-
-                    `\n\n👛 Balance actual: **${userData.wallet.toLocaleString()} monedas**`
-                )
-
-                .setThumbnail(
-
-                    interaction.user.displayAvatarURL({
-
-                        dynamic: true
-                    })
-                )
-
-                .setImage(
-                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
-                )
-
-                .setFooter({
-
-                    text:
-                        "Bryant's Casino"
-                })
-
-                .setTimestamp();
-
-        //////////////////////////////////////////////////
-
-        await interaction.editReply({
-
-            embeds: [embed],
-
-            components: []
-        });
-    
+        return interaction.editReply(panel("## 🎡 Ruleta\n❌ Apuesta cancelada.", null, 0xED4245));
+    }
+
+    await response.deferUpdate();
+    await interaction.editReply(panel(`## 🎡 BF Roulette\n### 🎲 Girando la ruleta...\n💰 Apostando **${amount.toLocaleString()} monedas**\n🍀 Buena suerte.`));
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    const freshUser = await EconomyUser.findOne({ guildId: interaction.guild.id, userId: interaction.user.id });
+    if (!freshUser || freshUser.wallet < amount)
+        return interaction.editReply(panel("## 🎡 Ruleta\n❌ Ya no tienes suficiente dinero para completar esta apuesta.", null, 0xED4245));
+
+    const rolledNumber = Math.floor(Math.random() * 37);
+    let rolledColor = "negro";
+    if (rolledNumber === 0) rolledColor = "verde";
+    else if (redNumbers.includes(rolledNumber)) rolledColor = "rojo";
+
+    let won = false, multiplier = 0;
+    if (type === "color" && bet === rolledColor) {
+        won = true;
+        multiplier = bet === "verde" ? 14 : 2;
+    } else if (type === "numero" && Number(bet) === rolledNumber) {
+        won = true;
+        multiplier = 35;
+    }
+
+    let winnings = 0;
+    if (won) {
+        winnings = amount * multiplier;
+        freshUser.wallet += winnings - amount;
+        stats.totalGames += 1;
+        stats.totalWins += 1;
+        stats.moneyWon += winnings;
+        stats.currentStreak += 1;
+        stats.rouletteWins += 1;
+        if (winnings > stats.biggestWin) stats.biggestWin = winnings;
+        if (multiplier >= 14) stats.jackpots += 1;
+    } else {
+        freshUser.wallet -= amount;
+        stats.totalGames += 1;
+        stats.totalLosses += 1;
+        stats.moneyLost += amount;
+        stats.currentStreak = 0;
+    }
+
+    await Promise.all([freshUser.save(), stats.save()]);
+    const colorEmoji = rolledColor === "rojo" ? "🔴" : rolledColor === "negro" ? "⚫" : "🟢";
+
+    return interaction.editReply(panel(
+        `## 🎡 Resultado — BF Roulette\n# ${colorEmoji} ${rolledColor.toUpperCase()} ${rolledNumber}\n\n🎯 Tu apuesta: **${bet}**\n💰 Cantidad: **${amount.toLocaleString()} monedas**\n\n${won ? `🎉 Ganaste **${winnings.toLocaleString()} monedas** — multiplicador **x${multiplier}**` : `💸 Perdiste **${amount.toLocaleString()} monedas**`}\n👛 Balance actual: **${freshUser.wallet.toLocaleString()} monedas**`,
+        null,
+        won ? 0x57F287 : 0xED4245
+    ));
 }
 
 async function run_slots(interaction) {
