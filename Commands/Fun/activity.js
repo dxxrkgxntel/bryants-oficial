@@ -64,7 +64,7 @@ async function runCalculator(interaction) {
     const msg=await interaction.reply({embeds:[new EmbedBuilder().setColor("#8A2BE2").setDescription("\`\`\`\nEmpieza a usar la calculadora\n\`\`\`")],components:rows});
     let data="";
     const col=msg.createMessageComponentCollector({filter:i=>i.user.id===interaction.user.id,time:600000});
-    col.on("collect",async i=>{await i.deferUpdate();const value=i.customId.slice((prefix+"_").length);let extra="";if(value==="="){try{data=math.evaluate(data.replace(/[^0-9+\\-*/(). ]/g,"")).toString();}catch{data="";extra="Error";}}else if(value==="clear"){data="";extra="Empieza";}else if(value==="backspace"){data=data.slice(0,-1);}else{const lc=data[data.length-1];data+=`${((parseInt(value)==value||value===".")&&(lc==parseInt(lc)||lc==="."))||data.length===0?"":" "}${value}`;}await interaction.editReply({embeds:[new EmbedBuilder().setColor("#8A2BE2").setDescription(`\`\`\`\n${data||extra}\n\`\`\``)],components:rows});});
+    col.on("collect",async i=>{await i.deferUpdate();const value=i.customId.slice((prefix+"_").length);let extra="";if(value==="="){try{data=math.evaluate(data.replace(/[^0-9+*/(). -]/g,"")).toString();}catch{data="";extra="Error";}}else if(value==="clear"){data="";extra="Empieza";}else if(value==="backspace"){data=data.slice(0,-1);}else{const lc=data[data.length-1];data+=`${((parseInt(value)==value||value===".")&&(lc==parseInt(lc)||lc==="."))||data.length===0?"":" "}${value}`;}await interaction.editReply({embeds:[new EmbedBuilder().setColor("#8A2BE2").setDescription(`\`\`\`\n${data||extra}\n\`\`\``)],components:rows});});
     col.on("end",async()=>{await interaction.editReply({components:[]}).catch(()=>{});});
 }
 async function runShitpost(interaction) {
