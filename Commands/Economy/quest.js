@@ -1,13 +1,20 @@
 const {
  SlashCommandBuilder, PermissionFlagsBits, ContainerBuilder, TextDisplayBuilder,
- SeparatorBuilder, SeparatorSpacingSize, ActionRowBuilder, ButtonBuilder,
+ SeparatorBuilder, SeparatorSpacingSize, MediaGalleryBuilder, MediaGalleryItemBuilder, ActionRowBuilder, ButtonBuilder,
  ButtonStyle, MessageFlags
 } = require("discord.js");
 const Quest = require("../../Models/Quest");
 const UserQuest = require("../../Models/UserQuest");
 
-function panel(title, text, row = null, color = 0x8A2BE2) {
- const p = new ContainerBuilder().setAccentColor(color)
+const QUEST_LIST_BANNER = "https://i.imgur.com/W9cabP5.png";
+const QUEST_CREATE_BANNER = "https://i.imgur.com/LP0v169.png";
+const QUEST_EDIT_BANNER = "https://i.imgur.com/wb9F4Kz.png";
+const QUEST_REMOVE_BANNER = "https://i.imgur.com/VhVn6nb.png";
+
+function panel(title, text, row = null, color = 0x8A2BE2, banner = null) {
+ const p = new ContainerBuilder().setAccentColor(color);
+ if (banner) p.addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(banner)));
+ p
   .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}`))
   .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small))
   .addTextDisplayComponents(new TextDisplayBuilder().setContent(text));
@@ -16,8 +23,8 @@ function panel(title, text, row = null, color = 0x8A2BE2) {
 }
 function flags(ephemeral=false){ return ephemeral ? MessageFlags.IsComponentsV2|MessageFlags.Ephemeral : MessageFlags.IsComponentsV2; }
 function admin(i){ return i.memberPermissions?.has(PermissionFlagsBits.Administrator); }
-async function reply(i,title,text,color=0x8A2BE2,ephemeral=false,row=null){
- return i.reply({components:[panel(title,text,row,color)],flags:flags(ephemeral),withResponse:true});
+async function reply(i,title,text,color=0x8A2BE2,ephemeral=false,row=null,banner=null){
+ return i.reply({components:[panel(title,text,row,color,banner)],flags:flags(ephemeral),withResponse:true});
 }
 
 async function list(i){
@@ -31,7 +38,7 @@ async function list(i){
   const type=q.type==="weekly"?"Semanal":"Diaria";
   return `${done?"✅":"📌"} **${q.name}** · ${type}\n> ${q.description}\n> 🎯 **${progress}/${q.goal}** · 💰 **${q.reward?.coins||0} monedas**`;
  });
- return reply(i,`📜 Misiones de ${i.user.username}`,lines.join("\n\n"),0x8A2BE2,true);
+ return reply(i,`📜 Misiones de ${i.user.username}`,lines.join("\n\n"),0x8A2BE2,true,null,QUEST_LIST_BANNER);
 }
 async function create(i){
  if(!admin(i)) return reply(i,"⛔ Sin permisos","Este subcomando es exclusivo para administradores.",0xFF0000,true);
@@ -39,7 +46,7 @@ async function create(i){
  const type=i.options.getString("tipo"), category=i.options.getString("categoria"), goal=i.options.getInteger("objetivo"), coins=i.options.getInteger("recompensa");
  if(await Quest.exists({guildId:i.guild.id,questId})) return reply(i,"❌ ID duplicado","Ya existe una misión con ese ID.",0xFF0000,true);
  await Quest.create({guildId:i.guild.id,questId,name,description,type,category,goal,reward:{coins}});
- return reply(i,"✅ Misión creada",`**${name}** fue creada correctamente.\n\n> 🆔 ${questId}\n> 📂 ${category}\n> 🎯 ${goal}\n> 💰 ${coins.toLocaleString()} monedas`,0x00FF99);
+ return reply(i,"✅ Misión creada",`**${name}** fue creada correctamente.\n\n> 🆔 ${questId}\n> 📂 ${category}\n> 🎯 ${goal}\n> 💰 ${coins.toLocaleString()} monedas`,0x00FF99,false,null,QUEST_CREATE_BANNER);
 }
 async function edit(i){
  if(!admin(i)) return reply(i,"⛔ Sin permisos","Este subcomando es exclusivo para administradores.",0xFF0000,true);
@@ -48,7 +55,7 @@ async function edit(i){
  const name=i.options.getString("nombre"),description=i.options.getString("descripcion"),goal=i.options.getInteger("objetivo"),coins=i.options.getInteger("recompensa"),enabled=i.options.getBoolean("activa");
  if(name!==null) quest.name=name;if(description!==null) quest.description=description;if(goal!==null) quest.goal=goal;if(coins!==null) quest.reward.coins=coins;if(enabled!==null) quest.enabled=enabled;
  await quest.save();
- return reply(i,"✏️ Misión actualizada",`**${quest.name}** se actualizó correctamente.\n\n> 🎯 Objetivo: **${quest.goal}**\n> 💰 Recompensa: **${quest.reward.coins} monedas**\n> Estado: **${quest.enabled?"Activa":"Desactivada"}**`,0xFFD700);
+ return reply(i,"✏️ Misión actualizada",`**${quest.name}** se actualizó correctamente.\n\n> 🎯 Objetivo: **${quest.goal}**\n> 💰 Recompensa: **${quest.reward.coins} monedas**\n> Estado: **${quest.enabled?"Activa":"Desactivada"}**`,0xFFD700,false,null,QUEST_EDIT_BANNER);
 }
 async function remove(i){
  if(!admin(i)) return reply(i,"⛔ Sin permisos","Este subcomando es exclusivo para administradores.",0xFF0000,true);
@@ -58,14 +65,14 @@ async function remove(i){
  const row=new ActionRowBuilder().addComponents(
   new ButtonBuilder().setCustomId(yes).setLabel("Eliminar").setStyle(ButtonStyle.Danger),
   new ButtonBuilder().setCustomId(no).setLabel("Cancelar").setStyle(ButtonStyle.Secondary));
- const response=await reply(i,"⚠️ Eliminar misión",`¿Deseas eliminar definitivamente **${quest.name}**?\n\nEsta acción no se puede deshacer.`,0xFF0000,true,row);
+ const response=await reply(i,"⚠️ Eliminar misión",`¿Deseas eliminar definitivamente **${quest.name}**?\n\nEsta acción no se puede deshacer.`,0xFF0000,true,row,QUEST_REMOVE_BANNER);
  const msg=response.resource?.message||await i.fetchReply();
  const col=msg.createMessageComponentCollector({time:30000,filter:x=>x.user.id===i.user.id&&(x.customId===yes||x.customId===no),max:1});
- col.on("collect",async x=>{await x.deferUpdate();if(x.customId===no)return i.editReply({components:[panel("❎ Eliminación cancelada",`**${quest.name}** no fue eliminada.`)]});
+ col.on("collect",async x=>{await x.deferUpdate();if(x.customId===no)return i.editReply({components:[panel("❎ Eliminación cancelada",`**${quest.name}** no fue eliminada.`,null,0x8A2BE2,QUEST_REMOVE_BANNER)]});
   const deleted=await Quest.findOneAndDelete({_id:quest._id,guildId:i.guild.id});
-  return i.editReply({components:[panel(deleted?"🗑️ Misión eliminada":"❌ No se pudo eliminar",deleted?`**${quest.name}** fue eliminada correctamente.`:"La misión ya no existe.",null,deleted?0x00FF99:0xFF0000)]});
+  return i.editReply({components:[panel(deleted?"🗑️ Misión eliminada":"❌ No se pudo eliminar",deleted?`**${quest.name}** fue eliminada correctamente.`:"La misión ya no existe.",null,deleted?0x00FF99:0xFF0000,QUEST_REMOVE_BANNER)]});
  });
- col.on("end",async collected=>{if(!collected.size) await i.editReply({components:[panel("⌛ Confirmación expirada","No se eliminó ninguna misión.")]}).catch(()=>{});});
+ col.on("end",async collected=>{if(!collected.size) await i.editReply({components:[panel("⌛ Confirmación expirada","No se eliminó ninguna misión.",null,0x8A2BE2,QUEST_REMOVE_BANNER)]}).catch(()=>{});});
 }
 
 module.exports={
