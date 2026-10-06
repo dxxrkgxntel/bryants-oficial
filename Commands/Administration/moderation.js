@@ -449,87 +449,16 @@ module.exports = {
         //////////////////////////////////////////////////
 
         if (subcommand === "mute") {
-
-            const user =
-            interaction.options.getMember(
-                "user"
-            );
-
-            const time =
-            ms(
-
-                interaction.options.getString(
-                    "time"
-                )
-
-            );
-
-            const reason =
-            interaction.options.getString(
-                "description"
-            ) ||
-
-            "No especificada";
-
-            //////////////////////////////////////////////////
-
-            if (!time) {
-
-                return errReply(
-
-                    interaction,
-
-                    "❌ Tiempo inválido.",
-
-                    true
-
-                );
-
-            }
-
-            //////////////////////////////////////////////////
-
-            await user.timeout(
-
-                time,
-
-                reason
-
-            );
-
-            //////////////////////////////////////////////////
-
-            const embed =
-            new EmbedBuilder()
-
-                .setColor("#8A2BE2")
-
-                .setTitle(
-                    "🔇 Usuario muteado"
-                )
-
-                .setDescription(
-
-                    `👤 Usuario: ${user}\n` +
-
-                    `🛡️ Moderador: ${interaction.user}\n` +
-
-                    `⏳ Tiempo: ${interaction.options.getString("time")}\n` +
-
-                    `📝 Razón: ${reason}`
-
-                )
-
-                .setTimestamp();
-
-            //////////////////////////////////////////////////
-
-            return interaction.reply({
-
-                embeds: [embed]
-
-            });
-
+            const user = interaction.options.getMember("user");
+            const rawTime = interaction.options.getString("time");
+            const time = ms(rawTime);
+            const reason = interaction.options.getString("description") || "No especificada";
+            if (!user) return moderationReply(interaction, "❌ Usuario inválido", "No pude encontrar a ese miembro.", 0xFF0000);
+            if (!time || time < 1000 || time > 2419200000) return moderationReply(interaction, "❌ Tiempo inválido", "Usa un tiempo válido entre **1 segundo y 28 días**. Ejemplo: `10m`, `2h`, `7d`.", 0xFF0000);
+            if (user.id === interaction.user.id) return moderationReply(interaction, "⚠️ Acción inválida", "No puedes silenciarte a ti mismo.", 0xFFD700);
+            if (!user.moderatable) return moderationReply(interaction, "⛔ No puedo silenciarlo", "Revisa la jerarquía de roles y los permisos del bot.", 0xFF0000);
+            await user.timeout(time, reason);
+            return moderationReply(interaction, "🔇 Usuario silenciado", "**Usuario:** " + user + "\n**Moderador:** " + interaction.user + "\n**Tiempo:** " + rawTime + "\n**Razón:** " + reason, 0x8A2BE2);
         }
 
         //////////////////////////////////////////////////
@@ -537,28 +466,11 @@ module.exports = {
         //////////////////////////////////////////////////
 
         if (subcommand === "unmute") {
-
-            const user =
-            interaction.options.getMember(
-                "user"
-            );
-
-            //////////////////////////////////////////////////
-
+            const user = interaction.options.getMember("user");
+            if (!user) return moderationReply(interaction, "❌ Usuario inválido", "No pude encontrar a ese miembro.", 0xFF0000);
+            if (!user.moderatable) return moderationReply(interaction, "⛔ No puedo modificarlo", "Revisa la jerarquía de roles y los permisos del bot.", 0xFF0000);
             await user.timeout(null);
-
-            //////////////////////////////////////////////////
-
-            return correReply(
-
-                interaction,
-
-                "✅ Usuario desmuteado.",
-
-                true
-
-            );
-
+            return moderationReply(interaction, "🔊 Usuario desmuteado", "**Usuario:** " + user + "\n**Moderador:** " + interaction.user, 0x00FF99);
         }
 
         //////////////////////////////////////////////////
