@@ -187,99 +187,43 @@ module.exports = {
 
             if (subcommand === "add") {
 
-                const role =
-                interaction.options.getRole(
-                    "rol"
-                );
+                const role = interaction.options.getRole("rol");
+                const amount = interaction.options.getInteger("cantidad");
 
-                //////////////////////////////////////////////////
-
-                const amount =
-                interaction.options.getInteger(
-                    "cantidad"
-                );
-
-                //////////////////////////////////////////////////
-
-                const exists =
-                await BankDonorRole.findOne({
-
-                    guildId:
-                        interaction.guild.id,
-
-                    roleId:
-                        role.id
-
-                });
-
-                //////////////////////////////////////////////////
-
-                if (exists) {
-
-                    return interaction.reply({
-
-                        content:
-                            "❌ Ese rol ya está configurado como rol de donador.",
-
-                        flags: 64
-
-                    });
-
+                if (role.id === interaction.guild.id) {
+                    return bankReply(interaction, "⚠️ Rol inválido", "No puedes configurar **@everyone** como rol de donador.", 0xFFD700);
                 }
 
-                //////////////////////////////////////////////////
+                if (role.managed) {
+                    return bankReply(interaction, "⚠️ Rol inválido", "Los roles administrados por bots o integraciones no pueden configurarse.", 0xFFD700);
+                }
+
+                const exists = await BankDonorRole.findOne({
+                    guildId: interaction.guild.id,
+                    roleId: role.id
+                });
+
+                if (exists) {
+                    return bankReply(
+                        interaction,
+                        "⚠️ Rol existente",
+                        role + " ya está configurado como rol de donador.\n**Requisito:** " + exists.requiredAmount.toLocaleString() + " monedas.",
+                        0xFFD700
+                    );
+                }
 
                 await BankDonorRole.create({
-
-                    guildId:
-                        interaction.guild.id,
-
-                    roleId:
-                        role.id,
-
-                    requiredAmount:
-                        amount
-
+                    guildId: interaction.guild.id,
+                    roleId: role.id,
+                    requiredAmount: amount
                 });
 
-                //////////////////////////////////////////////////
-
-                const embed =
-                new EmbedBuilder()
-
-                    .setColor("#00ff99")
-
-                    .setTitle(
-                        "🏦 Rol de donador añadido"
-                    )
-
-                    .setDescription(
-
-                        `🎭 Rol: ${role}\n\n` +
-
-                        `💰 Donación requerida:\n` +
-
-                        `**${amount.toLocaleString()} monedas**`
-
-                    )
-
-                    .setFooter({
-
-                        text:
-                            interaction.guild.name
-
-                    })
-
-                    .setTimestamp();
-
-                //////////////////////////////////////////////////
-
-                return interaction.reply({
-
-                    embeds: [embed]
-
-                });
-
+                return bankReply(
+                    interaction,
+                    "🏦 Rol de donador añadido",
+                    "**Rol:** " + role + "\n**Donación requerida:** " + amount.toLocaleString() + " monedas",
+                    0x00FF99
+                );
             }
 
             //////////////////////////////////////////////////
