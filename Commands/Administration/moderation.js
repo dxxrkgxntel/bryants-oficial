@@ -409,30 +409,14 @@ module.exports = {
         //////////////////////////////////////////////////
 
         if (subcommand === "unban") {
-
-            const userId =
-            interaction.options.getString(
-                "usuario"
-            );
-
-            //////////////////////////////////////////////////
-
-            await interaction.guild.members.unban(
-                userId
-            );
-
-            //////////////////////////////////////////////////
-
-            return correReply(
-
-                interaction,
-
-                "✅ Usuario desbaneado.",
-
-                true
-
-            );
-
+            const userId = interaction.options.getString("usuario").trim();
+            if (!/^\\d{17,20}$/.test(userId)) return moderationReply(interaction, "❌ ID inválido", "Introduce un ID de usuario válido.", 0xFF0000);
+            try {
+                await interaction.guild.members.unban(userId);
+                return moderationReply(interaction, "✅ Usuario desbaneado", "**ID:** " + userId + "\n**Moderador:** " + interaction.user, 0x00FF99);
+            } catch {
+                return moderationReply(interaction, "❌ No se pudo desbanear", "El usuario no está baneado o el bot no tiene permisos suficientes.", 0xFF0000);
+            }
         }
 
         //////////////////////////////////////////////////
@@ -440,70 +424,13 @@ module.exports = {
         //////////////////////////////////////////////////
 
         if (subcommand === "kick") {
-
-            const user =
-            interaction.options.getMember(
-                "usuario"
-            );
-
-            const reason =
-            interaction.options.getString(
-                "razon"
-            ) ||
-
-            "No especificada";
-
-            //////////////////////////////////////////////////
-
-            if (!user) {
-
-                return errReply(
-
-                    interaction,
-
-                    "❌ Usuario inválido.",
-
-                    true
-
-                );
-
-            }
-
-            //////////////////////////////////////////////////
-
+            const user = interaction.options.getMember("usuario");
+            const reason = interaction.options.getString("razon") || "No especificada";
+            if (!user) return moderationReply(interaction, "❌ Usuario inválido", "No pude encontrar a ese miembro en el servidor.", 0xFF0000);
+            if (user.id === interaction.user.id) return moderationReply(interaction, "⚠️ Acción inválida", "No puedes expulsarte a ti mismo.", 0xFFD700);
+            if (!user.kickable) return moderationReply(interaction, "⛔ No puedo expulsarlo", "Revisa la jerarquía de roles y los permisos del bot.", 0xFF0000);
             await user.kick(reason);
-
-            //////////////////////////////////////////////////
-
-            const embed =
-            new EmbedBuilder()
-
-                .setColor("#8A2BE2")
-
-                .setTitle(
-                    "👢 Usuario expulsado"
-                )
-
-                .setDescription(
-
-                    `👤 Usuario: ${user}\n` +
-
-                    `🛡️ Moderador: ${interaction.user}\n` +
-
-                    `📝 Razón: ${reason}`
-
-                )
-
-                .setTimestamp();
-
-            //////////////////////////////////////////////////
-
-            return interaction.reply({
-
-                embeds: [embed]
-
-            });
-
+            return moderationReply(interaction, "👢 Usuario expulsado", "**Usuario:** " + user + "\n**Moderador:** " + interaction.user + "\n**Razón:** " + reason, 0x8A2BE2);
         }
 
         //////////////////////////////////////////////////
@@ -511,50 +438,10 @@ module.exports = {
         //////////////////////////////////////////////////
 
         if (subcommand === "warn") {
-
-            const user =
-            interaction.options.getUser(
-                "usuario"
-            );
-
-            const reason =
-            interaction.options.getString(
-                "razon"
-            ) ||
-
-            "No especificada";
-
-            //////////////////////////////////////////////////
-
-            const embed =
-            new EmbedBuilder()
-
-                .setColor("#FFD700")
-
-                .setTitle(
-                    "⚠️ Usuario advertido"
-                )
-
-                .setDescription(
-
-                    `👤 Usuario: ${user}\n` +
-
-                    `🛡️ Moderador: ${interaction.user}\n` +
-
-                    `📝 Razón: ${reason}`
-
-                )
-
-                .setTimestamp();
-
-            //////////////////////////////////////////////////
-
-            return interaction.reply({
-
-                embeds: [embed]
-
-            });
-
+            const user = interaction.options.getUser("usuario");
+            const reason = interaction.options.getString("razon") || "No especificada";
+            if (user.id === interaction.user.id) return moderationReply(interaction, "⚠️ Acción inválida", "No puedes advertirte a ti mismo.", 0xFFD700);
+            return moderationReply(interaction, "⚠️ Usuario advertido", "**Usuario:** " + user + "\n**Moderador:** " + interaction.user + "\n**Razón:** " + reason, 0xFFD700);
         }
 
         //////////////////////////////////////////////////
