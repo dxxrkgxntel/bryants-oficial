@@ -154,17 +154,89 @@ async function runKiss(interaction) {
 }
 
 async function runPpt(interaction) {
-    const choices=["piedra","papel","tijeras"], bot=choices[Math.floor(Math.random()*3)];
-    const row=new ActionRowBuilder().addComponents(
+    const choices = ["piedra", "papel", "tijeras"];
+    const bot = choices[Math.floor(Math.random() * choices.length)];
+    const emojis = { piedra: "✊", papel: "✋", tijeras: "✌️" };
+
+    const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId("activity_ppt_piedra").setLabel("Piedra").setEmoji("✊").setStyle(ButtonStyle.Secondary),
         new ButtonBuilder().setCustomId("activity_ppt_papel").setLabel("Papel").setEmoji("✋").setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId("activity_ppt_tijeras").setLabel("Tijeras").setEmoji("✌").setStyle(ButtonStyle.Secondary)
+        new ButtonBuilder().setCustomId("activity_ppt_tijeras").setLabel("Tijeras").setEmoji("✌️").setStyle(ButtonStyle.Secondary)
     );
-    const msg=await interaction.reply({embeds:[new EmbedBuilder().setColor("#8A2BE2").setTitle("✊ Piedra, papel o tijeras").setDescription(`<@${interaction.user.id}>, elige tu ataque.`)],components:[row]});
-    const col=msg.createMessageComponentCollector({componentType:ComponentType.Button,time:ms("10s"),filter:i=>i.user.id===interaction.user.id});
-    col.on("collect",async i=>{await i.deferUpdate();col.stop("played");const pick=i.customId.split("_")[2];let result="🤝 Empate";if((pick==="piedra"&&bot==="tijeras")||(pick==="papel"&&bot==="piedra")||(pick==="tijeras"&&bot==="papel"))result="🎉 Has ganado";else if(pick!==bot)result="💥 Has perdido";await interaction.editReply({embeds:[new EmbedBuilder().setColor("#8A2BE2").setTitle("✊ Piedra, papel o tijeras").setDescription(`${result}\n\n**Tu elección:** ${pick}\n**Elección del bot:** ${bot}`)],components:[]});});
-    col.on("end",async(_,reason)=>{if(reason!=="played") await interaction.editReply({content:"⌛ No elegiste tu ataque.",embeds:[],components:[]}).catch(()=>{});});
+
+    const response = await interaction.reply({
+        flags: MessageFlags.IsComponentsV2,
+        withResponse: true,
+        components: [{
+            type: 17,
+            accent_color: 0x8A2BE2,
+            components: [
+                { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
+                { type: 10, content: "## ✊ BF Piedra, Papel o Tijeras\n### 🎮 Elige tu jugada\n\n<@" + interaction.user.id + ">, tienes **10 segundos** para elegir." },
+                { type: 14, divider: true, spacing: 1 },
+                row.toJSON()
+            ]
+        }]
+    });
+
+    const msg = response.resource?.message || await interaction.fetchReply();
+    const col = msg.createMessageComponentCollector({
+        componentType: ComponentType.Button,
+        time: ms("10s"),
+        filter: i => i.user.id === interaction.user.id && i.customId.startsWith("activity_ppt_")
+    });
+
+    col.on("collect", async i => {
+        await i.deferUpdate();
+        col.stop("played");
+
+        const pick = i.customId.split("_")[2];
+        let result = "🤝 **Empate**";
+        let accent = 0xFEE75C;
+
+        if (
+            (pick === "piedra" && bot === "tijeras") ||
+            (pick === "papel" && bot === "piedra") ||
+            (pick === "tijeras" && bot === "papel")
+        ) {
+            result = "🎉 **¡Has ganado!**";
+            accent = 0x57F287;
+        } else if (pick !== bot) {
+            result = "💥 **Has perdido.**";
+            accent = 0xED4245;
+        }
+
+        await interaction.editReply({
+            flags: MessageFlags.IsComponentsV2,
+            components: [{
+                type: 17,
+                accent_color: accent,
+                components: [
+                    { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
+                    { type: 10, content: "## ✊ Resultado — BF PPT\n" + result },
+                    { type: 14, divider: true, spacing: 1 },
+                    { type: 10, content: "### 👤 Tu jugada\n" + emojis[pick] + " **" + pick.toUpperCase() + "**\n\n### 🤖 BF Activity\n" + emojis[bot] + " **" + bot.toUpperCase() + "**" }
+                ]
+            }]
+        });
+    });
+
+    col.on("end", async (_, reason) => {
+        if (reason === "played") return;
+        await interaction.editReply({
+            flags: MessageFlags.IsComponentsV2,
+            components: [{
+                type: 17,
+                accent_color: 0x8A2BE2,
+                components: [
+                    { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
+                    { type: 10, content: "## ✊ BF Piedra, Papel o Tijeras\n⌛ **Se acabó el tiempo.** No elegiste ninguna jugada." }
+                ]
+            }]
+        }).catch(() => {});
+    });
 }
+
 async function runCalculator(interaction) {
     const prefix = "activity_calc";
     const mk = (label, id, style = ButtonStyle.Secondary) =>
