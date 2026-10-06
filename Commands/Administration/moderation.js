@@ -1,7 +1,13 @@
 const {
     SlashCommandBuilder,
     PermissionFlagsBits,
-    EmbedBuilder
+    ContainerBuilder,
+    TextDisplayBuilder,
+    SeparatorBuilder,
+    SeparatorSpacingSize,
+    MediaGalleryBuilder,
+    MediaGalleryItemBuilder,
+    MessageFlags
 } = require("discord.js");
 
 const errReply =
@@ -12,6 +18,34 @@ require("../../Functions/interactionReply");
 
 const ms =
 require("ms");
+
+const MODERATION_BANNER = "https://i.imgur.com/w7iUuCq.png";
+
+function moderationPanel(title, text, color = 0x8A2BE2) {
+    return new ContainerBuilder()
+        .setAccentColor(color)
+        .addMediaGalleryComponents(
+            new MediaGalleryBuilder().addItems(
+                new MediaGalleryItemBuilder().setURL(MODERATION_BANNER)
+            )
+        )
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent("## " + title)
+        )
+        .addSeparatorComponents(
+            new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+        )
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(text)
+        );
+}
+
+function moderationReply(interaction, title, text, color = 0x8A2BE2) {
+    return interaction.editReply({
+        components: [moderationPanel(title, text, color)],
+        flags: MessageFlags.IsComponentsV2
+    });
+}
 
 module.exports = {
 
@@ -347,6 +381,8 @@ module.exports = {
     //////////////////////////////////////////////////
 
     async execute(interaction) {
+
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const subcommand =
         interaction.options.getSubcommand();
@@ -723,12 +759,6 @@ module.exports = {
             );
 
             //////////////////////////////////////////////////
-
-            await interaction.deferReply({
-
-                flags: 64
-
-            });
 
             //////////////////////////////////////////////////
             // DELETE ALL
