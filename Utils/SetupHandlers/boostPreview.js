@@ -1,10 +1,10 @@
 const {
     SlashCommandBuilder,
     PermissionFlagsBits,
-    EmbedBuilder,
     ActionRowBuilder,
     ButtonBuilder,
-    ButtonStyle
+    ButtonStyle,
+    MessageFlags
 } = require("discord.js");
 
 const boostSchema = require("../../Models/boostSchema");
@@ -17,21 +17,20 @@ module.exports = {
 
     async execute(interaction) {
         try {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
             const data = await boostSchema.findOne({ guildId: interaction.guild.id });
 
             if (!data || !data.boostChannel) {
-                return interaction.reply({
-                    content: "❌ Primero debes configurar el sistema con `/boost-setup`.",
-                    flags: 64
+                return interaction.editReply({
+                    content: "❌ Primero debes configurar el sistema con `/setup boost`."
                 });
             }
 
             const channel = interaction.guild.channels.cache.get(data.boostChannel);
-
             if (!channel || !channel.isTextBased()) {
-                return interaction.reply({
-                    content: "❌ El canal Booster configurado no existe o ya no es válido.",
-                    flags: 64
+                return interaction.editReply({
+                    content: "❌ El canal Booster configurado no existe o ya no es válido."
                 });
             }
 
@@ -52,55 +51,51 @@ module.exports = {
 
             const description = replaceVariables(data.boostDescription || defaultDescription);
 
-            const embed = new EmbedBuilder()
-                .setColor("#8A2BE2")
-                .setTitle("🚀 - Nuevo Boost")
-                .setDescription(description);
+            const containerComponents = [{
+                type: 10,
+                content: `## 🚀 Nuevo Boost\n${description}`
+            }];
 
-            if (data.boostThumbnail) embed.setThumbnail(data.boostThumbnail);
-            if (data.boostImage) embed.setImage(data.boostImage);
+            if (data.boostThumbnail) {
+                containerComponents.push({
+                    type: 9,
+                    components: [{ type: 10, content: "### 💜 Nuevo miembro de la familia Booster" }],
+                    accessory: { type: 11, media: { url: data.boostThumbnail } }
+                });
+            }
+
+            if (data.boostImage) {
+                containerComponents.push({
+                    type: 12,
+                    items: [{ media: { url: data.boostImage } }]
+                });
+            }
 
             const row = new ActionRowBuilder().addComponents(
-                new ButtonBuilder()
-                    .setCustomId("claim_booster")
-                    .setLabel("BOOSTER")
-                    .setEmoji("<:booster:1503957081068142662>")
-                    .setStyle(ButtonStyle.Secondary),
-                new ButtonBuilder()
-                    .setCustomId("claim_booster_vip")
-                    .setLabel("BOOSTER VIP")
-                    .setEmoji("<:booster_vip:1503957123871019139>")
-                    .setStyle(ButtonStyle.Secondary),
-                new ButtonBuilder()
-                    .setCustomId("claim_booster_legend")
-                    .setLabel("BOOSTER LEGEND")
-                    .setEmoji("<:booster_legend:1503958247458078840>")
-                    .setStyle(ButtonStyle.Secondary)
+                new ButtonBuilder().setCustomId("claim_booster").setLabel("BOOSTER").setEmoji("<:booster:1503957081068142662>").setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder().setCustomId("claim_booster_vip").setLabel("BOOSTER VIP").setEmoji("<:booster_vip:1503957123871019139>").setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder().setCustomId("claim_booster_legend").setLabel("BOOSTER LEGEND").setEmoji("<:booster_legend:1503958247458078840>").setStyle(ButtonStyle.Secondary)
             );
 
+            containerComponents.push({ type: 14 }, row.toJSON());
+
             await channel.send({
-                content: `💜 ¡Gracias por boostear ${interaction.member}!`,
-                embeds: [embed],
-                components: [row]
+                flags: MessageFlags.IsComponentsV2,
+                components: [{
+                    type: 17,
+                    accent_color: 0x8A2BE2,
+                    components: containerComponents
+                }]
             });
 
-            return interaction.reply({
-                content: `✅ Vista previa enviada correctamente en ${channel}.`,
-                flags: 64
+            return interaction.editReply({
+                content: `✅ Vista previa Components V2 enviada correctamente en ${channel}.`
             });
         } catch (error) {
             console.log("❌ Error en boost-preview:", error);
-
-            const payload = {
-                content: "❌ Ocurrió un error al enviar la vista previa del sistema Booster.",
-                flags: 64
-            };
-
-            if (interaction.replied || interaction.deferred) {
-                return interaction.followUp(payload);
-            }
-
-            return interaction.reply(payload);
+            const message = "❌ Ocurrió un error al enviar la vista previa del sistema Booster.";
+            if (interaction.deferred || interaction.replied) return interaction.editReply({ content: message }).catch(() => null);
+            return interaction.reply({ content: message, flags: MessageFlags.Ephemeral });
         }
     }
 };
