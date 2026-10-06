@@ -1,11 +1,13 @@
 const {
  SlashCommandBuilder, PermissionFlagsBits, ChannelType,
  AutoModerationRuleEventType, AutoModerationRuleTriggerType, AutoModerationActionType,
- ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, MessageFlags
+ ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, MediaGalleryBuilder, MediaGalleryItemBuilder, MessageFlags
 }=require("discord.js");
+const AUTOMOD_BANNER="https://i.imgur.com/98lH1q4.png";
 
 function panel(title,text,color=0x8A2BE2){
  return new ContainerBuilder().setAccentColor(color)
+  .addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(AUTOMOD_BANNER)))
   .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}`))
   .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small))
   .addTextDisplayComponents(new TextDisplayBuilder().setContent(text));
