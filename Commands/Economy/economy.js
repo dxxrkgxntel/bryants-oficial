@@ -11,6 +11,7 @@ const GlobalBank = require("../../Models/GlobalBank");
 const EconomyUser = require("../../Models/EconomyUser");
 const RobCooldown = require("../../Models/RobCooldown");
 const { runGlobalBank, runDonate, runLoan, runPayDebt, runDistribute } = require("../../Utils/economyBankHandlers");
+const questHandler = require("../../Functions/questHandler");
 
 const BALANCE_BANNER = "https://i.imgur.com/IXKXRHL.png";
 const WORK_BANNER = "https://i.imgur.com/X7jFa3S.png";
