@@ -1,20 +1,25 @@
 const {
  SlashCommandBuilder, PermissionFlagsBits, ContainerBuilder, TextDisplayBuilder,
- SeparatorBuilder, SeparatorSpacingSize, MessageFlags
+ SeparatorBuilder, SeparatorSpacingSize, MediaGalleryBuilder, MediaGalleryItemBuilder, MessageFlags
 } = require("discord.js");
 const Prestige=require("../../Models/Prestige");
 const PrestigeConfig=require("../../Models/PrestigeConfig");
 const Level=require("../../Models/Level");
 const Economy=require("../../Models/EconomyUser");
 
-function panel(title,text,color=0x8A2BE2){
- return new ContainerBuilder().setAccentColor(color)
-  .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}`))
+const PRESTIGE_INFO_BANNER="https://i.imgur.com/K8A2QNz.png";
+const PRESTIGE_CLAIM_BANNER="https://i.imgur.com/82FA5VI.png";
+const PRESTIGE_ADMIN_BANNER="https://i.imgur.com/45XWMHw.png";
+
+function panel(title,text,color=0x8A2BE2,banner=null){
+ const p=new ContainerBuilder().setAccentColor(color);
+ if(banner)p.addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(banner)));
+ return p.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}`))
   .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small))
   .addTextDisplayComponents(new TextDisplayBuilder().setContent(text));
 }
 function flags(ephemeral=false){return ephemeral?MessageFlags.IsComponentsV2|MessageFlags.Ephemeral:MessageFlags.IsComponentsV2;}
-function reply(i,title,text,color=0x8A2BE2,ephemeral=false){return i.reply({components:[panel(title,text,color)],flags:flags(ephemeral)});}
+function reply(i,title,text,color=0x8A2BE2,ephemeral=false,banner=null){return i.reply({components:[panel(title,text,color,banner)],flags:flags(ephemeral)});}
 function isAdmin(i){return i.memberPermissions?.has(PermissionFlagsBits.Administrator);}
 async function getConfig(guildId){
  let c=await PrestigeConfig.findOne({guildId});
@@ -49,18 +54,18 @@ module.exports={
   const config=await getConfig(guildId);
 
   if(["setup","enable","disable"].includes(sub)&&!isAdmin(i))
-   return reply(i,"⛔ Sin permisos","Este subcomando es exclusivo para administradores.",0xFF0000,true);
+   return reply(i,"⛔ Sin permisos","Este subcomando es exclusivo para administradores.",0xFF0000,true,PRESTIGE_ADMIN_BANNER);
 
   if(sub==="setup"){
    const roles={},rewards={};
    for(let n=1;n<=5;n++){roles[n]=i.options.getRole(`prestige${n}`).id;rewards[n]=i.options.getInteger(`reward${n}`);}
    config.prestigeRoles=roles;config.prestigeRewards=rewards;await config.save();
-   return reply(i,"👑 Prestige configurado","Los **5 prestigios** fueron configurados correctamente.\n\nRoles y recompensas ya están listos para utilizarse.",0x00FF99,true);
+   return reply(i,"👑 Prestige configurado","Los **5 prestigios** fueron configurados correctamente.\n\nRoles y recompensas ya están listos para utilizarse.",0x00FF99,true,PRESTIGE_ADMIN_BANNER);
   }
-  if(sub==="enable"){config.enabled=true;await config.save();return reply(i,"✅ Prestige activado","El sistema de prestigios está activo.",0x00FF99,true);}
-  if(sub==="disable"){config.enabled=false;await config.save();return reply(i,"❌ Prestige desactivado","El sistema de prestigios fue desactivado.",0xFF0000,true);}
+  if(sub==="enable"){config.enabled=true;await config.save();return reply(i,"✅ Prestige activado","El sistema de prestigios está activo.",0x00FF99,true,PRESTIGE_ADMIN_BANNER);}
+  if(sub==="disable"){config.enabled=false;await config.save();return reply(i,"❌ Prestige desactivado","El sistema de prestigios fue desactivado.",0xFF0000,true,PRESTIGE_ADMIN_BANNER);}
 
-  if(!config.enabled)return reply(i,"🔒 Prestige desactivado","El sistema de prestigios está desactivado actualmente.",0xFF0000,true);
+  if(!config.enabled)return reply(i,"🔒 Prestige desactivado","El sistema de prestigios está desactivado actualmente.",0xFF0000,true,sub==="info"?PRESTIGE_INFO_BANNER:PRESTIGE_CLAIM_BANNER);
 
   const prestige=await getPrestige(guildId,userId);
   if(sub==="info"){
@@ -75,23 +80,23 @@ module.exports={
   }
 
   if(sub==="claim"){
-   if(prestige.prestige>=5)return reply(i,"🌟 Prestigio máximo","Ya alcanzaste el prestigio máximo.",0xFFD700,true);
+   if(prestige.prestige>=5)return reply(i,"🌟 Prestigio máximo","Ya alcanzaste el prestigio máximo.",0xFFD700,true,PRESTIGE_CLAIM_BANNER);
    const level=await Level.findOne({guildId,userId});
-   if(!level||level.level<50)return reply(i,"📈 Nivel insuficiente","Necesitas llegar a **nivel 50** para reclamar el siguiente prestigio.",0xFF0000,true);
+   if(!level||level.level<50)return reply(i,"📈 Nivel insuficiente","Necesitas llegar a **nivel 50** para reclamar el siguiente prestigio.",0xFF0000,true,PRESTIGE_CLAIM_BANNER);
 
    const next=prestige.prestige+1;
    const roleId=config.prestigeRoles?.[next];
    const reward=Number(config.prestigeRewards?.[next]);
-   if(!roleId||!Number.isFinite(reward))return reply(i,"⚠️ Prestige incompleto",`El **Prestigio ${next}** no está configurado correctamente. Contacta a un administrador.`,0xFF0000,true);
+   if(!roleId||!Number.isFinite(reward))return reply(i,"⚠️ Prestige incompleto",`El **Prestigio ${next}** no está configurado correctamente. Contacta a un administrador.`,0xFF0000,true,PRESTIGE_CLAIM_BANNER);
 
    const role=await i.guild.roles.fetch(roleId).catch(()=>null);
-   if(!role)return reply(i,"⚠️ Rol no disponible",`El rol configurado para **Prestigio ${next}** ya no existe.`,0xFF0000,true);
+   if(!role)return reply(i,"⚠️ Rol no disponible",`El rol configurado para **Prestigio ${next}** ya no existe.`,0xFF0000,true,PRESTIGE_CLAIM_BANNER);
    const me=i.guild.members.me;
    if(!me?.permissions.has(PermissionFlagsBits.ManageRoles)||role.position>=me.roles.highest.position)
-    return reply(i,"⚠️ No puedo entregar el rol","El bot necesita **Gestionar roles** y su rol debe estar por encima del rol de prestigio. No se realizó ningún cambio.",0xFF0000,true);
+    return reply(i,"⚠️ No puedo entregar el rol","El bot necesita **Gestionar roles** y su rol debe estar por encima del rol de prestigio. No se realizó ningún cambio.",0xFF0000,true,PRESTIGE_CLAIM_BANNER);
 
    try{await i.member.roles.add(roleId);}
-   catch{return reply(i,"❌ No se pudo entregar el rol","No se realizó ningún cambio en tu nivel, prestigio o dinero.",0xFF0000,true);}
+   catch{return reply(i,"❌ No se pudo entregar el rol","No se realizó ningún cambio en tu nivel, prestigio o dinero.",0xFF0000,true,PRESTIGE_CLAIM_BANNER);}
 
    try{
     let economy=await Economy.findOne({guildId,userId});
@@ -101,10 +106,10 @@ module.exports={
    }catch(err){
     await i.member.roles.remove(roleId).catch(()=>{});
     console.error("Error aplicando Prestige:",err);
-    return reply(i,"❌ Error al aplicar Prestige","Ocurrió un error guardando los cambios. El rol entregado fue revertido cuando fue posible.",0xFF0000,true);
+    return reply(i,"❌ Error al aplicar Prestige","Ocurrió un error guardando los cambios. El rol entregado fue revertido cuando fue posible.",0xFF0000,true,PRESTIGE_CLAIM_BANNER);
    }
    return reply(i,"👑 Prestigio reclamado",
-    `🎉 ${i.user} alcanzó **Prestigio ${next}**.\n\n💰 **Recompensa:** +${reward.toLocaleString()} monedas\n🎭 **Rol:** ${role}\n🔄 **Nivel:** reiniciado a 1\n✨ **XP:** reiniciada a 0`,0x8A2BE2,false);
+    `🎉 ${i.user} alcanzó **Prestigio ${next}**.\n\n💰 **Recompensa:** +${reward.toLocaleString()} monedas\n🎭 **Rol:** ${role}\n🔄 **Nivel:** reiniciado a 1\n✨ **XP:** reiniciada a 0`,0x8A2BE2,false,PRESTIGE_CLAIM_BANNER);
   }
  }
 };
