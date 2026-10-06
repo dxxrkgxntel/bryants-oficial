@@ -396,8 +396,53 @@ async function runShitpost(interaction) {
 
 async function runTranslate(interaction) {
     await interaction.deferReply();
-    const text=interaction.options.getString("texto"), language=interaction.options.getString("idioma");
-    try{const result=await translate(text,{to:language});const name=ISO6391.getName(language)||language;return interaction.editReply({embeds:[new EmbedBuilder().setColor("#8A2BE2").setTitle(`Traducido a ${name}`).addFields({name:"Texto original",value:text.slice(0,1024)},{name:"Texto traducido",value:String(result).slice(0,1024)}).setFooter({text:`Solicitado por ${interaction.user.username}`}).setTimestamp()]});}catch(err){console.error(err);return interaction.editReply("❌ Ocurrió un error al traducir el texto.");}
+
+    const input = interaction.options.getString("texto").trim();
+    const languageInput = interaction.options.getString("idioma").trim().toLowerCase();
+
+    const panel = (body, accent = 0x8A2BE2) => ({
+        flags: MessageFlags.IsComponentsV2,
+        components: [{
+            type: 17,
+            accent_color: accent,
+            components: [
+                { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
+                { type: 10, content: body }
+            ]
+        }]
+    });
+
+    if (!input) {
+        return interaction.editReply(panel(
+            "## 🌐 BF Translate\n❌ Debes escribir un texto para traducir.",
+            0xED4245
+        ));
+    }
+
+    if (!ISO6391.validate(languageInput)) {
+        return interaction.editReply(panel(
+            "## 🌐 BF Translate\n❌ **Código de idioma inválido:** `" + languageInput + "`\n\nUsa un código ISO 639-1, por ejemplo: `es`, `en`, `fr`, `pt`, `de` o `it`.",
+            0xED4245
+        ));
+    }
+
+    try {
+        const result = await translate(input, { to: languageInput });
+        const languageName = ISO6391.getName(languageInput) || languageInput.toUpperCase();
+        const original = input.length > 1500 ? input.slice(0, 1497) + "..." : input;
+        const translatedRaw = String(result);
+        const translated = translatedRaw.length > 1500 ? translatedRaw.slice(0, 1497) + "..." : translatedRaw;
+
+        return interaction.editReply(panel(
+            "## 🌐 BF Translate\n### 🎯 Idioma de destino\n**" + languageName + "** (`" + languageInput + "`)\n\n### 📝 Texto original\n>>> " + original + "\n\n### 🌍 Traducción\n>>> " + translated + "\n\n👤 Solicitado por <@" + interaction.user.id + ">"
+        ));
+    } catch (error) {
+        console.error("Error en /activity translate:", error);
+        return interaction.editReply(panel(
+            "## 🌐 BF Translate\n❌ No pude traducir el texto en este momento. Comprueba el idioma e inténtalo nuevamente.",
+            0xED4245
+        ));
+    }
 }
 
 module.exports={
