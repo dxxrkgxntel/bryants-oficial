@@ -1,737 +1,110 @@
 const {
-
-    SlashCommandBuilder,
-    PermissionFlagsBits,
-    ChannelType,
-    EmbedBuilder
-
+ SlashCommandBuilder, PermissionFlagsBits, ContainerBuilder, TextDisplayBuilder,
+ SeparatorBuilder, SeparatorSpacingSize, MessageFlags
 } = require("discord.js");
-
-const Prestige =
-require("../../Models/Prestige");
-
-const PrestigeConfig =
-require("../../Models/PrestigeConfig");
-
-const Level =
-require("../../Models/Level");
-
-const Economy =
-require("../../Models/EconomyUser");
-
-module.exports = {
-
-    data:
-    new SlashCommandBuilder()
-
-        .setName("prestige")
-
-        .setDescription(
-            "Sistema de prestigios."
-        )
-
-        .setDefaultMemberPermissions(
-            PermissionFlagsBits.Administrator
-        )
-
-        //////////////////////////////////////////////////
-        // SETUP
-        //////////////////////////////////////////////////
-
-        .addSubcommand(sub =>
-
-            sub
-
-                .setName("setup")
-
-                .setDescription(
-                    "Configura los prestigios."
-                )
-
-                //////////////////////////////////////////////////
-                // PRESTIGE 1
-                //////////////////////////////////////////////////
-
-                .addRoleOption(option =>
-
-                    option
-
-                        .setName("prestige1")
-
-                        .setDescription(
-                            "Rol de prestigio 1"
-                        )
-
-                        .setRequired(true)
-                )
-
-                .addIntegerOption(option =>
-
-                    option
-
-                        .setName("reward1")
-
-                        .setDescription(
-                            "Coins prestigio 1"
-                        )
-
-                        .setRequired(true)
-                )
-
-                //////////////////////////////////////////////////
-                // PRESTIGE 2
-                //////////////////////////////////////////////////
-
-                .addRoleOption(option =>
-
-                    option
-
-                        .setName("prestige2")
-
-                        .setDescription(
-                            "Rol de prestigio 2"
-                        )
-
-                        .setRequired(true)
-                )
-
-                .addIntegerOption(option =>
-
-                    option
-
-                        .setName("reward2")
-
-                        .setDescription(
-                            "Coins prestigio 2"
-                        )
-
-                        .setRequired(true)
-                )
-
-                //////////////////////////////////////////////////
-                // PRESTIGE 3
-                //////////////////////////////////////////////////
-
-                .addRoleOption(option =>
-
-                    option
-
-                        .setName("prestige3")
-
-                        .setDescription(
-                            "Rol de prestigio 3"
-                        )
-
-                        .setRequired(true)
-                )
-
-                .addIntegerOption(option =>
-
-                    option
-
-                        .setName("reward3")
-
-                        .setDescription(
-                            "Coins prestigio 3"
-                        )
-
-                        .setRequired(true)
-                )
-
-                //////////////////////////////////////////////////
-                // PRESTIGE 4
-                //////////////////////////////////////////////////
-
-                .addRoleOption(option =>
-
-                    option
-
-                        .setName("prestige4")
-
-                        .setDescription(
-                            "Rol de prestigio 4"
-                        )
-
-                        .setRequired(true)
-                )
-
-                .addIntegerOption(option =>
-
-                    option
-
-                        .setName("reward4")
-
-                        .setDescription(
-                            "Coins prestigio 4"
-                        )
-
-                        .setRequired(true)
-                )
-
-                //////////////////////////////////////////////////
-                // PRESTIGE 5
-                //////////////////////////////////////////////////
-
-                .addRoleOption(option =>
-
-                    option
-
-                        .setName("prestige5")
-
-                        .setDescription(
-                            "Rol de prestigio 5"
-                        )
-
-                        .setRequired(true)
-                )
-
-                .addIntegerOption(option =>
-
-                    option
-
-                        .setName("reward5")
-
-                        .setDescription(
-                            "Coins prestigio 5"
-                        )
-
-                        .setRequired(true)
-                )
-
-        )
-
-        //////////////////////////////////////////////////
-        // ENABLE
-        //////////////////////////////////////////////////
-
-        .addSubcommand(sub =>
-
-            sub
-
-                .setName("enable")
-
-                .setDescription(
-                    "Activa el sistema."
-                )
-
-        )
-
-        //////////////////////////////////////////////////
-        // DISABLE
-        //////////////////////////////////////////////////
-
-        .addSubcommand(sub =>
-
-            sub
-
-                .setName("disable")
-
-                .setDescription(
-                    "Desactiva el sistema."
-                )
-
-        )
-
-        //////////////////////////////////////////////////
-        // CLAIM
-        //////////////////////////////////////////////////
-
-        .addSubcommand(sub =>
-
-            sub
-
-                .setName("claim")
-
-                .setDescription(
-                    "Reclama tu prestigio."
-                )
-
-        )
-
-        //////////////////////////////////////////////////
-        // INFO
-        //////////////////////////////////////////////////
-
-        .addSubcommand(sub =>
-
-            sub
-
-                .setName("info")
-
-                .setDescription(
-                    "Mira tu información."
-                )
-
-        ),
-
-    //////////////////////////////////////////////////
-    // EXECUTE
-    //////////////////////////////////////////////////
-
-    async execute(interaction) {
-
-        const sub =
-        interaction.options.getSubcommand();
-
-        //////////////////////////////////////////////////
-        // BUSCAR CONFIG
-        //////////////////////////////////////////////////
-
-        let config =
-        await PrestigeConfig.findOne({
-
-            guildId:
-            interaction.guild.id
-
-        });
-
-        //////////////////////////////////////////////////
-
-        if (!config) {
-
-            config =
-            await PrestigeConfig.create({
-
-                guildId:
-                interaction.guild.id,
-
-                enabled: false,
-
-                prestigeRoles: {},
-
-                prestigeRewards: {}
-
-            });
-
-        }
-
-        //////////////////////////////////////////////////
-        // SETUP
-        //////////////////////////////////////////////////
-
-        if (sub === "setup") {
-
-            config.prestigeRoles = {
-
-                1:
-                interaction.options.getRole(
-                    "prestige1"
-                ).id,
-
-                2:
-                interaction.options.getRole(
-                    "prestige2"
-                ).id,
-
-                3:
-                interaction.options.getRole(
-                    "prestige3"
-                ).id,
-
-                4:
-                interaction.options.getRole(
-                    "prestige4"
-                ).id,
-
-                5:
-                interaction.options.getRole(
-                    "prestige5"
-                ).id
-
-            };
-
-            //////////////////////////////////////////////////
-
-            config.prestigeRewards = {
-
-                1:
-                interaction.options.getInteger(
-                    "reward1"
-                ),
-
-                2:
-                interaction.options.getInteger(
-                    "reward2"
-                ),
-
-                3:
-                interaction.options.getInteger(
-                    "reward3"
-                ),
-
-                4:
-                interaction.options.getInteger(
-                    "reward4"
-                ),
-
-                5:
-                interaction.options.getInteger(
-                    "reward5"
-                )
-
-            };
-
-            //////////////////////////////////////////////////
-
-            await config.save();
-
-            //////////////////////////////////////////////////
-
-            return interaction.reply({
-
-                embeds: [
-
-                    new EmbedBuilder()
-
-                        .setColor("#8A2BE2")
-
-                        .setTitle(
-                            "👑 Sistema Prestige Configurado"
-                        )
-
-                        .setDescription(
-                            "✅ Los 5 prestigios fueron configurados correctamente."
-                        )
-
-                ],
-
-                flags: 64
-
-            });
-
-        }
-
-        //////////////////////////////////////////////////
-        // ENABLE
-        //////////////////////////////////////////////////
-
-        if (sub === "enable") {
-
-            config.enabled = true;
-
-            await config.save();
-
-            return interaction.reply({
-
-                content:
-                "✅ Sistema Prestige activado.",
-
-                flags: 64
-
-            });
-
-        }
-
-        //////////////////////////////////////////////////
-        // DISABLE
-        //////////////////////////////////////////////////
-
-        if (sub === "disable") {
-
-            config.enabled = false;
-
-            await config.save();
-
-            return interaction.reply({
-
-                content:
-                "❌ Sistema Prestige desactivado.",
-
-                flags: 64
-
-            });
-
-        }
-
-        //////////////////////////////////////////////////
-        // VALIDAR SISTEMA
-        //////////////////////////////////////////////////
-
-        if (!config.enabled) {
-
-            return interaction.reply({
-
-                content:
-                "❌ El sistema de prestigios está desactivado.",
-
-                flags: 64
-
-            });
-
-        }
-
-        //////////////////////////////////////////////////
-        // BUSCAR PRESTIGE USER
-        //////////////////////////////////////////////////
-
-        let prestigeData =
-        await Prestige.findOne({
-
-            guildId:
-            interaction.guild.id,
-
-            userId:
-            interaction.user.id
-
-        });
-
-        //////////////////////////////////////////////////
-
-        if (!prestigeData) {
-
-            prestigeData =
-            await Prestige.create({
-
-                guildId:
-                interaction.guild.id,
-
-                userId:
-                interaction.user.id,
-
-                prestige: 0
-
-            });
-
-        }
-
-        //////////////////////////////////////////////////
-        // INFO
-        //////////////////////////////////////////////////
-
-        if (sub === "info") {
-
-            const embed =
-            new EmbedBuilder()
-
-                .setColor("#8A2BE2")
-
-                .setTitle(
-                    "👑 Sistema Prestige"
-                )
-
-                .setDescription(
-
-`🏆 Prestigio actual:
-**${prestigeData.prestige} / 5**
-
-📈 Nivel requerido:
-**50**
-
-🎁 Cada prestigio reinicia tu nivel a 1 y te recompensa con:
-• Coins
-• Rol exclusivo
-• Futuras recompensas de inventario`
-
-                )
-
-                .setTimestamp();
-
-            return interaction.reply({
-
-                embeds: [embed]
-
-            });
-
-        }
-
-        //////////////////////////////////////////////////
-        // CLAIM
-        //////////////////////////////////////////////////
-
-        if (sub === "claim") {
-
-            //////////////////////////////////////////////////
-            // LEVEL DATA
-            //////////////////////////////////////////////////
-
-            const levelData =
-            await Level.findOne({
-
-                guildId:
-                interaction.guild.id,
-
-                userId:
-                interaction.user.id
-
-            });
-
-            //////////////////////////////////////////////////
-
-            if (
-
-                !levelData ||
-
-                levelData.level < 50
-
-            ) {
-
-                return interaction.reply({
-
-                    content:
-                    "❌ Necesitas llegar a nivel 50.",
-
-                    flags: 64
-
-                });
-
-            }
-
-            //////////////////////////////////////////////////
-            // MAX PRESTIGE
-            //////////////////////////////////////////////////
-
-            if (prestigeData.prestige >= 5) {
-
-                return interaction.reply({
-
-                    content:
-                    "❌ Ya alcanzaste el prestigio máximo.",
-
-                    flags: 64
-
-                });
-
-            }
-
-            //////////////////////////////////////////////////
-            // NUEVO PRESTIGE
-            //////////////////////////////////////////////////
-
-            const newPrestige =
-            prestigeData.prestige + 1;
-
-            //////////////////////////////////////////////////
-            // ROLE
-            //////////////////////////////////////////////////
-
-            const roleId =
-            config.prestigeRoles[newPrestige];
-
-            //////////////////////////////////////////////////
-
-            const reward =
-            config.prestigeRewards[newPrestige];
-
-            //////////////////////////////////////////////////
-            // ECONOMY
-            //////////////////////////////////////////////////
-
-            let economyData =
-            await Economy.findOne({
-
-                guildId:
-                interaction.guild.id,
-
-                userId:
-                interaction.user.id
-
-            });
-
-            //////////////////////////////////////////////////
-
-            if (!economyData) {
-
-                economyData =
-                await Economy.create({
-
-                    guildId:
-                    interaction.guild.id,
-
-                    userId:
-                    interaction.user.id,
-
-                    wallet: 0,
-
-                    bank: 0
-
-                });
-
-            }
-
-            //////////////////////////////////////////////////
-            // DAR COINS
-            //////////////////////////////////////////////////
-
-            economyData.wallet += reward;
-
-            await economyData.save();
-
-            //////////////////////////////////////////////////
-            // ACTUALIZAR PRESTIGE
-            //////////////////////////////////////////////////
-
-            prestigeData.prestige =
-            newPrestige;
-
-            await prestigeData.save();
-
-            //////////////////////////////////////////////////
-            // RESET LEVEL
-            //////////////////////////////////////////////////
-
-            levelData.level = 1;
-
-            levelData.xp = 0;
-
-            await levelData.save();
-
-            //////////////////////////////////////////////////
-            // DAR ROL
-            //////////////////////////////////////////////////
-
-            const role =
-            interaction.guild.roles.cache.get(
-                roleId
-            );
-
-            //////////////////////////////////////////////////
-
-            if (role) {
-
-                await interaction.member.roles.add(
-                    roleId
-                ).catch(() => {});
-
-            }
-
-            //////////////////////////////////////////////////
-            // RESPUESTA
-            //////////////////////////////////////////////////
-
-            return interaction.reply({
-
-                embeds: [
-
-                    new EmbedBuilder()
-
-                        .setColor("#8A2BE2")
-
-                        .setTitle(
-                            "👑 Prestigio Reclamado"
-                        )
-
-                        .setDescription(
-
-`🎉 ${interaction.user} alcanzó:
-
-🏆 Prestigio:
-**${newPrestige}**
-
-💰 Recompensa:
-**${reward.toLocaleString()}** coins
-
-🔄 Tu nivel fue reiniciado a nivel 1.`
-
-                        )
-
-                        .setTimestamp()
-
-                ]
-
-            });
-
-        }
-
-    }
-
+const Prestige=require("../../Models/Prestige");
+const PrestigeConfig=require("../../Models/PrestigeConfig");
+const Level=require("../../Models/Level");
+const Economy=require("../../Models/EconomyUser");
+
+function panel(title,text,color=0x8A2BE2){
+ return new ContainerBuilder().setAccentColor(color)
+  .addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}`))
+  .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small))
+  .addTextDisplayComponents(new TextDisplayBuilder().setContent(text));
+}
+function flags(ephemeral=false){return ephemeral?MessageFlags.IsComponentsV2|MessageFlags.Ephemeral:MessageFlags.IsComponentsV2;}
+function reply(i,title,text,color=0x8A2BE2,ephemeral=false){return i.reply({components:[panel(title,text,color)],flags:flags(ephemeral)});}
+function isAdmin(i){return i.memberPermissions?.has(PermissionFlagsBits.Administrator);}
+async function getConfig(guildId){
+ let c=await PrestigeConfig.findOne({guildId});
+ if(!c)c=await PrestigeConfig.create({guildId,enabled:false,prestigeRoles:{},prestigeRewards:{}});
+ return c;
+}
+async function getPrestige(guildId,userId){
+ let p=await Prestige.findOne({guildId,userId});
+ if(!p)p=await Prestige.create({guildId,userId,prestige:0});
+ return p;
+}
+
+module.exports={
+ data:new SlashCommandBuilder().setName("prestige").setDescription("Sistema de prestigios.")
+  .addSubcommand(s=>s.setName("setup").setDescription("Configura los 5 prestigios (Administrador)")
+   .addRoleOption(o=>o.setName("prestige1").setDescription("Rol de prestigio 1").setRequired(true))
+   .addIntegerOption(o=>o.setName("reward1").setDescription("Monedas de prestigio 1").setRequired(true).setMinValue(0))
+   .addRoleOption(o=>o.setName("prestige2").setDescription("Rol de prestigio 2").setRequired(true))
+   .addIntegerOption(o=>o.setName("reward2").setDescription("Monedas de prestigio 2").setRequired(true).setMinValue(0))
+   .addRoleOption(o=>o.setName("prestige3").setDescription("Rol de prestigio 3").setRequired(true))
+   .addIntegerOption(o=>o.setName("reward3").setDescription("Monedas de prestigio 3").setRequired(true).setMinValue(0))
+   .addRoleOption(o=>o.setName("prestige4").setDescription("Rol de prestigio 4").setRequired(true))
+   .addIntegerOption(o=>o.setName("reward4").setDescription("Monedas de prestigio 4").setRequired(true).setMinValue(0))
+   .addRoleOption(o=>o.setName("prestige5").setDescription("Rol de prestigio 5").setRequired(true))
+   .addIntegerOption(o=>o.setName("reward5").setDescription("Monedas de prestigio 5").setRequired(true).setMinValue(0)))
+  .addSubcommand(s=>s.setName("enable").setDescription("Activa el sistema (Administrador)"))
+  .addSubcommand(s=>s.setName("disable").setDescription("Desactiva el sistema (Administrador)"))
+  .addSubcommand(s=>s.setName("claim").setDescription("Reclama tu siguiente prestigio"))
+  .addSubcommand(s=>s.setName("info").setDescription("Muestra tu información de prestigio")),
+ async execute(i){
+  const sub=i.options.getSubcommand(),guildId=i.guild.id,userId=i.user.id;
+  const config=await getConfig(guildId);
+
+  if(["setup","enable","disable"].includes(sub)&&!isAdmin(i))
+   return reply(i,"⛔ Sin permisos","Este subcomando es exclusivo para administradores.",0xFF0000,true);
+
+  if(sub==="setup"){
+   const roles={},rewards={};
+   for(let n=1;n<=5;n++){roles[n]=i.options.getRole(`prestige${n}`).id;rewards[n]=i.options.getInteger(`reward${n}`);}
+   config.prestigeRoles=roles;config.prestigeRewards=rewards;await config.save();
+   return reply(i,"👑 Prestige configurado","Los **5 prestigios** fueron configurados correctamente.\n\nRoles y recompensas ya están listos para utilizarse.",0x00FF99,true);
+  }
+  if(sub==="enable"){config.enabled=true;await config.save();return reply(i,"✅ Prestige activado","El sistema de prestigios está activo.",0x00FF99,true);}
+  if(sub==="disable"){config.enabled=false;await config.save();return reply(i,"❌ Prestige desactivado","El sistema de prestigios fue desactivado.",0xFF0000,true);}
+
+  if(!config.enabled)return reply(i,"🔒 Prestige desactivado","El sistema de prestigios está desactivado actualmente.",0xFF0000,true);
+
+  const prestige=await getPrestige(guildId,userId);
+  if(sub==="info"){
+   const next=Math.min(prestige.prestige+1,5);
+   const max=prestige.prestige>=5;
+   const reward=max?0:Number(config.prestigeRewards?.[next]||0);
+   const roleId=max?null:config.prestigeRoles?.[next];
+   return reply(i,"👑 Sistema Prestige",
+    `🏆 **Prestigio actual:** ${prestige.prestige} / 5\n📈 **Nivel requerido:** 50\n\n`+
+    (max?"🌟 Ya alcanzaste el prestigio máximo.":`🎯 **Siguiente prestigio:** ${next}\n🎁 **Recompensa:** ${reward.toLocaleString()} monedas\n🎭 **Rol:** ${roleId?`<@&${roleId}>`:"No configurado"}`)+
+    "\n\nAl reclamar, tu nivel y XP se reinician a **nivel 1 / 0 XP**.",0x8A2BE2,true);
+  }
+
+  if(sub==="claim"){
+   if(prestige.prestige>=5)return reply(i,"🌟 Prestigio máximo","Ya alcanzaste el prestigio máximo.",0xFFD700,true);
+   const level=await Level.findOne({guildId,userId});
+   if(!level||level.level<50)return reply(i,"📈 Nivel insuficiente","Necesitas llegar a **nivel 50** para reclamar el siguiente prestigio.",0xFF0000,true);
+
+   const next=prestige.prestige+1;
+   const roleId=config.prestigeRoles?.[next];
+   const reward=Number(config.prestigeRewards?.[next]);
+   if(!roleId||!Number.isFinite(reward))return reply(i,"⚠️ Prestige incompleto",`El **Prestigio ${next}** no está configurado correctamente. Contacta a un administrador.`,0xFF0000,true);
+
+   const role=await i.guild.roles.fetch(roleId).catch(()=>null);
+   if(!role)return reply(i,"⚠️ Rol no disponible",`El rol configurado para **Prestigio ${next}** ya no existe.`,0xFF0000,true);
+   const me=i.guild.members.me;
+   if(!me?.permissions.has(PermissionFlagsBits.ManageRoles)||role.position>=me.roles.highest.position)
+    return reply(i,"⚠️ No puedo entregar el rol","El bot necesita **Gestionar roles** y su rol debe estar por encima del rol de prestigio. No se realizó ningún cambio.",0xFF0000,true);
+
+   try{await i.member.roles.add(roleId);}
+   catch{return reply(i,"❌ No se pudo entregar el rol","No se realizó ningún cambio en tu nivel, prestigio o dinero.",0xFF0000,true);}
+
+   try{
+    let economy=await Economy.findOne({guildId,userId});
+    if(!economy)economy=await Economy.create({guildId,userId,wallet:0,bank:0});
+    economy.wallet+=reward;prestige.prestige=next;level.level=1;level.xp=0;
+    await economy.save();await prestige.save();await level.save();
+   }catch(err){
+    await i.member.roles.remove(roleId).catch(()=>{});
+    console.error("Error aplicando Prestige:",err);
+    return reply(i,"❌ Error al aplicar Prestige","Ocurrió un error guardando los cambios. El rol entregado fue revertido cuando fue posible.",0xFF0000,true);
+   }
+   return reply(i,"👑 Prestigio reclamado",
+    `🎉 ${i.user} alcanzó **Prestigio ${next}**.\n\n💰 **Recompensa:** +${reward.toLocaleString()} monedas\n🎭 **Rol:** ${role}\n🔄 **Nivel:** reiniciado a 1\n✨ **XP:** reiniciada a 0`,0x8A2BE2,false);
+  }
+ }
 };
