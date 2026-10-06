@@ -326,8 +326,74 @@ async function runCalculator(interaction) {
 
 async function runShitpost(interaction) {
     await interaction.deferReply();
-    try { const response=await fetch("https://www.reddit.com/r/ShitpostESP/random/.json");const data=await response.json();const post=data?.[0]?.data?.children?.[0]?.data;if(!post?.url)return interaction.editReply("❌ No pude obtener un shitpost con imagen.");return interaction.editReply({embeds:[new EmbedBuilder().setColor("#8A2BE2").setImage(post.url).setURL(post.url)]}); } catch(err){console.log(err);return interaction.editReply("❌ Ocurrió un error obteniendo el shitpost.");}
+
+    const panel = (text, imageUrl = null, accent = 0x8A2BE2) => {
+        const components = [
+            { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
+            { type: 10, content: text }
+        ];
+        if (imageUrl) {
+            components.push(
+                { type: 14, divider: true, spacing: 1 },
+                { type: 12, items: [{ media: { url: imageUrl } }] }
+            );
+        }
+        return {
+            flags: MessageFlags.IsComponentsV2,
+            components: [{ type: 17, accent_color: accent, components }]
+        };
+    };
+
+    try {
+        const response = await fetch("https://www.reddit.com/r/ShitpostESP/random/.json", {
+            headers: { "User-Agent": "BryantsOficialBot/1.0" }
+        });
+
+        if (!response.ok) {
+            return interaction.editReply(panel(
+                "## 😂 BF Shitpost\n❌ Reddit no respondió correctamente. Inténtalo nuevamente.",
+                null,
+                0xED4245
+            ));
+        }
+
+        const data = await response.json();
+        const post = data?.[0]?.data?.children?.[0]?.data;
+
+        if (!post) {
+            return interaction.editReply(panel(
+                "## 😂 BF Shitpost\n❌ No pude obtener un shitpost en este momento.",
+                null,
+                0xED4245
+            ));
+        }
+
+        const imageUrl = post.url_overridden_by_dest || post.url;
+        const validImage = typeof imageUrl === "string" &&
+            /\.(?:png|jpe?g|gif|webp)(?:\?.*)?$/i.test(imageUrl);
+
+        if (!validImage) {
+            return interaction.editReply(panel(
+                "## 😂 BF Shitpost\n⚠️ El shitpost aleatorio no contenía una imagen compatible. Ejecuta el comando otra vez."
+            ));
+        }
+
+        const title = post.title ? String(post.title).slice(0, 500) : "Shitpost aleatorio";
+
+        return interaction.editReply(panel(
+            "## 😂 BF Shitpost\n### " + title + "\n\n👍 **" + (post.ups || 0).toLocaleString() + "** votos · 💬 **" + (post.num_comments || 0).toLocaleString() + "** comentarios\n👤 Solicitado por <@" + interaction.user.id + ">",
+            imageUrl
+        ));
+    } catch (error) {
+        console.error("Error en /activity shitpost:", error);
+        return interaction.editReply(panel(
+            "## 😂 BF Shitpost\n❌ Ocurrió un error al obtener contenido de Reddit.",
+            null,
+            0xED4245
+        ));
+    }
 }
+
 async function runTranslate(interaction) {
     await interaction.deferReply();
     const text=interaction.options.getString("texto"), language=interaction.options.getString("idioma");
