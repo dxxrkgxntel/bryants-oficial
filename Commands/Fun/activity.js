@@ -70,8 +70,22 @@ async function runGay(interaction) {
 
 async function runJoke(interaction) {
     const joke = jokes[Math.floor(Math.random() * jokes.length)];
-    return interaction.reply({ embeds: [new EmbedBuilder().setColor("#8A2BE2").setTitle("😂 Joke").setDescription(`\`\`\`${joke}\`\`\``).setTimestamp()] });
+
+    return interaction.reply({
+        flags: MessageFlags.IsComponentsV2,
+        components: [{
+            type: 17,
+            accent_color: 0x8A2BE2,
+            components: [
+                { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
+                { type: 10, content: "## 😂 BF Joke\n### 🎤 Chiste aleatorio\n\n" + joke },
+                { type: 14, divider: true, spacing: 1 },
+                { type: 10, content: "🎲 **Chiste seleccionado al azar por BF Activity**\n👤 Solicitado por <@" + interaction.user.id + ">" }
+            ]
+        }]
+    });
 }
+
 async function runKiss(interaction) {
     const user = interaction.options.getUser("usuario");
     if (user.id === interaction.user.id) return interaction.reply({content:"❌ No puedes besarte a ti mismo.",ephemeral:true});
