@@ -232,124 +232,50 @@ module.exports = {
 
             if (subcommand === "remove") {
 
-                const roles =
-                await BankDonorRole.find({
+                const roles = await BankDonorRole.find({ guildId: interaction.guild.id }).sort({ requiredAmount: 1 });
 
-                    guildId:
-                        interaction.guild.id
+                if (!roles.length) return bankReply(interaction, "🏦 Eliminar rol", "No hay roles de donadores configurados.", 0xFFD700);
 
-                });
+                const valid = roles.map(data => ({ data, role: interaction.guild.roles.cache.get(data.roleId) })).filter(entry => entry.role);
 
-                //////////////////////////////////////////////////
-
-                if (!roles.length) {
-
-                    return interaction.reply({
-
-                        content:
-                            "❌ No hay roles de donadores configurados.",
-
-                        flags: 64
-
-                    });
-
+                if (!valid.length) {
+                    const result = await BankDonorRole.deleteMany({ guildId: interaction.guild.id, roleId: { $in: roles.map(data => data.roleId) } });
+                    return bankReply(interaction, "🧹 Registros limpiados", "Se eliminaron **" + result.deletedCount + " registros obsoletos**.", 0xFFD700);
                 }
 
-                //////////////////////////////////////////////////
+                const customId = "bank_role_remove_" + interaction.id;
+                const menu = new StringSelectMenuBuilder().setCustomId(customId).setPlaceholder("Selecciona un rol").addOptions(
+                    valid.slice(0, 25).map(entry => ({
+                        label: entry.role.name.slice(0, 100),
+                        description: ("Requiere " + entry.data.requiredAmount.toLocaleString() + " monedas").slice(0, 100),
+                        value: entry.role.id
+                    }))
+                );
+                const row = new ActionRowBuilder().addComponents(menu);
+                let text = "Selecciona el rol que deseas eliminar del sistema de donadores.\n\n**Roles disponibles:** " + valid.length;
+                if (valid.length > 25) text += "\n⚠️ Se muestran los primeros 25 roles.";
+                await bankReply(interaction, "🏦 Eliminar rol de donador", text, 0x8A2BE2, [row]);
 
-                const options = [];
-
-                //////////////////////////////////////////////////
-
-                for (const data of roles) {
-
-                    const role =
-                    interaction.guild.roles.cache.get(
-                        data.roleId
-                    );
-
-                    //////////////////////////////////////////////////
-
-                    if (!role)
-                        continue;
-
-                    //////////////////////////////////////////////////
-
-                    options.push({
-
-                        label:
-                            role.name,
-
-                        description:
-`Requiere ${data.requiredAmount.toLocaleString()} monedas`,
-
-                        value:
-                            role.id
-
+                const message = await interaction.fetchReply();
+                try {
+                    const selected = await message.awaitMessageComponent({
+                        componentType: ComponentType.StringSelect,
+                        filter: component => component.customId === customId && component.user.id === interaction.user.id,
+                        time: 60000
                     });
-
+                    await selected.deferUpdate();
+                    const roleId = selected.values[0];
+                    const data = await BankDonorRole.findOne({ guildId: interaction.guild.id, roleId });
+                    if (!data) return selected.editReply({ components: [bankPanel("⚠️ Rol no encontrado", "Ese rol ya había sido eliminado de la configuración.", 0xFFD700)], flags: MessageFlags.IsComponentsV2 });
+                    const role = interaction.guild.roles.cache.get(roleId);
+                    await BankDonorRole.deleteOne({ _id: data._id });
+                    const roleText = role ? role.toString() : "Rol eliminado de Discord (" + roleId + ")";
+                    return selected.editReply({ components: [bankPanel("🗑️ Rol eliminado", roleText + " fue retirado del sistema.\n**Requisito anterior:** " + data.requiredAmount.toLocaleString() + " monedas.", 0x00FF99)], flags: MessageFlags.IsComponentsV2 });
+                } catch (error) {
+                    if (error && error.code === "InteractionCollectorError") return interaction.editReply({ components: [bankPanel("⌛ Selección expirada", "El menú expiró después de 60 segundos. Ejecuta /bank role remove nuevamente.", 0xFFD700)], flags: MessageFlags.IsComponentsV2 });
+                    throw error;
                 }
-
-                //////////////////////////////////////////////////
-
-                const menu =
-                new StringSelectMenuBuilder()
-
-                    .setCustomId(
-                        "bank_role_remove_select"
-                    )
-
-                    .setPlaceholder(
-                        "Selecciona un rol"
-                    )
-
-                    .addOptions(options);
-
-                //////////////////////////////////////////////////
-
-                const row =
-                new ActionRowBuilder()
-
-                    .addComponents(menu);
-
-                //////////////////////////////////////////////////
-
-                const embed =
-                new EmbedBuilder()
-
-                    .setColor("#8A2BE2")
-
-                    .setTitle(
-                        "🏦 Eliminar rol de donador"
-                    )
-
-                    .setDescription(
-
-                        "Selecciona el rol que deseas eliminar del sistema de donadores."
-
-                    )
-
-                    .setFooter({
-
-                        text:
-                            interaction.guild.name
-
-                    })
-
-                    .setTimestamp();
-
-                //////////////////////////////////////////////////
-
-                return interaction.reply({
-
-                    embeds: [embed],
-
-                    components: [row]
-
-                });
-
             }
-
             //////////////////////////////////////////////////
             // LIST
             //////////////////////////////////////////////////
