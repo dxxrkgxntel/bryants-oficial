@@ -865,549 +865,105 @@ async function run_ruleta(interaction) {
 }
 
 async function run_slots(interaction) {
-
-        //////////////////////////////////////////////////
-        // AMOUNT
-        //////////////////////////////////////////////////
-
-        const amount =
-            interaction.options.getInteger(
-                "cantidad"
-            );
-
-        //////////////////////////////////////////////////
-        // USER
-        //////////////////////////////////////////////////
-
-        const userData =
-
-            await EconomyUser.findOne({
-
-                guildId:
-                    interaction.guild.id,
-
-                userId:
-                    interaction.user.id
-            });
-
-        //////////////////////////////////////////////////
-
-        if (!userData) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ No tienes datos económicos.",
-
-                flags: 64
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // CASINO STATS
-        //////////////////////////////////////////////////
-
-        let stats =
-
-            await CasinoStats.findOne({
-
-                guildId:
-                    interaction.guild.id,
-
-                userId:
-                    interaction.user.id
-            });
-
-        //////////////////////////////////////////////////
-
-        if (!stats) {
-
-            stats =
-                await CasinoStats.create({
-
-                    guildId:
-                        interaction.guild.id,
-
-                    userId:
-                        interaction.user.id
-                });
-        }
-
-        //////////////////////////////////////////////////
-        // DINERO
-        //////////////////////////////////////////////////
-
-        if (
-            userData.wallet < amount
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ No tienes suficiente dinero.",
-
-                flags: 64
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // CONFIRM EMBED
-        //////////////////////////////////////////////////
-
-        const confirmEmbed =
-
-            new EmbedBuilder()
-
-                .setColor("#8A2BE2")
-
-                .setTitle(
-                    "🎰 Confirmar apuesta"
-                )
-
-                .setDescription(
-
-                    `💸 Vas a apostar:\n` +
-                    `> **${amount.toLocaleString()} monedas**\n\n` +
-
-                    `👛 Tu wallet actual es:\n` +
-                    `> **${userData.wallet.toLocaleString()} monedas**\n\n` +
-
-                    `❓ ¿Deseas girar las tragamonedas?`
-                )
-
-                .setThumbnail(
-
-                    interaction.user.displayAvatarURL({
-
-                        dynamic: true
-                    })
-                )
-
-                .setFooter({
-
-                    text:
-                        "Bryant's Casino"
-                })
-
-                .setTimestamp();
-
-        //////////////////////////////////////////////////
-        // BUTTONS
-        //////////////////////////////////////////////////
-
-        const row =
-
-            new ActionRowBuilder()
-
-                .addComponents(
-
-                    new ButtonBuilder()
-
-                        .setCustomId(
-                            "slots_confirm"
-                        )
-
-                        .setLabel(
-                            "Confirmar"
-                        )
-
-                        .setEmoji("✅")
-
-                        .setStyle(
-                            ButtonStyle.Secondary
-                        ),
-
-                    new ButtonBuilder()
-
-                        .setCustomId(
-                            "slots_cancel"
-                        )
-
-                        .setLabel(
-                            "Cancelar"
-                        )
-
-                        .setEmoji("❌")
-
-                        .setStyle(
-                            ButtonStyle.Secondary
-                        )
-                );
-
-        //////////////////////////////////////////////////
-
-        await interaction.reply({
-
-            embeds: [confirmEmbed],
-
-            components: [row]
-        });
-
-        //////////////////////////////////////////////////
-        // MESSAGE
-        //////////////////////////////////////////////////
-
-        const message =
-            await interaction.fetchReply();
-
-        //////////////////////////////////////////////////
-        // BUTTON RESPONSE
-        //////////////////////////////////////////////////
-
-        const response =
-
-            await message.awaitMessageComponent({
-
-                filter: i =>
-
-                    i.user.id === interaction.user.id,
-
-                time: 30000
-            }).catch(() => null);
-
-        //////////////////////////////////////////////////
-        // TIMEOUT
-        //////////////////////////////////////////////////
-
-        if (!response) {
-
-            return interaction.editReply({
-
-                content:
-                    "⌛ La apuesta expiró.",
-
-                embeds: [],
-
-                components: []
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // CANCEL
-        //////////////////////////////////////////////////
-
-        if (
-
-            response.customId ===
-            "slots_cancel"
-
-        ) {
-
-            return response.update({
-
-                content:
-                    "❌ Apuesta cancelada.",
-
-                embeds: [],
-
-                components: []
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // DEFER BUTTON
-        //////////////////////////////////////////////////
-
+    await interaction.deferReply();
+    const amount = interaction.options.getInteger("cantidad");
+
+    const panel = (text, row = null, accent = 0x8A2BE2) => {
+        const components = [
+            { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+            { type: 10, content: text }
+        ];
+        if (row) components.push({ type: 14, divider: true, spacing: 1 }, row.toJSON());
+        return { flags: MessageFlags.IsComponentsV2, components: [{ type: 17, accent_color: accent, components }] };
+    };
+
+    const [userData, foundStats] = await Promise.all([
+        EconomyUser.findOne({ guildId: interaction.guild.id, userId: interaction.user.id }),
+        CasinoStats.findOne({ guildId: interaction.guild.id, userId: interaction.user.id })
+    ]);
+
+    if (!userData)
+        return interaction.editReply(panel("## 🎰 Slots\n❌ No tienes datos económicos.", null, 0xED4245));
+    if (userData.wallet < amount)
+        return interaction.editReply(panel(`## 🎰 Slots — Dinero insuficiente\n❌ Necesitas **${amount.toLocaleString()} monedas** y tienes **${userData.wallet.toLocaleString()}**.`, null, 0xED4245));
+
+    const stats = foundStats || new CasinoStats({ guildId: interaction.guild.id, userId: interaction.user.id });
+    const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId("slots_confirm").setLabel("Confirmar").setEmoji("✅").setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId("slots_cancel").setLabel("Cancelar").setEmoji("❌").setStyle(ButtonStyle.Secondary)
+    );
+
+    await interaction.editReply(panel(
+        `## 🎰 Confirmar apuesta\n💸 Apuesta: **${amount.toLocaleString()} monedas**\n👛 Wallet actual: **${userData.wallet.toLocaleString()} monedas**\n\n🎯 Premios de la fila central:\n👑👑👑 **JACKPOT x15**\n💎 Tres símbolos iguales **x5**\n✨ Dos símbolos iguales **x2**\n\n❓ ¿Deseas girar las tragamonedas?`,
+        row
+    ));
+
+    const message = await interaction.fetchReply();
+    const response = await message.awaitMessageComponent({ filter: i => i.user.id === interaction.user.id, time: 30000 }).catch(() => null);
+
+    if (!response)
+        return interaction.editReply(panel("## 🎰 Slots\n⌛ La apuesta expiró. No se descontaron monedas."));
+
+    if (response.customId === "slots_cancel") {
         await response.deferUpdate();
-
-        //////////////////////////////////////////////////
-        // GRID 3x3
-        //////////////////////////////////////////////////
-
-        const grid = [];
-
-        for (let row = 0; row < 3; row++) {
-
-            const currentRow = [];
-
-            for (let col = 0; col < 3; col++) {
-
-                currentRow.push(
-
-                    slots[
-                        Math.floor(
-                            Math.random() * slots.length
-                        )
-                    ]
-                );
-            }
-
-            grid.push(currentRow);
-        }
-
-        //////////////////////////////////////////////////
-        // DISPLAY
-        //////////////////////////////////////////////////
-
-        const generateDisplay = (data) => {
-
-            return data.map((row, index) => {
-
-                if (index === 1) {
-
-                    return `${row.join(" │ ")} <`;
-                }
-
-                return `${row.join(" │ ")}`;
-
-            }).join("\n");
-        };
-
-        //////////////////////////////////////////////////
-        // ANIMACION
-        //////////////////////////////////////////////////
-
-        await interaction.editReply({
-
-            embeds: [
-
-                new EmbedBuilder()
-
-                    .setColor("#8A2BE2")
-
-                    .setTitle(
-                        "🎰 Bryant's Casino"
-                    )
-
-                    .setDescription(
-
-                        `## 🎲 Girando tragamonedas...\n\n` +
-
-                        `❔ │ ❔ │ ❔\n` +
-                        `❔ │ ❔ │ ❔ <\n` +
-                        `❔ │ ❔ │ ❔`
-                    )
-            ],
-
-            components: []
-        });
-
-        //////////////////////////////////////////////////
-        // DELAY
-        //////////////////////////////////////////////////
-
-        await new Promise(resolve =>
-
-            setTimeout(resolve, 2500)
-        );
-
-        //////////////////////////////////////////////////
-        // LINEA VALIDA
-        //////////////////////////////////////////////////
-
-        const middleLine = grid[1];
-
-        //////////////////////////////////////////////////
-        // RESULTADO
-        //////////////////////////////////////////////////
-
-        let multiplier = 0;
-
-        let resultText =
-            "💸 Has perdido.";
-
-        //////////////////////////////////////////////////
-        // JACKPOT
-        //////////////////////////////////////////////////
-
-        if (
-
-            middleLine[0] === "👑" &&
-            middleLine[1] === "👑" &&
-            middleLine[2] === "👑"
-
-        ) {
-
-            multiplier = 15;
-
-            resultText =
-                "👑 JACKPOT x15";
-
-            stats.jackpots += 1;
-        }
-
-        //////////////////////////////////////////////////
-        // TRIPLE
-        //////////////////////////////////////////////////
-
-        else if (
-
-            middleLine[0] === middleLine[1] &&
-            middleLine[1] === middleLine[2]
-
-        ) {
-
-            multiplier = 5;
-
-            resultText =
-                "💎 Triple combinación x5";
-        }
-
-        //////////////////////////////////////////////////
-        // DOBLE
-        //////////////////////////////////////////////////
-
-        else if (
-
-            middleLine[0] === middleLine[1] ||
-
-            middleLine[1] === middleLine[2] ||
-
-            middleLine[0] === middleLine[2]
-
-        ) {
-
-            multiplier = 2;
-
-            resultText =
-                "✨ Doble combinación x2";
-        }
-
-        //////////////////////////////////////////////////
-        // CALCULAR
-        //////////////////////////////////////////////////
-
-        let winnings = 0;
-
-        if (multiplier > 0) {
-
-            winnings =
-                amount * multiplier;
-
-            const profit =
-                winnings - amount;
-
-            userData.wallet +=
-                profit;
-
-            //////////////////////////////////////////////////
-            // STATS
-            //////////////////////////////////////////////////
-
-            stats.totalGames += 1;
-
-            stats.totalWins += 1;
-
-            stats.moneyWon += winnings;
-
-            stats.currentStreak += 1;
-
-            stats.slotsWins += 1;
-
-            //////////////////////////////////////////////////
-
-            if (winnings > stats.biggestWin) {
-
-                stats.biggestWin =
-                    winnings;
-            }
-
-        } else {
-
-            userData.wallet -=
-                amount;
-
-            //////////////////////////////////////////////////
-            // STATS
-            //////////////////////////////////////////////////
-
-            stats.totalGames += 1;
-
-            stats.totalLosses += 1;
-
-            stats.moneyLost += amount;
-
-            stats.currentStreak = 0;
-        }
-
-        //////////////////////////////////////////////////
-        // SAVE
-        //////////////////////////////////////////////////
-
-        await userData.save();
-
-        await stats.save();
-
-        //////////////////////////////////////////////////
-        // EMBED FINAL
-        //////////////////////////////////////////////////
-
-        const embed =
-
-            new EmbedBuilder()
-
-                .setColor(
-
-                    multiplier > 0
-
-                        ?
-
-                        "#00ff99"
-
-                        :
-
-                        "#ff0000"
-                )
-
-                .setTitle(
-                    "🎰 Bryant's Casino"
-                )
-
-                .setDescription(
-
-                    `## 🎰 Resultado\n\n` +
-
-                    `${generateDisplay(grid)}\n\n` +
-
-                    `🎯 Línea válida: **Fila central**\n\n` +
-
-                    `${resultText}\n\n` +
-
-                    (
-
-                        multiplier > 0
-
-                            ?
-
-                            `💰 Ganaste **${winnings.toLocaleString()} monedas**`
-
-                            :
-
-                            `💸 Perdiste **${amount.toLocaleString()} monedas**`
-                    ) +
-
-                    `\n\n👛 Balance actual: **${userData.wallet.toLocaleString()} monedas**`
-                )
-
-                .setThumbnail(
-
-                    interaction.user.displayAvatarURL({
-
-                        dynamic: true
-                    })
-                )
-
-                .setImage(
-                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
-                )
-
-                .setFooter({
-
-                    text:
-                        "Bryant's Casino"
-                })
-
-                .setTimestamp();
-
-        //////////////////////////////////////////////////
-
-        await interaction.editReply({
-
-            embeds: [embed],
-
-            components: []
-        });
-    
+        return interaction.editReply(panel("## 🎰 Slots\n❌ Apuesta cancelada.", null, 0xED4245));
+    }
+
+    await response.deferUpdate();
+    await interaction.editReply(panel(
+        `## 🎰 BF Slots\n### 🎲 Girando tragamonedas...\n❔ │ ❔ │ ❔\n❔ │ ❔ │ ❔  ◀\n❔ │ ❔ │ ❔\n\n💰 Apostando **${amount.toLocaleString()} monedas**`
+    ));
+    await new Promise(resolve => setTimeout(resolve, 2500));
+
+    const freshUser = await EconomyUser.findOne({ guildId: interaction.guild.id, userId: interaction.user.id });
+    if (!freshUser || freshUser.wallet < amount)
+        return interaction.editReply(panel("## 🎰 Slots\n❌ Ya no tienes suficiente dinero para completar esta apuesta.", null, 0xED4245));
+
+    const grid = Array.from({ length: 3 }, () =>
+        Array.from({ length: 3 }, () => slots[Math.floor(Math.random() * slots.length)])
+    );
+    const middleLine = grid[1];
+    const generateDisplay = data => data.map((r, i) => `${r.join(" │ ")}${i === 1 ? "  ◀" : ""}`).join("\n");
+
+    let multiplier = 0;
+    let resultText = "💸 Sin combinación ganadora.";
+    if (middleLine.every(symbol => symbol === "👑")) {
+        multiplier = 15;
+        resultText = "👑 **JACKPOT x15**";
+        stats.jackpots += 1;
+    } else if (middleLine[0] === middleLine[1] && middleLine[1] === middleLine[2]) {
+        multiplier = 5;
+        resultText = "💎 **Triple combinación x5**";
+    } else if (middleLine[0] === middleLine[1] || middleLine[1] === middleLine[2] || middleLine[0] === middleLine[2]) {
+        multiplier = 2;
+        resultText = "✨ **Doble combinación x2**";
+    }
+
+    let winnings = 0;
+    if (multiplier > 0) {
+        winnings = amount * multiplier;
+        freshUser.wallet += winnings - amount;
+        stats.totalGames += 1;
+        stats.totalWins += 1;
+        stats.moneyWon += winnings;
+        stats.currentStreak += 1;
+        stats.slotsWins += 1;
+        if (winnings > stats.biggestWin) stats.biggestWin = winnings;
+    } else {
+        freshUser.wallet -= amount;
+        stats.totalGames += 1;
+        stats.totalLosses += 1;
+        stats.moneyLost += amount;
+        stats.currentStreak = 0;
+    }
+
+    await Promise.all([freshUser.save(), stats.save()]);
+
+    return interaction.editReply(panel(
+        `## 🎰 Resultado — BF Slots\n${generateDisplay(grid)}\n\n🎯 Línea válida: **Fila central**\n${resultText}\n\n${multiplier > 0 ? `💰 Ganaste **${winnings.toLocaleString()} monedas**` : `💸 Perdiste **${amount.toLocaleString()} monedas**`}\n👛 Balance actual: **${freshUser.wallet.toLocaleString()} monedas**`,
+        null,
+        multiplier > 0 ? (multiplier === 15 ? 0xFEE75C : 0x57F287) : 0xED4245
+    ));
 }
 
 module.exports = {
