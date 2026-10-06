@@ -7,7 +7,8 @@ const {
     ButtonBuilder,
     ButtonStyle,
     ComponentType,
-} = require("discord.js");
+} = const questHandler = require("../../Functions/questHandler");
+require("discord.js");
 const {
     TwoZeroFourEight,
     FastType,
@@ -79,8 +80,9 @@ module.exports = {
                 });
 
                 Game.startGame();
-                Game.on('gameOver', result => {
-                    console.log(result);  // =>  { result... }
+                Game.on('gameOver', async result => {
+                    console.log(result);
+                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
                 break;
@@ -100,8 +102,9 @@ module.exports = {
                 });
 
                 Game.startGame();
-                Game.on('gameOver', result => {
-                    console.log(result);  // =>  { result... }
+                Game.on('gameOver', async result => {
+                    console.log(result);
+                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
                 break;
@@ -126,8 +129,9 @@ module.exports = {
                 });
 
                 Game.startGame();
-                Game.on('gameOver', result => {
-                    console.log(result);  // =>  { result... }
+                Game.on('gameOver', async result => {
+                    console.log(result);
+                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
                 break;
@@ -149,8 +153,9 @@ module.exports = {
                 });
 
                 Game.startGame();
-                Game.on('gameOver', result => {
-                    console.log(result);  // =>  { result... }
+                Game.on('gameOver', async result => {
+                    console.log(result);
+                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
                 break;
@@ -170,8 +175,9 @@ module.exports = {
                 });
 
                 Game.startGame();
-                Game.on('gameOver', result => {
-                    console.log(result);  // =>  { result... }
+                Game.on('gameOver', async result => {
+                    console.log(result);
+                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
                 break;
@@ -205,8 +211,9 @@ module.exports = {
                 });
 
                 Game.startGame();
-                Game.on('gameOver', result => {
-                    console.log(result);  // =>  { result... }
+                Game.on('gameOver', async result => {
+                    console.log(result);
+                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
                 break;
@@ -227,8 +234,9 @@ module.exports = {
                 });
 
                 Game.startGame();
-                Game.on('gameOver', result => {
-                    console.log(result);  // =>  { result... }
+                Game.on('gameOver', async result => {
+                    console.log(result);
+                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
                 break;
@@ -250,8 +258,9 @@ module.exports = {
                 });
 
                 Game.startGame();
-                Game.on('gameOver', result => {
-                    console.log(result);  // =>  { result... }
+                Game.on('gameOver', async result => {
+                    console.log(result);
+                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
                 break;
@@ -487,8 +496,9 @@ module.exports = {
                 });
 
                 Game.startGame();
-                Game.on('gameOver', result => {
-                    console.log(result);  // =>  { result... }
+                Game.on('gameOver', async result => {
+                    console.log(result);
+                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
                 break;
@@ -517,9 +527,10 @@ module.exports = {
                 });
 
                 Game.startGame();
-                Game.on('gameOver', result => {
-                    console.log(result);  // =>  { result... }
-                })
+                Game.on('gameOver', async result => {
+                    console.log(result);
+                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
+                });
             }
                 break;
             case "trivia": {
@@ -544,9 +555,10 @@ module.exports = {
                 });
 
                 Game.startGame();
-                Game.on('gameOver', result => {
-                    console.log(result);  // =>  { result... }
-                })
+                Game.on('gameOver', async result => {
+                    console.log(result);
+                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
+                });
             }
                 break;
             case "wordle": {
@@ -565,8 +577,9 @@ module.exports = {
                 });
 
                 Game.startGame();
-                Game.on('gameOver', result => {
-                    console.log(result);  // =>  { result... }
+                Game.on('gameOver', async result => {
+                    console.log(result);
+                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
                 break;
