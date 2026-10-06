@@ -6,6 +6,10 @@ const { MessageFlags } = require("discord.js");
 
 const LEVEL_UP_BANNER = "https://i.imgur.com/IyrUtlE.png";
 
+function xpNeeded(level) {
+    return 5 * (level ** 2) + 50 * level + 100;
+}
+
 //////////////////////////////////////////////////
 // COOLDOWN
 //////////////////////////////////////////////////
@@ -101,14 +105,13 @@ module.exports = {
         // XP NECESARIA
         ////////////////////////////////////////
 
-        let xpNeeded =
-            (data.level + 1) * 100;
+        let neededXp =\n            xpNeeded(data.level);
 
         ////////////////////////////////////////
         // MULTI LEVEL UP
         ////////////////////////////////////////
 
-        while (data.xp >= xpNeeded) {
+        while (data.xp >= neededXp) {
 
             ////////////////////////////////////////
             // SUBIR NIVEL
@@ -120,14 +123,13 @@ module.exports = {
             // XP SOBRANTE
             ////////////////////////////////////////
 
-            data.xp -= xpNeeded;
+            data.xp -= neededXp;
 
             ////////////////////////////////////////
             // NUEVA XP NECESARIA
             ////////////////////////////////////////
 
-            xpNeeded =
-                (data.level + 1) * 100;
+            neededXp =\n                xpNeeded(data.level);
 
             //////////////////////////////////////////////////
             // RECOMPENSA ECONOMIA
