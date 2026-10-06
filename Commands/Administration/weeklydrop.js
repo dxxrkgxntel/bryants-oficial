@@ -103,6 +103,7 @@ module.exports = {
                         )
 
                         .setRequired(true)
+                        .setMinValue(1)
                 )
 
                 .addIntegerOption(option =>
@@ -115,6 +116,7 @@ module.exports = {
                         )
 
                         .setRequired(true)
+                        .setMinValue(1)
                 )
         )
 
@@ -216,79 +218,24 @@ module.exports = {
         */
 
         if (sub === "setup") {
+            const channel = interaction.options.getChannel("canal");
+            const minimo = interaction.options.getInteger("minimo");
+            const maximo = interaction.options.getInteger("maximo");
 
-            const channel =
-            interaction.options.getChannel(
-                "canal"
-            );
+            if (minimo >= maximo) return weeklyReply(interaction, "⚠️ Configuración inválida", "El mínimo debe ser menor que el máximo.", 0xFFD700);
 
-            const minimo =
-            interaction.options.getInteger(
-                "minimo"
-            );
-
-            const maximo =
-            interaction.options.getInteger(
-                "maximo"
-            );
-
-            if (minimo >= maximo) {
-
-                return interaction.reply({
-
-                    content:
-                    "❌ El mínimo debe ser menor que el máximo.",
-
-                    flags: 64
-
-                });
-
-            }
-
-            data.logChannelId =
-            channel.id;
-
-            data.minAmount =
-            minimo;
-
-            data.maxAmount =
-            maximo;
-
-            data.nextDrop =
-            new Date(
-                Date.now() +
-                7 * 24 * 60 * 60 * 1000
-            );
-
+            data.logChannelId = channel.id;
+            data.minAmount = minimo;
+            data.maxAmount = maximo;
+            data.nextDrop = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
             await data.save();
 
-            return interaction.reply({
-
-                embeds: [
-
-                    new EmbedBuilder()
-
-                        .setColor("Green")
-
-                        .setTitle(
-                            "🪙 WeeklyDrop Configurado"
-                        )
-
-                        .setDescription(
-
-`✅ Canal logs: ${channel}
-💰 Mínimo: ${minimo}
-💎 Máximo: ${maximo}
-
-⏳ Primer drop:
-<t:${Math.floor(data.nextDrop.getTime() / 1000)}:R>`
-
-                        )
-
-                ]
-
-            });
-
+            return weeklyReply(
+                interaction,
+                "🪙 WeeklyDrop configurado",
+                "**Canal de logs:** " + channel + "\n**Mínimo:** " + minimo.toLocaleString() + "\n**Máximo:** " + maximo.toLocaleString() + "\n**Primer drop:** <t:" + Math.floor(data.nextDrop.getTime() / 1000) + ":R>",
+                0x00FF99
+            );
         }
 
         /*
