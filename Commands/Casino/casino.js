@@ -775,7 +775,7 @@ async function run_ruleta(interaction) {
     if (type === "color" && !["rojo", "negro", "verde"].includes(bet))
         return interaction.editReply(panel("## 🎡 Ruleta\n❌ Para una apuesta de color utiliza **rojo**, **negro** o **verde**.", null, 0xED4245));
 
-    if (type === "numero" && (!/^\\d+$/.test(bet) || Number(bet) < 0 || Number(bet) > 36))
+    if (type === "numero" && (!/^\d+$/.test(bet) || Number(bet) < 0 || Number(bet) > 36))
         return interaction.editReply(panel("## 🎡 Ruleta\n❌ El número debe estar entre **0 y 36**.", null, 0xED4245));
 
     const [userData, foundStats] = await Promise.all([
