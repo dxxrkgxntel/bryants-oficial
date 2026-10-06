@@ -7,8 +7,8 @@ const {
     ButtonBuilder,
     ButtonStyle,
     ComponentType,
-} = const questHandler = require("../../Functions/questHandler");
-require("discord.js");
+} = require("discord.js");
+const questHandler = require("../../Functions/questHandler");
 const {
     TwoZeroFourEight,
     FastType,
