@@ -214,7 +214,17 @@ module.exports = (client) => {
                         // EMBED
                         //////////////////////////////////////////////////
 
-                        await channel.send({\n                            flags: MessageFlags.IsComponentsV2,\n                            components: [{ type: 17, accent_color: 0x8A2BE2, components: [\n                                { type: 12, items: [{ media: { url: BIRTHDAY_BANNER } }] },\n                                { type: 10, content: "## 🎉 ¡Feliz Cumpleaños!\\n🎂 ¡Feliz cumpleaños " + member + "!\\n\\n🥳 Esperamos que tengas un día increíble lleno de felicidad y regalos.\\n\\n🎁 Has recibido **" + reward.toLocaleString() + " monedas** por tu cumpleaños." }\n                            ] }]\n                        });
+                        await channel.send({
+                            flags: MessageFlags.IsComponentsV2,
+                            components: [{
+                                type: 17,
+                                accent_color: 0x8A2BE2,
+                                components: [
+                                    { type: 12, items: [{ media: { url: BIRTHDAY_BANNER } }] },
+                                    { type: 10, content: "## 🎉 ¡Feliz Cumpleaños!\n🎂 ¡Feliz cumpleaños " + member + "!\n\n🥳 Esperamos que tengas un día increíble lleno de felicidad y regalos.\n\n🎁 Has recibido **" + reward.toLocaleString() + " monedas** por tu cumpleaños." }
+                                ]
+                            }]
+                        });
 
                     } catch (err) {
 
