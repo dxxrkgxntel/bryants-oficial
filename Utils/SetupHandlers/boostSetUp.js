@@ -31,7 +31,11 @@ module.exports = {
                 .setDescription("URL del thumbnail del embed")
                 .setRequired(false)
         )
-        .addStringOption(option =>\n            option.setName("banner")\n                .setDescription("URL del banner superior")\n                .setRequired(false)\n        ),
+        .addStringOption(option =>
+            option.setName("banner")
+                .setDescription("URL del banner superior")
+                .setRequired(false)
+        ),
 
     async execute(interaction) {
         try {
