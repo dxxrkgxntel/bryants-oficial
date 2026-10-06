@@ -3,7 +3,13 @@ const {
     SlashCommandBuilder,
     PermissionFlagsBits,
     ChannelType,
-    EmbedBuilder
+    ContainerBuilder,
+    TextDisplayBuilder,
+    SeparatorBuilder,
+    SeparatorSpacingSize,
+    MediaGalleryBuilder,
+    MediaGalleryItemBuilder,
+    MessageFlags
 
 } = require("discord.js");
 
@@ -12,6 +18,34 @@ require("../../Models/WeeklyDrop");
 
 const Economy =
 require("../../Models/EconomyUser");
+
+const WEEKLYDROP_BANNER = "https://i.imgur.com/w7LzzI0.png";
+
+function weeklyPanel(title, text, color = 0x8A2BE2) {
+    return new ContainerBuilder()
+        .setAccentColor(color)
+        .addMediaGalleryComponents(
+            new MediaGalleryBuilder().addItems(
+                new MediaGalleryItemBuilder().setURL(WEEKLYDROP_BANNER)
+            )
+        )
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent("## " + title))
+        .addSeparatorComponents(
+            new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+        )
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent(text));
+}
+
+function weeklyPayload(title, text, color = 0x8A2BE2) {
+    return {
+        components: [weeklyPanel(title, text, color)],
+        flags: MessageFlags.IsComponentsV2
+    };
+}
+
+function weeklyReply(interaction, title, text, color = 0x8A2BE2) {
+    return interaction.editReply(weeklyPayload(title, text, color));
+}
 
 module.exports = {
 
@@ -149,6 +183,8 @@ module.exports = {
         ),
 
     async execute(interaction) {
+
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const sub =
         interaction.options.getSubcommand();
