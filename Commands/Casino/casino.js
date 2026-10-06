@@ -178,160 +178,34 @@ async function run_coinflip(interaction) {
 }
 
 async function run_dados(interaction) {
+    await interaction.deferReply();
+    const bet = interaction.options.getInteger("apuesta");
+    const userData = await getUser(interaction.guild.id, interaction.user.id);
 
-        //////////////////////////////////////////////////
-        // APUESTA
-        //////////////////////////////////////////////////
-
-        const bet =
-            interaction.options.getInteger(
-                "apuesta"
-            );
-
-        //////////////////////////////////////////////////
-        // USER DATA
-        //////////////////////////////////////////////////
-
-        const userData =
-
-            await getUser(
-
-                interaction.guild.id,
-                interaction.user.id
-            );
-
-        //////////////////////////////////////////////////
-        // VALIDAR DINERO
-        //////////////////////////////////////////////////
-
-        if (
-            userData.wallet < bet
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ No tienes suficiente dinero en tu wallet.",
-
-                flags: 64
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // EMBED
-        //////////////////////////////////////////////////
-
-        const embed =
-
-            new EmbedBuilder()
-
-                .setColor("#8A2BE2")
-
-                .setTitle(
-                    "🎲 Confirmar apuesta"
-                )
-
-                .setDescription(
-
-    `💰 **Apuesta:**\n` +
-    `> ${bet.toLocaleString()} monedas\n\n` +
-
-    `💵 **Wallet actual:**\n` +
-    `> ${userData.wallet.toLocaleString()} monedas\n\n` +
-
-    `❓ ¿Realmente quieres realizar esta apuesta?`
-)
-
-                //////////////////////////////////////////////////
-                // THUMBNAIL
-                //////////////////////////////////////////////////
-
-                .setThumbnail(
-
-                    interaction.user.displayAvatarURL({
-
-                        dynamic: true
-                    })
-                )
-
-                //////////////////////////////////////////////////
-                // IMAGE
-                //////////////////////////////////////////////////
-
-                .setImage(
-                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
-                )
-
-                //////////////////////////////////////////////////
-
-                .setFooter({
-
-                    text:
-                        interaction.guild.name
-                })
-
-                .setTimestamp();
-
-        //////////////////////////////////////////////////
-        // BOTONES
-        //////////////////////////////////////////////////
-
-        const row =
-
-            new ActionRowBuilder()
-
-                .addComponents(
-
-                    //////////////////////////////////////////////////
-                    // CONFIRMAR
-                    //////////////////////////////////////////////////
-
-                    new ButtonBuilder()
-
-                        .setCustomId(
-                            `dados_confirm_${bet}`
-                        )
-
-                        .setLabel(
-                            "Confirmar"
-                        )
-
-                        .setEmoji("✅")
-
-                        .setStyle(
-                            ButtonStyle.Secondary
-                        ),
-
-                    //////////////////////////////////////////////////
-                    // CANCELAR
-                    //////////////////////////////////////////////////
-
-                    new ButtonBuilder()
-
-                        .setCustomId(
-                            "dados_cancel"
-                        )
-
-                        .setLabel(
-                            "Cancelar"
-                        )
-
-                        .setEmoji("❌")
-
-                        .setStyle(
-                            ButtonStyle.Secondary
-                        )
-                );
-
-        //////////////////////////////////////////////////
-
-        await interaction.reply({
-
-            embeds: [embed],
-
-            components: [row]
+    if (userData.wallet < bet) {
+        return interaction.editReply({
+            flags: MessageFlags.IsComponentsV2,
+            components: [{ type: 17, accent_color: 0xED4245, components: [
+                { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+                { type: 10, content: `## 🎲 Dados — Dinero insuficiente\n❌ Necesitas **${bet.toLocaleString()} monedas** y tienes **${userData.wallet.toLocaleString()}** en tu wallet.` }
+            ]}]
         });
-    
+    }
+
+    const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`dados_confirm_${bet}`).setLabel("Confirmar").setEmoji("✅").setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId("dados_cancel").setLabel("Cancelar").setEmoji("❌").setStyle(ButtonStyle.Secondary)
+    );
+
+    return interaction.editReply({
+        flags: MessageFlags.IsComponentsV2,
+        components: [{ type: 17, accent_color: 0x8A2BE2, components: [
+            { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+            { type: 10, content: `## 🎲 Confirmar apuesta\n💰 Apuesta: **${bet.toLocaleString()} monedas**\n👛 Wallet actual: **${userData.wallet.toLocaleString()} monedas**\n\n❓ ¿Quieres lanzar los dados?` },
+            { type: 14, divider: true, spacing: 1 },
+            row.toJSON()
+        ]}]
+    });
 }
 
 async function run_gamble(interaction) {
