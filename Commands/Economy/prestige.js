@@ -76,7 +76,7 @@ module.exports={
    return reply(i,"👑 Sistema Prestige",
     `🏆 **Prestigio actual:** ${prestige.prestige} / 5\n📈 **Nivel requerido:** 50\n\n`+
     (max?"🌟 Ya alcanzaste el prestigio máximo.":`🎯 **Siguiente prestigio:** ${next}\n🎁 **Recompensa:** ${reward.toLocaleString()} monedas\n🎭 **Rol:** ${roleId?`<@&${roleId}>`:"No configurado"}`)+
-    "\n\nAl reclamar, tu nivel y XP se reinician a **nivel 1 / 0 XP**.",0x8A2BE2,true);
+    "\n\nAl reclamar, tu nivel y XP se reinician a **nivel 1 / 0 XP**.",0x8A2BE2,true,PRESTIGE_INFO_BANNER);
   }
 
   if(sub==="claim"){
