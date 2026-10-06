@@ -1,7 +1,6 @@
 const {
     SlashCommandBuilder,
     PermissionFlagsBits,
-    EmbedBuilder,
     ChannelType
 } = require("discord.js");
 
@@ -32,11 +31,7 @@ module.exports = {
                 .setDescription("URL del thumbnail del embed")
                 .setRequired(false)
         )
-        .addStringOption(option =>
-            option.setName("imagen")
-                .setDescription("URL de la imagen grande del embed")
-                .setRequired(false)
-        ),
+        .addStringOption(option =>\n            option.setName("banner")\n                .setDescription("URL del banner superior")\n                .setRequired(false)\n        ),
 
     async execute(interaction) {
         try {
@@ -46,7 +41,7 @@ module.exports = {
             const boostChannel = interaction.options.getChannel("canal");
             const boostDescription = interaction.options.getString("descripcion");
             const boostThumbnail = interaction.options.getString("thumbnail");
-            const boostImage = interaction.options.getString("imagen");
+            const boostImage = interaction.options.getString("banner");
 
             const botMember = interaction.guild.members.me;
             const roles = [boosterRole, boosterVipRole, boosterLegendRole];
@@ -72,7 +67,7 @@ module.exports = {
 
             if (!isValidUrl(boostThumbnail) || !isValidUrl(boostImage)) {
                 return interaction.reply({
-                    content: "❌ `thumbnail` e `imagen` deben ser URLs válidas que comiencen con http:// o https://.",
+                    content: "❌ `thumbnail` y `banner` deben ser URLs válidas que comiencen con http:// o https://.",
                     flags: 64
                 });
             }
@@ -104,7 +99,7 @@ module.exports = {
                     `📢 Canal: ${boostChannel}\n\n` +
                     `📝 Descripción: ${boostDescription ? "Actualizada" : existing?.boostDescription ? "Se conserva la anterior" : "Predeterminada"}\n` +
                     `🖼️ Thumbnail: ${boostThumbnail ? "Actualizado" : existing?.boostThumbnail ? "Se conserva el anterior" : "Sin configurar"}\n` +
-                    `🌄 Imagen: ${boostImage ? "Actualizada" : existing?.boostImage ? "Se conserva la anterior" : "Sin configurar"}`
+                    `🌄 Banner: ${boostImage ? "Actualizado" : existing?.boostImage ? "Se conserva el anterior" : "Sin configurar"}`
                 )
                 .setFooter({ text: `${interaction.guild.name} • Booster System` })
                 .setTimestamp();
