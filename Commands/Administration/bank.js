@@ -17,6 +17,37 @@ const BankDonorRole = require("../../Models/BankDonorRoles");
 
 const BANK_BANNER = "https://i.imgur.com/fHtidQP.png";
 
+function bankPanel(title, text, color = 0x8A2BE2, rows = []) {
+    const box = new ContainerBuilder()
+        .setAccentColor(color)
+        .addMediaGalleryComponents(
+            new MediaGalleryBuilder().addItems(
+                new MediaGalleryItemBuilder().setURL(BANK_BANNER)
+            )
+        )
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent("## " + title)
+        )
+        .addSeparatorComponents(
+            new SeparatorBuilder()
+                .setDivider(true)
+                .setSpacing(SeparatorSpacingSize.Small)
+        )
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(text)
+        );
+
+    if (rows.length) box.addActionRowComponents(...rows);
+    return box;
+}
+
+function bankReply(interaction, title, text, color = 0x8A2BE2, rows = []) {
+    return interaction.editReply({
+        components: [bankPanel(title, text, color, rows)],
+        flags: MessageFlags.IsComponentsV2
+    });
+}
+
 module.exports = {
 
     data:
@@ -133,6 +164,8 @@ module.exports = {
     //////////////////////////////////////////////////
 
     async execute(interaction) {
+
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const group =
         interaction.options.getSubcommandGroup();
