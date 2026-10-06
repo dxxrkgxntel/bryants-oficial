@@ -3,7 +3,8 @@ const {
     EmbedBuilder,
     ActionRowBuilder,
     ButtonBuilder,
-    ButtonStyle
+    ButtonStyle,
+    MessageFlags
 } = require("discord.js");
 
 const EconomyUser = require("../../Models/EconomyUser");
@@ -30,189 +31,72 @@ function calculateHand(hand) {
 }
 
 async function run_blackjack(interaction) {
-
-        //////////////////////////////////////////////////
-        // AMOUNT
-        //////////////////////////////////////////////////
-
-        const amount =
-            interaction.options.getInteger(
-                "cantidad"
-            );
-
-        //////////////////////////////////////////////////
-        // USER DATA
-        //////////////////////////////////////////////////
-
-        const userData =
-
-            await EconomyUser.findOne({
-
-                guildId:
-                    interaction.guild.id,
-
-                userId:
-                    interaction.user.id
-            });
-
-        //////////////////////////////////////////////////
-
-        if (!userData) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ No tienes datos económicos.",
-
-                flags: 64
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // MONEY
-        //////////////////////////////////////////////////
-
-        if (
-            userData.wallet < amount
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ No tienes suficiente dinero.",
-
-                flags: 64
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // PLAYER
-        //////////////////////////////////////////////////
-
-        const playerHand = [
-
-            drawCard(),
-            drawCard()
-        ];
-
-        //////////////////////////////////////////////////
-        // DEALER
-        //////////////////////////////////////////////////
-
-        const dealerHand = [
-
-            drawCard(),
-            drawCard()
-        ];
-
-        //////////////////////////////////////////////////
-        // TOTAL
-        //////////////////////////////////////////////////
-
-        const playerTotal =
-            calculateHand(playerHand);
-
-        //////////////////////////////////////////////////
-        // EMBED
-        //////////////////////////////////////////////////
-
-        const embed =
-
-            new EmbedBuilder()
-
-                .setColor("#8A2BE2")
-
-                .setTitle(
-                    "🃏 Blackjack"
-                )
-
-                .setDescription(
-
-                    `## 🎴 Dealer\n\n` +
-
-                    `❓ ${dealerHand[1]}\n\n` +
-
-                    `## 👤 ${interaction.user.username}\n\n` +
-
-                    `${playerHand.join("  ")}\n\n` +
-
-                    `💯 Total: **${playerTotal}**\n\n` +
-
-                    `💰 Apuesta: **${amount.toLocaleString()} monedas**`
-                )
-
-                .setThumbnail(
-
-                    interaction.user.displayAvatarURL({
-
-                        dynamic: true
-                    })
-                )
-
-                .setFooter({
-
-                    text:
-                        "Bryant's Casino"
-                })
-
-                .setTimestamp();
-
-        //////////////////////////////////////////////////
-        // BUTTONS
-        //////////////////////////////////////////////////
-
-        const row =
-
-            new ActionRowBuilder()
-
-                .addComponents(
-
-                    new ButtonBuilder()
-
-                        .setCustomId(
-
-                            `blackjack_hit_${interaction.user.id}_${amount}_${playerHand.join("-")}_${dealerHand.join("-")}`
-
-                        )
-
-                        .setLabel(
-                            "Pedir"
-                        )
-
-                        .setEmoji("➕")
-
-                        .setStyle(
-                            ButtonStyle.Secondary
-                        ),
-
-                    new ButtonBuilder()
-
-                        .setCustomId(
-
-                            `blackjack_stand_${interaction.user.id}_${amount}_${playerHand.join("-")}_${dealerHand.join("-")}`
-
-                        )
-
-                        .setLabel(
-                            "Plantarse"
-                        )
-
-                        .setEmoji("🛑")
-
-                        .setStyle(
-                            ButtonStyle.Secondary
-                        )
-                );
-
-        //////////////////////////////////////////////////
-
-        await interaction.reply({
-
-            embeds: [embed],
-
-            components: [row]
+    await interaction.deferReply();
+
+    const amount = interaction.options.getInteger("cantidad");
+    const userData = await EconomyUser.findOne({
+        guildId: interaction.guild.id,
+        userId: interaction.user.id
+    });
+
+    if (!userData) {
+        return interaction.editReply({
+            flags: MessageFlags.IsComponentsV2,
+            components: [{
+                type: 17,
+                accent_color: 0x8A2BE2,
+                components: [
+                    { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+                    { type: 10, content: "## ❌ Blackjack\nNo tienes datos económicos." }
+                ]
+            }]
         });
-    
+    }
+
+    if (userData.wallet < amount) {
+        return interaction.editReply({
+            flags: MessageFlags.IsComponentsV2,
+            components: [{
+                type: 17,
+                accent_color: 0x8A2BE2,
+                components: [
+                    { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+                    { type: 10, content: `## ❌ Dinero insuficiente\nNecesitas **${amount.toLocaleString()} monedas** y tienes **${userData.wallet.toLocaleString()}** en tu wallet.` }
+                ]
+            }]
+        });
+    }
+
+    const playerHand = [drawCard(), drawCard()];
+    const dealerHand = [drawCard(), drawCard()];
+    const playerTotal = calculateHand(playerHand);
+
+    const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId(`blackjack_hit_${interaction.user.id}_${amount}_${playerHand.join("-")}_${dealerHand.join("-")}`)
+            .setLabel("Pedir")
+            .setEmoji("➕")
+            .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+            .setCustomId(`blackjack_stand_${interaction.user.id}_${amount}_${playerHand.join("-")}_${dealerHand.join("-")}`)
+            .setLabel("Plantarse")
+            .setEmoji("🛑")
+            .setStyle(ButtonStyle.Secondary)
+    );
+
+    return interaction.editReply({
+        flags: MessageFlags.IsComponentsV2,
+        components: [{
+            type: 17,
+            accent_color: 0x8A2BE2,
+            components: [
+                { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+                { type: 10, content: `## 🃏 Blackjack\n### 🎴 Dealer\n❓  **${dealerHand[1]}**\n\n### 👤 ${interaction.user.username}\n**${playerHand.join("  •  ")}**\n\n💯 Total: **${playerTotal}**\n💰 Apuesta: **${amount.toLocaleString()} monedas**\n👛 Wallet: **${userData.wallet.toLocaleString()} monedas**` },
+                { type: 14, divider: true, spacing: 1 },
+                row.toJSON()
+            ]
+        }]
+    });
 }
 
 async function run_stats(interaction) {
