@@ -13,7 +13,9 @@ const {
     StringSelectMenuBuilder
 } = require("discord.js");
 
-const BankDonorRole =\nrequire("../../Models/BankDonorRoles");\n\nconst BANK_BANNER = "https://i.imgur.com/fHtidQP.png";
+const BankDonorRole = require("../../Models/BankDonorRoles");
+
+const BANK_BANNER = "https://i.imgur.com/fHtidQP.png";
 
 module.exports = {
 
