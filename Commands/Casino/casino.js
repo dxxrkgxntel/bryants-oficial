@@ -9,8 +9,10 @@ const {
 const EconomyUser = require("../../Models/EconomyUser");
 const CasinoStats = require("../../Models/CasinoStats");
 const getUser = require("../../Utils/getUser");
+const getConfig = require("../../Utils/getConfig");
 
 const activeBets = new Set();
+const activeGambles = new Set();
 
 const cards = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
 function drawCard() { return cards[Math.floor(Math.random() * cards.length)]; }
