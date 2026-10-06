@@ -272,83 +272,14 @@ module.exports = {
         */
 
         if (sub === "info") {
-
-            const embed =
-            new EmbedBuilder()
-
-                .setColor("Blurple")
-
-                .setTitle(
-                    "🪙 Información WeeklyDrop"
-                )
-
-                .addFields(
-
-                    {
-
-                        name: "Estado",
-
-                        value:
-                        data.enabled
-                        ? "✅ Activado"
-                        : "❌ Desactivado"
-
-                    },
-
-                    {
-
-                        name: "Mínimo",
-
-                        value:
-                        `${data.minAmount}`,
-
-                        inline: true
-
-                    },
-
-                    {
-
-                        name: "Máximo",
-
-                        value:
-                        `${data.maxAmount}`,
-
-                        inline: true
-
-                    },
-
-                    {
-
-                        name: "Canal Logs",
-
-                        value:
-                        data.logChannelId
-                        ? `<#${data.logChannelId}>`
-                        : "No configurado"
-
-                    },
-
-                    {
-
-                        name: "Próximo Drop",
-
-                        value:
-                        data.nextDrop
-                        ? `<t:${Math.floor(data.nextDrop.getTime() / 1000)}:R>`
-                        : "No definido"
-
-                    }
-
-                )
-
-                .setTimestamp();
-
-            return interaction.reply({
-
-                embeds: [embed]
-
-            });
-
+            const channel = data.logChannelId ? interaction.guild.channels.cache.get(data.logChannelId) : null;
+            let text = "**Estado:** " + (data.enabled ? "✅ Activado" : "❌ Desactivado");
+            text += "\n**Mínimo:** " + Number(data.minAmount || 0).toLocaleString();
+            text += "\n**Máximo:** " + Number(data.maxAmount || 0).toLocaleString();
+            text += "\n**Canal de logs:** " + (channel ? channel.toString() : data.logChannelId ? "⚠️ Canal eliminado" : "No configurado");
+            text += "\n**Último drop:** " + (data.lastDrop ? "<t:" + Math.floor(data.lastDrop.getTime() / 1000) + ":R>" : "Nunca");
+            text += "\n**Próximo drop:** " + (data.nextDrop ? "<t:" + Math.floor(data.nextDrop.getTime() / 1000) + ":R>" : "No definido");
+            return weeklyReply(interaction, "🪙 Información WeeklyDrop", text, 0x8A2BE2);
         }
 
         /*
