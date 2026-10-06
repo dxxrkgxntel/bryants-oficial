@@ -468,8 +468,37 @@ module.exports = {
         if (subcommand === "unmute") {
             const user = interaction.options.getMember("user");
             if (!user) return moderationReply(interaction, "❌ Usuario inválido", "No pude encontrar a ese miembro.", 0xFF0000);
-            if (!user.moderatable) return moderationReply(interaction, "⛔ No puedo modificarlo", "Revisa la jerarquía de roles y los permisos del bot.", 0xFF0000);
-            await user.timeout(null);
+
+            const me = interaction.guild.members.me;
+            if (user.id === interaction.guild.ownerId)
+                return moderationReply(interaction, "⛔ No puedo modificarlo", "Discord no permite moderar al propietario del servidor.", 0xFF0000);
+
+            if (!me.permissions.has("ModerateMembers"))
+                return moderationReply(interaction, "⛔ Falta un permiso", "El bot no tiene el permiso **Moderar miembros (Moderate Members)**.", 0xFF0000);
+
+            if (user.roles.highest.position >= me.roles.highest.position)
+                return moderationReply(
+                    interaction,
+                    "⛔ Jerarquía de roles",
+                    "Mi rol más alto es **" + me.roles.highest.name + "** y el del usuario es **" + user.roles.highest.name + "**. El rol del bot debe estar por encima.",
+                    0xFF0000
+                );
+
+            if (!user.isCommunicationDisabled())
+                return moderationReply(interaction, "ℹ️ Usuario sin timeout", "Ese usuario no tiene un timeout activo de Discord.", 0xFFD700);
+
+            try {
+                await user.timeout(null, "Timeout retirado por " + interaction.user.tag);
+            } catch (error) {
+                console.error("Error al retirar timeout:", error);
+                return moderationReply(
+                    interaction,
+                    "❌ Discord rechazó el unmute",
+                    "La jerarquía y **Moderar miembros** parecen correctos, pero Discord rechazó la acción. Código: **" + (error.code || "desconocido") + "**.",
+                    0xFF0000
+                );
+            }
+
             return moderationReply(interaction, "🔊 Usuario desmuteado", "**Usuario:** " + user + "\n**Moderador:** " + interaction.user, 0x00FF99);
         }
 
