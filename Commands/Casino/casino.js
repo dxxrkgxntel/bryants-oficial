@@ -15,6 +15,7 @@ const activeBets = new Set();
 const activeGambles = new Set();
 
 const cards = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
 function drawCard() { return cards[Math.floor(Math.random() * cards.length)]; }
 function calculateHand(hand) {
     let total = 0, aces = 0;
