@@ -100,178 +100,34 @@ async function run_blackjack(interaction) {
 }
 
 async function run_stats(interaction) {
-
-        //////////////////////////////////////////////////
-        // USER
-        //////////////////////////////////////////////////
-
-        const target =
-            interaction.user;
-
-        //////////////////////////////////////////////////
-        // DATA
-        //////////////////////////////////////////////////
-
-        const data =
-
-            await CasinoStats.findOne({
-
-                guildId:
-                    interaction.guild.id,
-
-                userId:
-                    target.id
-            });
-
-        //////////////////////////////////////////////////
-
-        if (!data) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ No tienes estadísticas.",
-
-                flags: 64
-            });
-        }
-
-        //////////////////////////////////////////////////
-        // FIX OLD DATA
-        //////////////////////////////////////////////////
-
-        data.totalGames ??= 0;
-
-        data.totalWins ??= 0;
-
-        data.totalLosses ??= 0;
-
-        data.moneyWon ??= 0;
-
-        data.moneyLost ??= 0;
-
-        data.jackpots ??= 0;
-
-        data.currentStreak ??= 0;
-
-        data.biggestWin ??= 0;
-
-        data.slotsWins ??= 0;
-
-        data.rouletteWins ??= 0;
-
-        data.gambleWins ??= 0;
-
-        data.coinflipWins ??= 0;
-
-        data.blackjackWins ??= 0;
-
-        //////////////////////////////////////////////////
-        // TOTAL GAMES
-        //////////////////////////////////////////////////
-
-        const totalGames =
-            data.totalGames;
-
-        //////////////////////////////////////////////////
-        // WINRATE
-        //////////////////////////////////////////////////
-
-        const winrate =
-
-            totalGames > 0
-
-                ?
-
-                (
-                    (
-                        data.totalWins /
-                        totalGames
-                    ) * 100
-                ).toFixed(1)
-
-                :
-
-                0;
-
-        //////////////////////////////////////////////////
-        // EMBED
-        //////////////////////////////////////////////////
-
-        const embed =
-
-            new EmbedBuilder()
-
-                .setColor("#8A2BE2")
-
-                .setTitle(
-                    "🎰 Estadísticas del Casino"
-                )
-
-                .setDescription(
-
-                    `## 👤 ${target.username}\n\n` +
-
-                    `> 🎉 Victorias: **${data.totalWins.toLocaleString()}**\n` +
-
-                    `> 💥 Derrotas: **${data.totalLosses.toLocaleString()}**\n` +
-
-                    `> 📈 Winrate: **${winrate}%**\n\n` +
-
-                    `> 💰 Dinero ganado: **${data.moneyWon.toLocaleString()}**\n` +
-
-                    `> 💸 Dinero perdido: **${data.moneyLost.toLocaleString()}**\n\n` +
-
-                    `> 🌟 Jackpots: **${data.jackpots.toLocaleString()}**\n` +
-
-                    `> 🔥 Racha actual: **${data.currentStreak.toLocaleString()}**\n` +
-
-                    `> 💎 Mayor victoria: **${data.biggestWin.toLocaleString()} monedas**\n\n` +
-
-                    `> 🎲 Total partidas: **${data.totalGames.toLocaleString()}**\n\n` +
-
-                    `### 🎮 Juegos\n\n` +
-
-                    `🎰 Slots ganados: **${data.slotsWins.toLocaleString()}**\n` +
-
-                    `🎡 Ruletas ganadas: **${data.rouletteWins.toLocaleString()}**\n` +
-
-                    `🎲 Apuestas ganadas: **${data.gambleWins.toLocaleString()}**\n` +
-
-                    `🪙 Coinflip ganados: **${data.coinflipWins.toLocaleString()}**\n` +
-
-                    `🃏 Blackjacks ganados: **${data.blackjackWins.toLocaleString()}**`
-                )
-
-                .setThumbnail(
-
-                    target.displayAvatarURL({
-
-                        dynamic: true,
-
-                        size: 1024
-                    })
-                )
-
-                .setImage(
-                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png?ex=6a0032f4&is=69fee174&hm=54a509859dcee24cd6a637b9e0373e1821b6ab3898eccd77a59591b6e6d55e3a&=&format=webp&quality=lossless&width=1288&height=515"
-                )
-
-                .setFooter({
-
-                    text:
-                        "Bryant's Casino"
-                })
-
-                .setTimestamp();
-
-        //////////////////////////////////////////////////
-
-        await interaction.reply({
-
-            embeds: [embed]
+    await interaction.deferReply();
+    const target = interaction.user;
+    const data = await CasinoStats.findOne({ guildId: interaction.guild.id, userId: target.id });
+
+    if (!data) {
+        return interaction.editReply({
+            flags: MessageFlags.IsComponentsV2,
+            components: [{ type: 17, accent_color: 0x8A2BE2, components: [
+                { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+                { type: 10, content: "## 🎰 Estadísticas del Casino\n❌ Todavía no tienes estadísticas registradas en BF Casino." }
+            ]}]
         });
-    
+    }
+
+    for (const key of ["totalGames","totalWins","totalLosses","moneyWon","moneyLost","jackpots","currentStreak","biggestWin","slotsWins","rouletteWins","gambleWins","coinflipWins","blackjackWins"]) data[key] ??= 0;
+    const winrate = data.totalGames > 0 ? ((data.totalWins / data.totalGames) * 100).toFixed(1) : "0.0";
+
+    return interaction.editReply({
+        flags: MessageFlags.IsComponentsV2,
+        components: [{ type: 17, accent_color: 0x8A2BE2, components: [
+            { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+            { type: 10, content: \`## 🎰 Estadísticas de BF Casino\n### 👤 \${target.username}\n\n🎉 Victorias: **\${data.totalWins.toLocaleString()}**\n💥 Derrotas: **\${data.totalLosses.toLocaleString()}**\n📈 Winrate: **\${winrate}%**\n🎲 Partidas: **\${data.totalGames.toLocaleString()}**\` },
+            { type: 14, divider: true, spacing: 1 },
+            { type: 10, content: \`### 💰 Rendimiento\n💵 Dinero ganado: **\${data.moneyWon.toLocaleString()}**\n💸 Dinero perdido: **\${data.moneyLost.toLocaleString()}**\n💎 Mayor victoria: **\${data.biggestWin.toLocaleString()} monedas**\n🌟 Jackpots: **\${data.jackpots.toLocaleString()}**\n🔥 Racha actual: **\${data.currentStreak.toLocaleString()}**\` },
+            { type: 14, divider: true, spacing: 1 },
+            { type: 10, content: \`### 🎮 Victorias por juego\n🎰 Slots: **\${data.slotsWins.toLocaleString()}**\n🎡 Ruleta: **\${data.rouletteWins.toLocaleString()}**\n🎲 Gamble: **\${data.gambleWins.toLocaleString()}**\n🪙 Coinflip: **\${data.coinflipWins.toLocaleString()}**\n🃏 Blackjack: **\${data.blackjackWins.toLocaleString()}**\` }
+        ]}]
+    });
 }
 
 async function run_coinflip(interaction) {
