@@ -8,8 +8,6 @@ const {
     "../../Utils/antiscam/detectScam"
 );
 
-const userMessageMap =
-new Map();
 
 module.exports = {
 
@@ -45,51 +43,6 @@ module.exports = {
                     )
                 )
             ) return;
-
-            const now = Date.now();
-
-if (
-    !userMessageMap.has(
-        message.author.id
-    )
-) {
-
-    userMessageMap.set(
-        message.author.id,
-        []
-    );
-
-}
-
-const messages =
-userMessageMap.get(
-    message.author.id
-);
-
-messages.push(now);
-
-const filtered =
-messages.filter(
-    time => now - time < 5000
-);
-
-userMessageMap.set(
-    message.author.id,
-    filtered
-);
-
-if (filtered.length >= 6) {
-
-    await message.member
-        .timeout(
-            10 * 60 * 1000,
-            "Spam masivo detectado"
-        )
-        .catch(() => {});
-
-    return;
-
-}
 
             const result =
                 detectScam(
