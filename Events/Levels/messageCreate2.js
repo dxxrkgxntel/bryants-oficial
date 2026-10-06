@@ -105,7 +105,8 @@ module.exports = {
         // XP NECESARIA
         ////////////////////////////////////////
 
-        let neededXp =\n            xpNeeded(data.level);
+        let neededXp =
+            xpNeeded(data.level);
 
         ////////////////////////////////////////
         // MULTI LEVEL UP
@@ -129,7 +130,8 @@ module.exports = {
             // NUEVA XP NECESARIA
             ////////////////////////////////////////
 
-            neededXp =\n                xpNeeded(data.level);
+            neededXp =
+            xpNeeded(data.level);
 
             //////////////////////////////////////////////////
             // RECOMPENSA ECONOMIA
