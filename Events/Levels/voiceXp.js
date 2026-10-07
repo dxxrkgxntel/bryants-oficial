@@ -325,7 +325,7 @@ module.exports = {
                                             image: {
 
                                                 url:
-                                                    "https://i.imgur.com/KCMdEyQ.png"
+                                                    "https://i.imgur.com/IyrUtlE.png"
                                             }
                                         }]
                                     }).catch(() => {});
@@ -467,7 +467,7 @@ module.exports = {
                                                     image: {
 
                                                         url:
-                                                            "https://i.imgur.com/KCMdEyQ.png"
+                                                            "https://i.imgur.com/IyrUtlE.png"
                                                     }
                                                 }]
                                             }).catch(() => {});
