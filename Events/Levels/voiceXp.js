@@ -317,7 +317,8 @@ module.exports = {
                                                     }]
                                                 },
 
-                                                {
+                                                                { type: 14, divider: true, spacing: 1 },
+{
                                                     type: 10,
 
                                                     content:
@@ -463,7 +464,8 @@ module.exports = {
                                                             }]
                                                         },
 
-                                                        {
+                                                                        { type: 14, divider: true, spacing: 1 },
+{
                                                             type: 10,
 
                                                             content:
