@@ -94,8 +94,6 @@ module.exports = {
             );
 
             const status =
-                `## 🚀 Sistema Booster Configurado\n` +
-                `✅ Configuración guardada correctamente.\n\n` +
                 `💜 **Booster:** ${boosterRole}\n` +
                 `🚀 **Booster VIP:** ${boosterVipRole}\n` +
                 `👑 **Booster Legend:** ${boosterLegendRole}\n` +
@@ -109,7 +107,11 @@ module.exports = {
                 components: [{
                     type: 17,
                     accent_color: 0x8A2BE2,
-                    components: [{ type: 10, content: status }]
+                    components: [
+                        { type: 10, content: "## 🚀 Sistema Booster Configurado\\n✅ Configuración guardada correctamente." },
+                        { type: 14, divider: true, spacing: 1 },
+                        { type: 10, content: status }
+                    ]
                 }]
             });
         } catch (error) {
