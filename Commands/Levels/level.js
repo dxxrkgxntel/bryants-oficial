@@ -21,6 +21,7 @@ function panel(body, accent = PURPLE, extra = []) {
             accent_color: accent,
             components: [
                 { type: 12, items: [{ media: { url: BANNER } }] },
+                { type: 14, divider: true, spacing: 1 },
                 { type: 10, content: body },
                 ...extra
             ]
