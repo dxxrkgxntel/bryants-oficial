@@ -22,7 +22,8 @@ async function run8ball(interaction) {
             accent_color: 0x8A2BE2,
             components: [
                 { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
-                { type: 10, content: "## 🎱 BF 8Ball\n### ❓ Pregunta\n" + question },
+                                { type: 14, divider: true, spacing: 1 },
+{ type: 10, content: "## 🎱 BF 8Ball\n### ❓ Pregunta\n" + question },
                 { type: 14, divider: true, spacing: 1 },
                 { type: 10, content: "### 🔮 Respuesta\n**" + answer + "**\n\n👤 Preguntado por <@" + interaction.user.id + ">" }
             ]
@@ -41,7 +42,8 @@ async function runBanana(interaction) {
             accent_color: 0x8A2BE2,
             components: [
                 { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
-                { type: 10, content: "## 🍌 BF Banana\n### 📏 Medición aleatoria\n\n👤 Usuario: <@" + user.id + ">\n🍌 Tamaño: **" + banana + " cm**" },
+                                { type: 14, divider: true, spacing: 1 },
+{ type: 10, content: "## 🍌 BF Banana\n### 📏 Medición aleatoria\n\n👤 Usuario: <@" + user.id + ">\n🍌 Tamaño: **" + banana + " cm**" },
                 { type: 14, divider: true, spacing: 1 },
                 { type: 10, content: "🎲 **Resultado generado al azar por BF Activity**\n👤 Solicitado por <@" + interaction.user.id + ">" }
             ]
@@ -60,7 +62,8 @@ async function runGay(interaction) {
             accent_color: 0x8A2BE2,
             components: [
                 { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
-                { type: 10, content: "## 🏳️‍🌈 BF Gay Meter\n### 🎯 Porcentaje aleatorio\n\n👤 Usuario: <@" + user.id + ">\n🌈 Resultado: **" + pct + "% gay**" },
+                                { type: 14, divider: true, spacing: 1 },
+{ type: 10, content: "## 🏳️‍🌈 BF Gay Meter\n### 🎯 Porcentaje aleatorio\n\n👤 Usuario: <@" + user.id + ">\n🌈 Resultado: **" + pct + "% gay**" },
                 { type: 14, divider: true, spacing: 1 },
                 { type: 10, content: "🎲 **Resultado generado al azar por BF Activity**\n👤 Solicitado por <@" + interaction.user.id + ">" }
             ]
@@ -78,7 +81,8 @@ async function runJoke(interaction) {
             accent_color: 0x8A2BE2,
             components: [
                 { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
-                { type: 10, content: "## 😂 BF Joke\n### 🎤 Chiste aleatorio\n\n" + joke },
+                                { type: 14, divider: true, spacing: 1 },
+{ type: 10, content: "## 😂 BF Joke\n### 🎤 Chiste aleatorio\n\n" + joke },
                 { type: 14, divider: true, spacing: 1 },
                 { type: 10, content: "🎲 **Chiste seleccionado al azar por BF Activity**\n👤 Solicitado por <@" + interaction.user.id + ">" }
             ]
@@ -97,7 +101,8 @@ async function runKiss(interaction) {
                 accent_color: 0xED4245,
                 components: [
                     { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
-                    { type: 10, content: "## 💋 BF Kiss\n❌ No puedes besarte a ti mismo." }
+                                    { type: 14, divider: true, spacing: 1 },
+{ type: 10, content: "## 💋 BF Kiss\n❌ No puedes besarte a ti mismo." }
                 ]
             }]
         });
@@ -111,7 +116,8 @@ async function runKiss(interaction) {
                 accent_color: 0xED4245,
                 components: [
                     { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
-                    { type: 10, content: "## 💋 BF Kiss\n🤖 Los bots no participan en el contador de besos." }
+                                    { type: 14, divider: true, spacing: 1 },
+{ type: 10, content: "## 💋 BF Kiss\n🤖 Los bots no participan en el contador de besos." }
                 ]
             }]
         });
@@ -144,7 +150,8 @@ async function runKiss(interaction) {
             accent_color: 0x8A2BE2,
             components: [
                 { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
-                { type: 10, content: "## 💋 BF Kiss\n### ❤️ ¡Nuevo beso!\n\n<@" + interaction.user.id + "> acaba de besar a <@" + user.id + ">." },
+                                { type: 14, divider: true, spacing: 1 },
+{ type: 10, content: "## 💋 BF Kiss\n### ❤️ ¡Nuevo beso!\n\n<@" + interaction.user.id + "> acaba de besar a <@" + user.id + ">." },
                 { type: 12, items: [{ media: { url: gif } }] },
                 { type: 14, divider: true, spacing: 1 },
                 { type: 10, content: "💞 <@" + user.id + "> ha recibido **" + data.kissCount.toLocaleString() + " beso" + (data.kissCount === 1 ? "" : "s") + "** en total." }
@@ -172,7 +179,8 @@ async function runPpt(interaction) {
             accent_color: 0x8A2BE2,
             components: [
                 { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
-                { type: 10, content: "## ✊ BF Piedra, Papel o Tijeras\n### 🎮 Elige tu jugada\n\n<@" + interaction.user.id + ">, tienes **10 segundos** para elegir." },
+                                { type: 14, divider: true, spacing: 1 },
+{ type: 10, content: "## ✊ BF Piedra, Papel o Tijeras\n### 🎮 Elige tu jugada\n\n<@" + interaction.user.id + ">, tienes **10 segundos** para elegir." },
                 { type: 14, divider: true, spacing: 1 },
                 row.toJSON()
             ]
@@ -213,7 +221,8 @@ async function runPpt(interaction) {
                 accent_color: accent,
                 components: [
                     { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
-                    { type: 10, content: "## ✊ Resultado — BF PPT\n" + result },
+                                    { type: 14, divider: true, spacing: 1 },
+{ type: 10, content: "## ✊ Resultado — BF PPT\n" + result },
                     { type: 14, divider: true, spacing: 1 },
                     { type: 10, content: "### 👤 Tu jugada\n" + emojis[pick] + " **" + pick.toUpperCase() + "**\n\n### 🤖 BF Activity\n" + emojis[bot] + " **" + bot.toUpperCase() + "**" }
                 ]
@@ -230,7 +239,8 @@ async function runPpt(interaction) {
                 accent_color: 0x8A2BE2,
                 components: [
                     { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
-                    { type: 10, content: "## ✊ BF Piedra, Papel o Tijeras\n⌛ **Se acabó el tiempo.** No elegiste ninguna jugada." }
+                                    { type: 14, divider: true, spacing: 1 },
+{ type: 10, content: "## ✊ BF Piedra, Papel o Tijeras\n⌛ **Se acabó el tiempo.** No elegiste ninguna jugada." }
                 ]
             }]
         }).catch(() => {});
@@ -257,7 +267,8 @@ async function runCalculator(interaction) {
             accent_color: 0x8A2BE2,
             components: [
                 { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
-                { type: 10, content: "## 🧮 BF Calculator\n### 🖥️ Pantalla\n```\n" + (display || "0") + "\n```\n" + status },
+                                { type: 14, divider: true, spacing: 1 },
+{ type: 10, content: "## 🧮 BF Calculator\n### 🖥️ Pantalla\n```\n" + (display || "0") + "\n```\n" + status },
                 { type: 14, divider: true, spacing: 1 },
                 ...rows.map(row => row.toJSON())
             ]
@@ -317,7 +328,8 @@ async function runCalculator(interaction) {
                 accent_color: 0x8A2BE2,
                 components: [
                     { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
-                    { type: 10, content: "## 🧮 BF Calculator\n### 🖥️ Pantalla\n```\n" + (data || "0") + "\n```\n⌛ **La calculadora se cerró por inactividad.**" }
+                                    { type: 14, divider: true, spacing: 1 },
+{ type: 10, content: "## 🧮 BF Calculator\n### 🖥️ Pantalla\n```\n" + (data || "0") + "\n```\n⌛ **La calculadora se cerró por inactividad.**" }
                 ]
             }]
         }).catch(() => {});
@@ -330,7 +342,8 @@ async function runShitpost(interaction) {
     const panel = (text, imageUrl = null, accent = 0x8A2BE2) => {
         const components = [
             { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
-            { type: 10, content: text }
+                            { type: 14, divider: true, spacing: 1 },
+{ type: 10, content: text }
         ];
         if (imageUrl) {
             components.push(
@@ -407,7 +420,8 @@ async function runTranslate(interaction) {
             accent_color: accent,
             components: [
                 { type: 12, items: [{ media: { url: "https://i.imgur.com/t5JfY5Z.png" } }] },
-                { type: 10, content: body }
+                                { type: 14, divider: true, spacing: 1 },
+{ type: 10, content: body }
             ]
         }]
     });
