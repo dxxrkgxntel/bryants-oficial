@@ -51,24 +51,30 @@ module.exports = {
 
             const description = replaceVariables(data.boostDescription || defaultDescription);
 
-            const containerComponents = [{
-                type: 10,
-                content: `## 🚀 Nuevo Boost\n${description}`
-            }];
-
-            if (data.boostThumbnail) {
-                containerComponents.push({
-                    type: 9,
-                    components: [{ type: 10, content: "### 💜 Nuevo miembro de la familia Booster" }],
-                    accessory: { type: 11, media: { url: data.boostThumbnail } }
-                });
-            }
-
+            const containerComponents = [];
             if (data.boostImage) {
                 containerComponents.push({
                     type: 12,
                     items: [{ media: { url: data.boostImage } }]
                 });
+                containerComponents.push({ type: 14, divider: true, spacing: 1 });
+            }
+
+            containerComponents.push(
+                { type: 10, content: "## 🚀 Nuevo Boost" },
+                { type: 14, divider: true, spacing: 1 },
+                { type: 10, content: description }
+            );
+
+            if (data.boostThumbnail) {
+                containerComponents.push(
+                    { type: 14, divider: true, spacing: 1 },
+                    {
+                        type: 9,
+                        components: [{ type: 10, content: "### 💜 Nuevo miembro de la familia Booster" }],
+                        accessory: { type: 11, media: { url: data.boostThumbnail } }
+                    }
+                );
             }
 
             const row = new ActionRowBuilder().addComponents(
@@ -77,7 +83,7 @@ module.exports = {
                 new ButtonBuilder().setCustomId("claim_booster_legend").setLabel("BOOSTER LEGEND").setEmoji("<:booster_legend:1503958247458078840>").setStyle(ButtonStyle.Secondary)
             );
 
-            containerComponents.push({ type: 14 }, row.toJSON());
+            containerComponents.push({ type: 14, divider: true, spacing: 1 }, row.toJSON());
 
             await channel.send({
                 flags: MessageFlags.IsComponentsV2,
