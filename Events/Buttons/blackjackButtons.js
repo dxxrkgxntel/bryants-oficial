@@ -24,6 +24,7 @@ function calculateHand(hand) {
 function panel(text, row = null, accent = 0x8A2BE2) {
     const components = [
         { type: 12, items: [{ media: { url: BANNER } }] },
+        { type: 14, divider: true, spacing: 1 },
         { type: 10, content: text }
     ];
     if (row) components.push({ type: 14, divider: true, spacing: 1 }, row.toJSON());

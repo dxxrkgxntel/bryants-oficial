@@ -8,6 +8,7 @@ function panel(text, accent = 0x8A2BE2) {
         flags: MessageFlags.IsComponentsV2,
         components: [{ type: 17, accent_color: accent, components: [
             { type: 12, items: [{ media: { url: BANNER } }] },
+            { type: 14, divider: true, spacing: 1 },
             { type: 10, content: text }
         ]}]
     };
