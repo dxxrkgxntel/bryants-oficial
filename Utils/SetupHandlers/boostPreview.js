@@ -86,6 +86,11 @@ module.exports = {
             containerComponents.push({ type: 14, divider: true, spacing: 1 }, row.toJSON());
 
             await channel.send({
+                content: "NUEVA MEJORA EN EL SERVIDOR @everyone",
+                allowedMentions: { parse: [] }
+            });
+
+            await channel.send({
                 flags: MessageFlags.IsComponentsV2,
                 components: [{
                     type: 17,

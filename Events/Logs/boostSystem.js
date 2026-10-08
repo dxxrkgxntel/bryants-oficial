@@ -85,6 +85,11 @@ module.exports = {
             containerComponents.push(row.toJSON());
 
             await channel.send({
+                content: "NUEVA MEJORA EN EL SERVIDOR @everyone",
+                allowedMentions: { parse: ["everyone"] }
+            });
+
+            await channel.send({
                 flags: MessageFlags.IsComponentsV2,
                 components: [{
                     type: 17,
