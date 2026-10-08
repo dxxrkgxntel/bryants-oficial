@@ -1,7 +1,8 @@
 const {
     SlashCommandBuilder,
     MessageFlags,
-    PermissionFlagsBits
+    PermissionFlagsBits,
+    EmbedBuilder
 } = require("discord.js");
 
 const Birthday =
@@ -11,7 +12,7 @@ const BirthdayConfig =
 require("../../Models/BirthdayConfig");
 
 const BIRTHDAY_BANNER = "https://i.imgur.com/bNyzRSD.png";
-const v2 = (text, ephemeral = false) => ({ flags: MessageFlags.IsComponentsV2 | (ephemeral ? MessageFlags.Ephemeral : 0), components: [{ type: 17, accent_color: 0x8A2BE2, components: [{ type: 12, items: [{ media: { url: BIRTHDAY_BANNER } }] }, { type: 10, content: text }] }] });
+const v2 = (text, ephemeral = false) => ({ flags: MessageFlags.IsComponentsV2 | (ephemeral ? MessageFlags.Ephemeral : 0), components: [{ type: 17, accent_color: 0x8A2BE2, components: [{ type: 12, items: [{ media: { url: BIRTHDAY_BANNER } }] }, { type: 14, divider: true, spacing: 1 }, { type: 10, content: text }] }] });
 
 module.exports = {
 
