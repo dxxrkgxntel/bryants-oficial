@@ -25,6 +25,18 @@ module.exports = {
                 "Sistema de cumpleaños"
             )
 
+            .addSubcommand(sub =>
+
+                sub
+
+                    .setName("preview")
+
+                    .setDescription(
+                        "Previsualizar el mensaje de cumpleaños"
+                    )
+
+            )
+
             //////////////////////////////////////////////////
             // SET
             //////////////////////////////////////////////////
@@ -253,6 +265,47 @@ module.exports = {
 
         const subcommand =
             interaction.options.getSubcommand();
+
+        //////////////////////////////////////////////////
+        // PREVIEW
+        //////////////////////////////////////////////////
+
+        if (subcommand === "preview") {
+
+            const isOwner =
+                interaction.guild.ownerId === interaction.user.id;
+
+            const isAdministrator =
+                interaction.memberPermissions?.has(
+                    PermissionFlagsBits.Administrator
+                );
+
+            if (!isOwner && !isAdministrator) {
+
+                return interaction.reply({
+
+                    content:
+                        "❌ Solo el propietario del servidor o un administrador puede usar esta previsualización.",
+
+                    flags: MessageFlags.Ephemeral
+
+                });
+
+            }
+
+            const reward = 5000;
+
+            return interaction.reply(
+                v2(
+                    "## 🎉 ¡Feliz Cumpleaños!\n" +
+                    `🎂 ¡Feliz cumpleaños ${interaction.user}!\n\n` +
+                    "🥳 Esperamos que tengas un día increíble lleno de felicidad y regalos.\n\n" +
+                    `🎁 Has recibido **${reward.toLocaleString()} monedas** por tu cumpleaños.`,
+                    true
+                )
+            );
+
+        }
 
         //////////////////////////////////////////////////
         // SET
