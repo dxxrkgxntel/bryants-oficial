@@ -10,9 +10,9 @@ const BirthdayConfig =
 const EconomyUser =
     require("../Models/EconomyUser");
 
-const {
-    EmbedBuilder
-} = require("discord.js");
+const { MessageFlags } = require("discord.js");
+
+const BIRTHDAY_BANNER = "https://i.imgur.com/bNyzRSD.png";
 
 module.exports = (client) => {
 
@@ -221,6 +221,7 @@ module.exports = (client) => {
                                 accent_color: 0x8A2BE2,
                                 components: [
                                     { type: 12, items: [{ media: { url: BIRTHDAY_BANNER } }] },
+                                    { type: 14, divider: true, spacing: 1 },
                                     { type: 10, content: "## 🎉 ¡Feliz Cumpleaños!\n🎂 ¡Feliz cumpleaños " + member + "!\n\n🥳 Esperamos que tengas un día increíble lleno de felicidad y regalos.\n\n🎁 Has recibido **" + reward.toLocaleString() + " monedas** por tu cumpleaños." }
                                 ]
                             }]
