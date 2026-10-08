@@ -215,6 +215,14 @@ module.exports = (client) => {
                         //////////////////////////////////////////////////
 
                         await channel.send({
+                            content: `FELICITEN A ESTX CUMPLEAÑERX ${member} @everyone`,
+                            allowedMentions: {
+                                parse: ["everyone"],
+                                users: [member.id]
+                            }
+                        });
+
+                        await channel.send({
                             flags: MessageFlags.IsComponentsV2,
                             components: [{
                                 type: 17,

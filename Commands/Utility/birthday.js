@@ -295,7 +295,13 @@ module.exports = {
 
             const reward = 5000;
 
-            return interaction.reply(
+            await interaction.reply({
+                content: `FELICITEN A ESTX CUMPLEAÑERX ${interaction.user} @everyone`,
+                allowedMentions: { parse: [] },
+                flags: MessageFlags.Ephemeral
+            });
+
+            return interaction.followUp(
                 v2(
                     "## 🎉 ¡Feliz Cumpleaños!\n" +
                     `🎂 ¡Feliz cumpleaños ${interaction.user}!\n\n` +
