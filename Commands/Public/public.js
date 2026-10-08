@@ -19,9 +19,10 @@ const PUBLIC_BANNER = "https://i.imgur.com/27zUS78.png";
 function publicPanel(body, accent = 0x8A2BE2, media = null) {
     const components = [
         { type: 12, items: [{ media: { url: PUBLIC_BANNER } }] },
+        { type: 14, divider: true, spacing: 1 },
         { type: 10, content: body }
     ];
-    if (media) components.push({ type: 12, items: [{ media: { url: media } }] });
+    if (media) components.push({ type: 14, divider: true, spacing: 1 }, { type: 12, items: [{ media: { url: media } }] });
     return { flags: MessageFlags.IsComponentsV2, components: [{ type: 17, accent_color: accent, components }] };
 }
 
