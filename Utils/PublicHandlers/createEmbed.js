@@ -120,10 +120,14 @@ module.exports = {
 
         if (footer || timestamp === "si") {
             if (contentComponents.length) contentComponents.push(separator());
-            const footerLines = [];
-            if (footer) footerLines.push(footer);
-            if (timestamp === "si") footerLines.push(`<t:${Math.floor(Date.now() / 1000)}:F>`);
-            contentComponents.push(textDisplay(footerLines.join("\n")));
+            const timestampSeconds = Math.floor(Date.now() / 1000);
+            const timestampText = timestamp === "si"
+                ? `<t:${timestampSeconds}:d> <t:${timestampSeconds}:t>`
+                : null;
+            const footerText = footer && timestampText
+                ? `${footer} **• ${timestampText}**`
+                : footer || timestampText;
+            contentComponents.push(textDisplay(footerText));
         }
 
         if (contentComponents.length === 0) {
