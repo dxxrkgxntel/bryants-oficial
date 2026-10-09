@@ -36,7 +36,7 @@ module.exports = {
         const titleURL = options.getString("url")?.trim();
         const author = options.getString("author")?.trim();
         const description = options.getString("description")
-            ?.replace(/\\n/g, "\n")
+            ?.replace(/\\n|\/n/gi, "\n")
             ?.replace(/```/g, "'''")
             ?.trim();
         const thumbnail = options.getAttachment("thumbnail");
@@ -78,10 +78,18 @@ module.exports = {
         const contentComponents = [];
         const headerComponents = [];
 
+        if (image) {
+            contentComponents.push({ type: 12, items: [{ media: { url: image.url } }] });
+        }
+
         if (author) headerComponents.push(textDisplay(`**${author}**`));
         if (title) {
             const titleContent = titleURL ? `[${title}](${titleURL})` : title;
             headerComponents.push(textDisplay(`## ${titleContent}`));
+        }
+
+        if (headerComponents.length && contentComponents.length) {
+            contentComponents.push(separator());
         }
 
         if (thumbnail && headerComponents.length) {
@@ -106,12 +114,8 @@ module.exports = {
                 contentComponents.push(textDisplay(description));
             }
         } else if (thumbnail && !headerComponents.length) {
-            contentComponents.push({ type: 12, items: [{ media: { url: thumbnail.url } }] });
-        }
-
-        if (image) {
             if (contentComponents.length) contentComponents.push(separator());
-            contentComponents.push({ type: 12, items: [{ media: { url: image.url } }] });
+            contentComponents.push({ type: 12, items: [{ media: { url: thumbnail.url } }] });
         }
 
         if (footer || timestamp === "si") {
