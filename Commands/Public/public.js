@@ -4,6 +4,7 @@ const handlers = {
     botinfo: require("../../Utils/PublicHandlers/botinfo"),
     confesiones: require("../../Utils/PublicHandlers/confesiones"),
     embed: require("../../Utils/PublicHandlers/createEmbed"),
+    mensaje: require("../../Utils/PublicHandlers/message"),
     ping: require("../../Utils/PublicHandlers/ping2"),
     reportar: require("../../Utils/PublicHandlers/reportar"),
     "server-icon": require("../../Utils/PublicHandlers/serverIcon"),
@@ -139,12 +140,14 @@ module.exports = {
         .addSubcommand(s=>s.setName("sugerencia").setDescription("Crea una sugerencia"))
         .addSubcommand(s=>s.setName("uptime").setDescription("Muestra el tiempo activo del bot"))
         .addSubcommand(s=>s.setName("user-info").setDescription("Información sobre un usuario")
-            .addUserOption(o=>o.setName("user").setDescription("Usuario a consultar").setRequired(false))),
+            .addUserOption(o=>o.setName("user").setDescription("Usuario a consultar").setRequired(false)))
+        .addSubcommand(s=>s.setName("mensaje").setDescription("Envía un mensaje como el bot")
+            .addStringOption(o=>o.setName("texto").setDescription("Texto que enviará el bot").setMaxLength(2000).setRequired(true))),
 
     async execute(interaction) {
         const sub=interaction.options.getSubcommand();
-        if(sub==="embed" && !interaction.memberPermissions?.has(PermissionFlagsBits.Administrator))
-            return interaction.reply({content:"❌ Necesitas permisos de administrador para crear embeds.",flags:64});
+        if(["embed", "mensaje"].includes(sub) && !interaction.memberPermissions?.has(PermissionFlagsBits.Administrator))
+            return interaction.reply({content:"❌ Necesitas permisos de administrador para usar este comando.",flags:64});
         const handler=handlers[sub];
         if(!handler?.execute) return interaction.reply({content:"❌ Esta opción no está disponible.",flags:64});
         return handler.execute(interaction);
