@@ -1,619 +1,151 @@
-const {
-    SlashCommandBuilder,
-    EmbedBuilder,
-    PermissionFlagsBits
-} = require('discord.js');
+const { MessageFlags, PermissionFlagsBits } = require("discord.js");
 
-const correReply =
-    require('../../Functions/interactionReply');
+const DEFAULT_ACCENT_COLOR = 0x8A2BE2;
 
-const ms =
-    require('ms');
+function separator() {
+    return { type: 14, divider: true, spacing: 1 };
+}
 
-//////////////////////////////////////////////////////
+function textDisplay(content) {
+    return { type: 10, content };
+}
+
+function isHttpUrl(value) {
+    try {
+        const url = new URL(value);
+        return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+        return false;
+    }
+}
 
 module.exports = {
-
-    Cooldown:
-        ms("10s"),
-
-    //////////////////////////////////////////////////////
-
-    data:
-        new SlashCommandBuilder()
-
-            .setName('crear-embed')
-
-            .setDescription(
-                'Crea un embed totalmente a tu gusto'
-            )
-
-            //////////////////////////////////////////////////////
-            // ADMIN ONLY
-            //////////////////////////////////////////////////////
-
-            .setDefaultMemberPermissions(
-                PermissionFlagsBits.Administrator
-            )
-
-            //////////////////////////////////////////////////////
-            // COLOR
-            //////////////////////////////////////////////////////
-
-            .addStringOption(option =>
-
-                option
-
-                    .setName('color')
-
-                    .setDescription(
-                        'Elige el color que quieres que tenga tu embed'
-                    )
-
-                    .addChoices(
-
-                        {
-                            name: 'Default',
-
-                            value: 'Default'
-                        },
-
-                        {
-                            name: 'White',
-
-                            value: 'White'
-                        },
-
-                        {
-                            name: 'Aqua',
-
-                            value: 'Aqua'
-                        },
-
-                        {
-                            name: 'Green',
-
-                            value: 'Green'
-                        },
-
-                        {
-                            name: 'Blue',
-
-                            value: 'Blue'
-                        },
-
-                        {
-                            name: 'Yellow',
-
-                            value: 'Yellow'
-                        },
-
-                        {
-                            name: 'Purple',
-
-                            value: 'Purple'
-                        },
-
-                        {
-                            name: 'Gold',
-
-                            value: 'Gold'
-                        },
-
-                        {
-                            name: 'Red',
-
-                            value: 'Red'
-                        },
-
-                        {
-                            name: 'Grey',
-
-                            value: 'Grey'
-                        },
-
-                        {
-                            name: 'Navy',
-
-                            value: 'Navy'
-                        },
-
-                        {
-                            name: 'Random',
-
-                            value: 'Random'
-                        }
-                    )
-            )
-
-            //////////////////////////////////////////////////////
-            // TITLE
-            //////////////////////////////////////////////////////
-
-            .addStringOption(option =>
-
-                option
-
-                    .setName('title')
-
-                    .setDescription(
-                        'Escribe el título de tu embed'
-                    )
-            )
-
-            //////////////////////////////////////////////////////
-            // DESCRIPTION
-            //////////////////////////////////////////////////////
-
-            .addStringOption(option =>
-
-                option
-
-                    .setName('description')
-
-                    .setDescription(
-                        'Ingresa la descripción de tu embed'
-                    )
-            )
-
-            //////////////////////////////////////////////////////
-            // THUMBNAIL
-            //////////////////////////////////////////////////////
-
-            .addAttachmentOption(option =>
-
-                option
-
-                    .setName('thumbnail')
-
-                    .setDescription(
-                        'Elige el Thumbnail de tu embed'
-                    )
-            )
-
-            //////////////////////////////////////////////////////
-            // IMAGE
-            //////////////////////////////////////////////////////
-
-            .addAttachmentOption(option =>
-
-                option
-
-                    .setName('image')
-
-                    .setDescription(
-                        'Elige la imagen de tu embed'
-                    )
-            )
-
-            //////////////////////////////////////////////////////
-            // URL
-            //////////////////////////////////////////////////////
-
-            .addStringOption(option =>
-
-                option
-
-                    .setName('url')
-
-                    .setDescription(
-                        'Ingresa el link para el título'
-                    )
-            )
-
-            //////////////////////////////////////////////////////
-            // AUTHOR
-            //////////////////////////////////////////////////////
-
-            .addStringOption(option =>
-
-                option
-
-                    .setName('author')
-
-                    .setDescription(
-                        'Elige el autor'
-                    )
-            )
-
-            //////////////////////////////////////////////////////
-            // TIMESTAMP
-            //////////////////////////////////////////////////////
-
-            .addStringOption(option =>
-
-                option
-
-                    .setName('timestamp')
-
-                    .setDescription(
-                        'Quieres que salga el timestamp'
-                    )
-
-                    .addChoices(
-
-                        {
-                            name: 'Sí',
-
-                            value: 'si'
-                        },
-
-                        {
-                            name: 'No',
-
-                            value: 'no'
-                        }
-                    )
-            )
-
-            //////////////////////////////////////////////////////
-            // FOOTER
-            //////////////////////////////////////////////////////
-
-            .addStringOption(option =>
-
-                option
-
-                    .setName('footer')
-
-                    .setDescription(
-                        'Ingresa el footer de tu embed'
-                    )
-            ),
-
-    //////////////////////////////////////////////////////
-
     async execute(interaction) {
-
-        //////////////////////////////////////////////////////
-        // ADMIN CHECK
-        //////////////////////////////////////////////////////
-
-        if (
-
-            !interaction.member.permissions.has(
-
-                PermissionFlagsBits.Administrator
-            )
-        ) {
-
+        if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
             return interaction.reply({
-
-                content:
-                    "❌ Solo administradores pueden usar este comando.",
-
-                flags: 64
+                content: "❌ Solo administradores pueden usar este comando.",
+                flags: MessageFlags.Ephemeral
             });
         }
 
-        //////////////////////////////////////////////////////
-        // BOT PERMISSIONS
-        //////////////////////////////////////////////////////
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-        if (
+        const { options } = interaction;
+        const colorInput = options.getString("color")?.trim();
+        const title = options.getString("title")?.trim();
+        const titleURL = options.getString("url")?.trim();
+        const author = options.getString("author")?.trim();
+        const description = options.getString("description")
+            ?.replace(/\\n/g, "\n")
+            ?.replace(/```/g, "'''")
+            ?.trim();
+        const thumbnail = options.getAttachment("thumbnail");
+        const image = options.getAttachment("image");
+        const timestamp = options.getString("timestamp");
+        const footer = options.getString("footer")?.trim();
 
-            !interaction.channel.permissionsFor(
-
-                interaction.guild.members.me
-
-            ).has('SendMessages')
-
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ No tengo permisos para enviar mensajes aquí.",
-
-                flags: 64
-            });
+        if (!title && !description && !thumbnail && !image && !footer && !author) {
+            return interaction.editReply("❌ Debes agregar contenido al Components V2.");
         }
 
-        //////////////////////////////////////////////////////
-        // OPTIONS
-        //////////////////////////////////////////////////////
-
-        const { options } =
-            interaction;
-
-        //////////////////////////////////////////////////////
-        // DATA
-        //////////////////////////////////////////////////////
-
-        const color =
-            options.getString('color');
-
-        const title =
-            options.getString('title');
-
-        const titleURL =
-            options.getString('url');
-
-        const author =
-            options.getString('author');
-
-        //////////////////////////////////////////////////////
-
-        let description =
-
-            options.getString('description')
-
-                ?.replace(/\\n/g, '\n')
-
-                ?.replace(/```/g, "'''")
-
-            || null;
-
-        //////////////////////////////////////////////////////
-
-        const attachment =
-            options.getAttachment('thumbnail');
-
-        const image =
-            options.getAttachment('image');
-
-        const timestamp =
-            options.getString('timestamp');
-
-        const footer =
-            options.getString('footer');
-
-        //////////////////////////////////////////////////////
-        // EMPTY EMBED
-        //////////////////////////////////////////////////////
-
-        if (
-
-            !title &&
-            !description &&
-            !attachment &&
-            !image &&
-            !footer &&
-            !author
-
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ Debes agregar contenido al embed.",
-
-                flags: 64
-            });
+        if (title && title.length > 256) {
+            return interaction.editReply("❌ El título no puede superar 256 caracteres.");
         }
 
-        //////////////////////////////////////////////////////
-        // LIMITS
-        //////////////////////////////////////////////////////
-
-        if (
-
-            title &&
-            title.length > 256
-
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ El título no puede superar 256 caracteres.",
-
-                flags: 64
-            });
+        if (description && description.length > 4000) {
+            return interaction.editReply("❌ La descripción no puede superar 4000 caracteres en Components V2.");
         }
 
-        //////////////////////////////////////////////////////
-
-        if (
-
-            description &&
-            description.length > 4096
-
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ La descripción no puede superar 4096 caracteres.",
-
-                flags: 64
-            });
+        if (footer && footer.length > 2048) {
+            return interaction.editReply("❌ El footer no puede superar 2048 caracteres.");
         }
 
-        //////////////////////////////////////////////////////
-
-        if (
-
-            footer &&
-            footer.length > 2048
-
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ El footer no puede superar 2048 caracteres.",
-
-                flags: 64
-            });
+        if (author && author.length > 256) {
+            return interaction.editReply("❌ El autor no puede superar 256 caracteres.");
         }
 
-        //////////////////////////////////////////////////////
-
-        if (
-
-            author &&
-            author.length > 256
-
-        ) {
-
-            return interaction.reply({
-
-                content:
-                    "❌ El author no puede superar 256 caracteres.",
-
-                flags: 64
-            });
+        if (colorInput && !/^#?[\da-f]{6}$/i.test(colorInput)) {
+            return interaction.editReply("❌ El color debe ser hexadecimal de 6 caracteres, por ejemplo `#FF0000`.");
         }
 
-        //////////////////////////////////////////////////////
-        // EMBED
-        //////////////////////////////////////////////////////
-
-        const embed =
-            new EmbedBuilder();
-
-        //////////////////////////////////////////////////////
-        // COLOR
-        //////////////////////////////////////////////////////
-
-        if (color) {
-
-            embed.setColor(color);
+        if (titleURL && !isHttpUrl(titleURL)) {
+            return interaction.editReply("❌ La URL del título debe comenzar con `http://` o `https://`.");
         }
 
-        //////////////////////////////////////////////////////
-        // TITLE
-        //////////////////////////////////////////////////////
+        const accentColor = colorInput
+            ? Number.parseInt(colorInput.replace(/^#/, ""), 16)
+            : DEFAULT_ACCENT_COLOR;
+        const contentComponents = [];
+        const headerComponents = [];
 
+        if (author) headerComponents.push(textDisplay(`**${author}**`));
         if (title) {
-
-            embed.setTitle(title);
+            const titleContent = titleURL ? `[${title}](${titleURL})` : title;
+            headerComponents.push(textDisplay(`## ${titleContent}`));
         }
 
-        //////////////////////////////////////////////////////
-        // URL VALIDATION
-        //////////////////////////////////////////////////////
-
-        if (titleURL) {
-
-            try {
-
-                new URL(titleURL);
-
-                embed.setURL(titleURL);
-
-            } catch {
-
-                return interaction.reply({
-
-                    content:
-                        "❌ URL inválida.",
-
-                    flags: 64
-                });
-            }
-        }
-
-        //////////////////////////////////////////////////////
-        // AUTHOR
-        //////////////////////////////////////////////////////
-
-        if (author) {
-
-            embed.setAuthor({
-
-                name: author
+        if (thumbnail && headerComponents.length) {
+            contentComponents.push({
+                type: 9,
+                components: headerComponents,
+                accessory: { type: 11, media: { url: thumbnail.url } }
             });
+        } else {
+            contentComponents.push(...headerComponents);
         }
-
-        //////////////////////////////////////////////////////
-        // DESCRIPTION
-        //////////////////////////////////////////////////////
 
         if (description) {
-
-            embed.setDescription(
-                description
-            );
+            if (contentComponents.length) contentComponents.push(separator());
+            if (thumbnail && !headerComponents.length) {
+                contentComponents.push({
+                    type: 9,
+                    components: [textDisplay(description)],
+                    accessory: { type: 11, media: { url: thumbnail.url } }
+                });
+            } else {
+                contentComponents.push(textDisplay(description));
+            }
+        } else if (thumbnail && !headerComponents.length) {
+            contentComponents.push({ type: 12, items: [{ media: { url: thumbnail.url } }] });
         }
-
-        //////////////////////////////////////////////////////
-        // THUMBNAIL
-        //////////////////////////////////////////////////////
-
-        if (attachment) {
-
-            embed.setThumbnail(
-                attachment.url
-            );
-        }
-
-        //////////////////////////////////////////////////////
-        // IMAGE
-        //////////////////////////////////////////////////////
 
         if (image) {
-
-            embed.setImage(
-                image.url
-            );
+            if (contentComponents.length) contentComponents.push(separator());
+            contentComponents.push({ type: 12, items: [{ media: { url: image.url } }] });
         }
 
-        //////////////////////////////////////////////////////
-        // TIMESTAMP
-        //////////////////////////////////////////////////////
-
-        if (
-            timestamp === 'si'
-        ) {
-
-            embed.setTimestamp();
+        if (footer || timestamp === "si") {
+            if (contentComponents.length) contentComponents.push(separator());
+            const footerLines = [];
+            if (footer) footerLines.push(footer);
+            if (timestamp === "si") footerLines.push(`<t:${Math.floor(Date.now() / 1000)}:F>`);
+            contentComponents.push(textDisplay(footerLines.join("\n")));
         }
 
-        //////////////////////////////////////////////////////
-        // FOOTER
-        //////////////////////////////////////////////////////
-
-        if (footer) {
-
-            embed.setFooter({
-
-                text: footer
-            });
+        if (contentComponents.length === 0) {
+            return interaction.editReply("❌ No hay contenido que se pueda mostrar.");
         }
 
-        //////////////////////////////////////////////////////
-        // TRY
-        //////////////////////////////////////////////////////
+        const botMember = interaction.guild?.members?.me;
+        if (!botMember || !interaction.channel?.permissionsFor(botMember)?.has(PermissionFlagsBits.SendMessages)) {
+            return interaction.editReply("❌ No tengo permisos para enviar mensajes aquí.");
+        }
 
         try {
-
-            //////////////////////////////////////////////////////
-            // SEND
-            //////////////////////////////////////////////////////
-
             await interaction.channel.send({
-
-                embeds: [embed]
+                flags: MessageFlags.IsComponentsV2,
+                components: [{
+                    type: 17,
+                    accent_color: accentColor,
+                    components: contentComponents
+                }],
+                allowedMentions: { parse: [] }
             });
 
-            //////////////////////////////////////////////////////
-            // SUCCESS
-            //////////////////////////////////////////////////////
-
-            await correReply(
-
-                interaction,
-
-                '✅ Se envió correctamente el embed.',
-
-                true
-            );
-
+            return interaction.editReply("✅ Se envió correctamente el mensaje Components V2.");
         } catch (error) {
-
-            console.log(error);
-
-            //////////////////////////////////////////////////////
-
-            return interaction.reply({
-
-                content:
-                    "❌ Ocurrió un error al enviar el embed.",
-
-                flags: 64
-            });
+            console.error("Error al enviar el Components V2 de /public embed:", error);
+            return interaction.editReply("❌ Ocurrió un error al enviar el Components V2.");
         }
     }
 };

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, AttachmentBuilder } = require("discord.js");
+const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 
 const handlers = {
     botinfo: require("../../Utils/PublicHandlers/botinfo"),
@@ -123,7 +123,7 @@ module.exports = {
         .addSubcommand(s=>s.setName("embed").setDescription("Crea un embed personalizado")
             .addStringOption(o=>o.setName("color").setDescription("Color hexadecimal").setRequired(false))
             .addStringOption(o=>o.setName("title").setDescription("Título").setRequired(false))
-            .addStringOption(o=>o.setName("description").setDescription("Descripción").setRequired(false))
+            .addStringOption(o=>o.setName("description").setDescription("Descripción").setMaxLength(4000).setRequired(false))
             .addAttachmentOption(o=>o.setName("thumbnail").setDescription("Thumbnail del embed").setRequired(false))
             .addAttachmentOption(o=>o.setName("image").setDescription("Imagen del embed").setRequired(false))
             .addStringOption(o=>o.setName("url").setDescription("URL del título").setRequired(false))
