@@ -10,6 +10,7 @@ const config =
 
 const WeeklyDrop = require('../../Models/WeeklyDrop');
 const Economy = require('../../Models/EconomyUser');
+const startDailyPurgeScheduler = require('../../Handlers/dailyPurgeScheduler');
 
 const WEEKLYDROP_BANNER = 'https://i.imgur.com/w7LzzI0.png';
 
@@ -53,6 +54,12 @@ module.exports = {
                 .red,
                 error
             );
+        }
+
+        if (mongoose.connection.readyState === 1) {
+            startDailyPurgeScheduler(client);
+        } else {
+            console.error('[Daily Purge] No se pudo iniciar: MongoDB no está conectado.');
         }
 
         //////////////////////////////////////////////////
