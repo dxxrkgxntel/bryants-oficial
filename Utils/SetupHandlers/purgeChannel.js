@@ -17,12 +17,13 @@ module.exports = {
         const requiredPermissions = [
             PermissionFlagsBits.ViewChannel,
             PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.SendMessages,
             PermissionFlagsBits.ManageMessages
         ];
 
         if (!permissions || !requiredPermissions.every(permission => permissions.has(permission))) {
             return interaction.reply({
-                content: "❌ Necesito permisos de ver el canal, leer el historial y administrar mensajes en ese canal.",
+                content: "❌ Necesito permisos de ver el canal, leer el historial, enviar mensajes y administrar mensajes en ese canal.",
                 flags: MessageFlags.Ephemeral
             });
         }

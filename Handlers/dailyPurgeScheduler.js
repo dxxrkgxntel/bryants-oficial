@@ -5,6 +5,7 @@ const PurgeConfig = require("../Models/PurgeConfig");
 const TIME_ZONE = "America/Santo_Domingo";
 const BULK_DELETE_MAX_AGE = 14 * 24 * 60 * 60 * 1000;
 let isRunning = false;
+const confirmationTimers = new Map();
 
 function dateKey(date) {
     const parts = new Intl.DateTimeFormat("en-CA", {
@@ -15,6 +16,79 @@ function dateKey(date) {
     }).formatToParts(date);
     const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
     return `${values.year}-${values.month}-${values.day}`;
+}
+
+function scheduleConfirmationDelete(client, config, attempt = 0) {
+    const configData = typeof config.toObject === "function" ? config.toObject() : config;
+    const timerKey = `${configData.guildId}:${configData.confirmationMessageId}`;
+    const existingTimer = confirmationTimers.get(timerKey);
+    if (existingTimer) clearTimeout(existingTimer);
+
+    const delay = Math.max(0, new Date(configData.confirmationDeleteAt).getTime() - Date.now());
+    const timer = setTimeout(async () => {
+        confirmationTimers.delete(timerKey);
+
+        try {
+            let channel = client.channels.cache.get(configData.confirmationChannelId);
+            if (!channel) channel = await client.channels.fetch(configData.confirmationChannelId);
+            if (!channel?.isTextBased()) throw new Error("El canal del aviso ya no está disponible.");
+
+            const message = await channel.messages.fetch(configData.confirmationMessageId).catch(error => {
+                if (error.code === 10008) return null;
+                throw error;
+            });
+            if (message) await message.delete();
+
+            await PurgeConfig.updateOne(
+                { guildId: configData.guildId, confirmationMessageId: configData.confirmationMessageId },
+                { $set: { confirmationChannelId: null, confirmationMessageId: null, confirmationDeleteAt: null } }
+            );
+        } catch (error) {
+            console.error(`[Daily Purge] No se pudo borrar el aviso temporal ${configData.confirmationMessageId}:`, error);
+            if (attempt < 3) {
+                scheduleConfirmationDelete(client, {
+                    ...configData,
+                    confirmationDeleteAt: new Date(Date.now() + 60_000)
+                }, attempt + 1);
+            }
+        }
+    }, delay);
+
+    timer.unref?.();
+    confirmationTimers.set(timerKey, timer);
+}
+
+async function sendTemporaryConfirmation(client, config, channel) {
+    let message;
+    try {
+        message = await channel.send("Limpieza de chats diaria realizada correctamente.");
+    } catch (error) {
+        console.error(`[Daily Purge] No se pudo enviar el aviso en ${channel.id}:`, error);
+        return;
+    }
+
+    config.confirmationChannelId = channel.id;
+    config.confirmationMessageId = message.id;
+    config.confirmationDeleteAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    try {
+        await config.save();
+    } catch (error) {
+        console.error(`[Daily Purge] No se pudo guardar el borrado pendiente del aviso ${message.id}:`, error);
+    }
+
+    scheduleConfirmationDelete(client, config);
+}
+
+async function restorePendingConfirmations(client) {
+    const configurations = await PurgeConfig.find({
+        confirmationMessageId: { $ne: null },
+        confirmationDeleteAt: { $ne: null }
+    });
+
+    for (const config of configurations) {
+        scheduleConfirmationDelete(client, config);
+    }
 }
 
 async function deleteAllMessages(channel) {
@@ -92,6 +166,7 @@ async function processDuePurges(client) {
             const requiredPermissions = [
                 PermissionFlagsBits.ViewChannel,
                 PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.SendMessages,
                 PermissionFlagsBits.ManageMessages
             ];
 
@@ -106,6 +181,7 @@ async function processDuePurges(client) {
                 config.lastPurgeAt = new Date();
                 await config.save();
                 console.log(`[Daily Purge] ${deletedCount} mensajes eliminados en #${channel.name} (${guild.name}).`);
+                await sendTemporaryConfirmation(client, config, channel);
             } catch (error) {
                 console.error(`[Daily Purge] Error en #${channel.name} (${guild.name}):`, error);
             }
@@ -120,6 +196,10 @@ async function processDuePurges(client) {
 module.exports = function startDailyPurgeScheduler(client) {
     cron.schedule("0 0 * * *", () => processDuePurges(client), { timezone: TIME_ZONE });
     console.log(`[Daily Purge] Programado diariamente a las 12:00 AM (${TIME_ZONE}).`);
+
+    restorePendingConfirmations(client).catch(error => {
+        console.error("[Daily Purge] Error al restaurar el borrado pendiente de avisos:", error);
+    });
 
     // Catch up once after startup if the bot was offline at midnight.
     processDuePurges(client);

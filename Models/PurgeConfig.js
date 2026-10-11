@@ -21,6 +21,18 @@ const purgeConfigSchema = new mongoose.Schema({
     lastPurgeAt: {
         type: Date,
         default: null
+    },
+    confirmationChannelId: {
+        type: String,
+        default: null
+    },
+    confirmationMessageId: {
+        type: String,
+        default: null
+    },
+    confirmationDeleteAt: {
+        type: Date,
+        default: null
     }
 });
 
