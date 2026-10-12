@@ -7,6 +7,7 @@ const {
     ButtonStyle,
     MessageFlags
 } = require("discord.js");
+const path = require("path");
 
 function createButton(customId, emoji) {
     return new ButtonBuilder()
@@ -48,11 +49,9 @@ module.exports = {
             .setDescription(
                 "Esta interfaz te permite administrar tu canal de voz temporal.\n" +
                 "Conéctate a tu sala y pulsa el icono de la función que quieras usar.\n\n" +
-                "✏️ Nombre  •  👥 Límite  •  🔒 Privacidad  •  🕒 Sala de espera  •  💬 Chat\n" +
-                "✅ Confiar  •  🚫 Quitar confianza  •  📞 Invitar  •  👢 Expulsar  •  🌐 Región\n" +
-                "⛔ Bloquear  •  🔓 Desbloquear  •  👑 Reclamar  •  🔁 Transferir  •  🗑️ Eliminar\n\n" +
                 "Las acciones de propietario solo funcionan en tu canal temporal."
             )
+            .setImage("attachment://tempvoice.png")
             .setFooter({ text: "Bryant's Oficial • TempVoice" });
 
         const buttons = [
@@ -83,6 +82,10 @@ module.exports = {
         try {
             await interaction.channel.send({
                 embeds: [embed],
+                files: [{
+                    attachment: path.join(__dirname, "../../Assets/tempvoice.png"),
+                    name: "tempvoice.png"
+                }],
                 components: rows
             });
             return interaction.reply({
