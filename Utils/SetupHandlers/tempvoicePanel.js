@@ -9,11 +9,17 @@ const {
 } = require("discord.js");
 const path = require("path");
 
-function createButton(customId, emoji) {
-    return new ButtonBuilder()
+function createButton(guild, customId, emojiName, fallbackEmoji) {
+    const customEmoji = emojiName
+        ? guild.emojis.cache.find(emoji => emoji.name === emojiName)
+        : null;
+    const button = new ButtonBuilder()
         .setCustomId(customId)
-        .setEmoji(emoji)
         .setStyle(ButtonStyle.Secondary);
+
+    return button.setEmoji(customEmoji
+        ? { id: customEmoji.id, name: customEmoji.name }
+        : fallbackEmoji);
 }
 
 module.exports = {
@@ -55,23 +61,23 @@ module.exports = {
             .setFooter({ text: "Bryant's Oficial • TempVoice" });
 
         const buttons = [
-            createButton("temp_rename", "✏️"),
-            createButton("temp_limit", "👥"),
-            createButton("temp_privacy_menu", "🔒"),
-            createButton("temp_waiting", "🕒"),
-            createButton("temp_chat", "💬"),
+            createButton(interaction.guild, "temp_rename", "tv_name", "✏️"),
+            createButton(interaction.guild, "temp_limit", "tv_limit", "👥"),
+            createButton(interaction.guild, "temp_privacy_menu", "tv_privacy", "🔒"),
+            createButton(interaction.guild, "temp_waiting", "tv_waiting", "🕒"),
+            createButton(interaction.guild, "temp_chat", "tv_chat", "💬"),
 
-            createButton("temp_trust", "✅"),
-            createButton("temp_untrust", "🚫"),
-            createButton("temp_invite", "📞"),
-            createButton("temp_kick", "👢"),
-            createButton("temp_region", "🌐"),
+            createButton(interaction.guild, "temp_trust", "tv_permit", "✅"),
+            createButton(interaction.guild, "temp_untrust", "tv_unpermit", "🚫"),
+            createButton(interaction.guild, "temp_invite", "tv_invite", "📞"),
+            createButton(interaction.guild, "temp_kick", "tv_kick", "👢"),
+            createButton(interaction.guild, "temp_region", "tv_region", "🌐"),
 
-            createButton("temp_block", "⛔"),
-            createButton("temp_unblock_user", "🔓"),
-            createButton("temp_claim", "👑"),
-            createButton("temp_transfer", "🔁"),
-            createButton("temp_delete", "🗑️")
+            createButton(interaction.guild, "temp_block", "tv_block", "⛔"),
+            createButton(interaction.guild, "temp_unblock_user", "tv_unblock", "🔓"),
+            createButton(interaction.guild, "temp_claim", null, "👑"),
+            createButton(interaction.guild, "temp_transfer", null, "🔁"),
+            createButton(interaction.guild, "temp_delete", null, "🗑️")
         ];
 
         const rows = [];
@@ -80,6 +86,7 @@ module.exports = {
         }
 
         try {
+            await interaction.guild.emojis.fetch();
             await interaction.channel.send({
                 embeds: [embed],
                 files: [{
