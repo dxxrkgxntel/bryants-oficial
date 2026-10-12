@@ -101,7 +101,15 @@ module.exports = {
 
                 waitingRoom: false,
 
-                textChannelId: null
+                textChannelId: null,
+
+                waitingRoomChannelId: null,
+
+                threadId: null,
+
+                chatClosed: false,
+
+                trustedUserIds: []
             });
 
             try {
@@ -126,11 +134,23 @@ module.exports = {
             if (joinedTempChannel?.textChannelId) {
                 const chatChannel = await newState.guild.channels.fetch(joinedTempChannel.textChannelId).catch(() => null);
                 if (chatChannel) {
+                    const canWrite = !joinedTempChannel.chatClosed ||
+                        member.id === joinedTempChannel.ownerId ||
+                        (joinedTempChannel.trustedUserIds || []).includes(member.id);
                     await chatChannel.permissionOverwrites.edit(member.id, {
                         ViewChannel: true,
-                        SendMessages: true,
+                        SendMessages: canWrite,
                         ReadMessageHistory: true
                     }).catch(() => {});
+                }
+            }
+            if (joinedTempChannel?.threadId) {
+                const thread = await newState.guild.channels.fetch(joinedTempChannel.threadId).catch(() => null);
+                const isTrusted = (joinedTempChannel.trustedUserIds || []).includes(member.id);
+                if (thread?.isThread() &&
+                    (!joinedTempChannel.chatClosed || isTrusted || member.id === joinedTempChannel.ownerId)) {
+                    if (thread.archived) await thread.setArchived(false).catch(() => {});
+                    await thread.members.add(member.id).catch(() => {});
                 }
             }
         }
@@ -169,11 +189,19 @@ module.exports = {
 
             if (!channel) return;
 
-            if (tempChannel.textChannelId) {
+            if (tempChannel.textChannelId &&
+                !(tempChannel.trustedUserIds || []).includes(oldState.id) &&
+                tempChannel.ownerId !== oldState.id) {
                 const chatChannel = await oldState.guild.channels.fetch(tempChannel.textChannelId).catch(() => null);
                 if (chatChannel) {
                     await chatChannel.permissionOverwrites.delete(oldState.id).catch(() => {});
                 }
+            }
+            if (tempChannel.threadId &&
+                !(tempChannel.trustedUserIds || []).includes(oldState.id) &&
+                tempChannel.ownerId !== oldState.id) {
+                const thread = await oldState.guild.channels.fetch(tempChannel.threadId).catch(() => null);
+                if (thread?.isThread()) await thread.members.remove(oldState.id).catch(() => {});
             }
 
             //////////////////////////////////////////////////
@@ -203,10 +231,24 @@ module.exports = {
 
                     await tempChannel.save();
 
+                    const oldOwnerTrusted = (tempChannel.trustedUserIds || []).includes(oldState.id);
                     await channel.permissionOverwrites.edit(oldState.id, {
+                        ViewChannel: oldOwnerTrusted ? true : null,
+                        Connect: oldOwnerTrusted ? true : null,
                         ManageChannels: null,
                         MoveMembers: null
                     }).catch(() => {});
+
+                    if (!oldOwnerTrusted) {
+                        if (tempChannel.textChannelId) {
+                            const oldChat = await oldState.guild.channels.fetch(tempChannel.textChannelId).catch(() => null);
+                            if (oldChat) await oldChat.permissionOverwrites.delete(oldState.id).catch(() => {});
+                        }
+                        if (tempChannel.threadId) {
+                            const oldThread = await oldState.guild.channels.fetch(tempChannel.threadId).catch(() => null);
+                            if (oldThread?.isThread()) await oldThread.members.remove(oldState.id).catch(() => {});
+                        }
+                    }
 
                     //////////////////////////////////////////////////
 
@@ -233,6 +275,14 @@ module.exports = {
                         }
                     }
 
+                    if (tempChannel.threadId) {
+                        const thread = await oldState.guild.channels.fetch(tempChannel.threadId).catch(() => null);
+                        if (thread?.isThread()) {
+                            if (thread.archived) await thread.setArchived(false).catch(() => {});
+                            await thread.members.add(newOwner.id).catch(() => {});
+                        }
+                    }
+
                     //////////////////////////////////////////////////
 
                     return;
@@ -247,9 +297,19 @@ module.exports = {
                 channel.members.size === 0
             ) {
 
+                if (tempChannel.threadId) {
+                    const thread = await oldState.guild.channels.fetch(tempChannel.threadId).catch(() => null);
+                    if (thread) await thread.delete("La sala temporal quedó vacía").catch(() => {});
+                }
+
                 if (tempChannel.textChannelId) {
                     const chatChannel = await oldState.guild.channels.fetch(tempChannel.textChannelId).catch(() => null);
                     if (chatChannel) await chatChannel.delete("La sala temporal quedó vacía").catch(() => {});
+                }
+
+                if (tempChannel.waitingRoomChannelId) {
+                    const waiting = await oldState.guild.channels.fetch(tempChannel.waitingRoomChannelId).catch(() => null);
+                    if (waiting) await waiting.delete("La sala temporal quedó vacía").catch(() => {});
                 }
 
                 //////////////////////////////////////////////////

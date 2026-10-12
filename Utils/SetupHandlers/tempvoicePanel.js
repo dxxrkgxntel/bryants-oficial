@@ -57,26 +57,23 @@ module.exports = {
             .setFooter({ text: "Bryant's Oficial • TempVoice" });
 
         const buttons = [
+            createButton("temp_rename", "NOMBRE", "✏️"),
             createButton("temp_limit", "LÍMITE", "👥"),
-            createButton("temp_privacy", "PRIVACIDAD", "🔒"),
+            createButton("temp_privacy_menu", "PRIVACIDAD", "🔒"),
             createButton("temp_waiting", "SALA DE ESPERA", "🕒"),
             createButton("temp_chat", "CHAT", "💬"),
-            createButton("temp_permit", "PERMITIR", "👤"),
 
-            createButton("temp_deny", "DES-PERMITIR", "🚫"),
+            createButton("temp_trust", "CONFIAR", "✅"),
+            createButton("temp_untrust", "QUITAR CONFIANZA", "🚫"),
             createButton("temp_invite", "INVITAR", "📞"),
-            createButton("temp_kick", "EXPULSAR", "📵"),
+            createButton("temp_kick", "EXPULSAR", "👢"),
             createButton("temp_region", "REGIÓN", "🌐"),
-            createButton("temp_block", "BLOQUEAR", "⛔"),
 
-            createButton("temp_unblock_user", "DESBLOQUEAR", "✅"),
-            createButton("temp_rename", "NOMBRE", "✏️"),
+            createButton("temp_block", "BLOQUEAR", "⛔"),
+            createButton("temp_unblock_user", "DESBLOQUEAR", "🔓"),
             createButton("temp_claim", "RECLAMAR", "👑"),
             createButton("temp_transfer", "TRANSFERIR", "🔁"),
-            createButton("temp_delete", "ELIMINAR SALA", "🗑️", ButtonStyle.Danger),
-
-            createButton("temp_visibility", "VISIBILIDAD", "👁️"),
-            createButton("temp_bitrate", "CALIDAD", "🔊")
+            createButton("temp_delete", "ELIMINAR SALA", "🗑️", ButtonStyle.Danger)
         ];
 
         const rows = [];
@@ -85,7 +82,10 @@ module.exports = {
         }
 
         try {
-            await interaction.channel.send({ embeds: [embed], components: rows });
+            await interaction.channel.send({
+                embeds: [embed],
+                components: rows
+            });
             return interaction.reply({
                 content: "✅ Panel TempVoice enviado correctamente.",
                 flags: MessageFlags.Ephemeral

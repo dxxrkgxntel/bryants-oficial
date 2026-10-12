@@ -14,7 +14,11 @@ const schema =
         locked: Boolean,
         hidden: Boolean,
         waitingRoom: Boolean,
-        textChannelId: String
+        textChannelId: String,
+        waitingRoomChannelId: String,
+        threadId: String,
+        chatClosed: Boolean,
+        trustedUserIds: [String]
 
     });
 
