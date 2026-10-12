@@ -8,12 +8,11 @@ const {
     MessageFlags
 } = require("discord.js");
 
-function createButton(customId, label, emoji, style = ButtonStyle.Secondary) {
+function createButton(customId, emoji) {
     return new ButtonBuilder()
         .setCustomId(customId)
-        .setLabel(label)
         .setEmoji(emoji)
-        .setStyle(style);
+        .setStyle(ButtonStyle.Secondary);
 }
 
 module.exports = {
@@ -48,32 +47,32 @@ module.exports = {
             .setTitle("🎛️ | PANEL DE VOZ")
             .setDescription(
                 "Esta interfaz te permite administrar tu canal de voz temporal.\n" +
-                "Conéctate a tu sala y utiliza los botones para cambiar sus opciones.\n\n" +
-                "👥 **Sala:** límite y privacidad\n" +
-                "🔐 **Acceso:** permitir, quitar acceso, invitar y bloquear usuarios\n" +
-                "⚙️ **Opciones:** sala de espera, chat, región y nombre\n\n" +
+                "Conéctate a tu sala y pulsa el icono de la función que quieras usar.\n\n" +
+                "✏️ Nombre  •  👥 Límite  •  🔒 Privacidad  •  🕒 Sala de espera  •  💬 Chat\n" +
+                "✅ Confiar  •  🚫 Quitar confianza  •  📞 Invitar  •  👢 Expulsar  •  🌐 Región\n" +
+                "⛔ Bloquear  •  🔓 Desbloquear  •  👑 Reclamar  •  🔁 Transferir  •  🗑️ Eliminar\n\n" +
                 "Las acciones de propietario solo funcionan en tu canal temporal."
             )
             .setFooter({ text: "Bryant's Oficial • TempVoice" });
 
         const buttons = [
-            createButton("temp_rename", "NOMBRE", "✏️"),
-            createButton("temp_limit", "LÍMITE", "👥"),
-            createButton("temp_privacy_menu", "PRIVACIDAD", "🔒"),
-            createButton("temp_waiting", "SALA DE ESPERA", "🕒"),
-            createButton("temp_chat", "CHAT", "💬"),
+            createButton("temp_rename", "✏️"),
+            createButton("temp_limit", "👥"),
+            createButton("temp_privacy_menu", "🔒"),
+            createButton("temp_waiting", "🕒"),
+            createButton("temp_chat", "💬"),
 
-            createButton("temp_trust", "CONFIAR", "✅"),
-            createButton("temp_untrust", "QUITAR CONFIANZA", "🚫"),
-            createButton("temp_invite", "INVITAR", "📞"),
-            createButton("temp_kick", "EXPULSAR", "👢"),
-            createButton("temp_region", "REGIÓN", "🌐"),
+            createButton("temp_trust", "✅"),
+            createButton("temp_untrust", "🚫"),
+            createButton("temp_invite", "📞"),
+            createButton("temp_kick", "👢"),
+            createButton("temp_region", "🌐"),
 
-            createButton("temp_block", "BLOQUEAR", "⛔"),
-            createButton("temp_unblock_user", "DESBLOQUEAR", "🔓"),
-            createButton("temp_claim", "RECLAMAR", "👑"),
-            createButton("temp_transfer", "TRANSFERIR", "🔁"),
-            createButton("temp_delete", "ELIMINAR SALA", "🗑️", ButtonStyle.Danger)
+            createButton("temp_block", "⛔"),
+            createButton("temp_unblock_user", "🔓"),
+            createButton("temp_claim", "👑"),
+            createButton("temp_transfer", "🔁"),
+            createButton("temp_delete", "🗑️")
         ];
 
         const rows = [];
