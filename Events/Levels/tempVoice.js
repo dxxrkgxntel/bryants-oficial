@@ -53,7 +53,7 @@ module.exports = {
                 await newState.guild.channels.create({
 
                     name:
-                        `${member.displayName}'s voice`,
+                        `Sala de ${member.displayName}`,
 
                     type:
                         ChannelType.GuildVoice,
@@ -62,29 +62,16 @@ module.exports = {
                         data.categoryId,
 
                     permissionOverwrites: [
-
+                        {
+                            id: newState.guild.id,
+                            allow: ["ViewChannel", "Connect"]
+                        },
                         {
                             id: member.id,
-
-                            allow: [
-                                "ManageChannels",
-                                "MoveMembers"
-                            ]
+                            allow: ["ViewChannel", "Connect", "ManageChannels", "MoveMembers"]
                         }
                     ]
                 });
-
-            //////////////////////////////////////////////////
-            // MOVER USER
-            //////////////////////////////////////////////////
-
-            await member.voice.setChannel(
-                channel
-            );
-
-            //////////////////////////////////////////////////
-            // GUARDAR DB
-            //////////////////////////////////////////////////
 
             await tempVoiceChannels.create({
 
@@ -110,8 +97,42 @@ module.exports = {
 
                 locked: false,
 
-                hidden: false
+                hidden: false,
+
+                waitingRoom: false,
+
+                textChannelId: null
             });
+
+            try {
+                await member.voice.setChannel(channel);
+            } catch (error) {
+                await tempVoiceChannels.deleteOne({ channelId: channel.id }).catch(() => {});
+                await channel.delete("No se pudo mover al usuario al canal temporal").catch(() => {});
+                throw error;
+            }
+        }
+
+        //////////////////////////////////////////////////
+        // SINCRONIZAR ACCESO AL CHAT TEMPORAL
+        //////////////////////////////////////////////////
+
+        if (newState.channelId && oldState.channelId !== newState.channelId) {
+            const joinedTempChannel = await tempVoiceChannels.findOne({
+                guildId: newState.guild.id,
+                channelId: newState.channelId
+            });
+
+            if (joinedTempChannel?.textChannelId) {
+                const chatChannel = await newState.guild.channels.fetch(joinedTempChannel.textChannelId).catch(() => null);
+                if (chatChannel) {
+                    await chatChannel.permissionOverwrites.edit(member.id, {
+                        ViewChannel: true,
+                        SendMessages: true,
+                        ReadMessageHistory: true
+                    }).catch(() => {});
+                }
+            }
         }
 
         //////////////////////////////////////////////////
@@ -119,7 +140,8 @@ module.exports = {
         //////////////////////////////////////////////////
 
         if (
-            oldState.channelId
+            oldState.channelId &&
+            oldState.channelId !== newState.channelId
         ) {
 
             //////////////////////////////////////////////////
@@ -146,6 +168,13 @@ module.exports = {
             //////////////////////////////////////////////////
 
             if (!channel) return;
+
+            if (tempChannel.textChannelId) {
+                const chatChannel = await oldState.guild.channels.fetch(tempChannel.textChannelId).catch(() => null);
+                if (chatChannel) {
+                    await chatChannel.permissionOverwrites.delete(oldState.id).catch(() => {});
+                }
+            }
 
             //////////////////////////////////////////////////
             // OWNER LEFT
@@ -174,6 +203,11 @@ module.exports = {
 
                     await tempChannel.save();
 
+                    await channel.permissionOverwrites.edit(oldState.id, {
+                        ManageChannels: null,
+                        MoveMembers: null
+                    }).catch(() => {});
+
                     //////////////////////////////////////////////////
 
                     await channel.permissionOverwrites.edit(
@@ -181,10 +215,23 @@ module.exports = {
                         newOwner.id,
 
                         {
+                            ViewChannel: true,
+                            Connect: true,
                             ManageChannels: true,
                             MoveMembers: true
                         }
                     );
+
+                    if (tempChannel.textChannelId) {
+                        const chatChannel = await oldState.guild.channels.fetch(tempChannel.textChannelId).catch(() => null);
+                        if (chatChannel) {
+                            await chatChannel.permissionOverwrites.edit(newOwner.id, {
+                                ViewChannel: true,
+                                SendMessages: true,
+                                ReadMessageHistory: true
+                            }).catch(() => {});
+                        }
+                    }
 
                     //////////////////////////////////////////////////
 
@@ -199,6 +246,11 @@ module.exports = {
             if (
                 channel.members.size === 0
             ) {
+
+                if (tempChannel.textChannelId) {
+                    const chatChannel = await oldState.guild.channels.fetch(tempChannel.textChannelId).catch(() => null);
+                    if (chatChannel) await chatChannel.delete("La sala temporal quedó vacía").catch(() => {});
+                }
 
                 //////////////////////////////////////////////////
 

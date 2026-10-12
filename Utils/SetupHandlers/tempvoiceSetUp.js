@@ -105,7 +105,7 @@ module.exports = {
                 await interaction.guild.channels.create({
 
                     name:
-                        "TEMP VOICE",
+                        "SALAS TEMPORALES",
 
                     type:
                         ChannelType.GuildCategory
@@ -119,7 +119,7 @@ module.exports = {
                 await interaction.guild.channels.create({
 
                     name:
-                        "➕ Create Room",
+                        "➕ Crear Sala",
 
                     type:
                         ChannelType.GuildVoice,
@@ -146,7 +146,7 @@ module.exports = {
                 await interaction.guild.channels.create({
 
                     name:
-                        "🎛️tempvoice-control",
+                        "🎛️panel-de-voz",
 
                     type:
                         ChannelType.GuildText,

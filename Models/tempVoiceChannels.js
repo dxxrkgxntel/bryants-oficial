@@ -12,7 +12,9 @@ const schema =
         bitrate: Number,
         region: String,
         locked: Boolean,
-        hidden: Boolean
+        hidden: Boolean,
+        waitingRoom: Boolean,
+        textChannelId: String
 
     });
 

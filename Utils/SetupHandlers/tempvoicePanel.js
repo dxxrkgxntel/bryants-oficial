@@ -3,375 +3,99 @@ const {
     PermissionFlagsBits,
     EmbedBuilder,
     ActionRowBuilder,
-    StringSelectMenuBuilder,
-    StringSelectMenuOptionBuilder
+    ButtonBuilder,
+    ButtonStyle,
+    MessageFlags
 } = require("discord.js");
 
+function createButton(customId, label, emoji, style = ButtonStyle.Secondary) {
+    return new ButtonBuilder()
+        .setCustomId(customId)
+        .setLabel(label)
+        .setEmoji(emoji)
+        .setStyle(style);
+}
+
 module.exports = {
-
     data: new SlashCommandBuilder()
-
         .setName("tempvoice-panel")
-
-        .setDescription(
-            "Envía el panel global de TempVoice"
-        )
-
-        // 🔒 SOLO ADMINS
-        .setDefaultMemberPermissions(
-            PermissionFlagsBits.Administrator
-        )
-
+        .setDescription("Envía el panel global de TempVoice")
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .setDMPermission(false),
 
-    //////////////////////////////////////////////////
-
     async execute(interaction) {
+        if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+            return interaction.reply({
+                content: "❌ Solo los administradores pueden enviar el panel TempVoice.",
+                flags: MessageFlags.Ephemeral
+            });
+        }
 
-        //////////////////////////////////////////////////
-        // SEGURIDAD EXTRA
-        //////////////////////////////////////////////////
+        const permissions = interaction.channel?.permissionsFor(interaction.guild.members.me);
+        if (!permissions?.has([
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.EmbedLinks,
+            PermissionFlagsBits.ViewChannel
+        ])) {
+            return interaction.reply({
+                content: "❌ No tengo permisos suficientes en este canal.",
+                flags: MessageFlags.Ephemeral
+            });
+        }
 
-        if (
-            !interaction.member.permissions.has(
-                PermissionFlagsBits.Administrator
+        const embed = new EmbedBuilder()
+            .setColor("#8A2BE2")
+            .setTitle("🎛️ | PANEL DE VOZ")
+            .setDescription(
+                "Esta interfaz te permite administrar tu canal de voz temporal.\n" +
+                "Conéctate a tu sala y utiliza los botones para cambiar sus opciones.\n\n" +
+                "👥 **Sala:** límite y privacidad\n" +
+                "🔐 **Acceso:** permitir, quitar acceso, invitar y bloquear usuarios\n" +
+                "⚙️ **Opciones:** sala de espera, chat, región y nombre\n\n" +
+                "Las acciones de propietario solo funcionan en tu canal temporal."
             )
-        ) {
+            .setFooter({ text: "Bryant's Oficial • TempVoice" });
 
-            return interaction.reply({
+        const buttons = [
+            createButton("temp_limit", "LÍMITE", "👥"),
+            createButton("temp_privacy", "PRIVACIDAD", "🔒"),
+            createButton("temp_waiting", "SALA DE ESPERA", "🕒"),
+            createButton("temp_chat", "CHAT", "💬"),
+            createButton("temp_permit", "PERMITIR", "👤"),
 
-                content:
-                    "❌ No tienes permisos para usar este comando.",
+            createButton("temp_deny", "DES-PERMITIR", "🚫"),
+            createButton("temp_invite", "INVITAR", "📞"),
+            createButton("temp_kick", "EXPULSAR", "📵"),
+            createButton("temp_region", "REGIÓN", "🌐"),
+            createButton("temp_block", "BLOQUEAR", "⛔"),
 
-                flags: 64
-            });
+            createButton("temp_unblock_user", "DESBLOQUEAR", "✅"),
+            createButton("temp_rename", "NOMBRE", "✏️"),
+            createButton("temp_claim", "RECLAMAR", "👑"),
+            createButton("temp_transfer", "TRANSFERIR", "🔁"),
+            createButton("temp_delete", "ELIMINAR SALA", "🗑️", ButtonStyle.Danger),
+
+            createButton("temp_visibility", "VISIBILIDAD", "👁️"),
+            createButton("temp_bitrate", "CALIDAD", "🔊")
+        ];
+
+        const rows = [];
+        for (let index = 0; index < buttons.length; index += 5) {
+            rows.push(new ActionRowBuilder().addComponents(buttons.slice(index, index + 5)));
         }
 
-        //////////////////////////////////////////////////
-        // VALIDAR PERMISOS DEL BOT
-        //////////////////////////////////////////////////
-
-        const permissions =
-            interaction.channel.permissionsFor(
-                interaction.guild.members.me
-            );
-
-        if (
-            !permissions.has([
-                PermissionFlagsBits.SendMessages,
-                PermissionFlagsBits.EmbedLinks,
-                PermissionFlagsBits.ViewChannel
-            ])
-        ) {
-
+        try {
+            await interaction.channel.send({ embeds: [embed], components: rows });
             return interaction.reply({
-
-                content:
-                    "❌ No tengo permisos suficientes en este canal.",
-
-                flags: 64
+                content: "✅ Panel TempVoice enviado correctamente.",
+                flags: MessageFlags.Ephemeral
+            });
+        } catch (error) {
+            console.error("[TempVoice Panel] Error al enviar el panel:", error);
+            return interaction.reply({
+                content: "❌ No pude enviar el panel TempVoice.",
+                flags: MessageFlags.Ephemeral
             });
         }
-
-        //////////////////////////////////////////////////
-        // EMBED
-        //////////////////////////////////////////////////
-
-        const embed =
-            new EmbedBuilder()
-
-                .setColor("#8A2BE2")
-
-                .setTitle(
-                    "🎛️ • Panel TempVoice"
-                )
-
-                .setDescription(
-
-                    `🎧 • Panel TempVoice\n\n` +
-
-                    `Personaliza y administra tu sala temporal de voz de manera rápida y sencilla utilizando los menús desplegables disponibles debajo de este panel.\n\n` +
-
-                    `🔒 • Opciones de Privacidad\n` +
-                    `• Controla quién puede entrar y ver tu canal\n` +
-                    `• Bloquea o desbloquea accesos fácilmente\n` +
-                    `• Mantén tu sala privada cuando lo necesites\n\n` +
-
-                    `👥 • Opciones de Usuarios\n` +
-                    `• Permite acceso a miembros específicos\n` +
-                    `• Expulsa usuarios de tu sala\n` +
-                    `• Gestiona quién puede permanecer dentro\n\n` +
-
-                    `⚙️ • Configuración\n` +
-                    `• Cambia el nombre de tu sala\n` +
-                    `• Ajusta el límite de usuarios\n` +
-                    `• Modifica el bitrate y la región de voz\n\n` +
-
-                    `📌 Debes estar conectado dentro de tu sala temporal para utilizar todas las funciones del panel.\n\n` +
-
-                    `💜 Disfruta de una experiencia totalmente personalizada junto a tu comunidad.`
-                )
-
-                .setThumbnail(
-                    "https://media.discordapp.net/attachments/1499375657103392839/1501666281651441925/logo_principal.png"
-                )
-
-                .setImage(
-                    "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png"
-                )
-
-                .setFooter({
-
-                    text:
-                        `Panel creado por ${interaction.user.username}`,
-
-                    iconURL:
-                        interaction.user.displayAvatarURL({
-                            dynamic: true
-                        })
-                })
-
-                .setTimestamp();
-
-        //////////////////////////////////////////////////
-        // PRIVACIDAD
-        //////////////////////////////////////////////////
-
-        const privacyMenu =
-            new StringSelectMenuBuilder()
-
-                .setCustomId(
-                    "tempvoice_privacy"
-                )
-
-                .setPlaceholder(
-                    "🔒 Opciones de Privacidad"
-                )
-
-                .addOptions(
-
-                    new StringSelectMenuOptionBuilder()
-
-                        .setLabel("Bloquear")
-
-                        .setDescription(
-                            "Nadie podrá entrar"
-                        )
-
-                        .setEmoji("🔒")
-
-                        .setValue("temp_lock"),
-
-                    new StringSelectMenuOptionBuilder()
-
-                        .setLabel("Desbloquear")
-
-                        .setDescription(
-                            "Todos podrán entrar"
-                        )
-
-                        .setEmoji("🔓")
-
-                        .setValue("temp_unlock"),
-
-                    new StringSelectMenuOptionBuilder()
-
-                        .setLabel("Ocultar")
-
-                        .setDescription(
-                            "Ocultar canal"
-                        )
-
-                        .setEmoji("👁️")
-
-                        .setValue("temp_hide"),
-
-                    new StringSelectMenuOptionBuilder()
-
-                        .setLabel("Mostrar")
-
-                        .setDescription(
-                            "Mostrar canal"
-                        )
-
-                        .setEmoji("👀")
-
-                        .setValue("temp_show")
-                );
-
-        //////////////////////////////////////////////////
-        // USUARIOS
-        //////////////////////////////////////////////////
-
-        const usersMenu =
-            new StringSelectMenuBuilder()
-
-                .setCustomId(
-                    "tempvoice_users"
-                )
-
-                .setPlaceholder(
-                    "👥 Opciones de Usuarios"
-                )
-
-                .addOptions(
-
-                    new StringSelectMenuOptionBuilder()
-
-                        .setLabel("Permitir")
-
-                        .setDescription(
-                            "Dar acceso a un usuario"
-                        )
-
-                        .setEmoji("➕")
-
-                        .setValue("temp_permit"),
-
-                    new StringSelectMenuOptionBuilder()
-
-                        .setLabel("Denegar")
-
-                        .setDescription(
-                            "Quitar acceso"
-                        )
-
-                        .setEmoji("🚫")
-
-                        .setValue("temp_deny"),
-
-                    new StringSelectMenuOptionBuilder()
-
-                        .setLabel("Expulsar")
-
-                        .setDescription(
-                            "Kickear usuario"
-                        )
-
-                        .setEmoji("👢")
-
-                        .setValue("temp_kick"),
-
-                    new StringSelectMenuOptionBuilder()
-
-                        .setLabel("Claim")
-
-                        .setDescription(
-                            "Reclamar ownership"
-                        )
-
-                        .setEmoji("👑")
-
-                        .setValue("temp_claim")
-                );
-
-        //////////////////////////////////////////////////
-        // CONFIG
-        //////////////////////////////////////////////////
-
-        const configMenu =
-            new StringSelectMenuBuilder()
-
-                .setCustomId(
-                    "tempvoice_config"
-                )
-
-                .setPlaceholder(
-                    "⚙️ Configuración"
-                )
-
-                .addOptions(
-
-                    new StringSelectMenuOptionBuilder()
-
-                        .setLabel("Renombrar")
-
-                        .setDescription(
-                            "Cambiar nombre"
-                        )
-
-                        .setEmoji("✏️")
-
-                        .setValue("temp_rename"),
-
-                    new StringSelectMenuOptionBuilder()
-
-                        .setLabel("Límite")
-
-                        .setDescription(
-                            "Cambiar límite"
-                        )
-
-                        .setEmoji("👥")
-
-                        .setValue("temp_limit"),
-
-                    new StringSelectMenuOptionBuilder()
-
-                        .setLabel("Bitrate")
-
-                        .setDescription(
-                            "Cambiar calidad"
-                        )
-
-                        .setEmoji("🔊")
-
-                        .setValue("temp_bitrate"),
-
-                    new StringSelectMenuOptionBuilder()
-
-                        .setLabel("Región")
-
-                        .setDescription(
-                            "Cambiar región"
-                        )
-
-                        .setEmoji("🌍")
-
-                        .setValue("temp_region")
-                );
-
-        //////////////////////////////////////////////////
-        // ROWS
-        //////////////////////////////////////////////////
-
-        const row1 =
-            new ActionRowBuilder()
-                .addComponents(privacyMenu);
-
-        const row2 =
-            new ActionRowBuilder()
-                .addComponents(usersMenu);
-
-        const row3 =
-            new ActionRowBuilder()
-                .addComponents(configMenu);
-
-        //////////////////////////////////////////////////
-        // ENVIAR PANEL
-        //////////////////////////////////////////////////
-
-        await interaction.channel.send({
-
-            embeds: [embed],
-
-            components: [
-                row1,
-                row2,
-                row3
-            ]
-        });
-
-        //////////////////////////////////////////////////
-        // RESPUESTA
-        //////////////////////////////////////////////////
-
-        await interaction.reply({
-
-            content:
-                "✅ Panel TempVoice enviado correctamente.",
-
-            flags: 64
-        });
     }
 };
