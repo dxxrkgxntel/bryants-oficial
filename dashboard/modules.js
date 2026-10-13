@@ -62,25 +62,14 @@ const configurations = {
     stats: {
         title: "Estadísticas del servidor",
         category: "Servidor",
+        description: "Configura la categoría y los dos canales de voz que muestran el total de miembros y la invitación personalizada. El bot actualiza los nombres de esos canales.",
         model: require("../Models/ServerStatsConfig"),
         guildField: "guildId",
         fields: [
-            { name: "categoryId", label: "Categoría", type: "category" },
-            { name: "membersChannelId", label: "Canal de miembros", type: "voice" },
-            { name: "inviteChannelId", label: "Canal de invitación", type: "voice" },
-            { name: "inviteLink", label: "Invitación personalizada (.gg/código)", type: "text", maxLength: 100 }
-        ]
-    },
-    voiceStats: {
-        title: "Contadores de voz",
-        category: "Servidor",
-        model: require("../Models/statsConfig"),
-        guildField: "guildId",
-        fields: [
-            { name: "categoryId", label: "Categoría", type: "category" },
-            { name: "usersChannel", label: "Canal de miembros", type: "voice" },
-            { name: "botsChannel", label: "Canal de bots", type: "voice" },
-            { name: "totalChannel", label: "Canal de total", type: "voice", optional: true }
+            { name: "categoryId", label: "Categoría de estadísticas", type: "category", help: "Elige la categoría donde están —o estarán— los dos canales de voz de estadísticas." },
+            { name: "membersChannelId", label: "Canal de miembros", type: "voice", help: "Canal de voz cuyo nombre muestra cuántos miembros tiene el servidor." },
+            { name: "inviteChannelId", label: "Canal de invitación", type: "voice", help: "Canal de voz cuyo nombre muestra tu enlace personalizado, por ejemplo .gg/bryantfamily." },
+            { name: "inviteLink", label: "Invitación personalizada (.gg/código)", type: "text", maxLength: 100, help: "Escribe el enlace o código que quieras mostrar. El bot lo incluye en el nombre del canal." }
         ]
     },
     logs: {
@@ -176,6 +165,7 @@ const configurations = {
     tempvoice: {
         title: "TempVoice",
         category: "Servidor",
+        description: "Administra las configuraciones existentes de TempVoice. Cada una conecta su categoría, canal creador de voz y canal de texto del panel; el ID del mensaje es opcional.",
         model: require("../Models/tempVoiceSchema"),
         guildField: "guildId",
         fields: [

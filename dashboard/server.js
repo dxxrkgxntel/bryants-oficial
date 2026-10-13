@@ -449,7 +449,7 @@ app.get("/api/guilds/:guildId/config", requireGuildAdmin, async (req, res) => {
             configurations: Object.fromEntries(configResults),
             lists: Object.fromEntries(listResults),
             modules: {
-                configurations: Object.fromEntries(Object.entries(configurations).map(([key, value]) => [key, { title: value.title, category: value.category, fields: value.fields }])),
+                configurations: Object.fromEntries(Object.entries(configurations).map(([key, value]) => [key, { title: value.title, category: value.category, description: value.description, fields: value.fields }])),
                 lists: Object.fromEntries(Object.entries(lists).map(([key, value]) => [key, { title: value.title, category: value.category, fields: value.fields }]))
             }
         });
