@@ -9,23 +9,12 @@ const {
 } = require("discord.js");
 const path = require("path");
 
-function findCustomEmoji(guild, emojiNames) {
-    if (!emojiNames) return null;
-
-    const candidates = (Array.isArray(emojiNames) ? emojiNames : [emojiNames])
-        .map(name => name.toLowerCase().replace(/[^a-z0-9]/g, ""));
-
-    return guild.emojis.cache.find(emoji => {
-        const normalizedName = emoji.name.toLowerCase().replace(/[^a-z0-9]/g, "");
-        return candidates.some(candidate =>
-            normalizedName === candidate ||
-            (candidate.length >= 5 && normalizedName.includes(candidate))
-        );
-    }) ?? null;
+function findCustomEmoji(guild, emojiName) {
+    return guild.emojis.cache.find(emoji => emoji.name === emojiName) ?? null;
 }
 
-function createButton(guild, customId, emojiNames, fallbackEmoji) {
-    const customEmoji = findCustomEmoji(guild, emojiNames);
+function createButton(guild, customId, emojiName, fallbackEmoji) {
+    const customEmoji = findCustomEmoji(guild, emojiName);
     const button = new ButtonBuilder()
         .setCustomId(customId)
         .setStyle(ButtonStyle.Secondary);
@@ -79,31 +68,35 @@ module.exports = {
             .setImage("attachment://tempvoice.png")
             .setFooter({ text: "Bryant's Oficial • TempVoice" });
 
-        const buttons = [
-            createButton(interaction.guild, "temp_rename", ["01_nombre", "tv_name"], "✏️"),
-            createButton(interaction.guild, "temp_limit", ["02_limite", "tv_limit"], "👥"),
-            createButton(interaction.guild, "temp_privacy_menu", ["03_privacidad", "tv_privacy"], "🔒"),
-            createButton(interaction.guild, "temp_waiting", ["04_sala_espera", "tv_waiting"], "🕒"),
-            createButton(interaction.guild, "temp_chat", ["05_chat", "tv_chat"], "💬"),
-
-            createButton(interaction.guild, "temp_trust", ["06_permitir", "tv_permit"], "✅"),
-            createButton(interaction.guild, "temp_untrust", ["07_quitar_permiso", "tv_unpermit"], "🚫"),
-            createButton(interaction.guild, "temp_invite", ["08_invitar", "tv_invite"], "📞"),
-            createButton(interaction.guild, "temp_kick", ["09_expulsar", "tv_kick"], "👢"),
-            createButton(interaction.guild, "temp_region", ["10_region", "tv_region"], "🌐"),
-
-            createButton(interaction.guild, "temp_block", ["11_bloquear", "tv_block"], "⛔"),
-            createButton(interaction.guild, "temp_unblock_user", ["12_desbloquear", "tv_unblock"], "🔓"),
-            createButton(interaction.guild, "temp_claim", ["13_reclamar", "tv_claim", "tempvoice_claim", "temp_claim", "claim", "reclamar", "crown", "corona"], "👑"),
-            createButton(interaction.guild, "temp_transfer", ["14_transferir", "tv_transfer", "tempvoice_transfer", "temp_transfer", "transfer", "transferir", "traspasar"], "🔁"),
-            createButton(interaction.guild, "temp_delete", ["15_eliminar_sala", "tv_delete", "tempvoice_delete", "temp_delete", "delete", "eliminar", "trash", "basura"], "🗑️")
+        const buttonDefinitions = [
+            { label: "NOMBRE", customId: "temp_rename", emojiName: "01_nombre", fallback: "✏️" },
+            { label: "LÍMITE", customId: "temp_limit", emojiName: "02_limite", fallback: "👥" },
+            { label: "PRIVACIDAD", customId: "temp_privacy_menu", emojiName: "03_privacidad", fallback: "🔒" },
+            { label: "SALA DE ESPERA", customId: "temp_waiting", emojiName: "04_sala_espera", fallback: "🕒" },
+            { label: "CHAT", customId: "temp_chat", emojiName: "05_chat", fallback: "💬" },
+            { label: "PERMITIR", customId: "temp_trust", emojiName: "06_permitir", fallback: "✅" },
+            { label: "QUITAR PERMISO", customId: "temp_untrust", emojiName: "07_quitar_permiso", fallback: "🚫" },
+            { label: "INVITAR", customId: "temp_invite", emojiName: "08_invitar", fallback: "📞" },
+            { label: "EXPULSAR", customId: "temp_kick", emojiName: "09_expulsar", fallback: "👢" },
+            { label: "REGIÓN", customId: "temp_region", emojiName: "10_region", fallback: "🌐" },
+            { label: "BLOQUEAR", customId: "temp_block", emojiName: "11_bloquear", fallback: "⛔" },
+            { label: "DESBLOQUEAR", customId: "temp_unblock_user", emojiName: "12_desbloquear", fallback: "🔓" },
+            { label: "RECLAMAR", customId: "temp_claim", emojiName: "13_reclamar", fallback: "👑" },
+            { label: "TRANSFERIR", customId: "temp_transfer", emojiName: "14_transferir", fallback: "🔁" },
+            { label: "ELIMINAR SALA", customId: "temp_delete", emojiName: "15_eliminar_sala", fallback: "🗑️" }
         ];
 
-        const missingLogos = [
-            { label: "RECLAMAR", names: ["13_reclamar", "tv_claim", "tempvoice_claim", "temp_claim", "claim", "reclamar", "crown", "corona"], canonical: "13_reclamar" },
-            { label: "TRANSFERIR", names: ["14_transferir", "tv_transfer", "tempvoice_transfer", "temp_transfer", "transfer", "transferir", "traspasar"], canonical: "14_transferir" },
-            { label: "ELIMINAR SALA", names: ["15_eliminar_sala", "tv_delete", "tempvoice_delete", "temp_delete", "delete", "eliminar", "trash", "basura"], canonical: "15_eliminar_sala" }
-        ].filter(item => !findCustomEmoji(interaction.guild, item.names));
+        const buttons = buttonDefinitions.map(definition =>
+            createButton(
+                interaction.guild,
+                definition.customId,
+                definition.emojiName,
+                definition.fallback
+            )
+        );
+        const missingLogos = buttonDefinitions.filter(definition =>
+            !findCustomEmoji(interaction.guild, definition.emojiName)
+        );
 
         const rows = [];
         for (let index = 0; index < buttons.length; index += 5) {
@@ -121,7 +114,7 @@ module.exports = {
             });
             return interaction.reply({
                 content: missingLogos.length
-                    ? `✅ Panel TempVoice enviado. No encontré logos personalizados para: **${missingLogos.map(item => item.label).join(", ")}**. Si tus emojis tienen otros nombres, renómbralos como ${missingLogos.map(item => `\`${item.canonical}\``).join(", ")} y vuelve a publicar el panel.`
+                    ? `✅ Panel TempVoice enviado. No encontré estos emojis personalizados: ${missingLogos.map(item => `\`${item.emojiName}\``).join(", ")}. Instálalos con /setup tempvoice-emojis y vuelve a publicar el panel.`
                     : "✅ Panel TempVoice enviado correctamente con los 15 logos personalizados.",
                 flags: MessageFlags.Ephemeral
             });

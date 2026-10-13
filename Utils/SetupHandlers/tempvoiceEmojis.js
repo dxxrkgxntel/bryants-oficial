@@ -6,21 +6,21 @@ const fs = require("fs");
 const path = require("path");
 
 const emojiDefinitions = [
-    { name: "01_nombre", file: "01_nombre.png", aliases: ["tv_name"] },
-    { name: "02_limite", file: "02_limite.png", aliases: ["tv_limit"] },
-    { name: "03_privacidad", file: "03_privacidad.png", aliases: ["tv_privacy"] },
-    { name: "04_sala_espera", file: "04_sala_espera.png", aliases: ["tv_waiting"] },
-    { name: "05_chat", file: "05_chat.png", aliases: ["tv_chat"] },
-    { name: "06_permitir", file: "06_permitir.png", aliases: ["tv_permit"] },
-    { name: "07_quitar_permiso", file: "07_quitar_permiso.png", aliases: ["tv_unpermit"] },
-    { name: "08_invitar", file: "08_invitar.png", aliases: ["tv_invite"] },
-    { name: "09_expulsar", file: "09_expulsar.png", aliases: ["tv_kick"] },
-    { name: "10_region", file: "10_region.png", aliases: ["tv_region"] },
-    { name: "11_bloquear", file: "11_bloquear.png", aliases: ["tv_block"] },
-    { name: "12_desbloquear", file: "12_desbloquear.png", aliases: ["tv_unblock"] },
-    { name: "13_reclamar", file: "13_reclamar.png", aliases: ["tv_claim", "tempvoice_claim", "temp_claim", "claim", "reclamar", "crown", "corona"] },
-    { name: "14_transferir", file: "14_transferir.png", aliases: ["tv_transfer", "tempvoice_transfer", "temp_transfer", "transfer", "transferir", "traspasar"] },
-    { name: "15_eliminar_sala", file: "15_eliminar_sala.png", aliases: ["tv_delete", "tempvoice_delete", "temp_delete", "delete", "eliminar", "trash", "basura"] }
+    { name: "01_nombre", file: "01_nombre.png" },
+    { name: "02_limite", file: "02_limite.png" },
+    { name: "03_privacidad", file: "03_privacidad.png" },
+    { name: "04_sala_espera", file: "04_sala_espera.png" },
+    { name: "05_chat", file: "05_chat.png" },
+    { name: "06_permitir", file: "06_permitir.png" },
+    { name: "07_quitar_permiso", file: "07_quitar_permiso.png" },
+    { name: "08_invitar", file: "08_invitar.png" },
+    { name: "09_expulsar", file: "09_expulsar.png" },
+    { name: "10_region", file: "10_region.png" },
+    { name: "11_bloquear", file: "11_bloquear.png" },
+    { name: "12_desbloquear", file: "12_desbloquear.png" },
+    { name: "13_reclamar", file: "13_reclamar.png" },
+    { name: "14_transferir", file: "14_transferir.png" },
+    { name: "15_eliminar_sala", file: "15_eliminar_sala.png" }
 ];
 
 module.exports = {
@@ -45,9 +45,7 @@ module.exports = {
             await interaction.guild.emojis.fetch();
 
             const missingDefinitions = emojiDefinitions.filter(definition =>
-                !interaction.guild.emojis.cache.some(emoji =>
-                    [definition.name, ...definition.aliases].includes(emoji.name)
-                )
+                !interaction.guild.emojis.cache.some(emoji => emoji.name === definition.name)
             );
             const maxEmojis = interaction.guild.maximumEmojis ?? 50;
             const availableSlots = Math.max(0, maxEmojis - interaction.guild.emojis.cache.size);
