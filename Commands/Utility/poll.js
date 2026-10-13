@@ -10,8 +10,26 @@ const {
 const Poll =
 require("../../Models/Poll");
 
+const PollConfig =
+require("../../Models/PollConfig");
+
 const progressBar =
 require("../../Functions/progressBar");
+
+async function getConfiguredPollChannel(interaction) {
+    const config = await PollConfig.findOne({ guildId: interaction.guild.id });
+    if (!config) {
+        return { error: "❌ Primero configura el canal con `/setup poll`." };
+    }
+
+    const channel = interaction.guild.channels.cache.get(config.channelId)
+        || await interaction.guild.channels.fetch(config.channelId).catch(() => null);
+    if (!channel?.isTextBased()) {
+        return { error: "❌ El canal de encuestas configurado ya no existe o no es de texto. Vuelve a usar `/setup poll`." };
+    }
+
+    return { channel };
+}
 
 module.exports = {
 
@@ -211,6 +229,22 @@ module.exports = {
 
         if (subcommand === "create") {
 
+            const configured = await getConfiguredPollChannel(interaction);
+            if (configured.error) {
+                return interaction.reply({ content: configured.error, flags: 64 });
+            }
+
+            const targetChannel = configured.channel;
+            const permissions = targetChannel.permissionsFor(interaction.guild.members.me);
+            if (!permissions?.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks])) {
+                return interaction.reply({
+                    content: "❌ No tengo permisos para publicar encuestas en el canal configurado.",
+                    flags: 64
+                });
+            }
+
+            await interaction.deferReply({ flags: 64 });
+
             const question =
                 interaction.options.getString(
                     "question"
@@ -318,15 +352,12 @@ module.exports = {
 
             //////////////////////////////////////////////////
 
-            const msg =
-                await interaction.reply({
-
+            let msg;
+            try {
+                msg = await targetChannel.send({
                     embeds: [embed],
-
                     components: [row],
-
-                    fetchReply: true
-
+                    allowedMentions: { parse: [] }
                 });
 
             //////////////////////////////////////////////////
@@ -356,7 +387,7 @@ module.exports = {
                     interaction.guild.id,
 
                 channelId:
-                    interaction.channel.id,
+                    targetChannel.id,
 
                 messageId:
                     msg.id,
@@ -372,6 +403,16 @@ module.exports = {
                 endAt
 
             });
+
+            return interaction.editReply(
+                `✅ Encuesta publicada en ${targetChannel}: ${msg.url}`
+            );
+
+            } catch (error) {
+                if (msg) await msg.delete().catch(() => {});
+                console.error("[Poll Create] Error al publicar la encuesta:", error);
+                return interaction.editReply("❌ No pude crear la encuesta en el canal configurado.");
+            }
 
         }
 
@@ -400,6 +441,11 @@ module.exports = {
 
             }
 
+            const configured = await getConfiguredPollChannel(interaction);
+            if (configured.error) {
+                return interaction.reply({ content: configured.error, flags: 64 });
+            }
+
             //////////////////////////////////////////////////
 
             const messageId =
@@ -409,13 +455,16 @@ module.exports = {
 
             //////////////////////////////////////////////////
 
-            const poll =
-                await Poll.findOne({
+                const poll =
+                    await Poll.findOne({
 
-                    guildId:
-                        interaction.guild.id,
+                        guildId:
+                            interaction.guild.id,
 
-                    messageId
+                        channelId:
+                            configured.channel.id,
+
+                        messageId
 
                 });
 
@@ -426,7 +475,7 @@ module.exports = {
                 return interaction.reply({
 
                     content:
-                        "❌ Encuesta no encontrada.",
+                        "❌ No encontré una encuesta con ese ID en el canal configurado.",
 
                     flags: 64
 
@@ -657,11 +706,19 @@ ${bar} ${percentage}%
 
         if (subcommand === "list") {
 
+            const configured = await getConfiguredPollChannel(interaction);
+            if (configured.error) {
+                return interaction.reply({ content: configured.error, flags: 64 });
+            }
+
             const polls =
                 await Poll.find({
 
                     guildId:
                         interaction.guild.id,
+
+                    channelId:
+                        configured.channel.id,
 
                     ended: false
 
@@ -669,12 +726,17 @@ ${bar} ${percentage}%
 
             //////////////////////////////////////////////////
 
+            const totalPolls = await Poll.countDocuments({
+                guildId: interaction.guild.id,
+                channelId: configured.channel.id
+            });
+
             if (!polls.length) {
 
                 return interaction.reply({
 
                     content:
-                        "❌ No hay encuestas activas.",
+                        `📊 No hay encuestas activas en ${configured.channel}. Encuestas registradas: ${totalPolls}.`,
 
                     flags: 64
 
@@ -695,6 +757,7 @@ ${bar} ${percentage}%
 
                     .setDescription(
 
+                        `Canal: ${configured.channel}\nActivas: ${polls.length} · Registradas: ${totalPolls}\n\n` +
                         polls.map(poll =>
 
                             `🆔 \`${poll.messageId}\`\n` +
@@ -746,6 +809,11 @@ ${bar} ${percentage}%
 
             }
 
+            const configured = await getConfiguredPollChannel(interaction);
+            if (configured.error) {
+                return interaction.reply({ content: configured.error, flags: 64 });
+            }
+
             //////////////////////////////////////////////////
 
             const messageId =
@@ -761,6 +829,9 @@ ${bar} ${percentage}%
                     guildId:
                         interaction.guild.id,
 
+                    channelId:
+                        configured.channel.id,
+
                     messageId
 
                 });
@@ -772,7 +843,7 @@ ${bar} ${percentage}%
                 return interaction.reply({
 
                     content:
-                        "❌ Encuesta no encontrada.",
+                        "❌ No encontré una encuesta con ese ID en el canal configurado.",
 
                     flags: 64
 
@@ -817,6 +888,9 @@ ${bar} ${percentage}%
 
                 guildId:
                     interaction.guild.id,
+
+                channelId:
+                    configured.channel.id,
 
                 messageId
 
