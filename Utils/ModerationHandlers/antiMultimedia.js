@@ -54,7 +54,7 @@ module.exports = {
             }
             config.allowedChannels.push(channel.id);
             await config.save();
-            return respond(interaction, "✅ Canal permitido", `El contenido multimedia ahora está permitido en ${channel}.`, 0x00FF99);
+            return respond(interaction, "✅ Canal multimedia configurado", `En ${channel} se permitirán imágenes, vídeos y documentos. Los mensajes sin ese contenido se eliminarán automáticamente.`, 0x00FF99);
         }
 
         if (subcommand === "remove") {
@@ -73,7 +73,7 @@ module.exports = {
             let text = valid.length ? valid.map(id => `<#${id}>`).join("\n") : "Ninguno";
             text += `\n\n**Total:** ${valid.length}/5`;
             if (stale.length) text += `\n**Canales eliminados guardados:** ${stale.length}`;
-            return respond(interaction, "📸 Canales multimedia permitidos", text);
+            return respond(interaction, "📸 Canales multimedia configurados", text);
         }
 
         if (subcommand === "log") {

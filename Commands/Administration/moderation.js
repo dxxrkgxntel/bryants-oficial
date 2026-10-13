@@ -374,7 +374,7 @@ module.exports = {
                 group
                     .setName("antimultimedia")
                     .setDescription("Configura el filtro de contenido multimedia")
-                    .addSubcommand(sub => sub.setName("add").setDescription("Permitir imágenes en un canal")
+                    .addSubcommand(sub => sub.setName("add").setDescription("Configurar canal para imágenes, vídeos y documentos")
                         .addChannelOption(option => option.setName("canal").setDescription("Canal").setRequired(true).addChannelTypes(ChannelType.GuildText)))
                     .addSubcommand(sub => sub.setName("remove").setDescription("Quitar canal permitido")
                         .addChannelOption(option => option.setName("canal").setDescription("Canal").setRequired(true).addChannelTypes(ChannelType.GuildText)))
