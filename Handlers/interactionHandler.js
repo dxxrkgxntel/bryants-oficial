@@ -1,6 +1,11 @@
 const ascii = require('ascii-table');
 const fs = require('fs');
 
+function readInteractionFiles(directory) {
+    if (!fs.existsSync(directory)) return [];
+    return fs.readdirSync(directory).filter(file => file.endsWith('.js'));
+}
+
 function loadInteractions(client) {
 
     const table =
@@ -23,7 +28,7 @@ function loadInteractions(client) {
     // 🔘 BOTONES
     //////////////////////////////////////////////////
 
-    fs.readdirSync('./Interactions/Buttons')
+    readInteractionFiles('./Interactions/Buttons')
 
         .forEach(file => {
 
@@ -86,7 +91,7 @@ function loadInteractions(client) {
     // 📜 SELECT MENUS
     //////////////////////////////////////////////////
 
-    fs.readdirSync('./Interactions/StringSelect')
+    readInteractionFiles('./Interactions/StringSelect')
 
         .forEach(file => {
 
@@ -151,7 +156,7 @@ function loadInteractions(client) {
     // 🧾 MODALES
     //////////////////////////////////////////////////
 
-    fs.readdirSync('./Interactions/ModalSubmit')
+    readInteractionFiles('./Interactions/ModalSubmit')
 
         .forEach(file => {
 
