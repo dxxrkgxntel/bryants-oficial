@@ -17,11 +17,6 @@ Bot avanzado de Discord enfocado en **moderación, entretenimiento y automatizac
 * Juegos interactivos dentro del servidor
 * Sistema de recompensas vinculado a economía
 
-### 🎫 Tickets
-
-* Sistema de tickets configurable
-* Soporte organizado por canales privados
-
 ### 💰 Economía
 
 * Sistema de dinero virtual

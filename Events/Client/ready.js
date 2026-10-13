@@ -145,13 +145,6 @@ module.exports = {
 
             {
                 name:
-                    '💜 || Sistema de Tickets',
-                type:
-                    ActivityType.Listening
-            },
-
-            {
-                name:
                     '💜 || Desenvolvido por @bryantdx',
                 type:
                     ActivityType.Playing
