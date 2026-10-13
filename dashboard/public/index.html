@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#100b18">
+    <title>Bryant's Oficial | Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+</head>
+<body>
+    <main class="shell">
+        <header class="topbar">
+            <a class="brand" href="/" aria-label="Bryant's Oficial, inicio">
+                <span class="brand-mark">BF</span>
+                <span><strong>Bryant's Oficial</strong><small>Panel de control</small></span>
+            </a>
+            <div id="user-area" class="user-area" hidden></div>
+        </header>
+
+        <section id="welcome" class="welcome-card">
+            <div class="eyebrow">B R Y A N T ' S &nbsp; F A M I L Y</div>
+            <h1>Tu servidor,<br><span>bajo tu control.</span></h1>
+            <p>Administra los sistemas del bot desde un solo lugar. Inicia sesión con Discord para continuar.</p>
+            <a id="login" class="primary-button" href="/auth/login">Continuar con Discord <span aria-hidden="true">↗</span></a>
+            <p id="login-error" class="error" hidden>No se pudo completar el acceso. Inténtalo otra vez.</p>
+        </section>
+
+        <section id="servers-section" class="servers-section" hidden>
+            <div class="section-heading">
+                <div><div class="eyebrow">ACCESO ADMINISTRATIVO</div><h2>Elige un servidor</h2></div>
+                <p>Se muestran los servidores donde tienes permisos de administrador y el bot está instalado.</p>
+            </div>
+            <div id="servers" class="server-grid"></div>
+            <p id="servers-error" class="error" hidden></p>
+            <p id="empty-state" class="empty-state" hidden>No encontré servidores disponibles para esta cuenta.</p>
+        </section>
+
+        <footer>Las sesiones se protegen y los secretos permanecen en la configuración privada del hosting.</footer>
+    </main>
+</body>
+</html>

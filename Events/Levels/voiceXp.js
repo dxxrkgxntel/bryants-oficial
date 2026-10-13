@@ -14,15 +14,7 @@ const EconomyUser =
 
 const questHandler =
     require("../../Functions/questHandler");
-
-//////////////////////////////////////////////////
-// CONFIG
-//////////////////////////////////////////////////
-
-const VOICE_XP = 15;
-
-const VOICE_COOLDOWN =
-    5 * 60 * 1000;
+const { getLevelSettings } = require("../../Functions/levelSettings");
 
 //////////////////////////////////////////////////
 // CACHE
@@ -58,6 +50,8 @@ module.exports = {
             client.guilds.cache.forEach(
 
                 async (guild) => {
+
+                    const levelSettings = await getLevelSettings(guild.id);
 
                     //////////////////////////////////////////////////
                     // VOICE CHANNELS
@@ -102,7 +96,7 @@ module.exports = {
                         //////////////////////////////////////////////////
 
                         if (
-                            members.size < 2
+                            members.size < levelSettings.voiceMinMembers
                         ) continue;
 
                         //////////////////////////////////////////////////
@@ -137,7 +131,7 @@ module.exports = {
 
                                 voiceCooldown.delete(key);
 
-                            }, VOICE_COOLDOWN);
+                            }, levelSettings.voiceXpCooldownMs);
 
                             //////////////////////////////////////////////////
                             // DATA
@@ -169,7 +163,7 @@ module.exports = {
                                         guildId:
                                             guild.id,
 
-                                        xp: VOICE_XP,
+                                        xp: levelSettings.voiceXpAmount,
 
                                         level: 0
                                     });
@@ -177,7 +171,7 @@ module.exports = {
                             } else {
 
                                 data.xp +=
-                                    VOICE_XP;
+                                    levelSettings.voiceXpAmount;
                             }
 
                             //////////////////////////////////////////////////

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#100b18">
+    <title>Configurar servidor | Bryant's Oficial</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/server.js" defer></script>
+</head>
+<body class="dashboard-page">
+    <div class="app-layout">
+        <aside class="sidebar">
+            <a class="brand" href="/">
+                <span class="brand-mark">BF</span>
+                <span><strong>Bryant's Oficial</strong><small>Panel de control</small></span>
+            </a>
+            <div class="server-switch">
+                <span class="eyebrow">SERVIDOR ACTIVO</span>
+                <strong id="server-name">Cargando servidor…</strong>
+                <a href="/">Cambiar servidor</a>
+            </div>
+            <nav id="module-nav" aria-label="Sistemas del bot"></nav>
+            <div class="sidebar-footer"><span class="online-dot"></span> Conectado a Bryant's Oficial</div>
+        </aside>
+
+        <main class="main-panel">
+            <header class="main-header">
+                <div><div class="eyebrow">DASHBOARD</div><h1 id="page-title">Configuración del servidor</h1></div>
+                <div class="header-actions"><span id="user-name"></span><button id="logout" class="quiet-button" type="button">Salir</button></div>
+            </header>
+            <div id="notice" class="notice" role="status" hidden></div>
+            <section id="module-content" class="module-content">
+                <div class="loading-card">Cargando los sistemas…</div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

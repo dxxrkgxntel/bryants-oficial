@@ -3,6 +3,7 @@ const LevelReward = require("../../Models/LevelReward");
 const LevelConfig = require("../../Models/LevelConfig");
 const EconomyUser = require("../../Models/EconomyUser");
 const { MessageFlags } = require("discord.js");
+const { getLevelSettings } = require("../../Functions/levelSettings");
 
 const LEVEL_UP_BANNER = "https://i.imgur.com/IyrUtlE.png";
 
@@ -38,6 +39,7 @@ module.exports = {
         // COOLDOWN POR SERVER + USER
         ////////////////////////////////////////
 
+        const levelSettings = await getLevelSettings(message.guild.id);
         const key =
             `${message.guild.id}_${message.author.id}`;
 
@@ -53,14 +55,14 @@ module.exports = {
 
             cooldown.delete(key);
 
-        }, 5000);
+        }, levelSettings.messageXpCooldownMs);
 
         ////////////////////////////////////////
         // XP RANDOM
         ////////////////////////////////////////
 
         const xpRandom =
-            Math.floor(Math.random() * 10) + 5;
+            Math.floor(Math.random() * (levelSettings.messageXpMax - levelSettings.messageXpMin + 1)) + levelSettings.messageXpMin;
 
         ////////////////////////////////////////
         // BUSCAR DATA

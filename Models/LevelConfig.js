@@ -11,7 +11,13 @@ const levelConfigSchema =
 
         levelThumbnail: String,
 
-        levelColor: String
+        levelColor: String,
+        messageXpMin: { type: Number, default: 5 },
+        messageXpMax: { type: Number, default: 14 },
+        messageXpCooldownMs: { type: Number, default: 5000 },
+        voiceXpAmount: { type: Number, default: 15 },
+        voiceXpCooldownMs: { type: Number, default: 300000 },
+        voiceMinMembers: { type: Number, default: 2 }
 
 
     });
