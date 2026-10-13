@@ -80,29 +80,29 @@ module.exports = {
             .setFooter({ text: "Bryant's Oficial • TempVoice" });
 
         const buttons = [
-            createButton(interaction.guild, "temp_rename", "tv_name", "✏️"),
-            createButton(interaction.guild, "temp_limit", "tv_limit", "👥"),
-            createButton(interaction.guild, "temp_privacy_menu", "tv_privacy", "🔒"),
-            createButton(interaction.guild, "temp_waiting", "tv_waiting", "🕒"),
-            createButton(interaction.guild, "temp_chat", "tv_chat", "💬"),
+            createButton(interaction.guild, "temp_rename", ["01_nombre", "tv_name"], "✏️"),
+            createButton(interaction.guild, "temp_limit", ["02_limite", "tv_limit"], "👥"),
+            createButton(interaction.guild, "temp_privacy_menu", ["03_privacidad", "tv_privacy"], "🔒"),
+            createButton(interaction.guild, "temp_waiting", ["04_sala_espera", "tv_waiting"], "🕒"),
+            createButton(interaction.guild, "temp_chat", ["05_chat", "tv_chat"], "💬"),
 
-            createButton(interaction.guild, "temp_trust", "tv_permit", "✅"),
-            createButton(interaction.guild, "temp_untrust", "tv_unpermit", "🚫"),
-            createButton(interaction.guild, "temp_invite", "tv_invite", "📞"),
-            createButton(interaction.guild, "temp_kick", "tv_kick", "👢"),
-            createButton(interaction.guild, "temp_region", "tv_region", "🌐"),
+            createButton(interaction.guild, "temp_trust", ["06_permitir", "tv_permit"], "✅"),
+            createButton(interaction.guild, "temp_untrust", ["07_quitar_permiso", "tv_unpermit"], "🚫"),
+            createButton(interaction.guild, "temp_invite", ["08_invitar", "tv_invite"], "📞"),
+            createButton(interaction.guild, "temp_kick", ["09_expulsar", "tv_kick"], "👢"),
+            createButton(interaction.guild, "temp_region", ["10_region", "tv_region"], "🌐"),
 
-            createButton(interaction.guild, "temp_block", "tv_block", "⛔"),
-            createButton(interaction.guild, "temp_unblock_user", "tv_unblock", "🔓"),
-            createButton(interaction.guild, "temp_claim", ["tv_claim", "tempvoice_claim", "temp_claim", "claim", "reclamar", "crown", "corona"], "👑"),
-            createButton(interaction.guild, "temp_transfer", ["tv_transfer", "tempvoice_transfer", "temp_transfer", "transfer", "transferir", "traspasar"], "🔁"),
-            createButton(interaction.guild, "temp_delete", ["tv_delete", "tempvoice_delete", "temp_delete", "delete", "eliminar", "trash", "basura"], "🗑️")
+            createButton(interaction.guild, "temp_block", ["11_bloquear", "tv_block"], "⛔"),
+            createButton(interaction.guild, "temp_unblock_user", ["12_desbloquear", "tv_unblock"], "🔓"),
+            createButton(interaction.guild, "temp_claim", ["13_reclamar", "tv_claim", "tempvoice_claim", "temp_claim", "claim", "reclamar", "crown", "corona"], "👑"),
+            createButton(interaction.guild, "temp_transfer", ["14_transferir", "tv_transfer", "tempvoice_transfer", "temp_transfer", "transfer", "transferir", "traspasar"], "🔁"),
+            createButton(interaction.guild, "temp_delete", ["15_eliminar_sala", "tv_delete", "tempvoice_delete", "temp_delete", "delete", "eliminar", "trash", "basura"], "🗑️")
         ];
 
         const missingLogos = [
-            { label: "RECLAMAR", names: ["tv_claim", "tempvoice_claim", "temp_claim", "claim", "reclamar", "crown", "corona"], canonical: "tv_claim" },
-            { label: "TRANSFERIR", names: ["tv_transfer", "tempvoice_transfer", "temp_transfer", "transfer", "transferir", "traspasar"], canonical: "tv_transfer" },
-            { label: "ELIMINAR SALA", names: ["tv_delete", "tempvoice_delete", "temp_delete", "delete", "eliminar", "trash", "basura"], canonical: "tv_delete" }
+            { label: "RECLAMAR", names: ["13_reclamar", "tv_claim", "tempvoice_claim", "temp_claim", "claim", "reclamar", "crown", "corona"], canonical: "13_reclamar" },
+            { label: "TRANSFERIR", names: ["14_transferir", "tv_transfer", "tempvoice_transfer", "temp_transfer", "transfer", "transferir", "traspasar"], canonical: "14_transferir" },
+            { label: "ELIMINAR SALA", names: ["15_eliminar_sala", "tv_delete", "tempvoice_delete", "temp_delete", "delete", "eliminar", "trash", "basura"], canonical: "15_eliminar_sala" }
         ].filter(item => !findCustomEmoji(interaction.guild, item.names));
 
         const rows = [];
