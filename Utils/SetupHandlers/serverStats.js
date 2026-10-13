@@ -80,11 +80,11 @@ module.exports = {
 
             const membersChannel = await createCounter(
                 existing?.membersChannelId,
-                `「👥」𝐌𝐢𝐞𝐦𝐛𝐫𝐨𝐬: ${guild.memberCount}`
+                `「👥」𝗠𝗶𝗲𝗺𝗯𝗿𝗼𝘀: ${guild.memberCount}`
             );
             const inviteChannel = await createCounter(
                 existing?.inviteChannelId,
-                `「🔗」${inviteLink}`
+                `「🔗」𝗜𝗻𝘃𝗶𝘁𝗮𝗰𝗶𝗼𝗻: ${inviteLink}`
             );
 
             await ServerStatsConfig.findOneAndUpdate(
