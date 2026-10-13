@@ -161,7 +161,11 @@ function renderList(key, definition, editItem = null) {
     const records = configState.lists[key] || [];
     const editing = Boolean(editItem);
     const form = `<form id="list-form" class="fields-grid">${definition.fields.map(field => renderField(field, getNested(editItem, field.name), `${key}-`)).join("")}<div class="form-actions"><button class="primary-button" type="submit">${editing ? "Guardar elemento" : "Añadir elemento"}</button>${editing ? '<button class="quiet-button" id="cancel-edit" type="button">Cancelar</button>' : ""}</div></form>`;
-    const rows = records.map(record => `<div class="record-row"><div class="record-title">${escapeHtml(record[definition.identity] ?? record.name ?? record.roleId ?? "Elemento")}</div><div class="record-actions"><button type="button" class="quiet-button" data-edit="${escapeHtml(record._id)}">Editar</button><button type="button" class="quiet-button danger-text" data-delete="${escapeHtml(record._id)}">Eliminar</button></div></div>`).join("");
+    const rows = records.map(record => {
+        const identity = record[definition.identity] ?? record.name ?? record.roleId;
+        const label = identity || (record._id ? `Registro ${String(record._id).slice(-8)}` : "Registro sin identificar");
+        return `<div class="record-row"><div class="record-title">${escapeHtml(label)}</div><div class="record-actions"><button type="button" class="quiet-button" data-edit="${escapeHtml(record._id)}">Editar</button><button type="button" class="quiet-button danger-text" data-delete="${escapeHtml(record._id)}">Eliminar</button></div></div>`;
+    }).join("");
     content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div><div class="records-list">${rows || '<p class="empty-state">Todavía no hay elementos configurados.</p>'}</div><div class="form-divider"></div><h3>${editing ? "Editar elemento" : "Añadir elemento"}</h3>${form}</article>`;
 
     content.querySelectorAll("[data-edit]").forEach(button => button.addEventListener("click", () => {
