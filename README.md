@@ -44,11 +44,6 @@ Bot avanzado de Discord enfocado en **moderación, entretenimiento y automatizac
 * Compra de ítems usando la economía del bot
 * Integración directa con el sistema de dinero
 
-### 🔢 Conteo
-
-* Sistema de conteo en canal específico
-* Control de errores y reinicio automático
-
 ### 🎭 Autoroles
 
 * Asignación automática de roles
