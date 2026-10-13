@@ -58,7 +58,24 @@ async function getRoom(interaction, { requireOwner = true, channelId = null } = 
         guildId: interaction.guildId,
         channelId: voiceChannel.id
     });
-    if (!data || (requireOwner && data.ownerId !== interaction.user.id)) return null;
+    if (!data) return null;
+
+    // Migrate room records created before panelChannelId was separated from
+    // the room-owned textChannelId. Never let room cleanup delete a shared panel.
+    if (data.textChannelId) {
+        const config = await tempVoiceSchema.findOne({ guildId: interaction.guildId });
+        const panelChannelIds = new Set([
+            config?.panelChannelId,
+            ...(config?.setups || []).map(item => item.panelChannelId)
+        ].filter(Boolean));
+        if (panelChannelIds.has(data.textChannelId)) {
+            data.panelChannelId = data.textChannelId;
+            data.textChannelId = null;
+            await data.save();
+        }
+    }
+
+    if (requireOwner && data.ownerId !== interaction.user.id) return null;
 
     return { voiceChannel, data };
 }
@@ -326,6 +343,8 @@ async function createRoomThread(voiceChannel, data) {
 
     let parent = data.textChannelId
         ? await voiceChannel.guild.channels.fetch(data.textChannelId).catch(() => null)
+        : data.panelChannelId
+            ? await voiceChannel.guild.channels.fetch(data.panelChannelId).catch(() => null)
         : null;
     if (!parent) {
         const setup = await tempVoiceSchema.findOne({ guildId: voiceChannel.guild.id });

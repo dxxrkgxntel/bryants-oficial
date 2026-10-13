@@ -15,6 +15,7 @@ const schema =
         hidden: Boolean,
         waitingRoom: Boolean,
         textChannelId: String,
+        panelChannelId: String,
         waitingRoomChannelId: String,
         threadId: String,
         chatClosed: Boolean,

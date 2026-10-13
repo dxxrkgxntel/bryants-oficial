@@ -101,7 +101,9 @@ module.exports = {
 
                 waitingRoom: false,
 
-                textChannelId: creatorSetup?.panelChannelId || data.panelChannelId || null,
+                textChannelId: null,
+
+                panelChannelId: creatorSetup?.panelChannelId || data.panelChannelId || null,
 
                 waitingRoomChannelId: null,
 
@@ -176,6 +178,20 @@ module.exports = {
             //////////////////////////////////////////////////
 
             if (!tempChannel) return;
+
+            // Correct records created before panelChannelId was separated from
+            // the room-owned textChannelId, preventing deletion of the shared panel.
+            if (tempChannel.textChannelId) {
+                const panelChannelIds = new Set([
+                    data.panelChannelId,
+                    ...(data.setups || []).map(setup => setup.panelChannelId)
+                ].filter(Boolean));
+                if (panelChannelIds.has(tempChannel.textChannelId)) {
+                    tempChannel.panelChannelId = tempChannel.textChannelId;
+                    tempChannel.textChannelId = null;
+                    await tempChannel.save();
+                }
+            }
 
             //////////////////////////////////////////////////
 
