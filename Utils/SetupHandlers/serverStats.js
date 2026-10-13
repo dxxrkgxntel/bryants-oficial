@@ -84,7 +84,7 @@ module.exports = {
             );
             const inviteChannel = await createCounter(
                 existing?.inviteChannelId,
-                `「🔗」𝗜𝗻𝘃𝗶𝘁𝗮𝗰𝗶𝗼𝗻: ${inviteLink}`
+                `「🔗」${inviteLink}`
             );
 
             await ServerStatsConfig.findOneAndUpdate(
