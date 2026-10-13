@@ -15,7 +15,7 @@ function watchConnection(connection, guildId, channelId) {
     connection._persistentVoiceRecoveryAttached = true;
 
     connection.on("error", error => {
-        console.error(`[Voice Connect] Error en ${guildId}:`, error);
+        console.error(`[VOICE CONNECT] Error en ${guildId}:`, error);
     });
 
     connection.on("stateChange", (_oldState, newState) => {
@@ -96,15 +96,15 @@ async function restoreVoiceConnections(client) {
         const channel = guild.channels.cache.get(config.channelId)
             || await guild.channels.fetch(config.channelId).catch(() => null);
         if (!channel?.isVoiceBased()) {
-            console.warn(`[Voice Connect] Canal guardado no disponible en el servidor ${guild.id}.`);
+            console.warn(`[VOICE CONNECT] Canal guardado no disponible en el servidor ${guild.id}.`);
             continue;
         }
 
         try {
             await connectToVoiceChannel(guild, channel.id);
-            console.log(`[Voice Connect] Reconectado en ${guild.name} / ${channel.name}.`);
+            console.log(`[VOICE CONNECT] Reconectado en ${guild.name} / ${channel.name}.`);
         } catch (error) {
-            console.error(`[Voice Connect] No pude reconectar en ${guild.id}/${channel.id}:`, error);
+            console.error(`[VOICE CONNECT] No pude reconectar en ${guild.id}/${channel.id}:`, error);
         }
     }
 }

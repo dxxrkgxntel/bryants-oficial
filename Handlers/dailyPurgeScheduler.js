@@ -44,7 +44,7 @@ function scheduleConfirmationDelete(client, config, attempt = 0) {
                 { $set: { confirmationChannelId: null, confirmationMessageId: null, confirmationDeleteAt: null } }
             );
         } catch (error) {
-            console.error(`[Daily Purge] No se pudo borrar el aviso temporal ${configData.confirmationMessageId}:`, error);
+            console.error(`[DAILY PURGE] No se pudo borrar el aviso temporal ${configData.confirmationMessageId}:`, error);
             if (attempt < 3) {
                 scheduleConfirmationDelete(client, {
                     ...configData,
@@ -63,7 +63,7 @@ async function sendTemporaryConfirmation(client, config, channel) {
     try {
         message = await channel.send("Limpieza de chats diaria realizada correctamente.");
     } catch (error) {
-        console.error(`[Daily Purge] No se pudo enviar el aviso en ${channel.id}:`, error);
+        console.error(`[DAILY PURGE] No se pudo enviar el aviso en ${channel.id}:`, error);
         return;
     }
 
@@ -74,7 +74,7 @@ async function sendTemporaryConfirmation(client, config, channel) {
     try {
         await config.save();
     } catch (error) {
-        console.error(`[Daily Purge] No se pudo guardar el borrado pendiente del aviso ${message.id}:`, error);
+        console.error(`[DAILY PURGE] No se pudo guardar el borrado pendiente del aviso ${message.id}:`, error);
     }
 
     scheduleConfirmationDelete(client, config);
@@ -157,7 +157,7 @@ async function processDuePurges(client) {
             let channel = guild.channels.cache.get(config.channelId);
             if (!channel) channel = await guild.channels.fetch(config.channelId).catch(() => null);
             if (!channel || ![ChannelType.GuildText, ChannelType.GuildAnnouncement].includes(channel.type)) {
-                console.error(`[Daily Purge] Canal no disponible para el servidor ${config.guildId}.`);
+                console.error(`[DAILY PURGE] Canal no disponible para el servidor ${config.guildId}.`);
                 continue;
             }
 
@@ -171,7 +171,7 @@ async function processDuePurges(client) {
             ];
 
             if (!permissions || !requiredPermissions.every(permission => permissions.has(permission))) {
-                console.error(`[Daily Purge] Faltan permisos para limpiar ${channel.id} en ${guild.name}.`);
+                console.error(`[DAILY PURGE] Faltan permisos para limpiar ${channel.id} en ${guild.name}.`);
                 continue;
             }
 
@@ -180,14 +180,14 @@ async function processDuePurges(client) {
                 config.lastPurgeDate = today;
                 config.lastPurgeAt = new Date();
                 await config.save();
-                console.log(`[Daily Purge] ${deletedCount} mensajes eliminados en #${channel.name} (${guild.name}).`);
+                console.log(`[DAILY PURGE] ${deletedCount} mensajes eliminados en #${channel.name} (${guild.name}).`);
                 await sendTemporaryConfirmation(client, config, channel);
             } catch (error) {
-                console.error(`[Daily Purge] Error en #${channel.name} (${guild.name}):`, error);
+                console.error(`[DAILY PURGE] Error en #${channel.name} (${guild.name}):`, error);
             }
         }
     } catch (error) {
-        console.error("[Daily Purge] Error al procesar las configuraciones:", error);
+        console.error("[DAILY PURGE] Error al procesar las configuraciones:", error);
     } finally {
         isRunning = false;
     }
@@ -195,10 +195,10 @@ async function processDuePurges(client) {
 
 module.exports = function startDailyPurgeScheduler(client) {
     cron.schedule("0 0 * * *", () => processDuePurges(client), { timezone: TIME_ZONE });
-    console.log(`[Daily Purge] Programado diariamente a las 12:00 AM (${TIME_ZONE}).`);
+    console.log(`[DAILY PURGE] Programado diariamente a las 12:00 AM (${TIME_ZONE}).`);
 
     restorePendingConfirmations(client).catch(error => {
-        console.error("[Daily Purge] Error al restaurar el borrado pendiente de avisos:", error);
+        console.error("[DAILY PURGE] Error al restaurar el borrado pendiente de avisos:", error);
     });
 
     // Catch up once after startup if the bot was offline at midnight.

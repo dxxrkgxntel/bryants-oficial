@@ -63,7 +63,7 @@ module.exports = {
             await restoreVoiceConnections(client);
             await restoreServerStats(client);
         } else {
-            console.error('[Daily Purge] No se pudo iniciar: MongoDB no está conectado.');
+            console.error('[DAILY PURGE] No se pudo iniciar: MongoDB no está conectado.');
         }
 
         //////////////////////////////////////////////////
@@ -149,7 +149,7 @@ module.exports = {
 
             {
                 name:
-                    '💜 || Desenvolvido por @bryantdx',
+                    '💜 || Desenvolvido por @elbryantdx',
                 type:
                     ActivityType.Playing
             },
