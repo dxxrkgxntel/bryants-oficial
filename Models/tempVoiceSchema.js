@@ -31,7 +31,14 @@ const tempVoiceSchema = new mongoose.Schema({
     panelMessageId: {
         type: String,
         default: null
-    }
+    },
+
+    setups: [{
+        categoryId: { type: String, required: true },
+        creatorChannelId: { type: String, required: true },
+        panelChannelId: { type: String, required: true },
+        panelMessageId: { type: String, default: null }
+    }]
 
 });
 

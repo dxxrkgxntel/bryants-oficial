@@ -40,10 +40,10 @@ module.exports = {
         // ENTRAR CANAL CREADOR
         //////////////////////////////////////////////////
 
-        if (
-            newState.channelId ===
-            data.creatorChannelId
-        ) {
+        const creatorSetup = (data.setups || []).find(setup => setup.creatorChannelId === newState.channelId);
+        const isCreatorChannel = creatorSetup || data.creatorChannelId === newState.channelId;
+
+        if (isCreatorChannel) {
 
             //////////////////////////////////////////////////
             // CREAR CANAL
@@ -59,7 +59,7 @@ module.exports = {
                         ChannelType.GuildVoice,
 
                     parent:
-                        data.categoryId,
+                        creatorSetup?.categoryId || data.categoryId,
 
                     permissionOverwrites: [
                         {
@@ -101,7 +101,7 @@ module.exports = {
 
                 waitingRoom: false,
 
-                textChannelId: null,
+                textChannelId: creatorSetup?.panelChannelId || data.panelChannelId || null,
 
                 waitingRoomChannelId: null,
 
