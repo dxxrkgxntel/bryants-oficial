@@ -24,7 +24,19 @@ async function loadDashboard() {
         welcome.hidden = true;
         serversSection.hidden = false;
         userArea.hidden = false;
-        userArea.textContent = `Sesión iniciada como ${session.user.username}`;
+        userArea.replaceChildren();
+        const userAvatar = document.createElement("img");
+        userAvatar.className = "user-avatar";
+        userAvatar.alt = "";
+        userAvatar.width = 36;
+        userAvatar.height = 36;
+        const defaultAvatarIndex = Number((BigInt(session.user.id) >> 22n) % 6n);
+        userAvatar.src = session.user.avatar
+            ? `https://cdn.discordapp.com/avatars/${encodeURIComponent(session.user.id)}/${encodeURIComponent(session.user.avatar)}.${session.user.avatar.startsWith("a_") ? "gif" : "png"}?size=64`
+            : `https://cdn.discordapp.com/embed/avatars/${defaultAvatarIndex}.png`;
+        const sessionLabel = document.createElement("span");
+        sessionLabel.textContent = `Sesión iniciada como ${session.user.username}`;
+        userArea.append(userAvatar, sessionLabel);
 
         const response = await fetch("/api/guilds", { credentials: "same-origin" });
         const result = await response.json();
