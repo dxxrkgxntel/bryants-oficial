@@ -1,6 +1,5 @@
-const { MessageFlags } = require("discord.js");
 const welcomeSchema = require("../../Models/welcomeSchema");
-const { renderConfiguredMessage, parseConfiguredColor } = require("../../Functions/renderConfiguredMessage");
+const { buildConfiguredEmbed } = require("../../Functions/buildConfiguredEmbed");
 
 module.exports = {
     name: "guildMemberAdd",
@@ -13,7 +12,7 @@ module.exports = {
             if (!channel?.isTextBased()) return;
 
             const createdAt = Math.floor(member.user.createdTimestamp / 1000);
-            const title = renderConfiguredMessage(data.Title, {
+            const values = {
                 usuario: `${member}`,
                 username: member.user.username,
                 userTag: member.user.tag || member.user.username,
@@ -23,35 +22,16 @@ module.exports = {
                 id: member.id,
                 cuenta: `<t:${createdAt}:R>`,
                 accountCreated: `<t:${createdAt}:R>`
+            };
+            const embed = buildConfiguredEmbed(data, {
+                title: data.Title,
+                description: data.MessageDes,
+                color: data.Color,
+                image: data.Banner,
+                thumbnail: data.Thumbnail,
+                values
             });
-            const description = renderConfiguredMessage(data.MessageDes, {
-                usuario: `${member}`,
-                username: member.user.username,
-                userTag: member.user.tag || member.user.username,
-                servidor: member.guild.name,
-                serverId: member.guild.id,
-                miembros: member.guild.memberCount,
-                id: member.id,
-                cuenta: `<t:${createdAt}:R>`,
-                accountCreated: `<t:${createdAt}:R>`
-            });
-            const text = [title ? `## ${title}` : "", description].filter(Boolean).join("\n\n");
-            const components = [];
-            if (data.Banner) components.push({ type: 12, items: [{ media: { url: data.Banner } }] });
-
-            if (text && data.Thumbnail) {
-                components.push({ type: 9, components: [{ type: 10, content: text }], accessory: { type: 11, media: { url: data.Thumbnail } } });
-            } else if (text) {
-                components.push({ type: 10, content: text });
-            } else if (data.Thumbnail) {
-                components.push({ type: 12, items: [{ media: { url: data.Thumbnail } }] });
-            }
-            if (!components.length) return;
-
-            const container = { type: 17, components };
-            const accentColor = parseConfiguredColor(data.Color);
-            if (accentColor !== null) container.accent_color = accentColor;
-            await channel.send({ flags: MessageFlags.IsComponentsV2, components: [container] });
+            if (embed) await channel.send({ embeds: [embed] });
         } catch (error) {
             console.error("[Welcome] No se pudo enviar el mensaje configurado:", error);
         }

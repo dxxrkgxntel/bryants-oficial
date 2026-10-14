@@ -8,6 +8,12 @@ let welcomeSchema = new Schema({
     Channel: String,
     Guild: String,
     Title: String,
+    embedAuthorName: String,
+    embedAuthorUrl: String,
+    embedAuthorIcon: String,
+    embedFooterText: String,
+    embedFooterIcon: String,
+    embedTimestamp: { type: Boolean, default: false },
 })
 
 module.exports = model("welcome", welcomeSchema)

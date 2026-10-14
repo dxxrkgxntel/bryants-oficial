@@ -58,8 +58,25 @@ const messageVariables = {
         { token: "{{role}}", label: "Rol", description: "Rol concedido." },
         { token: "{{date}}", label: "Fecha", description: "Fecha actual." },
         { token: "{{time}}", label: "Hora", description: "Hora actual." }
+    ],
+    embedStyle: [
+        { token: "{{user}}", label: "Miembro", description: "Mención al miembro del aviso." },
+        { token: "{{username}}", label: "Nombre", description: "Nombre de usuario." },
+        { token: "{{server}}", label: "Servidor", description: "Nombre del servidor." },
+        { token: "{{date}}", label: "Fecha", description: "Fecha actual." },
+        { token: "{{time}}", label: "Hora", description: "Hora actual." }
     ]
 };
+
+const embedStyleFields = [
+    { name: "embedStyleSection", label: "Personalización del mensaje", type: "section", optional: true },
+    { name: "embedAuthorName", label: "Autor · nombre", type: "text", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.embedStyle },
+    { name: "embedAuthorUrl", label: "Autor · URL", type: "url", optional: true, help: "Se enlaza desde el nombre del autor." },
+    { name: "embedAuthorIcon", label: "Autor · imagen", type: "url", optional: true, help: "Solo aparece si configuras el nombre del autor." },
+    { name: "embedFooterText", label: "Footer · texto", type: "text", maxLength: 2048, optional: true, templateComposer: true, templateVariables: messageVariables.embedStyle },
+    { name: "embedFooterIcon", label: "Footer · imagen", type: "url", optional: true, help: "Solo aparece si configuras el texto del footer." },
+    { name: "embedTimestamp", label: "Mostrar fecha y hora del mensaje", type: "boolean", optional: true }
+];
 
 const configurations = {
     autoroles: {
@@ -83,7 +100,8 @@ const configurations = {
             { name: "MessageDes", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.welcome, help: "Admite variables con llaves dobles, por ejemplo {{user}}, {{server}} y {{members}}. También puedes insertarlas con los botones." },
             { name: "Color", label: "Color hexadecimal", type: "color", optional: true },
             { name: "Banner", label: "URL del banner", type: "url", optional: true },
-            { name: "Thumbnail", label: "URL de miniatura", type: "url", optional: true }
+            { name: "Thumbnail", label: "URL de miniatura", type: "url", optional: true },
+            ...embedStyleFields
         ]
     },
     leaves: {
@@ -97,7 +115,8 @@ const configurations = {
             { name: "MessageDes", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.leave, help: "Admite variables con llaves dobles, por ejemplo {{user}}, {{server}} y {{members}}. También puedes insertarlas con los botones." },
             { name: "Color", label: "Color hexadecimal", type: "color", optional: true },
             { name: "Banner", label: "URL del banner", type: "url", optional: true },
-            { name: "Thumbnail", label: "URL de miniatura", type: "url", optional: true }
+            { name: "Thumbnail", label: "URL de miniatura", type: "url", optional: true },
+            ...embedStyleFields
         ]
     },
     birthday: {
@@ -113,7 +132,8 @@ const configurations = {
             { name: "birthdayBanner", label: "URL del banner", type: "url", optional: true },
             { name: "birthdayColor", label: "Color hexadecimal", type: "color", optional: true },
             { name: "birthdayReminder", label: "Recordatorio del día anterior", type: "textarea", maxLength: 2000, optional: true, templateComposer: true, templateVariables: messageVariables.birthdayReminder, help: "Puedes insertar variables como {{user}}, {{server}} y {{date}} con los botones." },
-            { name: "birthdayReward", label: "Monedas de cumpleaños", type: "number", min: 0, max: 1000000, optional: true }
+            { name: "birthdayReward", label: "Monedas de cumpleaños", type: "number", min: 0, max: 1000000, optional: true },
+            ...embedStyleFields
         ]
     },
     boosts: {
@@ -130,7 +150,8 @@ const configurations = {
             { name: "boostDescription", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.boost, help: "Puedes insertar variables como {{user}}, {{server}} y {{boost}} con los botones." },
             { name: "boostColor", label: "Color hexadecimal", type: "color", optional: true },
             { name: "boostThumbnail", label: "URL de miniatura", type: "url", optional: true },
-            { name: "boostImage", label: "URL del banner", type: "url", optional: true }
+            { name: "boostImage", label: "URL del banner", type: "url", optional: true },
+            ...embedStyleFields
         ]
     },
     stats: {
@@ -262,6 +283,7 @@ const configurations = {
             { name: "levelImage", label: "URL de imagen", type: "url", optional: true },
             { name: "levelThumbnail", label: "URL de miniatura", type: "url", optional: true },
             { name: "levelColor", label: "Color hexadecimal", type: "color", optional: true },
+            ...embedStyleFields,
             { name: "levelCoinReward", label: "Monedas por cada nivel alcanzado", type: "number", min: 0, max: 1000000, optional: true },
             { name: "messageXpMin", label: "XP mínima por mensaje", type: "number", min: 0, max: 1000, default: 5 },
             { name: "messageXpMax", label: "XP máxima por mensaje", type: "number", min: 0, max: 1000, default: 14 },

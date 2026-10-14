@@ -260,6 +260,7 @@ function renderField(field, value, prefix = "") {
     const safeValue = value ?? field.default ?? "";
     const help = field.help ? `<small>${escapeHtml(field.help)}</small>` : "";
     if (field.type === "setups") return renderSetupsEditor(Array.isArray(value) ? value : []);
+    if (field.type === "section") return `<div class="field-section"><strong>${escapeHtml(field.label)}</strong><span>Personaliza cómo se verá en Discord.</span></div>`;
     if (field.type === "json" && ["prestigeRoles", "prestigeRewards"].includes(field.name)) return renderPrestigeMap(field, value);
     if (field.type === "boolean") {
         return `<label class="field checkbox-field" for="${id}"><span><strong>${escapeHtml(field.label)}</strong></span><input id="${id}" name="${escapeHtml(field.name)}" type="checkbox" ${value ? "checked" : ""}></label>`;
@@ -414,38 +415,57 @@ function renderPreviewMarkup(key, values) {
     const thumbnail = safePreviewImage(values.thumbnail);
     const title = renderPreviewTemplate(values.title).trim();
     const description = renderPreviewTemplate(values.description).trim();
-    const configuredText = [title ? `<h3>${escapeHtml(title)}</h3>` : "", description ? `<p>${escapeHtml(description)}</p>` : ""].filter(Boolean).join("");
+    const authorName = renderPreviewTemplate(values.authorName).trim();
+    const authorIcon = safePreviewImage(values.authorIcon);
+    const authorUrl = safePreviewImage(values.authorUrl);
+    const footerText = renderPreviewTemplate(values.footerText).trim();
+    const footerIcon = safePreviewImage(values.footerIcon);
+    const authorBlock = authorName ? `<div class="discord-preview-author">${authorIcon ? `<img data-preview-image src="${escapeHtml(authorIcon)}" alt="">` : ""}${authorUrl ? `<a href="${escapeHtml(authorUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(authorName)}</a>` : `<strong>${escapeHtml(authorName)}</strong>`}</div>` : "";
+    const titleBlock = title ? `<h3>${escapeHtml(title)}</h3>` : "";
+    const separator = title && description ? '<hr class="discord-preview-separator">' : "";
+    const configuredText = `${authorBlock}${titleBlock}${separator}${description ? `<p>${escapeHtml(description)}</p>` : ""}`;
     const media = banner ? `<div class="message-preview-banner"><img data-preview-image src="${escapeHtml(banner)}" alt="Vista previa del banner"></div>` : "";
+    const previewTime = new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeStyle: "short" }).format(new Date());
+    const footer = footerText ? `<div class="discord-preview-footer">${footerIcon ? `<img data-preview-image src="${escapeHtml(footerIcon)}" alt="">` : ""}<span>${escapeHtml(footerText)}</span>${values.timestamp ? `<time>${escapeHtml(previewTime)}</time>` : ""}</div>` : values.timestamp ? `<div class="discord-preview-footer"><time>${escapeHtml(previewTime)}</time></div>` : "";
     const thumbnailBlock = thumbnail ? `<img class="message-preview-avatar" data-preview-image src="${escapeHtml(thumbnail)}" alt="Miniatura configurada">` : "";
 
     if (["welcome", "leaves", "boosts", "birthday"].includes(key)) {
-        const empty = !configuredText && !media && !thumbnailBlock;
-        const reminder = values.reminder ? `<p class="preview-reminder"><strong>Recordatorio:</strong> ${escapeHtml(renderPreviewTemplate(values.reminder))}</p>` : "";
-        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Contenido configurado para Discord</small></div><article class="discord-preview" style="--preview-accent:${color}">${media}<div class="discord-preview-body">${thumbnailBlock}<div class="discord-preview-copy">${configuredText || (empty ? '<p class="preview-empty">Todavía no hay contenido configurado para este aviso.</p>' : "")}</div></div></article>${reminder}</section>`;
+        const empty = !configuredText && !media && !thumbnailBlock && !footer;
+        const reminder = values.reminder ? `<div class="preview-reminder"><strong>Vista previa del recordatorio</strong><article class="discord-preview" style="--preview-accent:${color}"><div class="discord-preview-body"><div class="discord-preview-copy">${authorBlock}<p>${escapeHtml(renderPreviewTemplate(values.reminder))}</p></div></div>${footer}</article></div>` : "";
+        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Contenido configurado para Discord</small></div><article class="discord-preview" style="--preview-accent:${color}"><div class="discord-preview-body">${thumbnailBlock}<div class="discord-preview-copy">${configuredText || (empty ? '<p class="preview-empty">Todavía no hay contenido configurado para este aviso.</p>' : "")}</div></div>${media}${footer}</article>${reminder}</section>`;
     }
     if (key === "levelSettings") {
         const levelTitle = renderPreviewTemplate(values.levelTitle).trim();
         const levelDescription = renderPreviewTemplate(values.levelDescription).trim();
         const roleTitle = renderPreviewTemplate(values.roleTitle).trim();
         const roleDescription = renderPreviewTemplate(values.roleDescription).trim();
-        const contentText = [levelTitle ? `<strong>${escapeHtml(levelTitle)}</strong>` : "", levelDescription ? `<span>${escapeHtml(levelDescription)}</span>` : ""].filter(Boolean).join("");
+        const contentText = [authorBlock, levelTitle ? `<strong>${escapeHtml(levelTitle)}</strong>` : "", levelTitle && levelDescription ? '<hr class="discord-preview-separator">' : "", levelDescription ? `<span>${escapeHtml(levelDescription)}</span>` : ""].filter(Boolean).join("");
         const empty = !contentText && !banner && !thumbnail;
-        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Contenido del aviso de nivel configurado</small></div><article class="level-preview" style="--preview-accent:${color}"><div class="level-preview-background">${banner ? `<img data-preview-image src="${escapeHtml(banner)}" alt="Imagen configurada">` : ""}</div>${thumbnailBlock}<div class="level-preview-copy">${contentText || (empty ? '<span class="preview-empty">Configura título, descripción o imagen para mostrar una vista previa.</span>' : "")}</div></article>${roleTitle || roleDescription ? `<div class="level-preview-role">${roleTitle ? `<strong>${escapeHtml(roleTitle)}</strong>` : ""}${roleDescription ? `<span>${escapeHtml(roleDescription)}</span>` : ""}</div>` : ""}</section>`;
+        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Contenido del aviso de nivel configurado</small></div><article class="level-preview" style="--preview-accent:${color}"><div class="level-preview-background">${banner ? `<img data-preview-image src="${escapeHtml(banner)}" alt="Imagen configurada">` : ""}</div>${thumbnailBlock}<div class="level-preview-copy">${contentText || (empty ? '<span class="preview-empty">Configura título, descripción o imagen para mostrar una vista previa.</span>' : "")}</div></article>${footer}${roleTitle || roleDescription ? `<div class="level-preview-role">${authorBlock}${roleTitle ? `<strong>${escapeHtml(roleTitle)}</strong>` : ""}${roleTitle && roleDescription ? '<hr class="discord-preview-separator">' : ""}${roleDescription ? `<span>${escapeHtml(roleDescription)}</span>` : ""}</div>` : ""}</section>`;
     }
     return "";
 }
 
 function previewValues(key, form) {
     const read = name => form.elements.namedItem(name)?.value || "";
-    if (key === "welcome") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail") };
-    if (key === "leaves") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail") };
-    if (key === "birthday") return { title: read("birthdayTitle"), description: read("birthdayDescription"), color: read("birthdayColor"), banner: read("birthdayBanner"), reminder: read("birthdayReminder") };
-    if (key === "boosts") return { title: read("boostTitle"), description: read("boostDescription"), color: read("boostColor"), banner: read("boostImage"), thumbnail: read("boostThumbnail") };
-    return { levelTitle: read("levelUpTitle"), levelDescription: read("levelUpDescription"), roleTitle: read("levelRoleTitle"), roleDescription: read("levelRoleDescription"), color: read("levelColor"), image: read("levelImage"), thumbnail: read("levelThumbnail") };
+    const style = {
+        authorName: read("embedAuthorName"), authorUrl: read("embedAuthorUrl"), authorIcon: read("embedAuthorIcon"),
+        footerText: read("embedFooterText"), footerIcon: read("embedFooterIcon"),
+        timestamp: Boolean(form.elements.namedItem("embedTimestamp")?.checked)
+    };
+    if (key === "welcome") return { ...style, title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail") };
+    if (key === "leaves") return { ...style, title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail") };
+    if (key === "birthday") return { ...style, title: read("birthdayTitle"), description: read("birthdayDescription"), color: read("birthdayColor"), banner: read("birthdayBanner"), reminder: read("birthdayReminder") };
+    if (key === "boosts") return { ...style, title: read("boostTitle"), description: read("boostDescription"), color: read("boostColor"), banner: read("boostImage"), thumbnail: read("boostThumbnail") };
+    return { ...style, levelTitle: read("levelUpTitle"), levelDescription: read("levelUpDescription"), roleTitle: read("levelRoleTitle"), roleDescription: read("levelRoleDescription"), color: read("levelColor"), image: read("levelImage"), thumbnail: read("levelThumbnail") };
 }
 
 function renderPreview(key, data) {
     if (!["welcome", "leaves", "boosts", "birthday", "levelSettings"].includes(key)) return "";
+    const style = {
+        authorName: data.embedAuthorName, authorUrl: data.embedAuthorUrl, authorIcon: data.embedAuthorIcon,
+        footerText: data.embedFooterText, footerIcon: data.embedFooterIcon, timestamp: Boolean(data.embedTimestamp)
+    };
     const values = key === "welcome"
         ? { title: data.Title, description: data.MessageDes, color: data.Color, banner: data.Banner, thumbnail: data.Thumbnail }
         : key === "leaves"
@@ -455,7 +475,7 @@ function renderPreview(key, data) {
                 : key === "boosts"
                 ? { title: data.boostTitle, description: data.boostDescription, color: data.boostColor, banner: data.boostImage, thumbnail: data.boostThumbnail }
                 : { levelTitle: data.levelUpTitle, levelDescription: data.levelUpDescription, roleTitle: data.levelRoleTitle, roleDescription: data.levelRoleDescription, color: data.levelColor, image: data.levelImage, thumbnail: data.levelThumbnail };
-    return renderPreviewMarkup(key, values);
+    return renderPreviewMarkup(key, { ...values, ...style });
 }
 
 function updatePreview(key, form) {

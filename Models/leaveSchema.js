@@ -7,7 +7,13 @@ let leaveSchema = new Schema({
     MessageDes:String,
     Banner: String,
     Thumbnail: String,
-    Color: String
+    Color: String,
+    embedAuthorName: String,
+    embedAuthorUrl: String,
+    embedAuthorIcon: String,
+    embedFooterText: String,
+    embedFooterIcon: String,
+    embedTimestamp: { type: Boolean, default: false }
 })
 
 module.exports = model("leave", leaveSchema)
