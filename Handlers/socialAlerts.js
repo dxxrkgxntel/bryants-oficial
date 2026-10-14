@@ -164,7 +164,9 @@ async function checkAlert(client, alert) {
     }
     const channelInfo = await getStream(alert.slug);
     const stream = channelInfo?.stream;
-    if (!stream?.is_live) {
+    // Kick represents an offline channel with a null/missing `stream` object.
+    // Some API responses omit `is_live` while returning the active stream.
+    if (!stream || stream.is_live === false) {
         if (state.lastStreamId) {
             state.lastStreamId = null;
             state.messageId = null;
@@ -174,7 +176,11 @@ async function checkAlert(client, alert) {
         return;
     }
     const streamId = String(stream.id || stream.start_time || `${alert.slug}:${channelInfo.stream_title || "live"}`);
-    if (streamId !== state.lastStreamId) return sendLiveAlert(client, alert, state, { ...channelInfo, ...stream, stream_title: channelInfo.stream_title || stream.title });
+    if (streamId !== state.lastStreamId) {
+        await sendLiveAlert(client, alert, state, { ...channelInfo, ...stream, stream_title: channelInfo.stream_title || stream.title });
+        console.info(`[SocialAlerts] Kick ${alert.slug} (${alert.guildId}): alerta enviada al canal ${alert.channelId}.`);
+        return;
+    }
     await updateViewerCount(client, alert, state, { ...channelInfo, ...stream, stream_title: channelInfo.stream_title || stream.title });
 }
 
@@ -200,6 +206,7 @@ async function poll(client) {
 }
 
 module.exports = function startSocialAlerts(client) {
+    console.info("[SocialAlerts] Monitor de alertas de Kick iniciado; comprobación cada 60 segundos.");
     setTimeout(() => poll(client), 15_000);
     const timer = setInterval(() => poll(client), POLL_INTERVAL_MS);
     timer.unref?.();
