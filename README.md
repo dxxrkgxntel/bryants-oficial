@@ -169,7 +169,7 @@ index.js      Entrada principal del bot
 
 <div align="center">
 
-### Hecho para que Bryant's Family tenga todo en un mismo lugar. 💜
+### Hecho para que los servidores tengan todo en un mismo lugar. 💜
 
 **Moderación · Comunidad · Voz · Juegos · Economía · Dashboard**
 
