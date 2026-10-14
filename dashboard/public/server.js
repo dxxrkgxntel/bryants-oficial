@@ -768,7 +768,7 @@ async function initialize() {
         } catch {
             // A direct link or restricted browser storage can omit the cached server preview.
         }
-        const guild = cachedGuilds.find(item => item?.id === guildId) || null;
+        const guild = resourcesResult.guild || cachedGuilds.find(item => item?.id === guildId) || null;
         activeGuild = guild || null;
         const serverName = guild?.name || "Servidor de Discord";
         const avatar = document.querySelector("#server-avatar");

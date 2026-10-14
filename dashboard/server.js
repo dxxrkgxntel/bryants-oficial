@@ -791,10 +791,27 @@ app.get("/api/guilds", requireLogin, async (req, res) => {
 
 app.get("/api/guilds/:guildId/resources", requireGuildAdmin, async (req, res) => {
     try {
-        const { channels, roles } = await fetchGuildResources(req.params.guildId);
+        const guildId = req.params.guildId;
+        const [resources, guildResponse] = await Promise.all([
+            fetchGuildResources(guildId),
+            fetch(`https://discord.com/api/v10/guilds/${guildId}`, {
+                headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` }
+            })
+        ]);
+        let guild = null;
+        if (guildResponse.ok) {
+            const details = await guildResponse.json();
+            const extension = details.icon?.startsWith("a_") ? "gif" : "png";
+            guild = {
+                id: details.id,
+                name: details.name,
+                icon: details.icon ? `https://cdn.discordapp.com/icons/${details.id}/${details.icon}.${extension}?size=128` : null
+            };
+        }
         return res.json({
-            channels: channels.map(({ id, name, type, parent_id }) => ({ id, name, type, parentId: parent_id })),
-            roles: roles.filter(role => !role.managed && role.name !== "@everyone").map(({ id, name, color }) => ({ id, name, color }))
+            guild,
+            channels: resources.channels.map(({ id, name, type, parent_id }) => ({ id, name, type, parentId: parent_id })),
+            roles: resources.roles.filter(role => !role.managed && role.name !== "@everyone").map(({ id, name, color }) => ({ id, name, color }))
         });
     } catch (error) {
         console.error("[Dashboard Resources] Error al cargar canales y roles:", error.message);
