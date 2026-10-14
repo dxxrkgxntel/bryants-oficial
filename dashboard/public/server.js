@@ -252,13 +252,21 @@ function renderModule(key, modules) {
     });
 }
 
+function getRecordLabel(key, record, definition) {
+    const role = record.roleId ? resources.roles.find(item => item.id === record.roleId) : null;
+    const roleName = role?.name || (record.roleId ? "Rol no disponible" : "");
+    if (key === "levelRewards") return `Nivel ${record.level} · ${roleName}`;
+    if (key === "shopItems") return `${roleName} · ${Number(record.price || 0).toLocaleString("es-DO")} monedas`;
+    if (key === "bankDonorRoles") return `${roleName} · bonificación desde ${Number(record.requiredAmount || 0).toLocaleString("es-DO")}`;
+    return record.name || record[definition.identity] || roleName || (record._id ? `Registro ${String(record._id).slice(-8)}` : "Registro sin identificar");
+}
+
 function renderList(key, definition, editItem = null) {
     const records = configState.lists[key] || [];
     const editing = Boolean(editItem);
     const form = `<form id="list-form" class="fields-grid">${definition.fields.map(field => renderField(field, getNested(editItem, field.name), `${key}-`)).join("")}<div class="form-actions"><button class="primary-button" type="submit">${editing ? "Guardar elemento" : "Añadir elemento"}</button>${editing ? '<button class="quiet-button" id="cancel-edit" type="button">Cancelar</button>' : ""}</div></form>`;
     const rows = records.map(record => {
-        const identity = record[definition.identity] ?? record.name ?? record.roleId;
-        const label = identity || (record._id ? `Registro ${String(record._id).slice(-8)}` : "Registro sin identificar");
+        const label = getRecordLabel(key, record, definition);
         return `<div class="record-row"><div class="record-title">${escapeHtml(label)}</div><div class="record-actions"><button type="button" class="quiet-button" data-edit="${escapeHtml(record._id)}">Editar</button><button type="button" class="quiet-button danger-text" data-delete="${escapeHtml(record._id)}">Eliminar</button></div></div>`;
     }).join("");
     content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div><div class="records-list">${rows || '<p class="empty-state">Todavía no hay elementos configurados.</p>'}</div><div class="form-divider"></div><h3>${editing ? "Editar elemento" : "Añadir elemento"}</h3>${form}</article>`;
