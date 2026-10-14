@@ -428,7 +428,7 @@ const lists = {
     },
     socialAlerts: {
         title: "Alertas sociales · Kick",
-        category: "Comunidad",
+        category: "Alertas sociales",
         description: "Sigue canales de Kick y envía una alerta Componentes V2 a Discord al comenzar un directo. Para usar la API oficial de Kick, configura KICK_CLIENT_ID y KICK_CLIENT_SECRET en el entorno del bot.",
         model: require("../Models/SocialAlert"),
         fields: [

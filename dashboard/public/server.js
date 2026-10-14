@@ -1,5 +1,5 @@
 const guildId = decodeURIComponent(window.location.pathname.split("/").filter(Boolean).at(-1) || "");
-const categoriesOrder = ["Comunidad", "Moderación", "Servidor", "Economía y XP"];
+const categoriesOrder = ["Comunidad", "Alertas sociales", "Moderación", "Servidor", "Economía y XP"];
 const nav = document.querySelector("#module-nav");
 const content = document.querySelector("#module-content");
 const notice = document.querySelector("#notice");
@@ -281,6 +281,11 @@ function renderField(field, value, prefix = "") {
     if (["channel-list", "role-list"].includes(field.type)) {
         const values = Array.isArray(value) ? value.map(String) : [];
         const options = optionsFor(field);
+        if (field.type === "role-list" && field.maxItems) {
+            const staleOptions = values.filter(current => !options.some(option => option.id === current)).map(current => ({ id: current, name: `ID guardado: ${current}` }));
+            const roleOptions = [...staleOptions, ...options];
+            return `<div class="field role-picker-field" data-role-picker="${escapeHtml(field.name)}" data-max-selected="${field.maxItems}"><span>${escapeHtml(field.label)}</span><details class="role-picker"><summary class="role-picker-trigger"><span data-role-summary>${values.length ? `${values.length} de ${field.maxItems} roles seleccionados` : `Selecciona hasta ${field.maxItems} roles`}</span><span class="role-picker-chevron" aria-hidden="true">⌄</span></summary><div class="role-picker-menu"><input type="search" class="role-picker-search" placeholder="Buscar roles…" aria-label="Buscar roles"><div class="role-picker-options" role="group" aria-label="Roles disponibles">${roleOptions.map(option => `<label class="role-picker-option" data-role-name="${escapeHtml(normalizeSearch(option.name))}"><input type="checkbox" value="${escapeHtml(option.id)}" data-role-option ${values.includes(option.id) ? "checked" : ""}><span>${escapeHtml(option.name)}</span></label>`).join("")}</div></div></details><small>Selecciona hasta ${field.maxItems} roles. Haz clic para añadir o quitar cada rol.</small></div>`;
+        }
         const stale = values.filter(current => !options.some(option => option.id === current)).map(current => `<option value="${escapeHtml(current)}" selected>ID guardado: ${escapeHtml(current)}</option>`).join("");
         return `<label class="field" for="${id}"><span>${escapeHtml(field.label)}</span><select id="${id}" name="${escapeHtml(field.name)}" multiple size="5" ${field.maxItems ? `data-max-selected="${field.maxItems}"` : ""}>${stale}${options.map(option => `<option value="${escapeHtml(option.id)}" ${values.includes(option.id) ? "selected" : ""}>${escapeHtml(option.name)}</option>`).join("")}</select><small>${field.maxItems ? `Selecciona hasta ${field.maxItems} roles. ` : ""}Mantén Ctrl o Cmd para seleccionar varios.</small></label>`;
     }
@@ -461,6 +466,13 @@ function renderPreviewTemplate(template) {
         days_until_drop: "7",
         next_drop: "en 7 días"
     });
+    Object.assign(samples, {
+        channel: "CanalDemo",
+        title: "Jugando con la comunidad",
+        viewers: "1.234",
+        category: "Charlando",
+        url: "https://kick.com/CanalDemo"
+    });
     samples.boost = samples.boosts;
     samples.date = new Intl.DateTimeFormat("es", { dateStyle: "long" }).format(new Date());
     samples.fecha = samples.date;
@@ -482,6 +494,20 @@ function renderPreviewMarkup(key, values) {
     const configuredText = [title ? `<h3>${escapeHtml(title)}</h3>` : "", title && description ? '<hr class="discord-preview-separator">' : "", description ? `<p>${escapeHtml(description)}</p>` : ""].filter(Boolean).join("");
     const media = banner ? `<div class="message-preview-banner"><img data-preview-image src="${escapeHtml(banner)}" alt="Vista previa del banner"></div>` : "";
     const thumbnailBlock = thumbnail ? `<img class="message-preview-avatar" data-preview-image src="${escapeHtml(thumbnail)}" alt="Miniatura configurada">` : "";
+
+    if (key === "socialAlerts") {
+        const alertColor = /^#[\da-f]{6}$/i.test(String(values.color || "")) ? values.color : "#53fc18";
+        const alertTitle = renderPreviewTemplate(values.title).trim();
+        const alertMessage = renderPreviewTemplate(values.description).trim();
+        const avatar = safePreviewImage(values.avatarUrl);
+        const author = escapeHtml(values.displayName || "CanalDemo");
+        const avatarBlock = avatar
+            ? `<img class="message-preview-avatar" data-preview-image src="${escapeHtml(avatar)}" alt="Avatar configurado">`
+            : '<span class="social-alert-preview-avatar" aria-hidden="true">🎥</span>';
+        const header = `<div class="social-alert-preview-author">${avatarBlock}<strong>${author}</strong><span>APP</span><small>ahora</small></div>`;
+        const copy = [alertTitle ? `<h3>${escapeHtml(alertTitle)}</h3>` : '<h3>🔴 CanalDemo está en vivo en Kick</h3>', '<hr class="discord-preview-separator">', alertMessage ? `<p>${escapeHtml(alertMessage)}</p>` : '<p class="preview-empty">Escribe el mensaje para ver aquí la alerta de Kick.</p>'].join("");
+        return `<section class="live-preview social-alert-live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Mensaje Componentes V2 que aparecerá en Discord</small></div>${header}<article class="discord-preview" style="--preview-accent:${alertColor}">${media}<div class="discord-preview-body"><div class="discord-preview-copy">${copy}</div></div></article></section>`;
+    }
 
     if (key === "weeklyDrop") {
         const description = renderPreviewTemplate(values.description).trim();
@@ -519,6 +545,7 @@ function renderPreviewMarkup(key, values) {
 
 function previewValues(key, form) {
     const read = name => form.elements.namedItem(name)?.value || "";
+    if (key === "socialAlerts") return { title: read("title"), description: read("messageTemplate"), color: read("color"), banner: read("image"), avatarUrl: read("avatarUrl"), displayName: read("displayName") };
     if (key === "welcome") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail"), buttons: form.querySelector('[data-button-list="Buttons"]') ? readButtonRows(form.querySelector('[data-button-list="Buttons"]')) : [], sendDM: form.elements.namedItem("SendDM")?.checked, dmTitle: read("DMTitle"), dmDescription: read("DMMessage"), dmColor: read("DMColor"), dmBanner: read("DMBanner"), dmThumbnail: read("DMThumbnail") };
     if (key === "leaves") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail") };
     if (key === "birthday") return { title: read("birthdayTitle"), description: read("birthdayDescription"), color: read("birthdayColor"), banner: read("birthdayBanner"), reminder: read("birthdayReminder") };
@@ -589,6 +616,11 @@ function readForm(form, fields) {
             continue;
         }
         if (field.type === "section") continue;
+        if (field.type === "role-list" && field.maxItems) {
+            const picker = form.querySelector(`[data-role-picker="${CSS.escape(field.name)}"]`);
+            result[field.name] = [...(picker?.querySelectorAll("[data-role-option]:checked") || [])].map(option => option.value);
+            continue;
+        }
         const element = form.elements.namedItem(field.name);
         if (!element) continue;
         let value;
@@ -737,6 +769,7 @@ function renderModule(key, modules) {
     }
     const settingsForm = content.querySelector("#settings-form");
     wireMultiSelectLimits(settingsForm);
+    wireRolePickers(settingsForm);
     registerFormGuard(settingsForm, definition.fields);
     setupButtonEditors(settingsForm, definition);
     setupTemplateComposers(settingsForm);
@@ -893,6 +926,32 @@ function wireMultiSelectLimits(form) {
     });
 }
 
+function wireRolePickers(form) {
+    form?.querySelectorAll("[data-role-picker]").forEach(picker => {
+        const max = Number(picker.dataset.maxSelected) || 5;
+        const summary = picker.querySelector("[data-role-summary]");
+        const checkboxes = [...picker.querySelectorAll("[data-role-option]")];
+        const search = picker.querySelector(".role-picker-search");
+        const updateSummary = () => {
+            const count = checkboxes.filter(option => option.checked).length;
+            summary.textContent = count ? `${count} de ${max} roles seleccionados` : `Selecciona hasta ${max} roles`;
+        };
+        checkboxes.forEach(checkbox => checkbox.addEventListener("change", () => {
+            if (checkbox.checked && checkboxes.filter(option => option.checked).length > max) {
+                checkbox.checked = false;
+                showNotice(`Puedes seleccionar hasta ${max} roles.`, true);
+            }
+            updateSummary();
+        }));
+        search?.addEventListener("input", () => {
+            const query = normalizeSearch(search.value);
+            picker.querySelectorAll(".role-picker-option").forEach(option => {
+                option.hidden = Boolean(query) && !option.dataset.roleName.includes(query);
+            });
+        });
+    });
+}
+
 function renderList(key, definition, editItem = null) {
     const records = configState.lists[key] || [];
     const editing = Boolean(editItem);
@@ -902,7 +961,15 @@ function renderList(key, definition, editItem = null) {
         return `<div class="record-row" data-record-id="${escapeHtml(record._id)}" data-search="${escapeHtml(getRecordSearchText(key, record, definition))}"><div class="record-title">${escapeHtml(label)}</div><div class="record-actions"><button type="button" class="quiet-button" data-edit="${escapeHtml(record._id)}">Editar</button><button type="button" class="quiet-button danger-text" data-delete="${escapeHtml(record._id)}">Eliminar</button></div></div>`;
     }).join("");
     const search = records.length > 3 ? `<div class="list-toolbar"><span>${records.length} elementos</span><label class="record-search"><span class="sr-only">Buscar en ${escapeHtml(definition.title)}</span><input type="search" id="record-search" placeholder="Buscar en la lista…" autocomplete="off"></label></div>` : "";
-    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div>${definition.description ? `<p class="card-description">${escapeHtml(definition.description)}</p>` : ""}${search}<div class="records-list">${rows || '<p class="empty-state">Todavía no hay elementos configurados.</p>'}<p id="list-no-results" class="empty-state" hidden>No hay elementos que coincidan con la búsqueda.</p></div><div class="form-divider"></div><h3>${editing ? "Editar elemento" : "Añadir elemento"}</h3>${form}</article>`;
+    const alertPreview = key === "socialAlerts" ? renderPreviewMarkup(key, {
+        title: editItem?.title || "",
+        description: editItem?.messageTemplate || "",
+        color: editItem?.color || "",
+        banner: editItem?.image || "",
+        avatarUrl: editItem?.avatarUrl || "",
+        displayName: editItem?.displayName || ""
+    }) : "";
+    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div>${definition.description ? `<p class="card-description">${escapeHtml(definition.description)}</p>` : ""}${alertPreview}${search}<div class="records-list">${rows || '<p class="empty-state">Todavía no hay elementos configurados.</p>'}<p id="list-no-results" class="empty-state" hidden>No hay elementos que coincidan con la búsqueda.</p></div><div class="form-divider"></div><h3>${editing ? "Editar elemento" : "Añadir elemento"}</h3>${form}</article>`;
 
     if (key === "birthdayMembers" && !editing && records.length) {
         api(`/api/guilds/${encodeURIComponent(guildId)}/birthday-members/names`).then(result => {
@@ -947,7 +1014,13 @@ function renderList(key, definition, editItem = null) {
     }));
     const listForm = content.querySelector("#list-form");
     wireMultiSelectLimits(listForm);
+    wireRolePickers(listForm);
     setupTemplateComposers(listForm);
+    if (key === "socialAlerts") {
+        updatePreview(key, listForm);
+        listForm.addEventListener("input", () => updatePreview(key, listForm));
+        listForm.addEventListener("change", () => updatePreview(key, listForm));
+    }
     registerFormGuard(listForm, definition.fields);
     listForm.addEventListener("submit", async event => {
         event.preventDefault();
