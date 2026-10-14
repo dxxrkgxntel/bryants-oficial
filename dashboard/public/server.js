@@ -273,7 +273,7 @@ function renderField(field, value, prefix = "") {
     if (["kick-channel", "social-channel"].includes(field.type)) {
         const current = String(safeValue || "");
         const pickerType = field.type === "social-channel" ? "data-social-channel-picker" : "data-kick-channel-picker";
-        return `<div class="field kick-channel-field" ${pickerType}><label for="${id}" data-channel-label>${escapeHtml(field.label)}</label><div class="kick-channel-control"><input id="${id}" type="search" data-kick-channel-query value="${escapeHtml(current)}" maxlength="50" placeholder="Buscar un canal de Kick" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false"><input type="hidden" name="${escapeHtml(field.name)}" value="${escapeHtml(current)}"><div class="kick-channel-selected" data-kick-channel-selected ${current ? "" : "hidden"}></div><div class="kick-channel-results" data-kick-channel-results role="listbox" hidden></div><div class="kick-channel-status" data-kick-channel-status role="status" aria-live="polite"></div></div>${help}</div>`;
+        return `<div class="field kick-channel-field" ${pickerType}><label for="${id}" data-channel-label>${escapeHtml(field.label)}</label><div class="kick-channel-control"><input id="${id}" type="search" data-kick-channel-query value="${escapeHtml(current)}" maxlength="${field.maxLength || 50}" placeholder="Buscar un canal de Kick" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false"><input type="hidden" name="${escapeHtml(field.name)}" value="${escapeHtml(current)}"><div class="kick-channel-selected" data-kick-channel-selected ${current ? "" : "hidden"}></div><div class="kick-channel-results" data-kick-channel-results role="listbox" hidden></div><div class="kick-channel-status" data-kick-channel-status role="status" aria-live="polite"></div></div>${help}</div>`;
     }
     if (["channel", "voice", "category", "role"].includes(field.type)) {
         const options = optionsFor(field);
@@ -503,9 +503,9 @@ function renderPreviewMarkup(key, values) {
 
     if (key === "socialAlerts") {
         const alertColor = /^#[\da-f]{6}$/i.test(String(values.color || "")) ? values.color : "#53fc18";
-        const platform = ["TikTok", "Twitch"].includes(values.platform) ? values.platform : "Kick";
-        const sampleLogin = platform === "TikTok" ? "usuario_demo" : platform === "Twitch" ? "streamer_demo" : "CanalDemo";
-        const sampleUrl = platform === "TikTok" ? "https://www.tiktok.com/@usuario_demo/live" : platform === "Twitch" ? "https://www.twitch.tv/streamer_demo" : "https://kick.com/CanalDemo";
+        const platform = ["TikTok", "Twitch", "YouTube"].includes(values.platform) ? values.platform : "Kick";
+        const sampleLogin = platform === "TikTok" ? "usuario_demo" : platform === "Twitch" ? "streamer_demo" : platform === "YouTube" ? "canal_demo" : "CanalDemo";
+        const sampleUrl = platform === "TikTok" ? "https://www.tiktok.com/@usuario_demo/live" : platform === "Twitch" ? "https://www.twitch.tv/streamer_demo" : platform === "YouTube" ? "https://www.youtube.com/@canal_demo/live" : "https://kick.com/CanalDemo";
         const sampleValues = { channel: sampleLogin, platform, url: sampleUrl };
         const alertTitle = renderPreviewTemplate(values.title, sampleValues).trim();
         const alertMessage = renderPreviewTemplate(values.description, sampleValues).trim();
@@ -977,24 +977,30 @@ function wireKickChannelPickers(form) {
         let requestId = 0;
 
         const setStatus = message => { status.textContent = message; };
-        const isManualPlatform = () => socialPicker && ["TikTok", "Twitch"].includes(platformSelect?.value);
+        const isManualPlatform = () => socialPicker && ["TikTok", "Twitch", "YouTube"].includes(platformSelect?.value);
         const updateManualValue = () => {
             const platform = platformSelect.value;
-            const platformName = platform === "TikTok" ? "TikTok" : "Twitch";
-            const username = queryInput.value.trim().replace(/^@+/, "");
+            const platformName = platform;
+            let username = queryInput.value.trim();
+            if (platform === "YouTube") {
+                try {
+                    if (/^https?:\/\//i.test(username)) username = new URL(username).pathname.split("/").filter(Boolean)[0] || "";
+                } catch { /* preserve invalid input so the user can correct it */ }
+            }
+            username = username.replace(/^@+/, "");
             slugInput.value = username;
             results.hidden = true;
             queryInput.setAttribute("aria-expanded", "false");
             selected.replaceChildren();
             if (username) {
                 const description = document.createElement("span");
-                description.textContent = `Usuario seleccionado: @${username} · ${platform === "TikTok" ? `tiktok.com/@${username}` : `twitch.tv/${username}`}`;
+                description.textContent = platform === "YouTube" ? `Canal seleccionado: @${username} · youtube.com/@${username}` : `Usuario seleccionado: @${username} · ${platform === "TikTok" ? `tiktok.com/@${username}` : `twitch.tv/${username}`}`;
                 selected.append(description);
                 selected.hidden = false;
                 setStatus("");
             } else {
                 selected.hidden = true;
-                setStatus(`Escribe el usuario de ${platformName}, con o sin @.`);
+                setStatus(platform === "YouTube" ? "Escribe el @handle o la URL youtube.com/@handle del canal." : `Escribe el usuario de ${platformName}, con o sin @.`);
             }
             slugInput.dispatchEvent(new Event("input", { bubbles: true }));
             slugInput.dispatchEvent(new Event("change", { bubbles: true }));
@@ -1002,9 +1008,9 @@ function wireKickChannelPickers(form) {
         const syncPlatform = () => {
             if (!socialPicker) return;
             const platform = platformSelect.value;
-            const manual = ["TikTok", "Twitch"].includes(platform);
-            label.textContent = platform === "TikTok" ? "Usuario de TikTok" : platform === "Twitch" ? "Usuario de Twitch" : "Canal de Kick";
-            queryInput.placeholder = manual ? `Escribe el usuario de ${platform}` : "Buscar un canal de Kick";
+            const manual = ["TikTok", "Twitch", "YouTube"].includes(platform);
+            label.textContent = platform === "TikTok" ? "Usuario de TikTok" : platform === "Twitch" ? "Usuario de Twitch" : platform === "YouTube" ? "Canal de YouTube" : "Canal de Kick";
+            queryInput.placeholder = platform === "YouTube" ? "@handle o URL del canal de YouTube" : manual ? `Escribe el usuario de ${platform}` : "Buscar un canal de Kick";
             queryInput.setAttribute("aria-label", label.textContent);
             if (manual) updateManualValue();
             else {

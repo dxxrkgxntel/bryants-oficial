@@ -1,11 +1,11 @@
 const messageVariables = {
     socialAlert: [
-        { token: "{{channel}}", label: "Canal", description: "Nombre del canal de Kick, TikTok o Twitch." },
+        { token: "{{channel}}", label: "Canal", description: "Nombre del canal de Kick, TikTok, Twitch o YouTube." },
         { token: "{{title}}", label: "Título del directo", description: "Título actual del directo." },
         { token: "{{viewers}}", label: "Espectadores", description: "Espectadores actuales (si está activada esa opción)." },
         { token: "{{category}}", label: "Categoría", description: "Categoría actual del directo." },
-        { token: "{{platform}}", label: "Plataforma", description: "Kick, TikTok o Twitch." },
-        { token: "{{url}}", label: "Enlace", description: "Enlace al canal de Kick, TikTok o Twitch." }
+        { token: "{{platform}}", label: "Plataforma", description: "Kick, TikTok, Twitch o YouTube." },
+        { token: "{{url}}", label: "Enlace", description: "Enlace al canal de Kick, TikTok, Twitch o YouTube." }
     ],
     welcome: [
         { token: "{{user}}", label: "Miembro", description: "Mención al miembro que entra." },
@@ -430,11 +430,11 @@ const lists = {
     socialAlerts: {
         title: "Alertas sociales",
         category: "Alertas sociales",
-        description: "Sigue canales de Kick, TikTok y Twitch y envía una alerta Componentes V2 a Discord al comenzar un directo. Kick y Twitch requieren sus credenciales de API en el entorno del bot; TikTok usa su endpoint web público, ya que no ofrece una API pública oficial para consultar directos.",
+        description: "Sigue canales de Kick, TikTok, Twitch y YouTube y envía una alerta Componentes V2 a Discord al comenzar un directo. Kick y Twitch requieren sus credenciales de API; YouTube requiere una clave de YouTube Data API v3 en el entorno del bot.",
         model: require("../Models/SocialAlert"),
         fields: [
-            { name: "platform", label: "Plataforma", type: "select", options: ["Kick", "TikTok", "Twitch"] },
-            { name: "slug", label: "Canal / usuario", type: "social-channel", maxLength: 50, help: "Selecciona un canal de Kick o escribe el usuario de TikTok o Twitch, con o sin @." },
+            { name: "platform", label: "Plataforma", type: "select", options: ["Kick", "TikTok", "Twitch", "YouTube"] },
+            { name: "slug", label: "Canal / usuario", type: "social-channel", maxLength: 100, help: "Selecciona un canal de Kick o escribe el usuario de TikTok/Twitch o el identificador, @handle o URL del canal de YouTube." },
             { name: "channelId", label: "Canal de Discord", type: "channel", channelTypes: [0] },
             { name: "includeViewerCount", label: "Cantidad de espectadores", type: "boolean", help: "Incluye los espectadores actuales y actualiza el mensaje cada cinco minutos." },
             { name: "title", label: "Título de la alerta", type: "text", default: "🔴 {{channel}} está en vivo en {{platform}}", maxLength: 256, templateComposer: true, templateVariables: messageVariables.socialAlert },

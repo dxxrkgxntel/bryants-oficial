@@ -18,6 +18,7 @@ let accessToken = null;
 let accessTokenExpiresAt = 0;
 let twitchAccessToken = null;
 let twitchAccessTokenExpiresAt = 0;
+const youtubeChannelIds = new Map();
 let pollRunning = false;
 const warnedMissingCredentials = new Set();
 
@@ -56,9 +57,10 @@ function escapePlatformText(value) {
 }
 
 function renderAlert(template, stream, slug, includeViewerCount, platform = "Kick") {
-    const normalizedPlatform = ["TikTok", "Twitch"].includes(platform) ? platform : "Kick";
+    const normalizedPlatform = ["TikTok", "Twitch", "YouTube"].includes(platform) ? platform : "Kick";
     const isTikTok = normalizedPlatform === "TikTok";
     const isTwitch = normalizedPlatform === "Twitch";
+    const isYouTube = normalizedPlatform === "YouTube";
     const username = String(slug || "").replace(/^@+/, "");
     const values = {
         channel: escapePlatformText(stream.broadcaster?.username || stream.channel?.slug || username),
@@ -66,7 +68,7 @@ function renderAlert(template, stream, slug, includeViewerCount, platform = "Kic
         viewers: includeViewerCount ? Number(stream.viewer_count || 0).toLocaleString("es") : "",
         category: escapePlatformText(stream.category?.name || ""),
         platform,
-        url: isTikTok ? `https://www.tiktok.com/@${encodeURIComponent(username)}/live` : isTwitch ? `https://www.twitch.tv/${encodeURIComponent(username)}` : `https://kick.com/${encodeURIComponent(username)}`
+        url: stream.url || (isTikTok ? `https://www.tiktok.com/@${encodeURIComponent(username)}/live` : isTwitch ? `https://www.twitch.tv/${encodeURIComponent(username)}` : isYouTube ? `https://www.youtube.com/@${encodeURIComponent(username)}/live` : `https://kick.com/${encodeURIComponent(username)}`)
     };
     return String(template || "").replace(/\{\{(channel|title|viewers|category|platform|url)\}\}/gi, (_match, token) => values[token.toLowerCase()] ?? "").slice(0, 2000);
 }
@@ -185,6 +187,76 @@ async function getTwitchLiveInfo(login) {
     };
 }
 
+function normalizeYouTubeHandle(input) {
+    let value = String(input || "").trim();
+    try {
+        if (/^https?:\/\//i.test(value)) {
+            const url = new URL(value);
+            if (!/(^|\.)youtube\.com$/i.test(url.hostname)) throw new Error("Usa un enlace de youtube.com.");
+            value = url.pathname.split("/").filter(Boolean)[0] || "";
+        }
+    } catch (error) {
+        if (error.message === "Usa un enlace de youtube.com.") throw error;
+        throw new Error("El canal de YouTube no tiene un formato válido.");
+    }
+    value = value.replace(/^@+/, "").trim();
+    if (!/^[a-zA-Z0-9._-]{3,30}$/.test(value)) throw new Error("Escribe el @handle de YouTube o la URL youtube.com/@handle.");
+    return value;
+}
+
+async function youtubeApiRequest(endpoint, params) {
+    const apiKey = process.env.YOUTUBE_API_KEY;
+    if (!apiKey) throw new Error("Falta YOUTUBE_API_KEY.");
+    const url = new URL(`https://www.googleapis.com/youtube/v3/${endpoint}`);
+    for (const [key, value] of Object.entries({ ...params, key: apiKey })) url.searchParams.set(key, value);
+    const response = await fetch(url, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(12_000) });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+        const reason = payload?.error?.errors?.[0]?.reason;
+        const message = payload?.error?.message;
+        if (reason === "quotaExceeded") throw new Error("YouTube agotó la cuota diaria de la API. Revisa Google Cloud Console.");
+        throw new Error(`YouTube API respondió ${response.status}${message ? `: ${message}` : ""}.`);
+    }
+    return payload;
+}
+
+async function getYouTubeChannelId(handle) {
+    const key = handle.toLowerCase();
+    if (youtubeChannelIds.has(key)) return youtubeChannelIds.get(key);
+    const payload = await youtubeApiRequest("channels", { part: "id", forHandle: `@${handle}` });
+    const channelId = payload?.items?.[0]?.id;
+    if (!channelId) throw new Error(`YouTube no encontró el canal @${handle}. Comprueba su @handle.`);
+    youtubeChannelIds.set(key, channelId);
+    return channelId;
+}
+
+async function getYouTubeLiveInfo(input) {
+    const handle = normalizeYouTubeHandle(input);
+    const channelId = await getYouTubeChannelId(handle);
+    // activities.list and videos.list cost one quota unit each, unlike search.list's 100-unit cost.
+    const activities = await youtubeApiRequest("activities", { part: "snippet,contentDetails", channelId, maxResults: "10" });
+    const videoIds = [...new Set((activities?.items || []).filter(item => item.type === "upload").map(item => item.contentDetails?.upload?.videoId).filter(Boolean))];
+    if (!videoIds.length) return { stream: null };
+    const videos = await youtubeApiRequest("videos", { part: "snippet,liveStreamingDetails", id: videoIds.join(",") });
+    const video = (videos?.items || []).find(item => item.snippet?.liveBroadcastContent === "live" && !item.liveStreamingDetails?.actualEndTime);
+    if (!video) return { stream: null };
+    const title = video.snippet?.title || "En directo en YouTube";
+    return {
+        stream: {
+            id: video.id,
+            is_live: true,
+            stream_title: title,
+            title,
+            viewer_count: Number(video.liveStreamingDetails?.concurrentViewers || 0),
+            category: { name: "" },
+            broadcaster: { username: handle },
+            start_time: video.liveStreamingDetails?.actualStartTime,
+            url: `https://www.youtube.com/watch?v=${encodeURIComponent(video.id)}`,
+            thumbnail: video.snippet?.thumbnails?.high?.url || video.snippet?.thumbnails?.medium?.url
+        }
+    };
+}
+
 async function ensureWebhook(channel, state, alert) {
     if (state.webhookId && state.webhookToken && state.webhookChannelId === channel.id) {
         return new WebhookClient({ id: state.webhookId, token: state.webhookToken });
@@ -215,7 +287,7 @@ async function sendLiveAlert(client, alert, state, stream) {
     const platform = alert.platform || "Kick";
     const content = renderAlert(alert.messageTemplate, stream, alert.slug, alert.includeViewerCount, platform);
     const options = {
-        components: makeComponents(renderAlert(alert.title, stream, alert.slug, alert.includeViewerCount, platform), content, alert.image, alert.color),
+        components: makeComponents(renderAlert(alert.title, stream, alert.slug, alert.includeViewerCount, platform), content, alert.image || stream.thumbnail, alert.color),
         flags: MessageFlags.IsComponentsV2,
         allowedMentions: allowedMentionsFor(`${alert.title || ""} ${alert.messageTemplate || ""}`)
     };
@@ -241,7 +313,7 @@ async function updateViewerCount(client, alert, state, stream) {
     if (!channel?.isTextBased()) return;
     const platform = alert.platform || "Kick";
     const content = renderAlert(alert.messageTemplate, stream, alert.slug, true, platform);
-    const options = { components: makeComponents(renderAlert(alert.title, stream, alert.slug, true, platform), content, alert.image, alert.color), flags: MessageFlags.IsComponentsV2, allowedMentions: allowedMentionsFor(`${alert.title || ""} ${alert.messageTemplate || ""}`) };
+    const options = { components: makeComponents(renderAlert(alert.title, stream, alert.slug, true, platform), content, alert.image || stream.thumbnail, alert.color), flags: MessageFlags.IsComponentsV2, allowedMentions: allowedMentionsFor(`${alert.title || ""} ${alert.messageTemplate || ""}`) };
     if (alert.displayName || alert.avatarUrl) {
         if (!state.webhookId || !state.webhookToken) return;
         const webhook = new WebhookClient({ id: state.webhookId, token: state.webhookToken });
@@ -270,7 +342,7 @@ async function checkAlert(client, alert) {
         state.channelId = alert.channelId;
         state.messageId = null;
     }
-    const channelInfo = platform === "TikTok" ? await getTikTokLiveInfo(alert.slug) : platform === "Twitch" ? await getTwitchLiveInfo(alert.slug) : await getKickStream(alert.slug);
+    const channelInfo = platform === "TikTok" ? await getTikTokLiveInfo(alert.slug) : platform === "Twitch" ? await getTwitchLiveInfo(alert.slug) : platform === "YouTube" ? await getYouTubeLiveInfo(alert.slug) : await getKickStream(alert.slug);
     if (platform === "Kick" && !channelInfo) {
         console.warn(`[SocialAlerts] Kick ${alert.slug} (${alert.guildId}): la API no devolvió ningún canal para ese nombre.`);
         return;
@@ -302,13 +374,13 @@ async function poll(client) {
     if (pollRunning) return;
     pollRunning = true;
     try {
-        const alerts = await SocialAlert.find({ platform: { $in: ["Kick", "TikTok", "Twitch"] }, enabled: { $ne: false } }).lean();
+        const alerts = await SocialAlert.find({ platform: { $in: ["Kick", "TikTok", "Twitch", "YouTube"] }, enabled: { $ne: false } }).lean();
         console.info(`[SocialAlerts] Revisando ${alerts.length} alerta(s) activa(s).`);
         for (const alert of alerts) {
             try { await checkAlert(client, alert); }
             catch (error) {
                 const platform = alert.platform || "Kick";
-                const missingCredentials = error.message.startsWith("Faltan ") && error.message.includes("_CLIENT_");
+                const missingCredentials = (error.message.startsWith("Faltan ") && error.message.includes("_CLIENT_")) || error.message === "Falta YOUTUBE_API_KEY.";
                 if (!missingCredentials || !warnedMissingCredentials.has(platform)) {
                     console.error(`[SocialAlerts] ${alert.platform || "Kick"} ${alert.slug} (${alert.guildId}):`, error.message);
                     if (missingCredentials) warnedMissingCredentials.add(platform);
@@ -323,7 +395,7 @@ async function poll(client) {
 }
 
 module.exports = function startSocialAlerts(client) {
-    console.info("[SocialAlerts] Monitor de alertas de Kick, TikTok y Twitch iniciado; comprobación cada 60 segundos.");
+    console.info("[SocialAlerts] Monitor de alertas de Kick, TikTok, Twitch y YouTube iniciado; comprobación cada 60 segundos.");
     setTimeout(() => poll(client), 15_000);
     const timer = setInterval(() => poll(client), POLL_INTERVAL_MS);
     timer.unref?.();
