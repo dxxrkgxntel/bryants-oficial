@@ -1003,7 +1003,7 @@ function wireMultiSelectLimits(form) {
 function renderSpecialChannels(definition, data) {
     const channels = Array.isArray(data.channels) ? data.channels : [];
     const contentTypes = [
-        ["images", "Imágenes"], ["videos", "Vídeos"], ["files", "Archivos"],
+        ["text", "Texto"], ["images", "Imágenes"], ["videos", "Vídeos"], ["files", "Archivos"],
         ["stickers", "Stickers"], ["links", "Enlaces"], ["commands", "Comandos"]
     ];
     const channelOptions = optionsFor({ type: "channel", channelTypes: [0] });
@@ -1013,7 +1013,8 @@ function renderSpecialChannels(definition, data) {
         return `<section class="setup-row special-channel-row" data-special-row="${index}">
             <div class="setup-row-heading"><strong>Canal ${index + 1}${rule.channelId ? ` · #${escapeHtml(name)}` : ""}</strong><button class="quiet-button danger-text" type="button" data-special-remove="${index}">Quitar</button></div>
             <label class="field"><span>Canal</span><select data-special-channel required><option value="">Elige un canal</option>${channelOptions.map(item => `<option value="${escapeHtml(item.id)}" ${item.id === rule.channelId ? "selected" : ""}>#${escapeHtml(item.name)}</option>`).join("")}</select></label>
-            <div class="field"><span>Contenido permitido</span><small>Si el mensaje incluye algún tipo desactivado, se eliminará. El texto normal se permite.</small><div class="special-content-grid">${contentTypes.map(([key, label]) => `<label class="field checkbox-field"><span><strong>${label}</strong></span><input type="checkbox" data-special-type="${key}" ${rule[key] ? "checked" : ""}></label>`).join("")}</div></div>
+            <div class="field"><span>Contenido permitido</span><small>Si el mensaje incluye algún tipo desactivado, se eliminará. Si desactivas Texto, también se eliminarán los mensajes de texto sin adjuntos.</small><div class="special-content-grid">${contentTypes.map(([key, label]) => `<label class="field checkbox-field"><span><strong>${label}</strong></span><input type="checkbox" data-special-type="${key}" ${key === "text" ? rule.text !== false ? "checked" : "" : rule[key] ? "checked" : ""}></label>`).join("")}</div></div>
+            <label class="field"><span>Canal de registros <em>(opcional)</em></span><select data-special-log-channel><option value="">No registrar eliminaciones</option>${channelOptions.map(item => `<option value="${escapeHtml(item.id)}" ${item.id === rule.logChannelId ? "selected" : ""}>#${escapeHtml(item.name)}</option>`).join("")}</select><small>El bot enviará ahí el usuario, canal, contenido eliminado y la regla incumplida.</small></label>
             <label class="field"><span>Roles inmunes</span><select data-special-roles multiple size="5">${roleOptions.map(role => `<option value="${escapeHtml(role.id)}" ${(rule.immuneRoles || []).includes(role.id) ? "selected" : ""}>${escapeHtml(role.name)}</option>`).join("")}</select><small>Hasta 25 roles. El dueño, administradores y moderadores con permiso para gestionar mensajes también quedan exentos. Usa Ctrl o Cmd para seleccionar varios.</small></label>
         </section>`;
     }).join("");
@@ -1025,7 +1026,7 @@ function renderSpecialChannels(definition, data) {
     form.querySelector("[data-special-add]").addEventListener("click", () => {
         const channelId = form.querySelector("[data-special-new-channel]").value;
         if (!channelId || channels.length >= 25 || channels.some(rule => rule.channelId === channelId)) return;
-        channels.push({ channelId, images: false, videos: false, files: false, stickers: false, links: false, commands: false, immuneRoles: [] });
+        channels.push({ channelId, text: true, images: false, videos: false, files: false, stickers: false, links: false, commands: false, immuneRoles: [], logChannelId: null });
         redraw();
     });
     form.addEventListener("click", event => {
@@ -1040,6 +1041,7 @@ function renderSpecialChannels(definition, data) {
         const rule = channels[Number(row.dataset.specialRow)];
         if (event.target.matches("[data-special-channel]")) rule.channelId = event.target.value;
         else if (event.target.matches("[data-special-type]")) rule[event.target.dataset.specialType] = event.target.checked;
+        else if (event.target.matches("[data-special-log-channel]")) rule.logChannelId = event.target.value || null;
         else if (event.target.matches("[data-special-roles]")) {
             const selected = [...event.target.selectedOptions].map(option => option.value);
             if (selected.length > 25) {

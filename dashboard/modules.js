@@ -207,7 +207,7 @@ const configurations = {
     specialChannels: {
         title: "Canales especiales",
         category: "Moderación",
-        description: "Define por canal qué contenido puede enviarse. Si un mensaje combina tipos permitidos y bloqueados, se eliminará por completo.",
+        description: "Define por canal qué contenido puede enviarse, qué roles quedan exentos y dónde registrar los mensajes eliminados. Si un mensaje combina tipos permitidos y bloqueados, se eliminará por completo.",
         model: require("../Models/SpecialChannelsConfig"),
         guildField: "guildId",
         fields: [{ name: "channels", label: "Canales restringidos", type: "special-channels" }]

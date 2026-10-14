@@ -1,4 +1,4 @@
-const { PermissionsBitField } = require("discord.js");
+const { PermissionsBitField, EmbedBuilder } = require("discord.js");
 const SpecialChannelsConfig = require("../../Models/SpecialChannelsConfig");
 
 const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "webp", "avif", "bmp"]);
@@ -18,6 +18,10 @@ function classifyAttachment(attachment) {
 
 function hasLink(content = "") {
     return /(?:https?:\/\/|www\.)[^\s<>]+/i.test(content);
+}
+
+function hasText(content = "") {
+    return content.replace(/(?:https?:\/\/|www\.)[^\s<>]+/gi, "").trim().length > 0;
 }
 
 function hasCommand(message, client) {
@@ -48,19 +52,48 @@ module.exports = {
 
             const detected = new Set();
             for (const attachment of message.attachments.values()) detected.add(classifyAttachment(attachment));
+            const command = hasCommand(message, client);
             if (message.stickers?.size) detected.add("stickers");
             if (hasLink(message.content)) detected.add("links");
-            if (hasCommand(message, client)) detected.add("commands");
+            if (command) detected.add("commands");
+            if (!command && hasText(message.content)) detected.add("text");
             for (const embed of message.embeds || []) {
                 if (embed.video) detected.add("videos");
                 else if (embed.image || embed.thumbnail) detected.add("images");
             }
 
-            // El texto normal se permite. Si el mensaje incluye varios tipos de
-            // contenido, todos deben estar habilitados para que se conserve.
-            if (![...detected].some(type => !rule[type])) return;
+            // Las reglas antiguas no tenían la opción texto: se interpreta como
+            // permitida para no borrar mensajes al actualizar.
+            const blocked = [...detected].filter(type => type === "text"
+                ? rule.text === false
+                : rule[type] === false || rule[type] == null);
+            if (!blocked.length) return;
 
-            await message.delete().catch(() => {});
+            const deleted = await message.delete().then(() => true).catch(() => false);
+            if (!deleted || !rule.logChannelId) return;
+
+            const logChannel = await message.guild.channels.fetch(rule.logChannelId).catch(() => null);
+            if (!logChannel?.isTextBased?.()) return;
+            const labels = {
+                text: "Texto", images: "Imágenes", videos: "Vídeos", files: "Archivos",
+                stickers: "Stickers", links: "Enlaces", commands: "Comandos"
+            };
+            const embed = new EmbedBuilder()
+                .setColor(0xD95C70)
+                .setTitle("Mensaje eliminado · Canal especial")
+                .addFields(
+                    { name: "Usuario", value: `${message.author.tag} (${message.author.id})`, inline: false },
+                    { name: "Canal", value: `<#${message.channel.id}>`, inline: true },
+                    { name: "Contenido bloqueado", value: blocked.map(type => labels[type] || type).join(", "), inline: true },
+                    { name: "Mensaje", value: (message.content || "Sin texto").slice(0, 1024), inline: false }
+                )
+                .setTimestamp();
+            if (message.attachments.size) {
+                embed.addFields({ name: "Adjuntos", value: [...message.attachments.values()].map(file => file.url).join("\n").slice(0, 1024), inline: false });
+            }
+            await logChannel.send({ embeds: [embed], allowedMentions: { parse: [] } }).catch(error => {
+                console.error(`[SpecialChannels] No pude enviar logs a ${rule.logChannelId}:`, error.message);
+            });
         } catch (error) {
             console.error(`[SpecialChannels] No pude revisar un mensaje en ${message.guild.id}:`, error.message);
         }

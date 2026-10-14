@@ -989,8 +989,11 @@ app.put("/api/guilds/:guildId/config/:module", requireLogin, requireCsrf, requir
                 if (!Array.isArray(rule.immuneRoles) || rule.immuneRoles.length > 25) {
                     throw new Error("Puedes asignar hasta 25 roles inmunes por canal.");
                 }
+                if (rule.logChannelId != null && typeof rule.logChannelId !== "string") {
+                    throw new Error("Selecciona un canal de registro válido.");
+                }
                 rule.immuneRoles.forEach(id => roleIds.add(id));
-                for (const key of ["images", "videos", "files", "stickers", "links", "commands"]) {
+                for (const key of ["text", "images", "videos", "files", "stickers", "links", "commands"]) {
                     if (typeof rule[key] !== "boolean") throw new Error("Revisa los tipos de contenido seleccionados.");
                 }
             }
@@ -998,6 +1001,7 @@ app.put("/api/guilds/:guildId/config/:module", requireLogin, requireCsrf, requir
             const validChannelIds = new Set(guildChannels.filter(channel => channel.type === 0).map(channel => channel.id));
             const validRoleIds = new Set(guildRoles.map(role => role.id));
             if ([...channelIds].some(id => !validChannelIds.has(id))) throw new Error("Selecciona canales de texto de este servidor.");
+            if (channels.some(rule => rule.logChannelId && !validChannelIds.has(rule.logChannelId))) throw new Error("El canal de registro debe ser un canal de texto de este servidor.");
             if ([...roleIds].some(id => !validRoleIds.has(id))) throw new Error("Los roles inmunes deben pertenecer a este servidor.");
             const document = await definition.model.findOneAndUpdate(
                 { guildId: req.params.guildId },
