@@ -272,7 +272,7 @@ module.exports = (client) => {
                         //////////////////////////////////////////////////
 
                         const reminder = renderBirthdayReminder(config, guild, { id: data.userId });
-                        if (reminder) await channel.send(reminder);
+                        if (reminder) await channel.send({ content: reminder, allowedMentions: { users: [data.userId] } });
 
                     } catch (err) {
 

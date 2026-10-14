@@ -1,4 +1,6 @@
-const { buildConfiguredEmbed } = require("./buildConfiguredEmbed");
+const { MessageFlags } = require("discord.js");
+const { renderConfiguredMessage, parseConfiguredColor } = require("./renderConfiguredMessage");
+const { buildV2MessageComponents } = require("./buildV2MessageComponents");
 
 function buildBirthdayNotification(config, guild, user, reward = config.birthdayReward || 0) {
     const userData = user.user || user;
@@ -12,32 +14,27 @@ function buildBirthdayNotification(config, guild, user, reward = config.birthday
         miembros: guild.memberCount,
         recompensa: Number(reward).toLocaleString()
     };
-    const embed = buildConfiguredEmbed(config, {
-        title: config.birthdayTitle,
-        description: config.birthdayDescription,
-        color: config.birthdayColor,
-        image: config.birthdayBanner,
-        values
-    });
-    return embed ? { embeds: [embed] } : null;
+    const title = renderConfiguredMessage(config.birthdayTitle, values);
+    const description = renderConfiguredMessage(config.birthdayDescription, values);
+    const components = buildV2MessageComponents({ title, description, banner: config.birthdayBanner });
+    if (!components.length) return null;
+
+    const container = { type: 17, components };
+    const color = parseConfiguredColor(config.birthdayColor);
+    if (color !== null) container.accent_color = color;
+    return { flags: MessageFlags.IsComponentsV2, components: [container] };
 }
 
 function renderBirthdayReminder(config, guild, user) {
     const userData = user.user || user;
-    const values = {
+    return renderConfiguredMessage(config.birthdayReminder, {
         usuario: `<@${userData.id}>`,
         username: userData.username || userData.id,
         id: userData.id,
         servidor: guild.name,
         serverId: guild.id,
         miembros: guild.memberCount
-    };
-    const embed = buildConfiguredEmbed(config, {
-        description: config.birthdayReminder,
-        color: config.birthdayColor,
-        values
     });
-    return embed ? { embeds: [embed], allowedMentions: { users: [String(userData.id)] } } : null;
 }
 
 module.exports = { buildBirthdayNotification, renderBirthdayReminder };

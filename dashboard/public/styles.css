@@ -394,9 +394,6 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
 .field input:focus, .field textarea:focus, .field select:focus { border-color: #b96df2; box-shadow: 0 0 0 3px #a84cec20; }
 .field small { color: #8e8397; font-size: 10px; line-height: 1.5; }
 .field em { color: #8e8397; font-size: 10px; font-style: normal; font-weight: 400; }
-.field-section { display: grid; grid-column: 1 / -1; gap: 5px; margin: 8px 0 -2px; padding: 12px 0 9px; border-bottom: 1px solid #ffffff18; }
-.field-section strong { color: #d696ff; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
-.field-section span { color: #8e8397; font-size: 10px; }
 .template-field > label { color: #d6cddd; font-size: 12px; font-weight: 650; }
 .template-composer { position: relative; display: flex; justify-content: flex-end; }
 .template-toolbar { display: flex; gap: 6px; margin-top: -1px; }
@@ -465,20 +462,15 @@ button:disabled { opacity: .55; cursor: wait !important; }
 .discord-preview-copy { min-width: 0; }
 .discord-preview-copy > small, .level-preview-copy small { color: #a99bb0; font-size: 9px; font-weight: 750; letter-spacing: .08em; }
 .discord-preview-copy h3 { margin: 7px 0; color: var(--preview-accent); font-size: 16px; }
+.discord-preview-separator { width: 100%; height: 1px; margin: 9px 0; border: 0; background: #ffffff1c; }
 .discord-preview-copy p { margin: 0; color: #d2cad8; font-size: 12px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
 .discord-preview-copy > span { display: block; margin-top: 11px; color: #82778a; font-size: 9px; }
-.discord-preview-author { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; color: #eee5f4; font-size: 10px; }
-.discord-preview-author img, .discord-preview-footer img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
-.discord-preview-author a { color: inherit; text-decoration: none; }
-.discord-preview-separator { height: 0; margin: 10px 0; border: 0; border-top: 1px solid #ffffff20; }
-.discord-preview-footer { display: flex; align-items: center; gap: 7px; min-height: 36px; margin-top: 10px; padding: 9px 14px; border-top: 1px solid #ffffff16; color: #a99fb2; font-size: 10px; }
-.discord-preview-footer img { width: 18px; height: 18px; }
-.discord-preview-footer time { margin-left: auto; color: #82778a; font-size: 9px; }
 .level-preview { position: relative; display: flex; min-height: 150px; align-items: center; gap: 15px; padding: 18px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--preview-accent) 45%, transparent); border-radius: 11px; background: linear-gradient(120deg, #201727, #111015 72%); }
 .level-preview-background { position: absolute; inset: 0; opacity: .25; }
 .level-preview-background img { width: 100%; height: 100%; object-fit: cover; }
 .level-preview > *:not(.level-preview-background) { position: relative; z-index: 1; }
 .level-preview-copy { display: grid; gap: 6px; }
+.level-preview-copy .discord-preview-separator, .level-preview-role .discord-preview-separator { margin: 3px 0; }
 .level-preview-copy strong { color: #f2e8f7; font-size: 16px; }
 .level-preview-copy > span { color: #b3a7bc; font-size: 11px; }
 .level-preview-number { margin-left: auto; color: var(--preview-accent); font-size: 40px; text-shadow: 0 0 24px color-mix(in srgb, var(--preview-accent) 45%, transparent); }

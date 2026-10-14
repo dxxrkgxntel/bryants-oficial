@@ -1,5 +1,7 @@
+const { MessageFlags } = require("discord.js");
 const leaveSchema = require("../../Models/leaveSchema");
-const { buildConfiguredEmbed } = require("../../Functions/buildConfiguredEmbed");
+const { renderConfiguredMessage, parseConfiguredColor } = require("../../Functions/renderConfiguredMessage");
+const { buildV2MessageComponents } = require("../../Functions/buildV2MessageComponents");
 
 module.exports = {
     name: "guildMemberRemove",
@@ -20,15 +22,15 @@ module.exports = {
                 miembros: member.guild.memberCount,
                 id: member.id
             };
-            const embed = buildConfiguredEmbed(data, {
-                title: data.Title,
-                description: data.MessageDes,
-                color: data.Color,
-                image: data.Banner,
-                thumbnail: data.Thumbnail,
-                values
-            });
-            if (embed) await channel.send({ embeds: [embed] });
+            const title = renderConfiguredMessage(data.Title, values);
+            const description = renderConfiguredMessage(data.MessageDes, values);
+            const components = buildV2MessageComponents({ title, description, banner: data.Banner, thumbnail: data.Thumbnail });
+            if (!components.length) return;
+
+            const container = { type: 17, components };
+            const accentColor = parseConfiguredColor(data.Color);
+            if (accentColor !== null) container.accent_color = accentColor;
+            await channel.send({ flags: MessageFlags.IsComponentsV2, components: [container] });
         } catch (error) {
             console.error("[Leave] No se pudo enviar el mensaje configurado:", error);
         }

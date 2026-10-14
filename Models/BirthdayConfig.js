@@ -44,11 +44,5 @@ module.exports =
             birthdayColor: String,
             birthdayReminder: String,
             birthdayReward: { type: Number, min: 0 },
-            embedAuthorName: String,
-            embedAuthorUrl: String,
-            embedAuthorIcon: String,
-            embedFooterText: String,
-            embedFooterIcon: String,
-            embedTimestamp: { type: Boolean, default: false },
         })
     );

@@ -12,12 +12,6 @@ module.exports = mongoose.model(
         boostDescription: String,
         boostColor: String,
         boostThumbnail: String,
-        boostImage: String,
-        embedAuthorName: String,
-        embedAuthorUrl: String,
-        embedAuthorIcon: String,
-        embedFooterText: String,
-        embedFooterIcon: String,
-        embedTimestamp: { type: Boolean, default: false }
+        boostImage: String
     })
 );
