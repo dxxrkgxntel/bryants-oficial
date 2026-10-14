@@ -1,3 +1,4 @@
+const isLogIgnored = require("../../Utils/logsIgnored");
 const {
     EmbedBuilder,
     AuditLogEvent
@@ -48,6 +49,7 @@ module.exports = {
 
             const log =
                 fetchedLogs.entries.first();
+            if (await isLogIgnored(data, ban.guild, null, log?.executor?.id)) return;
 
             //////////////////////////////////////////////////
             // EMBED

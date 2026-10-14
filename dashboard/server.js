@@ -948,6 +948,7 @@ app.get("/api/guilds/:guildId/birthday-members/names", requireGuildAdmin, async 
 app.get("/api/guilds/:guildId/config", requireGuildAdmin, async (req, res) => {
     try {
         const configResults = await Promise.all(Object.entries(configurations).map(async ([key, definition]) => {
+            if (key === "memberEconomy") return [key, { configured: true }];
             const document = await definition.model.findOne({ [definition.guildField]: req.params.guildId });
             const data = document?.toObject();
             return [key, data ? { ...data, _id: String(data._id), configured: true } : { configured: false }];
@@ -968,6 +969,26 @@ app.get("/api/guilds/:guildId/config", requireGuildAdmin, async (req, res) => {
         console.error("[Dashboard Config] Error al leer configuración:", error.message);
         return res.status(500).json({ error: "No pude leer la configuración de este servidor." });
     }
+});
+
+app.get("/api/guilds/:guildId/members/search", requireGuildAdmin, async (req, res) => {
+    const query = String(req.query.q || "").trim();
+    if (query.length < 2) return res.json({ members: [] });
+    try {
+        const members = await discordBotRequest(`https://discord.com/api/v10/guilds/${req.params.guildId}/members/search?query=${encodeURIComponent(query)}&limit=10`);
+        return res.json({ members: members.map(member => ({ id: member.user.id, username: member.user.username, globalName: member.user.global_name, nick: member.nick, avatar: member.user.avatar })) });
+    } catch (error) { return res.status(502).json({ error: error.message || "No pude buscar miembros." }); }
+});
+
+app.get("/api/guilds/:guildId/members/:userId/economy", requireGuildAdmin, async (req, res) => {
+    if (!/^\d{17,20}$/.test(req.params.userId)) return res.status(400).json({ error: "ID de miembro inválido." });
+    try {
+        const [member, economy] = await Promise.all([
+            discordBotRequest(`https://discord.com/api/v10/guilds/${req.params.guildId}/members/${req.params.userId}`),
+            EconomyUser.findOne({ guildId: req.params.guildId, userId: req.params.userId }).lean()
+        ]);
+        return res.json({ member: { id: member.user.id, username: member.user.username, globalName: member.user.global_name, nick: member.nick, avatar: member.user.avatar }, economy: economy || { wallet: 0, bank: 0 } });
+    } catch (error) { return res.status(error.status === 404 ? 404 : 502).json({ error: error.status === 404 ? "El miembro ya no está en el servidor." : error.message || "No pude cargar la economía." }); }
 });
 
 app.put("/api/guilds/:guildId/config/:module", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
@@ -1014,6 +1035,29 @@ app.put("/api/guilds/:guildId/config/:module", requireLogin, requireCsrf, requir
         const update = cleanFields(definition.fields, req.body);
         if (!Object.keys(update).length) return res.status(400).json({ error: "No hay cambios para guardar." });
         await validateDiscordReferences(req.params.guildId, definition.fields, update);
+        if (req.params.module === "antiInvites") {
+            const config = await definition.model.findOne({ guildId: req.params.guildId }).lean();
+            const rulesUrl = `https://discord.com/api/v10/guilds/${req.params.guildId}/auto-moderation/rules`;
+            const rules = await discordBotRequest(rulesUrl);
+            const rule = rules.find(item => item.id === config?.ruleId || item.name === "Bryants Anti-Invites");
+            let ruleId = rule?.id || null;
+            if (update.enabled) {
+                const body = {
+                    name: "Bryants Anti-Invites", event_type: 1, trigger_type: 1,
+                    trigger_metadata: { regex_patterns: ["(?:https?:\\/\\/)?(?:www\\.)?(?:discord\\.gg|discord(?:app)?\\.com\\/invite)\\/[A-Za-z0-9-]+"] },
+                    actions: [{ type: 1, metadata: { custom_message: "No puedes compartir invitaciones a otros servidores." } }, ...(update.logChannelId ? [{ type: 2, metadata: { channel_id: update.logChannelId } }] : [])],
+                    enabled: true, exempt_roles: [], exempt_channels: []
+                };
+                const saved = rule
+                    ? await discordBotRequest(`${rulesUrl}/${rule.id}`, { method: "PATCH", body })
+                    : await discordBotRequest(rulesUrl, { method: "POST", body });
+                ruleId = saved.id;
+            } else if (rule) {
+                await discordBotRequest(`${rulesUrl}/${rule.id}`, { method: "DELETE" });
+                ruleId = null;
+            }
+            update.ruleId = ruleId;
+        }
         const document = await definition.model.findOneAndUpdate(
             { [definition.guildField]: req.params.guildId },
             { $set: update, $setOnInsert: { [definition.guildField]: req.params.guildId } },

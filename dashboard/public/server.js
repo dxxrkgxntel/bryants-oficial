@@ -291,10 +291,12 @@ function renderField(field, value, prefix = "") {
     if (["channel-list", "role-list"].includes(field.type)) {
         const values = Array.isArray(value) ? value.map(String) : [];
         const options = optionsFor(field);
-        if (field.type === "role-list" && field.maxItems) {
+        if (field.maxItems) {
             const staleOptions = values.filter(current => !options.some(option => option.id === current)).map(current => ({ id: current, name: `ID guardado: ${current}` }));
-            const roleOptions = [...staleOptions, ...options];
-            return `<div class="field role-picker-field" data-role-picker="${escapeHtml(field.name)}" data-max-selected="${field.maxItems}"><span>${escapeHtml(field.label)}</span><details class="role-picker"><summary class="role-picker-trigger"><span data-role-summary>${values.length ? `${values.length} de ${field.maxItems} roles seleccionados` : `Selecciona hasta ${field.maxItems} roles`}</span><span class="role-picker-chevron" aria-hidden="true">⌄</span></summary><div class="role-picker-menu"><input type="search" class="role-picker-search" placeholder="Buscar roles…" aria-label="Buscar roles"><div class="role-picker-options" role="group" aria-label="Roles disponibles">${roleOptions.map(option => `<label class="role-picker-option" data-role-name="${escapeHtml(normalizeSearch(option.name))}"><input type="checkbox" value="${escapeHtml(option.id)}" data-role-option ${values.includes(option.id) ? "checked" : ""}><span>${escapeHtml(option.name)}</span></label>`).join("")}</div></div></details><small>Selecciona hasta ${field.maxItems} roles. Haz clic para añadir o quitar cada rol.</small></div>`;
+            const itemOptions = [...staleOptions, ...options];
+            const noun = field.type === "role-list" ? "roles" : "canales";
+            const icon = field.type === "role-list" ? "@" : "#";
+            return `<div class="field role-picker-field" data-role-picker="${escapeHtml(field.name)}" data-max-selected="${field.maxItems}" data-item-label="${noun}"><span>${escapeHtml(field.label)}</span><details class="role-picker"><summary class="role-picker-trigger"><span data-role-summary>${values.length ? `${values.length} de ${field.maxItems} ${noun} seleccionados` : `Selecciona hasta ${field.maxItems} ${noun}`}</span><span class="role-picker-chevron" aria-hidden="true">⌄</span></summary><div class="role-picker-menu"><input type="search" class="role-picker-search" placeholder="Buscar ${noun}…" aria-label="Buscar ${noun}"><div class="role-picker-options" role="group" aria-label="${escapeHtml(field.label)}">${itemOptions.map(option => `<label class="role-picker-option" data-role-name="${escapeHtml(normalizeSearch(option.name))}"><input type="checkbox" value="${escapeHtml(option.id)}" data-role-option ${values.includes(option.id) ? "checked" : ""}><span>${icon}</span><span>${escapeHtml(option.name)}</span></label>`).join("")}</div></div></details><small>Selecciona hasta ${field.maxItems} ${noun}. Haz clic para añadir o quitar cada elemento.</small></div>`;
         }
         const stale = values.filter(current => !options.some(option => option.id === current)).map(current => `<option value="${escapeHtml(current)}" selected>ID guardado: ${escapeHtml(current)}</option>`).join("");
         return `<label class="field" for="${id}"><span>${escapeHtml(field.label)}</span><select id="${id}" name="${escapeHtml(field.name)}" multiple size="5" ${field.maxItems ? `data-max-selected="${field.maxItems}"` : ""}>${stale}${options.map(option => `<option value="${escapeHtml(option.id)}" ${values.includes(option.id) ? "selected" : ""}>${escapeHtml(option.name)}</option>`).join("")}</select><small>${field.maxItems ? `Selecciona hasta ${field.maxItems} roles. ` : ""}Mantén Ctrl o Cmd para seleccionar varios.</small></label>`;
@@ -677,7 +679,7 @@ function readForm(form, fields) {
             continue;
         }
         if (field.type === "section") continue;
-        if (field.type === "role-list" && field.maxItems) {
+        if (["role-list", "channel-list"].includes(field.type) && field.maxItems) {
             const picker = form.querySelector(`[data-role-picker="${CSS.escape(field.name)}"]`);
             result[field.name] = [...(picker?.querySelectorAll("[data-role-option]:checked") || [])].map(option => option.value);
             continue;
@@ -788,6 +790,44 @@ function makeNav(modules) {
     applyModuleFilter();
 }
 
+function renderMemberEconomy(definition) {
+    content.innerHTML = `<article class="settings-card member-economy-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div><p class="card-description">${escapeHtml(definition.description)}</p><section class="member-search-panel"><label class="field"><span>Buscar miembro</span><input type="search" id="member-economy-search" autocomplete="off" placeholder="Escribe un nombre o usuario…"></label><div id="member-economy-results" class="member-search-results" role="listbox"></div></section><section id="member-economy-detail" class="member-economy-detail"><p class="empty-state">Busca y selecciona un miembro para ver sus datos.</p></section></article>`;
+    const input = content.querySelector("#member-economy-search");
+    const results = content.querySelector("#member-economy-results");
+    const detail = content.querySelector("#member-economy-detail");
+    let timer;
+    input.addEventListener("input", () => {
+        clearTimeout(timer);
+        const query = input.value.trim();
+        if (query.length < 2) { results.replaceChildren(); return; }
+        timer = setTimeout(async () => {
+            try {
+                const response = await api(`/api/guilds/${encodeURIComponent(guildId)}/members/search?q=${encodeURIComponent(query)}`);
+                if (!input.isConnected || input.value.trim() !== query) return;
+                results.innerHTML = response.members.length ? response.members.map(member => {
+                    const name = member.nick || member.globalName || member.username;
+                    const avatar = member.avatar ? `https://cdn.discordapp.com/avatars/${member.id}/${member.avatar}.png?size=64` : "";
+                    return `<button class="member-search-result" type="button" data-member-id="${escapeHtml(member.id)}"><img src="${avatar}" alt="" onerror="this.hidden=true"><span><strong>${escapeHtml(name)}</strong><small>@${escapeHtml(member.username)}</small></span></button>`;
+                }).join("") : '<p class="empty-state">No encontré miembros.</p>';
+            } catch (error) { results.innerHTML = `<p class="empty-state">${escapeHtml(error.message)}</p>`; }
+        }, 250);
+    });
+    results.addEventListener("click", async event => {
+        const button = event.target.closest("[data-member-id]");
+        if (!button) return;
+        detail.innerHTML = '<p class="loading-card">Cargando economía…</p>';
+        try {
+            const response = await api(`/api/guilds/${encodeURIComponent(guildId)}/members/${encodeURIComponent(button.dataset.memberId)}/economy`);
+            const { member, economy } = response;
+            const name = member.nick || member.globalName || member.username;
+            const wallet = Number(economy.wallet || 0), bank = Number(economy.bank || 0);
+            const stats = [["Racha diaria", economy.dailyStreak], ["Apuestas ganadas", economy.gamblesWon], ["Apuestas perdidas", economy.gamblesLost], ["Racha de apuestas", economy.gambleStreak], ["Jackpots", economy.jackpots], ["Récord de ganancia", economy.biggestWin], ["Deuda", economy.debt], ["Préstamo activo", economy.loanTaken ? "Sí" : "No"], ["Donado al banco", economy.bankDonated], ["Victorias de dados", economy.diceWins], ["Derrotas de dados", economy.diceLosses], ["Potenciadores activos", Array.isArray(economy.activeBoosts) ? economy.activeBoosts.length : 0]]
+                .filter(([, value]) => value != null).map(([label, value]) => `<div class="member-economy-stat"><span>${label}</span><strong>${typeof value === "number" ? value.toLocaleString("es-ES") : value}</strong></div>`).join("");
+            detail.innerHTML = `<div class="member-economy-heading"><div><span class="eyebrow">Economía de</span><h3>${escapeHtml(name)}</h3><small>@${escapeHtml(member.username)}</small></div></div><div class="member-balance-grid"><article><span>Cartera</span><strong>${wallet.toLocaleString("es-ES")}</strong><small>Monedas disponibles en mano</small></article><article><span>Banco</span><strong>${bank.toLocaleString("es-ES")}</strong><small>Monedas guardadas</small></article></div><div class="member-economy-stats">${stats}</div><article class="member-backpack"><h3>Mochila</h3><p>La gestión del inventario estará disponible cuando se implemente el sistema de objetos.</p></article>`;
+        } catch (error) { detail.innerHTML = `<p class="empty-state">${escapeHtml(error.message)}</p>`; }
+    });
+}
+
 function renderModule(key, modules) {
     currentModule = key;
     nav.querySelectorAll(".nav-item").forEach(button => {
@@ -803,9 +843,11 @@ function renderModule(key, modules) {
 
     const data = configState.configurations[key] || { configured: false };
     if (key === "specialChannels") return renderSpecialChannels(definition, data);
+    if (key === "memberEconomy") return renderMemberEconomy(definition);
     const formFields = definition.fields.map(field => {
         if (field.type === "section") return renderField(field);
         let value = getNested(data, field.name);
+        if (key === "voiceConnection" && field.name === "enabled" && value == null) value = Boolean(data.channelId);
         if (key === "boosts" && field.name === "boostButtons" && !Array.isArray(value)) {
             value = boostButtonsFor(data);
         }
@@ -820,7 +862,7 @@ function renderModule(key, modules) {
         return renderField(field, value);
     }).join("");
     const description = definition.description || "Los cambios se guardan en la configuración del servidor y los canales y roles existentes se conservan.";
-    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div><span class="status-pill ${data.configured ? "configured" : "unconfigured"}">${data.configured ? "Configurado" : "Sin configurar"}</span></div><p class="card-description">${escapeHtml(description)}</p>${renderPreview(key, data)}<form id="settings-form" class="fields-grid">${formFields}<div class="form-actions"><button class="primary-button" type="submit">Guardar cambios</button><span class="unsaved-indicator" hidden>● Cambios sin guardar</span><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>${key === "polls" ? '<div id="poll-admin"><div class="loading-card">Cargando encuestas…</div></div>' : ""}`;
+    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div><span class="status-pill ${data.configured ? "configured" : "unconfigured"}">${data.configured ? "Configurado" : "Sin configurar"}</span></div><p class="card-description">${escapeHtml(description)}</p>${renderPreview(key, data)}<form id="settings-form" class="fields-grid${key === "prestige" ? " prestige-settings-grid" : ""}">${formFields}<div class="form-actions"><button class="primary-button" type="submit">Guardar cambios</button><span class="unsaved-indicator" hidden>● Cambios sin guardar</span><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>${key === "polls" ? '<div id="poll-admin"><div class="loading-card">Cargando encuestas…</div></div>' : ""}`;
     const setupsEditor = content.querySelector("[data-setups-editor]");
     if (setupsEditor) {
         const updateSetupRows = setups => {
@@ -865,7 +907,7 @@ function renderModule(key, modules) {
             });
             configState.configurations[key] = { ...result.configuration, configured: true };
             showNotice(key === "voiceConnection"
-                ? "Canal guardado. El bot cambiará en unos segundos."
+                ? (payload.enabled ? "Conexión activada. El bot se conectará al canal en unos segundos." : "Conexión desactivada. El bot se desconectará aunque el canal siga seleccionado.")
                 : "Configuración guardada.");
             // A save can finish after the user has navigated elsewhere. Keep the data,
             // but never replace the newly selected module with this form's old view.
@@ -1082,12 +1124,13 @@ function wireRolePickers(form) {
         const search = picker.querySelector(".role-picker-search");
         const updateSummary = () => {
             const count = checkboxes.filter(option => option.checked).length;
-            summary.textContent = count ? `${count} de ${max} roles seleccionados` : `Selecciona hasta ${max} roles`;
+            const itemLabel = picker.dataset.itemLabel || "roles";
+            summary.textContent = count ? `${count} de ${max} ${itemLabel} seleccionados` : `Selecciona hasta ${max} ${itemLabel}`;
         };
         checkboxes.forEach(checkbox => checkbox.addEventListener("change", () => {
             if (checkbox.checked && checkboxes.filter(option => option.checked).length > max) {
                 checkbox.checked = false;
-                showNotice(`Puedes seleccionar hasta ${max} roles.`, true);
+                showNotice(`Puedes seleccionar hasta ${max} ${picker.dataset.itemLabel || "elementos"}.`, true);
             }
             updateSummary();
         }));

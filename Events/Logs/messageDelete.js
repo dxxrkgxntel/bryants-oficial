@@ -1,3 +1,4 @@
+const isLogIgnored = require("../../Utils/logsIgnored");
 const {EmbedBuilder} = require("discord.js");
 const logsSchema = require("../../Models/logsSchema");
 
@@ -34,6 +35,7 @@ module.exports = {
             //////////////////////////////////////////////////
 
             if (!channel) return;
+            if (await isLogIgnored(data, message.guild, message.channelId, message.author.id)) return;
 
             //////////////////////////////////////////////////
             // CONTENIDO

@@ -512,6 +512,30 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
 .prestige-row { display: grid; grid-template-columns: 90px minmax(0, 1fr); align-items: center; gap: 10px; color: #d6cddd; font-size: 11px; }
 .prestige-row strong { font-size: 11px; }
 .prestige-map-field > small { margin-top: 1px; }
+.prestige-settings-grid { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-items: start; gap: 18px; }
+.prestige-settings-grid > .checkbox-field { grid-column: 1; grid-row: 1; }
+.prestige-settings-grid [data-prestige-map="prestigeRoles"] { grid-column: 2; grid-row: 1 / span 2; padding: 16px; border: 1px solid #ffffff18; border-radius: 12px; background: linear-gradient(145deg, #24162d, #110e16); }
+.prestige-settings-grid [data-prestige-map="prestigeRewards"] { grid-column: 1; grid-row: 2; padding: 16px; border: 1px solid #ffffff18; border-radius: 12px; background: #0e0b1280; }
+.prestige-settings-grid .prestige-rows { gap: 11px; margin-top: 12px; }
+.prestige-settings-grid [data-prestige-map="prestigeRoles"] .prestige-row { grid-template-columns: 88px minmax(0, 1fr); }
+.member-search-panel { position: relative; max-width: 620px; }
+.member-search-results { position: absolute; z-index: 3; top: calc(100% - 7px); left: 0; right: 0; max-height: 300px; overflow: auto; border: 1px solid #ffffff20; border-radius: 10px; background: #1b1720; box-shadow: 0 14px 35px #0008; }
+.member-search-result { display: flex; align-items: center; gap: 11px; width: 100%; padding: 10px 13px; border: 0; border-bottom: 1px solid #ffffff10; background: transparent; color: #eee5f2; text-align: left; cursor: pointer; }
+.member-search-result:hover { background: #ffffff0d; }
+.member-search-result img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: #342c3a; }
+.member-search-result span { display: grid; gap: 3px; }
+.member-search-result small, .member-economy-heading small { color: #a99fb2; }
+.member-economy-detail { display: grid; gap: 16px; margin-top: 24px; }
+.member-economy-heading h3 { margin: 4px 0; }
+.member-balance-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.member-balance-grid article, .member-backpack { display: grid; gap: 8px; padding: 18px; border: 1px solid #ffffff18; border-radius: 12px; background: linear-gradient(145deg, #211827, #110e16); }
+.member-balance-grid article > span { color: #c7b8d0; font-size: 12px; }
+.member-balance-grid strong { color: #f3e9fb; font-size: 26px; }
+.member-balance-grid small, .member-backpack p { margin: 0; color: #a99fb2; }
+.member-economy-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 9px; }
+.member-economy-stat { display: flex; justify-content: space-between; gap: 8px; padding: 12px; border: 1px solid #ffffff14; border-radius: 9px; color: #b8adbf; font-size: 11px; }
+.member-economy-stat strong { color: #eadff1; }
+.member-backpack h3 { margin: 0; }
 .checkbox-field { display: flex; align-items: center; justify-content: space-between; min-height: 46px; padding: 0 12px; border: 1px solid #ffffff20; border-radius: 9px; background: #0e0b12; }
 .checkbox-field { align-self: start; }
 .checkbox-field input { width: 18px; min-height: 18px; accent-color: #aa5ce3; }
@@ -693,6 +717,9 @@ button:disabled { opacity: .55; cursor: wait !important; }
     .level-preview { min-height: 125px; gap: 9px; padding: 12px; }
     .level-preview-number { font-size: 30px; }
     .fields-grid { grid-template-columns: 1fr; }
+    .prestige-settings-grid { grid-template-columns: 1fr; }
+    .prestige-settings-grid > .checkbox-field, .prestige-settings-grid [data-prestige-map="prestigeRoles"], .prestige-settings-grid [data-prestige-map="prestigeRewards"] { grid-column: 1; grid-row: auto; }
+    .member-balance-grid { grid-template-columns: 1fr; }
     .setup-row-fields { grid-template-columns: 1fr; }
     .special-content-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .special-channel-add { align-items: stretch; flex-direction: column; }

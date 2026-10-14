@@ -1,3 +1,4 @@
+const isLogIgnored = require("../../Utils/logsIgnored");
 const {
     EmbedBuilder
 } = require("discord.js");
@@ -44,6 +45,7 @@ module.exports = {
                 oldMessage.guild.channels.cache.get(data.Channel);
 
             if (!channel) return;
+            if (await isLogIgnored(data, oldMessage.guild, oldMessage.channelId, oldMessage.author.id)) return;
 
             //////////////////////////////////////////////////
             // EMBED

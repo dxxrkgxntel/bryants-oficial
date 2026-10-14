@@ -4,7 +4,9 @@ const logsSchema = new mongoose.Schema({
 
     Guild: String,
     Channel: String,
-    Enabled: { type: Boolean, default: true }
+    Enabled: { type: Boolean, default: true },
+    ignoredChannels: { type: [String], default: [] },
+    ignoredRoles: { type: [String], default: [] }
 
 });
 

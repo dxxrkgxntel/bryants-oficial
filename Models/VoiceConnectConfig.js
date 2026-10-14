@@ -8,7 +8,11 @@ const voiceConnectConfigSchema = new mongoose.Schema({
     },
     channelId: {
         type: String,
-        required: true
+        default: null
+    },
+    enabled: {
+        type: Boolean,
+        default: undefined
     },
     updatedBy: {
         type: String,

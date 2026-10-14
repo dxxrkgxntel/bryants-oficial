@@ -5,6 +5,7 @@ const {
 
 const logsSchema =
     require("../../Models/logsSchema");
+const isLogIgnored = require("../../Utils/logsIgnored");
 
 module.exports = {
 
@@ -51,6 +52,7 @@ module.exports = {
 
                 const log =
                     fetchedLogs.entries.first();
+                if (await isLogIgnored(data, newMember.guild, null, log?.executor?.id)) return;
 
                 const embed =
                     new EmbedBuilder()
@@ -81,6 +83,7 @@ module.exports = {
 
                 const log =
                     fetchedLogs.entries.first();
+                if (await isLogIgnored(data, newMember.guild, null, log?.executor?.id)) return;
 
                 const embed =
                     new EmbedBuilder()

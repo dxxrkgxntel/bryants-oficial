@@ -172,11 +172,14 @@ const configurations = {
     logs: {
         title: "Logs",
         category: "Moderación",
+        description: "Configura el registro de eventos y excluye canales o roles cuyas acciones no deban aparecer en los logs.",
         model: require("../Models/logsSchema"),
         guildField: "Guild",
         fields: [
             { name: "Enabled", label: "Sistema activo", type: "boolean", default: true },
-            { name: "Channel", label: "Canal de logs", type: "channel", channelTypes: [0] }
+            { name: "Channel", label: "Canal de logs", type: "channel", channelTypes: [0] },
+            { name: "ignoredChannels", label: "Canales ignorados", type: "channel-list", maxItems: 10, help: "Los eventos de estos canales no se registrarán." },
+            { name: "ignoredRoles", label: "Roles ignorados", type: "role-list", maxItems: 10, help: "Las acciones de miembros con estos roles no se registrarán." }
         ]
     },
     reports: {
@@ -200,8 +203,19 @@ const configurations = {
             { name: "timeoutDuration", label: "Duración de timeout (minutos)", type: "number", min: 1, max: 40320 },
             { name: "logChannelId", label: "Canal de logs", type: "channel", channelTypes: [0], optional: true },
             { name: "whitelistDomains", label: "Dominios permitidos", type: "string-list" },
-            { name: "ignoredChannels", label: "Canales ignorados", type: "channel-list" },
-            { name: "ignoredRoles", label: "Roles ignorados", type: "role-list" }
+            { name: "ignoredChannels", label: "Canales ignorados", type: "channel-list", maxItems: 10 },
+            { name: "ignoredRoles", label: "Roles ignorados", type: "role-list", maxItems: 10 }
+        ]
+    },
+    antiInvites: {
+        title: "Anti-invitaciones",
+        category: "Moderación",
+        description: "Crea una regla nativa de Discord AutoMod que bloquea invitaciones a otros servidores. El bot necesita permiso para gestionar el servidor.",
+        model: require("../Models/AntiInvitesConfig"),
+        guildField: "guildId",
+        fields: [
+            { name: "enabled", label: "Bloquear invitaciones", type: "boolean", default: false },
+            { name: "logChannelId", label: "Canal para alertas de AutoMod", type: "channel", channelTypes: [0], optional: true, help: "Discord enviará aquí las alertas cuando AutoMod bloquee una invitación." }
         ]
     },
     specialChannels: {
@@ -256,10 +270,13 @@ const configurations = {
     voiceConnection: {
         title: "Conexión de voz del bot",
         category: "Servidor",
-        description: "El bot aplicará el canal seleccionado en unos segundos después de guardar.",
+        description: "Activa el sistema para conectar el bot al canal seleccionado. Si lo desactivas, el bot se desconectará aunque haya un canal guardado.",
         model: require("../Models/VoiceConnectConfig"),
         guildField: "guildId",
-        fields: [{ name: "channelId", label: "Canal de voz", type: "voice" }]
+        fields: [
+            { name: "enabled", label: "Sistema activo", type: "boolean", default: false },
+            { name: "channelId", label: "Canal de voz", type: "voice", optional: true }
+        ]
     },
     tempvoice: {
         title: "TempVoice",
@@ -410,6 +427,14 @@ const lists = {
             { name: "channelId", label: "Canal de anuncio personalizado", type: "channel", channelTypes: [0], optional: true }
         ],
         identity: "userId"
+    },
+    memberEconomy: {
+        title: "Miembros",
+        category: "Economía y XP",
+        description: "Busca miembros del servidor y consulta su economía: wallet, banco y estadísticas. La mochila estará disponible cuando implementemos el inventario.",
+        model: require("../Models/EconomyUser"),
+        guildField: "guildId",
+        fields: []
     },
     socialAlerts: {
         title: "Alertas sociales",

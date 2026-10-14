@@ -91,8 +91,14 @@ async function connectToVoiceChannel(guild, channelId) {
 }
 
 async function restoreVoiceConnections(client) {
-    const configs = await VoiceConnectConfig.find({});
+    const configs = await VoiceConnectConfig.find({}).lean();
     for (const config of configs) {
+        if (config.enabled === false) {
+            const connection = getVoiceConnection(config.guildId);
+            if (connection && connection.state.status !== VoiceConnectionStatus.Destroyed) connection.destroy();
+            continue;
+        }
+        if (!config.channelId) continue;
         const guild = client.guilds.cache.get(config.guildId)
             || await client.guilds.fetch(config.guildId).catch(() => null);
         if (!guild) continue;
@@ -116,6 +122,12 @@ async function restoreVoiceConnections(client) {
 async function syncVoiceConnections(client) {
     const configs = await VoiceConnectConfig.find({}).lean();
     for (const config of configs) {
+        if (config.enabled === false || !config.channelId) {
+            const connection = getVoiceConnection(config.guildId);
+            if (connection && connection.state.status !== VoiceConnectionStatus.Destroyed) connection.destroy();
+            retryAfterByGuild.delete(config.guildId);
+            continue;
+        }
         const guild = client.guilds.cache.get(config.guildId)
             || await client.guilds.fetch(config.guildId).catch(() => null);
         if (!guild) continue;

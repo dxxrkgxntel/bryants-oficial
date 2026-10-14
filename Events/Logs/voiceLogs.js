@@ -1,3 +1,4 @@
+const isLogIgnored = require("../../Utils/logsIgnored");
 const {
     EmbedBuilder
 } = require("discord.js");
@@ -34,6 +35,7 @@ module.exports = {
                 );
 
             if (!channel) return;
+            if (await isLogIgnored(data, newState.guild, [oldState.channelId, newState.channelId], newState.member?.id)) return;
 
             //////////////////////////////////////////////////
             // USER

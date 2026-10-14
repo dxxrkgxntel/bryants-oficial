@@ -1,5 +1,7 @@
+const isLogIgnored = require("../../Utils/logsIgnored");
 const {
-    EmbedBuilder
+    EmbedBuilder,
+    AuditLogEvent
 } = require("discord.js");
 
 const logsSchema =
@@ -41,6 +43,10 @@ module.exports = {
                 );
 
             if (!logs) return;
+            if (await isLogIgnored(data, newChannel.guild, newChannel.id)) return;
+            const audit = await newChannel.guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelUpdate }).catch(() => null);
+            const actorId = audit?.entries.first()?.executor?.id;
+            if (await isLogIgnored(data, newChannel.guild, newChannel.id, actorId)) return;
 
             //////////////////////////////////////////////////
             // EMBED BASE
