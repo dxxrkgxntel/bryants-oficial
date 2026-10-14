@@ -607,3 +607,17 @@ button:disabled { opacity: .55; cursor: wait !important; }
     .prestige-row { grid-template-columns: 82px minmax(0, 1fr); }
     .form-actions { flex-wrap: wrap; }
 }
+.form-section-heading {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #ffffff18;
+    color: #c983ff;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.level-preview-list { display: grid; gap: 14px; }
+.level-preview-panel { display: grid; gap: 8px; }

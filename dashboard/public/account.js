@@ -3,11 +3,8 @@ const profileName = document.querySelector("#account-profile-name");
 const profileDisplay = document.querySelector("#account-profile-display");
 const profileId = document.querySelector("#account-profile-id");
 const profileForm = document.querySelector("#account-profile-form");
-const languageForm = document.querySelector("#account-language-form");
 const linksContainer = document.querySelector("#account-links");
 let csrfToken = "";
-let savedLocale = "es";
-let localeInteracted = false;
 
 function setFeedback(element, message, error = false) {
     element.textContent = message;
@@ -66,10 +63,6 @@ async function loadAccountSettings() {
         window.mountAccountMenu(document.querySelector("#account-menu-host"), session.user);
 
         const user = session.user;
-        savedLocale = settings.locale || "es";
-        profileName.dataset.localeFixed = "true";
-        profileDisplay.dataset.localeFixed = "true";
-        profileId.dataset.localeFixed = "true";
         const defaultAvatarIndex = Number((BigInt(user.id) >> 22n) % 6n);
         profileAvatar.src = user.avatar
             ? `https://cdn.discordapp.com/avatars/${encodeURIComponent(user.id)}/${encodeURIComponent(user.avatar)}.${user.avatar.startsWith("a_") ? "gif" : "png"}?size=128`
@@ -77,21 +70,19 @@ async function loadAccountSettings() {
         profileName.textContent = user.username;
         profileDisplay.textContent = user.globalName || user.username;
         profileId.textContent = user.id;
-        if (!localeInteracted) window.dashboardI18n?.setLocale(savedLocale);
         document.querySelector("#account-bio").value = settings.bio;
         document.querySelector("#bio-count").textContent = settings.bio.length;
-        if (!localeInteracted) document.querySelector("#account-locale").value = savedLocale;
         settings.links.forEach(addProfileLink);
         document.querySelector("#account-add-link").disabled = settings.links.length >= 5;
-        document.querySelector("#referral-count").textContent = rewards.referralCount.toLocaleString(settings.locale);
-        document.querySelector("#vote-count").textContent = rewards.voteCount.toLocaleString(settings.locale);
+        document.querySelector("#referral-count").textContent = rewards.referralCount.toLocaleString("es");
+        document.querySelector("#vote-count").textContent = rewards.voteCount.toLocaleString("es");
         document.querySelector("#referral-link").value = rewards.referralUrl;
         document.querySelector("#topgg-vote").href = rewards.topggUrl;
         const rewardNotes = [];
-        if (rewards.referralConfigured) rewardNotes.push(window.dashboardI18n.translate("Cada referido válido da {amount} monedas en el servidor donde se instala el bot.").replace("{amount}", rewards.referralReward.toLocaleString(settings.locale)));
-        else rewardNotes.push(window.dashboardI18n.translate("Los referidos se activarán cuando se registre la URL de retorno OAuth en Discord Developer Portal."));
-        if (rewards.voteConfigured) rewardNotes.push(window.dashboardI18n.translate("Cada voto verificado da {amount} monedas en el servidor configurado.").replace("{amount}", rewards.voteReward.toLocaleString(settings.locale)));
-        else rewardNotes.push(window.dashboardI18n.translate("Las recompensas por votar se activarán al configurar el webhook de Top.gg y el servidor de pago en el hosting."));
+        if (rewards.referralConfigured) rewardNotes.push(`Cada referido válido da ${rewards.referralReward.toLocaleString("es")} monedas en el servidor donde se instala el bot.`);
+        else rewardNotes.push("Los referidos se activarán cuando se registre la URL de retorno OAuth en Discord Developer Portal.");
+        if (rewards.voteConfigured) rewardNotes.push(`Cada voto verificado da ${rewards.voteReward.toLocaleString("es")} monedas en el servidor configurado.`);
+        else rewardNotes.push("Las recompensas por votar se activarán al configurar el webhook de Top.gg y el servidor de pago en el hosting.");
         document.querySelector("#rewards-description").textContent = rewardNotes.join(" ");
     } catch (error) {
         if (error.message.includes("Inicia sesión")) return window.location.assign("/");
@@ -148,45 +139,6 @@ profileForm.addEventListener("submit", async event => {
     } finally {
         button.disabled = false;
     }
-});
-
-languageForm.addEventListener("submit", async event => {
-    event.preventDefault();
-    const feedback = document.querySelector("#language-feedback");
-    const button = languageForm.querySelector("button[type=submit]");
-    const localeSelect = document.querySelector("#account-locale");
-    button.disabled = true;
-    localeSelect.disabled = true;
-    setFeedback(feedback, "Guardando…");
-    try {
-        const result = await api("/api/account/settings", {
-            method: "PUT",
-            body: JSON.stringify({
-                locale: localeSelect.value
-            })
-        });
-        const locale = result.locale || localeSelect.value;
-        savedLocale = locale;
-        localeSelect.value = locale;
-        window.dashboardI18n?.setLocale(locale);
-        setFeedback(feedback, window.dashboardI18n?.translate("Idioma guardado.") || "Idioma guardado.");
-        // Rebuild the page from the persisted preference so every initial and dynamic label
-        // starts in the same locale after a language change.
-        window.setTimeout(() => window.location.reload(), 250);
-    } catch (error) {
-        localeSelect.value = savedLocale;
-        window.dashboardI18n?.setLocale(savedLocale);
-        setFeedback(feedback, error.message, true);
-    } finally {
-        button.disabled = false;
-        localeSelect.disabled = false;
-    }
-});
-
-document.querySelector("#account-locale").addEventListener("change", () => {
-    localeInteracted = true;
-    window.dashboardI18n?.setLocale(document.querySelector("#account-locale").value);
-    languageForm.requestSubmit();
 });
 
 document.querySelectorAll(".account-settings-nav-item").forEach(link => link.addEventListener("click", () => {

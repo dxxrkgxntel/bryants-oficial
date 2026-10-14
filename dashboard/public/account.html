@@ -4,10 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#100b18">
-    <title>Settings | Bryant's Oficial</title>
+    <title>Configuración | Bryant's Oficial</title>
     <link rel="icon" type="image/png" sizes="128x128" href="/bot-avatar.png">
     <link rel="stylesheet" href="/styles.css">
-    <script src="/i18n.js" defer></script>
     <script src="/account-menu.js" defer></script>
     <script src="/account.js" defer></script>
 </head>
@@ -30,12 +29,11 @@
                 <div class="account-nav-heading">CUENTA</div>
                 <a class="account-settings-nav-item active" href="#general" aria-current="page"><span aria-hidden="true">⚙</span> General</a>
                 <a class="account-settings-nav-item" href="#profile"><span aria-hidden="true">♙</span> Perfil</a>
-                <a class="account-settings-nav-item" href="#language"><span aria-hidden="true">文</span> Idioma</a>
                 <a class="account-settings-nav-item" href="#rewards"><span aria-hidden="true">♢</span> Recompensas</a>
             </aside>
 
             <main class="account-settings-main">
-                <div class="account-breadcrumb">Settings <span>›</span> General</div>
+                <div class="account-breadcrumb">Configuración <span>›</span> General</div>
                 <div class="account-page-heading"><div><div class="eyebrow">CUENTA</div><h1>General</h1></div></div>
 
                 <section id="general" class="settings-card account-section">
@@ -65,16 +63,6 @@
                         <div class="account-links-heading"><div><strong>Enlaces de perfil</strong><small>Añade hasta cinco enlaces públicos.</small></div><button id="account-add-link" class="quiet-button" type="button">＋ Añadir enlace</button></div>
                         <div id="account-links" class="account-links-list"></div>
                         <div class="form-actions"><button class="primary-button" type="submit">Guardar perfil</button><span id="profile-feedback" class="save-feedback" role="status" aria-live="polite"></span></div>
-                    </form>
-                </section>
-
-                <section id="language" class="settings-card account-section">
-                    <div class="account-section-heading"><div class="account-section-icon" aria-hidden="true">文</div><div><h2>Idioma</h2><p>Elige tu idioma preferido para la dashboard.</p></div></div>
-                    <form id="account-language-form" class="account-edit-form">
-                        <label class="field account-full-field"><span>Idioma preferido</span><select id="account-locale" name="locale" required>
-                            <option value="en">🇺🇸 English</option><option value="de">🇩🇪 Deutsch</option><option value="es">🇪🇸 Español</option><option value="pt">🇵🇹 Português</option><option value="fr">🇫🇷 Français</option><option value="pl">🇵🇱 Polski</option><option value="tr">🇹🇷 Türkçe</option><option value="ru">🇷🇺 Русский</option><option value="it">🇮🇹 Italiano</option><option value="nl">🇳🇱 Nederlands</option>
-                        </select><small class="account-field-hint">Tu preferencia queda guardada en tu cuenta.</small></label>
-                        <div class="form-actions"><button class="primary-button" type="submit">Guardar idioma</button><span id="language-feedback" class="save-feedback" role="status" aria-live="polite"></span></div>
                     </form>
                 </section>
 

@@ -225,6 +225,7 @@ function cleanFields(fields, input, requireAll = false) {
 
     const cleaned = {};
     for (const field of fields) {
+        if (field.type === "section") continue;
         if (!Object.prototype.hasOwnProperty.call(input, field.name)) {
             if (requireAll && !field.optional) throw new Error(`Completa el campo ${field.label}.`);
             continue;
@@ -449,7 +450,6 @@ app.get("/auth/login", (req, res) => {
     const state = crypto.randomBytes(32).toString("hex");
     req.session.oauthState = state;
     req.session.oauthPopup = req.query.popup === "1";
-    req.session.oauthLocale = supportedAccountLocales.has(req.query.locale) ? req.query.locale : "es";
     req.session.save(error => {
         if (error) return res.status(500).send("No se pudo iniciar el acceso con Discord.");
         return res.redirect(makeOAuthUrl(state));
@@ -460,14 +460,12 @@ app.get("/auth/callback", async (req, res) => {
     const { code, state, error } = req.query;
     const expectedState = req.session.oauthState;
     const isPopup = req.session.oauthPopup === true;
-    const requestedLocale = supportedAccountLocales.has(req.session.oauthLocale) ? req.session.oauthLocale : "es";
     delete req.session.oauthState;
     delete req.session.oauthPopup;
-    delete req.session.oauthLocale;
 
     if (error || !code || !expectedState || state !== expectedState) {
         return res.redirect(isPopup
-            ? `/auth/popup-result?status=failed&locale=${encodeURIComponent(requestedLocale)}`
+            ? "/auth/popup-result?status=failed"
             : "/?login=failed");
     }
 
@@ -504,13 +502,13 @@ app.get("/auth/callback", async (req, res) => {
         return req.session.save(error => {
             if (error) return res.status(500).send("No se pudo guardar la sesión.");
             return res.redirect(isPopup
-                ? `/auth/popup-result?status=success&locale=${encodeURIComponent(requestedLocale)}`
+                ? "/auth/popup-result?status=success"
                 : "/");
         });
     } catch (requestError) {
         console.error("[Dashboard OAuth] Error al iniciar sesión:", requestError.message);
         return res.redirect(isPopup
-            ? `/auth/popup-result?status=failed&locale=${encodeURIComponent(requestedLocale)}`
+            ? "/auth/popup-result?status=failed"
             : "/?login=failed");
     }
 });
@@ -527,13 +525,10 @@ app.get("/api/me", (req, res) => {
         : { user: null });
 });
 
-const supportedAccountLocales = new Set(["en", "es", "de", "pt", "fr", "pl", "tr", "ru", "it", "nl"]);
-
 app.get("/api/account/settings", requireLogin, async (req, res) => {
     res.set("Cache-Control", "no-store");
     const settings = await DashboardAccount.findOne({ userId: req.session.user.id }).lean();
     return res.json({
-        locale: settings?.locale || "es",
         bio: settings?.bio || "",
         links: settings?.links || []
     });
@@ -541,12 +536,8 @@ app.get("/api/account/settings", requireLogin, async (req, res) => {
 
 app.put("/api/account/settings", requireLogin, requireCsrf, async (req, res) => {
     res.set("Cache-Control", "no-store");
-    const { locale, bio, links } = req.body || {};
+    const { bio, links } = req.body || {};
     const update = {};
-    if (locale !== undefined) {
-        if (!supportedAccountLocales.has(locale)) return res.status(400).json({ error: "Elige un idioma disponible." });
-        update.locale = locale;
-    }
     if (bio !== undefined) {
         if (typeof bio !== "string" || bio.length > 2000) return res.status(400).json({ error: "La descripción debe tener como máximo 2.000 caracteres." });
         update.bio = bio.trim();
@@ -575,7 +566,7 @@ app.put("/api/account/settings", requireLogin, requireCsrf, async (req, res) => 
         { $set: update },
         { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
     ).lean();
-    return res.json({ ok: true, locale: settings.locale, bio: settings.bio, links: settings.links });
+    return res.json({ ok: true, bio: settings.bio, links: settings.links });
 });
 
 const REFERRAL_REWARD = 1000;

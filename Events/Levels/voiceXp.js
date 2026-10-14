@@ -251,7 +251,7 @@ module.exports = {
                                 await economy.save();
 
                                 const levelChannel = guild.channels.cache.get(levelConfig?.levelChannel);
-                                await sendLevelNotification(levelChannel, levelConfig, "level", {
+                                await sendLevelNotification(levelChannel, levelConfig, "voice", {
                                     usuario: `${member}`,
                                     username: member.user.username,
                                     userTag: member.user.tag || member.user.username,

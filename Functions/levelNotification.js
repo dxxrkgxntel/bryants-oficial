@@ -4,10 +4,12 @@ const { buildV2MessageComponents } = require("./buildV2MessageComponents");
 
 function buildLevelNotification(config, kind, values) {
     if (!config) return null;
-    const titleField = kind === "role" ? "levelRoleTitle" : "levelUpTitle";
-    const descriptionField = kind === "role" ? "levelRoleDescription" : "levelUpDescription";
-    const title = renderConfiguredMessage(config[titleField], values);
-    const description = renderConfiguredMessage(config[descriptionField], values);
+    const titleField = kind === "role" ? "levelRoleTitle" : kind === "voice" ? "voiceLevelTitle" : "messageLevelTitle";
+    const descriptionField = kind === "role" ? "levelRoleDescription" : kind === "voice" ? "voiceLevelDescription" : "messageLevelDescription";
+    const legacyTitle = kind === "role" ? undefined : config.levelUpTitle;
+    const legacyDescription = kind === "role" ? undefined : config.levelUpDescription;
+    const title = renderConfiguredMessage(config[titleField] === undefined ? legacyTitle : config[titleField], values);
+    const description = renderConfiguredMessage(config[descriptionField] === undefined ? legacyDescription : config[descriptionField], values);
     const components = buildV2MessageComponents({ title, description, banner: config.levelImage, thumbnail: config.levelThumbnail });
     if (!components.length) return null;
 
