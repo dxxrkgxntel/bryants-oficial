@@ -445,6 +445,10 @@ function serialize(document) {
 
 app.get("/healthz", (_req, res) => res.json({ status: "ok" }));
 
+app.get("/invitar", (_req, res) => {
+    res.redirect(302, "https://discord.com/oauth2/authorize?client_id=1497973126569656540&permissions=8&integration_type=0&scope=bot");
+});
+
 app.get("/auth/login", (req, res) => {
     if (!getRedirectUri()) return res.status(503).send("Activa la dirección web de FadeHost para continuar.");
     const state = crypto.randomBytes(32).toString("hex");
