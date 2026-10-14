@@ -8,6 +8,93 @@ let resources = { channels: [], roles: [] };
 let configState = null;
 let currentModule = "";
 let activeGuild = null;
+let currentModules = null;
+let favoritesOnly = false;
+let activeFormGuard = null;
+let favoriteModules = new Set();
+
+function loadFavorites() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(`bryants-dashboard-favorites:${guildId}`) || "[]");
+        favoriteModules = new Set(Array.isArray(stored) ? stored.filter(key => typeof key === "string") : []);
+    } catch {
+        favoriteModules = new Set();
+    }
+}
+
+function saveFavorites() {
+    try { localStorage.setItem(`bryants-dashboard-favorites:${guildId}`, JSON.stringify([...favoriteModules])); } catch { /* Storage may be disabled by the browser. */ }
+}
+
+function normalizeSearch(value) {
+    return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es").trim();
+}
+
+function applyModuleFilter() {
+    const query = normalizeSearch(document.querySelector("#module-search")?.value);
+    let visibleCount = 0;
+    nav.querySelectorAll(".nav-entry").forEach(entry => {
+        const visible = (!favoritesOnly || favoriteModules.has(entry.dataset.module))
+            && (!query || normalizeSearch(entry.dataset.search).includes(query));
+        entry.hidden = !visible;
+        if (visible) visibleCount += 1;
+    });
+    nav.querySelectorAll(".nav-heading").forEach(heading => {
+        heading.hidden = ![...nav.querySelectorAll(".nav-entry")].some(entry => entry.dataset.group === heading.dataset.category && !entry.hidden);
+    });
+    const homeButton = nav.querySelector('[data-module="__home"]');
+    if (homeButton) homeButton.hidden = favoritesOnly || Boolean(query);
+    const empty = nav.querySelector(".nav-empty");
+    if (empty) {
+        empty.hidden = visibleCount > 0;
+        empty.textContent = favoritesOnly && favoriteModules.size === 0
+            ? "Aún no tienes favoritos en este servidor."
+            : favoritesOnly ? "No hay favoritos que coincidan con la búsqueda." : "No hay módulos que coincidan.";
+    }
+}
+
+function formSnapshot(form, fields) {
+    try { return JSON.stringify(readForm(form, fields)); } catch { return null; }
+}
+
+function formIsDirty() {
+    return Boolean(activeFormGuard?.form.isConnected && formSnapshot(activeFormGuard.form, activeFormGuard.fields) !== activeFormGuard.baseline);
+}
+
+function registerFormGuard(form, fields) {
+    const indicator = form.querySelector(".unsaved-indicator");
+    const guard = { form, fields, baseline: formSnapshot(form, fields), update: null };
+    guard.update = () => {
+        const dirty = formSnapshot(form, fields) !== guard.baseline;
+        if (indicator) indicator.hidden = !dirty;
+        form.classList.toggle("has-unsaved-changes", dirty);
+    };
+    activeFormGuard = guard;
+    form.addEventListener("input", guard.update);
+    form.addEventListener("change", guard.update);
+    form.addEventListener("click", event => {
+        if (event.target.closest("[data-add-setup], [data-remove-setup]")) window.setTimeout(guard.update, 0);
+    });
+}
+
+function confirmDiscardChanges() {
+    if (!formIsDirty()) return true;
+    if (!window.confirm("Tienes cambios sin guardar. ¿Quieres descartarlos y continuar?")) return false;
+    activeFormGuard = null;
+    return true;
+}
+
+function navigateToHome() {
+    if (!confirmDiscardChanges()) return;
+    activeFormGuard = null;
+    renderHome(activeGuild, currentModules);
+}
+
+function navigateToModule(key, modules = currentModules) {
+    if (!confirmDiscardChanges()) return;
+    activeFormGuard = null;
+    renderModule(key, modules);
+}
 
 function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
@@ -44,6 +131,7 @@ function showSavedState(form) {
 }
 
 function renderHome(guild, modules) {
+    currentModule = "__home";
     nav.querySelectorAll(".nav-item").forEach(button => {
         const active = button.dataset.module === "__home";
         button.classList.toggle("active", active);
@@ -52,30 +140,36 @@ function renderHome(guild, modules) {
     });
     const entries = [...Object.entries(modules.configurations), ...Object.entries(modules.lists)];
     const total = entries.length;
-    const configured = entries.filter(([key]) => {
+    const isModuleConfigured = key => {
         if (modules.lists[key]) return (configState.lists[key] || []).length > 0;
         return Boolean(configState.configurations[key]?.configured);
-    }).length;
+    };
+    const configured = entries.filter(([key]) => isModuleConfigured(key)).length;
+    const pendingEntries = entries.filter(([key]) => !isModuleConfigured(key));
     const categories = categoriesOrder.map(category => {
         const group = entries.filter(([, definition]) => definition.category === category);
         if (!group.length) return "";
-        const ready = group.filter(([key]) => modules.lists[key]
-            ? (configState.lists[key] || []).length > 0
-            : Boolean(configState.configurations[key]?.configured)).length;
+        const ready = group.filter(([key]) => isModuleConfigured(key)).length;
         const percent = Math.round(ready / group.length * 100);
         const firstModule = group[0][0];
-        const preview = group.slice(0, 3).map(([key, definition]) =>
-            `<button class="overview-module-link" type="button" data-overview-module="${escapeHtml(key)}">${escapeHtml(definition.title)}</button>`
+        const previewEntries = group.filter(([key]) => !isModuleConfigured(key)).slice(0, 3);
+        const visibleEntries = previewEntries.length ? previewEntries : group.slice(0, 3);
+        const preview = visibleEntries.map(([key, definition]) =>
+            `<button class="overview-module-link${isModuleConfigured(key) ? " is-configured" : " is-pending"}" type="button" data-overview-module="${escapeHtml(key)}">${escapeHtml(definition.title)}${isModuleConfigured(key) ? "" : " · pendiente"}</button>`
         ).join("");
-        const extra = group.length > 3 ? `<span class="overview-more">+${group.length - 3} sistemas</span>` : "";
+        const extraPending = Math.max(0, group.filter(([key]) => !isModuleConfigured(key)).length - visibleEntries.length);
+        const extra = extraPending ? `<span class="overview-more">+${extraPending} pendientes</span>` : (!previewEntries.length && group.length > 3 ? `<span class="overview-more">+${group.length - 3} sistemas</span>` : "");
         return `<article class="overview-card"><div class="overview-card-top"><span class="eyebrow">${escapeHtml(category)}</span><span class="overview-count">${ready}/${group.length}</span></div><div class="overview-progress"><span style="width:${percent}%"></span></div><div class="overview-module-links">${preview}${extra}</div><button class="overview-open" type="button" data-overview-module="${escapeHtml(firstModule)}">Explorar sección <span aria-hidden="true">→</span></button></article>`;
     }).join("");
     const avatar = guild?.icon
         ? `<img src="${escapeHtml(guild.icon)}" alt="" width="64" height="64">`
         : `<span aria-hidden="true">${escapeHtml((guild?.name || "S").trim().slice(0, 2).toUpperCase())}</span>`;
     document.querySelector("#page-title").textContent = "Inicio";
-    content.innerHTML = `<div class="overview-page"><section class="overview-hero"><div class="overview-server-mark">${avatar}</div><div class="overview-welcome"><div class="eyebrow">TU ESPACIO DE TRABAJO</div><h2>Todo listo para tu comunidad.</h2><p>Administra los sistemas de <strong>${escapeHtml(guild?.name || "tu servidor")}</strong> desde un solo lugar.</p></div><div class="overview-hero-glow" aria-hidden="true"></div></section><section class="overview-stats" aria-label="Resumen del servidor"><article><span>Sistemas activos</span><strong>${configured}<small> / ${total}</small></strong></article><article><span>Secciones</span><strong>${categoriesOrder.filter(category => entries.some(([, item]) => item.category === category)).length}</strong></article><article><span>Servidor</span><strong class="overview-server-name">${escapeHtml(guild?.name || "Discord")}</strong></article></section><div class="overview-section-title"><div><div class="eyebrow">PANEL DE CONTROL</div><h3>Explora tus sistemas</h3></div><span>Elige una sección para empezar</span></div><section class="overview-grid">${categories}</section></div>`;
-    content.querySelectorAll("[data-overview-module]").forEach(button => button.addEventListener("click", () => renderModule(button.dataset.overviewModule, modules)));
+    const pendingSummary = pendingEntries.length
+        ? `<section class="overview-pending"><div><span class="overview-pending-icon" aria-hidden="true">✦</span><div><strong>${pendingEntries.length} ${pendingEntries.length === 1 ? "sistema pendiente" : "sistemas pendientes"}</strong><small>Completa su configuración para dejar todo a tu gusto.</small></div></div><div class="overview-pending-links">${pendingEntries.slice(0, 5).map(([key, definition]) => `<button class="overview-pending-link" type="button" data-overview-module="${escapeHtml(key)}">${escapeHtml(definition.title)}<span>Configurar →</span></button>`).join("")}${pendingEntries.length > 5 ? `<span class="overview-more">y ${pendingEntries.length - 5} más</span>` : ""}</div></section>`
+        : `<section class="overview-all-ready"><span aria-hidden="true">✓</span><div><strong>¡Todo está configurado!</strong><small>Tus sistemas principales ya están listos.</small></div></section>`;
+    content.innerHTML = `<div class="overview-page"><section class="overview-hero"><div class="overview-server-mark">${avatar}</div><div class="overview-welcome"><div class="eyebrow">TU ESPACIO DE TRABAJO</div><h2>Todo listo para tu comunidad.</h2><p>Administra los sistemas de <strong>${escapeHtml(guild?.name || "tu servidor")}</strong> desde un solo lugar.</p></div><div class="overview-hero-glow" aria-hidden="true"></div></section><section class="overview-stats" aria-label="Resumen del servidor"><article><span>Configurados</span><strong>${configured}<small> / ${total}</small></strong></article><article><span>Por configurar</span><strong>${pendingEntries.length}</strong></article><article><span>Servidor</span><strong class="overview-server-name">${escapeHtml(guild?.name || "Discord")}</strong></article></section>${pendingSummary}<div class="overview-section-title"><div><div class="eyebrow">PANEL DE CONTROL</div><h3>Explora tus sistemas</h3></div><span>Elige una sección para empezar</span></div><section class="overview-grid">${categories}</section></div>`;
+    content.querySelectorAll("[data-overview-module]").forEach(button => button.addEventListener("click", () => navigateToModule(button.dataset.overviewModule, modules)));
     const homeImage = content.querySelector(".overview-server-mark img");
     homeImage?.addEventListener("error", () => {
         const fallback = document.createElement("span");
@@ -201,6 +295,73 @@ function renderField(field, value, prefix = "") {
     return `<label class="field" for="${id}"><span>${escapeHtml(field.label)}</span><input id="${id}" name="${escapeHtml(field.name)}" type="${inputType}" value="${escapeHtml(safeValue)}" maxlength="${field.maxLength || 2000}" ${minMax} ${required}>${help}</label>`;
 }
 
+function safePreviewImage(value) {
+    try {
+        const url = new URL(String(value || ""), window.location.href);
+        return url.protocol === "https:" ? url.href : "";
+    } catch { return ""; }
+}
+
+function validPreviewColor(value) {
+    return /^#[\da-f]{6}$/i.test(String(value || "")) ? value : "#a85be0";
+}
+
+function renderPreviewMarkup(key, values) {
+    const color = validPreviewColor(values.color);
+    const banner = safePreviewImage(values.banner);
+    const thumbnail = safePreviewImage(values.thumbnail);
+    const title = String(values.title || "");
+    const description = String(values.description || "");
+    const bannerBlock = `<div class="message-preview-banner">${banner ? `<img data-preview-image src="${escapeHtml(banner)}" alt="Vista previa del banner">` : `<span>${key === "welcome" ? "Banner de bienvenida" : "Banner de despedida"}</span>`}</div>`;
+    const thumbnailBlock = thumbnail
+        ? `<img class="message-preview-avatar" data-preview-image src="${escapeHtml(thumbnail)}" alt="Miniatura">`
+        : `<span class="message-preview-avatar placeholder">BF</span>`;
+    if (key === "welcome" || key === "leaves") {
+        const isWelcome = key === "welcome";
+        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Así se verá el mensaje en Discord</small></div><article class="discord-preview" style="--preview-accent:${color}">${bannerBlock}<div class="discord-preview-body">${thumbnailBlock}<div class="discord-preview-copy"><small>${isWelcome ? "BRYANT'S OFICIAL · NUEVA INCORPORACIÓN" : "BRYANT'S OFICIAL · DESPEDIDA"}</small><h3>${escapeHtml(title || (isWelcome ? "¡Alguien llegó al servidor!" : "Alguien salió del servidor"))}</h3><p>${escapeHtml(description || (isWelcome ? "¡Bienvenid@ a la comunidad! Nos alegra tenerte aquí." : "Gracias por compartir este tiempo con nosotros."))}</p><span>${isWelcome ? "Miembro #128" : "Hasta pronto"}</span></div></div></article></section>`;
+    }
+    if (key === "levelSettings") {
+        const image = safePreviewImage(values.image);
+        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Tarjeta de subida de nivel</small></div><article class="level-preview" style="--preview-accent:${color}"><div class="level-preview-background">${image ? `<img data-preview-image src="${escapeHtml(image)}" alt="Imagen de nivel">` : ""}</div>${thumbnailBlock}<div class="level-preview-copy"><small>BRYANT'S OFICIAL</small><strong>¡Has subido de nivel!</strong><span>Usuario de ejemplo · Nivel 5</span></div><b class="level-preview-number">05</b></article></section>`;
+    }
+    return "";
+}
+
+function previewValues(key, form) {
+    const read = name => form.elements.namedItem(name)?.value || "";
+    if (key === "welcome") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail") };
+    if (key === "leaves") return { description: read("MessageDes"), color: "#a85be0", banner: read("Banner") };
+    return { color: read("levelColor"), image: read("levelImage"), thumbnail: read("levelThumbnail") };
+}
+
+function renderPreview(key, data) {
+    if (!["welcome", "leaves", "levelSettings"].includes(key)) return "";
+    const values = key === "welcome"
+        ? { title: data.Title, description: data.MessageDes, color: data.Color, banner: data.Banner, thumbnail: data.Thumbnail }
+        : key === "leaves"
+            ? { description: data.MessageDes, color: "#a85be0", banner: data.Banner }
+            : { color: data.levelColor, image: data.levelImage, thumbnail: data.levelThumbnail };
+    return renderPreviewMarkup(key, values);
+}
+
+function updatePreview(key, form) {
+    const preview = content.querySelector(".live-preview");
+    if (!preview) return;
+    preview.outerHTML = renderPreviewMarkup(key, previewValues(key, form));
+    content.querySelectorAll("[data-preview-image]").forEach(image => image.addEventListener("error", () => {
+        if (image.classList.contains("message-preview-avatar")) {
+            const fallback = document.createElement("span");
+            fallback.className = "message-preview-avatar placeholder";
+            fallback.textContent = "BF";
+            image.replaceWith(fallback);
+        } else {
+            const fallback = document.createElement("span");
+            fallback.textContent = "No se pudo cargar la imagen";
+            image.parentElement.replaceChildren(fallback);
+        }
+    }, { once: true }));
+}
+
 function readForm(form, fields) {
     const result = {};
     for (const field of fields) {
@@ -239,26 +400,76 @@ function makeNav(modules) {
     homeButton.className = "nav-item nav-home";
     homeButton.textContent = "Inicio";
     homeButton.dataset.module = "__home";
-    homeButton.addEventListener("click", () => renderHome(activeGuild, modules));
+    homeButton.addEventListener("click", navigateToHome);
     nav.append(homeButton);
     const all = [...Object.entries(modules.configurations), ...Object.entries(modules.lists)];
-    for (const category of categoriesOrder) {
-        const group = all.filter(([, definition]) => definition.category === category);
-        if (!group.length) continue;
+    const appendHeading = category => {
         const heading = document.createElement("div");
         heading.className = "nav-heading";
         heading.textContent = category;
+        heading.dataset.category = category;
         nav.append(heading);
-        for (const [key, definition] of group) {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.className = "nav-item";
-            button.textContent = definition.title;
-            button.dataset.module = key;
-            button.addEventListener("click", () => renderModule(key, modules));
-            nav.append(button);
-        }
+    };
+    const appendEntry = (key, definition, group) => {
+        const entry = document.createElement("div");
+        entry.className = "nav-entry";
+        entry.dataset.module = key;
+        entry.dataset.group = group;
+        entry.dataset.search = `${definition.title} ${definition.category}`;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "nav-item";
+        button.textContent = definition.title;
+        button.dataset.module = key;
+        button.addEventListener("click", () => navigateToModule(key, modules));
+        const favorite = document.createElement("button");
+        favorite.type = "button";
+        favorite.className = `nav-favorite${favoriteModules.has(key) ? " is-favorite" : ""}`;
+        favorite.textContent = favoriteModules.has(key) ? "★" : "☆";
+        favorite.setAttribute("aria-label", favoriteModules.has(key) ? `Quitar ${definition.title} de favoritos` : `Añadir ${definition.title} a favoritos`);
+        favorite.setAttribute("aria-pressed", String(favoriteModules.has(key)));
+        favorite.title = favoriteModules.has(key) ? "Quitar de favoritos" : "Añadir a favoritos";
+        favorite.addEventListener("click", () => {
+            if (favoriteModules.has(key)) favoriteModules.delete(key);
+            else favoriteModules.add(key);
+            saveFavorites();
+            makeNav(modules);
+        });
+        entry.append(button, favorite);
+        nav.append(entry);
+    };
+    const pinnedEntries = all.filter(([key]) => favoriteModules.has(key));
+    if (pinnedEntries.length) {
+        appendHeading("Favoritos");
+        pinnedEntries.forEach(([key, definition]) => appendEntry(key, definition, "Favoritos"));
     }
+    for (const category of categoriesOrder) {
+        const group = all.filter(([key, definition]) => definition.category === category && !favoriteModules.has(key));
+        if (!group.length) continue;
+        appendHeading(category);
+        group.forEach(([key, definition]) => appendEntry(key, definition, category));
+    }
+    const empty = document.createElement("div");
+    empty.className = "nav-empty";
+    empty.hidden = true;
+    nav.append(empty);
+    const searchInput = document.querySelector("#module-search");
+    const favoritesToggle = document.querySelector("#favorites-toggle");
+    searchInput.oninput = applyModuleFilter;
+    favoritesToggle.onclick = () => {
+        favoritesOnly = !favoritesOnly;
+        favoritesToggle.classList.toggle("active", favoritesOnly);
+        favoritesToggle.setAttribute("aria-pressed", String(favoritesOnly));
+        favoritesToggle.textContent = favoritesOnly ? "★ Favoritos" : "☆ Favoritos";
+        applyModuleFilter();
+    };
+    nav.querySelectorAll(".nav-item").forEach(button => {
+        const active = button.dataset.module === currentModule;
+        button.classList.toggle("active", active);
+        if (active) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
+    });
+    applyModuleFilter();
 }
 
 function renderModule(key, modules) {
@@ -288,7 +499,7 @@ function renderModule(key, modules) {
         return renderField(field, value);
     }).join("");
     const description = definition.description || "Los cambios se guardan en la configuración del servidor y los canales y roles existentes se conservan.";
-    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div><span class="status-pill ${data.configured ? "configured" : "unconfigured"}">${data.configured ? "Configurado" : "Sin configurar"}</span></div><p class="card-description">${escapeHtml(description)}</p><form id="settings-form" class="fields-grid">${formFields}<div class="form-actions"><button class="primary-button" type="submit">Guardar cambios</button><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>`;
+    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div><span class="status-pill ${data.configured ? "configured" : "unconfigured"}">${data.configured ? "Configurado" : "Sin configurar"}</span></div><p class="card-description">${escapeHtml(description)}</p>${renderPreview(key, data)}<form id="settings-form" class="fields-grid">${formFields}<div class="form-actions"><button class="primary-button" type="submit">Guardar cambios</button><span class="unsaved-indicator" hidden>● Cambios sin guardar</span><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>`;
     const setupsEditor = content.querySelector("[data-setups-editor]");
     if (setupsEditor) {
         const updateSetupRows = setups => {
@@ -309,7 +520,12 @@ function renderModule(key, modules) {
             updateSetupRows(setups);
         });
     }
-    content.querySelector("#settings-form").addEventListener("submit", async event => {
+    const settingsForm = content.querySelector("#settings-form");
+    registerFormGuard(settingsForm, definition.fields);
+    updatePreview(key, settingsForm);
+    settingsForm.addEventListener("input", () => updatePreview(key, settingsForm));
+    settingsForm.addEventListener("change", () => updatePreview(key, settingsForm));
+    settingsForm.addEventListener("submit", async event => {
         event.preventDefault();
         const button = event.currentTarget.querySelector("button[type=submit]");
         const form = event.currentTarget;
@@ -347,22 +563,51 @@ function getRecordLabel(key, record, definition) {
     return record.name || record[definition.identity] || roleName || (record._id ? `Registro ${String(record._id).slice(-8)}` : "Registro sin identificar");
 }
 
+function getRecordSearchText(key, record, definition) {
+    const values = definition.fields.map(field => {
+        const value = getNested(record, field.name);
+        if (value == null) return "";
+        const options = field.type === "role" || field.type === "role-list"
+            ? resources.roles
+            : ["channel", "channel-list", "voice", "category"].includes(field.type) ? resources.channels : [];
+        if (Array.isArray(value)) return `${field.label} ${value.map(item => options.find(option => option.id === String(item))?.name || item).join(" ")}`;
+        return `${field.label} ${options.find(option => option.id === String(value))?.name || value}`;
+    }).join(" ");
+    return normalizeSearch(`${getRecordLabel(key, record, definition)} ${values}`);
+}
+
 function renderList(key, definition, editItem = null) {
     const records = configState.lists[key] || [];
     const editing = Boolean(editItem);
-    const form = `<form id="list-form" class="fields-grid">${definition.fields.map(field => renderField(field, getNested(editItem, field.name), `${key}-`)).join("")}<div class="form-actions"><button class="primary-button" type="submit">${editing ? "Guardar elemento" : "Añadir elemento"}</button>${editing ? '<button class="quiet-button" id="cancel-edit" type="button">Cancelar</button>' : ""}<span class="save-feedback" role="status" aria-live="polite"></span></div></form>`;
+    const form = `<form id="list-form" class="fields-grid">${definition.fields.map(field => renderField(field, getNested(editItem, field.name), `${key}-`)).join("")}<div class="form-actions"><button class="primary-button" type="submit">${editing ? "Guardar elemento" : "Añadir elemento"}</button>${editing ? '<button class="quiet-button" id="cancel-edit" type="button">Cancelar</button>' : ""}<span class="unsaved-indicator" hidden>● Cambios sin guardar</span><span class="save-feedback" role="status" aria-live="polite"></span></div></form>`;
     const rows = records.map(record => {
         const label = getRecordLabel(key, record, definition);
-        return `<div class="record-row"><div class="record-title">${escapeHtml(label)}</div><div class="record-actions"><button type="button" class="quiet-button" data-edit="${escapeHtml(record._id)}">Editar</button><button type="button" class="quiet-button danger-text" data-delete="${escapeHtml(record._id)}">Eliminar</button></div></div>`;
+        return `<div class="record-row" data-search="${escapeHtml(getRecordSearchText(key, record, definition))}"><div class="record-title">${escapeHtml(label)}</div><div class="record-actions"><button type="button" class="quiet-button" data-edit="${escapeHtml(record._id)}">Editar</button><button type="button" class="quiet-button danger-text" data-delete="${escapeHtml(record._id)}">Eliminar</button></div></div>`;
     }).join("");
-    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div><div class="records-list">${rows || '<p class="empty-state">Todavía no hay elementos configurados.</p>'}</div><div class="form-divider"></div><h3>${editing ? "Editar elemento" : "Añadir elemento"}</h3>${form}</article>`;
+    const search = records.length > 3 ? `<div class="list-toolbar"><span>${records.length} elementos</span><label class="record-search"><span class="sr-only">Buscar en ${escapeHtml(definition.title)}</span><input type="search" id="record-search" placeholder="Buscar en la lista…" autocomplete="off"></label></div>` : "";
+    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div>${search}<div class="records-list">${rows || '<p class="empty-state">Todavía no hay elementos configurados.</p>'}<p id="list-no-results" class="empty-state" hidden>No hay elementos que coincidan con la búsqueda.</p></div><div class="form-divider"></div><h3>${editing ? "Editar elemento" : "Añadir elemento"}</h3>${form}</article>`;
+
+    content.querySelector("#record-search")?.addEventListener("input", event => {
+        const query = normalizeSearch(event.currentTarget.value);
+        let matches = 0;
+        content.querySelectorAll(".record-row").forEach(row => {
+            const match = !query || row.dataset.search.includes(query);
+            row.hidden = !match;
+            if (match) matches += 1;
+        });
+        content.querySelector("#list-no-results").hidden = matches > 0;
+    });
 
     content.querySelectorAll("[data-edit]").forEach(button => button.addEventListener("click", () => {
+        if (!confirmDiscardChanges()) return;
+        activeFormGuard = null;
         const record = records.find(item => item._id === button.dataset.edit);
         renderList(key, definition, record);
     }));
     content.querySelectorAll("[data-delete]").forEach(button => button.addEventListener("click", async () => {
         if (!window.confirm("¿Eliminar este elemento de la configuración del servidor?")) return;
+        if (!confirmDiscardChanges()) return;
+        activeFormGuard = null;
         try {
             await api(`/api/guilds/${encodeURIComponent(guildId)}/lists/${encodeURIComponent(key)}/${encodeURIComponent(button.dataset.delete)}`, { method: "DELETE" });
             configState.lists[key] = records.filter(item => item._id !== button.dataset.delete);
@@ -370,7 +615,9 @@ function renderList(key, definition, editItem = null) {
             showNotice("Elemento eliminado.");
         } catch (error) { showNotice(error.message, true); }
     }));
-    content.querySelector("#list-form").addEventListener("submit", async event => {
+    const listForm = content.querySelector("#list-form");
+    registerFormGuard(listForm, definition.fields);
+    listForm.addEventListener("submit", async event => {
         event.preventDefault();
         const button = event.currentTarget.querySelector("button[type=submit]");
         const form = event.currentTarget;
@@ -395,10 +642,15 @@ function renderList(key, definition, editItem = null) {
             if (button.isConnected) button.disabled = false;
         }
     });
-    content.querySelector("#cancel-edit")?.addEventListener("click", () => renderList(key, definition));
+    content.querySelector("#cancel-edit")?.addEventListener("click", () => {
+        if (!confirmDiscardChanges()) return;
+        activeFormGuard = null;
+        renderList(key, definition);
+    });
 }
 
 async function initialize() {
+    loadFavorites();
     try {
         const sessionResult = await api("/api/me");
         if (!sessionResult.user) return window.location.assign("/");
@@ -431,6 +683,7 @@ async function initialize() {
         }
         resources = resourcesResult;
         configState = configResult;
+        currentModules = configResult.modules;
         makeNav(configResult.modules);
         renderHome(guild, configResult.modules);
     } catch (error) {
@@ -438,7 +691,14 @@ async function initialize() {
     }
 }
 
+window.addEventListener("beforeunload", event => {
+    if (!formIsDirty()) return;
+    event.preventDefault();
+    event.returnValue = "";
+});
+
 document.querySelector("#logout").addEventListener("click", async () => {
+    if (!confirmDiscardChanges()) return;
     try {
         await api("/auth/logout", { method: "POST" });
         window.location.assign("/");

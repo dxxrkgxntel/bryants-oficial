@@ -35,7 +35,7 @@ app.use(helmet({
         directives: {
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'"],
-            imgSrc: ["'self'", "data:", "https://cdn.discordapp.com"],
+            imgSrc: ["'self'", "data:", "https://cdn.discordapp.com", "https:"],
             scriptSrc: ["'self'"],
             connectSrc: ["'self'"]
         }
