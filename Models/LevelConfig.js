@@ -9,6 +9,20 @@ const levelConfigSchema =
 
         levelImage: String,
 
+        levelTopImage: String,
+
+        levelRankImage: String,
+
+        levelProfileImage: String,
+
+        levelGiveXpImage: String,
+
+        levelRemoveXpImage: String,
+
+        levelChannelImage: String,
+
+        levelRoleImage: String,
+
         levelThumbnail: String,
 
         levelColor: String,
