@@ -8,6 +8,9 @@ const mongoose = require("mongoose");
 const { configurations, lists } = require("./modules");
 const Poll = require("../Models/Poll");
 const PollConfig = require("../Models/PollConfig");
+const DashboardAccount = require("../Models/DashboardAccount");
+const DashboardReferral = require("../Models/DashboardReferral");
+const EconomyUser = require("../Models/EconomyUser");
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -43,7 +46,12 @@ app.use(helmet({
         }
     }
 }));
-app.use(express.json({ limit: "32kb" }));
+app.use(express.json({
+    limit: "32kb",
+    verify: (req, _res, buffer) => {
+        if (req.originalUrl === "/integrations/topgg/vote") req.rawBody = Buffer.from(buffer);
+    }
+}));
 app.use(session({
     name: "bryants_dashboard",
     secret: process.env.DASHBOARD_SESSION_SECRET,
@@ -442,6 +450,7 @@ app.get("/auth/callback", async (req, res) => {
         req.session.user = {
             id: user.id,
             username: user.global_name || user.username,
+            globalName: user.global_name || null,
             avatar: user.avatar
         };
         req.session.oauth = {
@@ -462,6 +471,259 @@ app.get("/api/me", (req, res) => {
     res.json(req.session.user
         ? { user: req.session.user, csrfToken: req.session.csrfToken }
         : { user: null });
+});
+
+const supportedAccountLocales = new Set(["en", "es", "de", "pt", "fr", "pl", "tr", "ru", "it", "nl"]);
+
+app.get("/api/account/settings", requireLogin, async (req, res) => {
+    const settings = await DashboardAccount.findOne({ userId: req.session.user.id }).lean();
+    return res.json({
+        locale: settings?.locale || "es",
+        bio: settings?.bio || "",
+        links: settings?.links || []
+    });
+});
+
+app.put("/api/account/settings", requireLogin, requireCsrf, async (req, res) => {
+    const { locale, bio, links } = req.body || {};
+    const update = {};
+    if (locale !== undefined) {
+        if (!supportedAccountLocales.has(locale)) return res.status(400).json({ error: "Elige un idioma disponible." });
+        update.locale = locale;
+    }
+    if (bio !== undefined) {
+        if (typeof bio !== "string" || bio.length > 2000) return res.status(400).json({ error: "La descripción debe tener como máximo 2.000 caracteres." });
+        update.bio = bio.trim();
+    }
+    if (links !== undefined && (!Array.isArray(links) || links.length > 5)) return res.status(400).json({ error: "Puedes guardar hasta cinco enlaces." });
+
+    const cleanLinks = [];
+    for (const link of links || []) {
+        if (!link || typeof link.label !== "string" || typeof link.url !== "string") {
+            return res.status(400).json({ error: "Revisa los enlaces del perfil." });
+        }
+        const label = link.label.trim().slice(0, 40);
+        const rawUrl = link.url.trim();
+        if (!label && !rawUrl) continue;
+        if (!label || rawUrl.length > 300) return res.status(400).json({ error: "Cada enlace necesita un nombre y una dirección válida." });
+        let parsedUrl;
+        try { parsedUrl = new URL(rawUrl); } catch { return res.status(400).json({ error: "Usa una dirección web completa, por ejemplo https://ejemplo.com." }); }
+        if (!["https:", "http:"].includes(parsedUrl.protocol)) return res.status(400).json({ error: "Los enlaces solo pueden usar HTTP o HTTPS." });
+        cleanLinks.push({ label, url: parsedUrl.toString() });
+    }
+
+    if (links !== undefined) update.links = cleanLinks;
+    if (!Object.keys(update).length) return res.status(400).json({ error: "No recibí cambios para guardar." });
+    const settings = await DashboardAccount.findOneAndUpdate(
+        { userId: req.session.user.id },
+        { $set: update },
+        { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+    ).lean();
+    return res.json({ ok: true, locale: settings.locale, bio: settings.bio, links: settings.links });
+});
+
+const REFERRAL_REWARD = 1000;
+const TOPGG_VOTE_REWARD = 250;
+const TOPGG_VOTE_COOLDOWN = 12 * 60 * 60 * 1000;
+
+function getReferralRedirectUri() {
+    if (process.env.REFERRAL_REDIRECT_URI) return process.env.REFERRAL_REDIRECT_URI;
+    if (!process.env.APP_URL) return null;
+    return new URL("/referral/callback", process.env.APP_URL).toString();
+}
+
+function secureStringEqual(left, right) {
+    const leftBuffer = Buffer.from(String(left || ""));
+    const rightBuffer = Buffer.from(String(right || ""));
+    return leftBuffer.length === rightBuffer.length && leftBuffer.length > 0 && crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function renderReferralResult(res, status) {
+    return res.redirect(`/referral-result.html?status=${encodeURIComponent(status)}`);
+}
+
+app.get("/api/account/rewards", requireLogin, async (req, res) => {
+    const userId = req.session.user.id;
+    let account = await DashboardAccount.findOne({ userId });
+    if (!account) account = await DashboardAccount.create({ userId });
+    if (!account.referralCode) {
+        for (let attempt = 0; attempt < 3 && !account.referralCode; attempt++) {
+            account.referralCode = crypto.randomBytes(7).toString("base64url");
+            try { await account.save(); }
+            catch (error) {
+                if (error.code !== 11000) throw error;
+                account = await DashboardAccount.findOne({ userId });
+                if (!account.referralCode) account.referralCode = undefined;
+            }
+        }
+        if (!account.referralCode) return res.status(503).json({ error: "No pude crear tu enlace de referido. Inténtalo de nuevo." });
+    }
+    const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+    return res.json({
+        referralCount: account.referralCount || 0,
+        voteCount: account.voteCount || 0,
+        referralUrl: new URL(`/invite/${account.referralCode}`, baseUrl).toString(),
+        referralReward: REFERRAL_REWARD,
+        voteReward: TOPGG_VOTE_REWARD,
+        voteConfigured: Boolean(process.env.TOPGG_WEBHOOK_SECRET && process.env.TOPGG_REWARD_GUILD_ID),
+        referralConfigured: Boolean(getReferralRedirectUri()),
+        voteRewardGuildId: process.env.TOPGG_REWARD_GUILD_ID || null,
+        topggUrl: `https://top.gg/bot/${encodeURIComponent(process.env.DISCORD_CLIENT_ID)}/vote`
+    });
+});
+
+app.get("/invite/:referralCode", async (req, res) => {
+    const referrer = await DashboardAccount.findOne({ referralCode: req.params.referralCode }).select("userId referralCode").lean();
+    if (!referrer) return renderReferralResult(res, "invalid");
+    const redirectUri = getReferralRedirectUri();
+    if (!redirectUri) return renderReferralResult(res, "unavailable");
+
+    const state = crypto.randomBytes(24).toString("hex");
+    req.session.referralInstall = { state, referralCode: referrer.referralCode, createdAt: Date.now() };
+    return req.session.save(error => {
+        if (error) return renderReferralResult(res, "unavailable");
+        const url = new URL("https://discord.com/oauth2/authorize");
+        url.searchParams.set("client_id", process.env.DISCORD_CLIENT_ID);
+        url.searchParams.set("response_type", "code");
+        url.searchParams.set("redirect_uri", redirectUri);
+        url.searchParams.set("scope", "identify bot applications.commands");
+        url.searchParams.set("permissions", process.env.DISCORD_BOT_PERMISSIONS || "8");
+        url.searchParams.set("integration_type", "0");
+        url.searchParams.set("state", state);
+        return res.redirect(url.toString());
+    });
+});
+
+app.get("/referral/callback", async (req, res) => {
+    const saved = req.session.referralInstall;
+    delete req.session.referralInstall;
+    if (!saved || Date.now() - saved.createdAt > 2 * 60 * 60_000 || !secureStringEqual(req.query.state, saved.state) || !req.query.code) {
+        return renderReferralResult(res, "invalid");
+    }
+    try {
+        const redirectUri = getReferralRedirectUri();
+        const tokenResponse = await fetch("https://discord.com/api/oauth2/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                grant_type: "authorization_code",
+                code: String(req.query.code),
+                redirect_uri: redirectUri,
+                client_id: process.env.DISCORD_CLIENT_ID,
+                client_secret: process.env.DISCORD_CLIENT_SECRET
+            })
+        });
+        if (!tokenResponse.ok) throw new Error("Discord rechazó el flujo de instalación.");
+        const token = await tokenResponse.json();
+        const [installer, guildId] = await Promise.all([
+            discordRequest("https://discord.com/api/v10/users/@me", token.access_token),
+            Promise.resolve(String(req.query.guild_id || ""))
+        ]);
+        if (!/^\d{17,20}$/.test(guildId)) return renderReferralResult(res, "not-added");
+
+        const memberResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${process.env.DISCORD_CLIENT_ID}`, {
+            headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
+            signal: AbortSignal.timeout(8000)
+        });
+        if (!memberResponse.ok) return renderReferralResult(res, "not-added");
+        const botMember = await memberResponse.json();
+        const joinedAt = Date.parse(botMember.joined_at || "");
+        if (!Number.isFinite(joinedAt) || Date.now() - joinedAt > 60 * 60_000 || joinedAt > Date.now() + 60_000) {
+            return renderReferralResult(res, "not-new");
+        }
+
+        const referrer = await DashboardAccount.findOne({ referralCode: saved.referralCode }).select("userId").lean();
+        if (!referrer || referrer.userId === installer.id) return renderReferralResult(res, "self");
+
+        const databaseSession = await mongoose.startSession();
+        let credited = false;
+        try {
+            await databaseSession.withTransaction(async () => {
+                const priorReferral = await DashboardReferral.exists({ inviteeId: installer.id }).session(databaseSession);
+                if (priorReferral) return;
+                await DashboardReferral.create([{
+                    referrerId: referrer.userId,
+                    inviteeId: installer.id,
+                    guildId,
+                    reward: REFERRAL_REWARD
+                }], { session: databaseSession });
+                await EconomyUser.findOneAndUpdate(
+                    { guildId, userId: referrer.userId },
+                    { $inc: { wallet: REFERRAL_REWARD }, $setOnInsert: { guildId, userId: referrer.userId } },
+                    { upsert: true, new: true, session: databaseSession }
+                );
+                await DashboardAccount.updateOne(
+                    { userId: referrer.userId },
+                    { $inc: { referralCount: 1 } },
+                    { session: databaseSession }
+                );
+                credited = true;
+            });
+        } finally {
+            await databaseSession.endSession();
+        }
+        return renderReferralResult(res, credited ? "credited" : "duplicate");
+    } catch (error) {
+        console.error("[Dashboard Referrals] No se pudo confirmar el referido:", error.message);
+        if (error.code === 11000) return renderReferralResult(res, "duplicate");
+        return renderReferralResult(res, "error");
+    }
+});
+
+app.post("/integrations/topgg/vote", async (req, res) => {
+    const secret = process.env.TOPGG_WEBHOOK_SECRET;
+    if (!secret || !process.env.TOPGG_REWARD_GUILD_ID) return res.status(503).json({ error: "Recompensas de Top.gg sin configurar." });
+
+    const authorization = String(req.get("authorization") || "");
+    let authorized = secureStringEqual(authorization, secret)
+        || (authorization.startsWith("Bearer ") && secureStringEqual(authorization.slice(7), secret));
+    const signature = req.get("x-topgg-signature");
+    if (!authorized && signature && req.rawBody) {
+        const parts = Object.fromEntries(signature.split(",").map(part => part.trim().split("=")));
+        const timestamp = Number(parts.t);
+        if (Number.isFinite(timestamp) && Math.abs(Date.now() / 1000 - timestamp) <= 300 && parts.v1) {
+            const expected = crypto.createHmac("sha256", secret).update(`${parts.t}.`).update(req.rawBody).digest("hex");
+            authorized = secureStringEqual(expected, parts.v1);
+        }
+    }
+    if (!authorized) return res.status(401).json({ error: "Firma de Top.gg no válida." });
+
+    const vote = req.body?.vote || req.body;
+    const userId = String(vote?.user || vote?.userId || "");
+    if (vote?.type === "test") return res.json({ ok: true, ignored: "test" });
+    const votedBotId = vote?.bot || vote?.botId;
+    if (votedBotId && String(votedBotId) !== String(process.env.DISCORD_CLIENT_ID)) return res.status(400).json({ error: "El voto no corresponde a este bot." });
+    if (!/^\d{17,20}$/.test(userId)) return res.status(400).json({ error: "El voto no incluye un ID de usuario válido." });
+
+    const now = new Date();
+    const cutoff = new Date(now.getTime() - TOPGG_VOTE_COOLDOWN);
+    const amount = TOPGG_VOTE_REWARD;
+    const guildId = process.env.TOPGG_REWARD_GUILD_ID;
+    const databaseSession = await mongoose.startSession();
+    let credited = false;
+    try {
+        await databaseSession.withTransaction(async () => {
+            await DashboardAccount.updateOne({ userId }, { $setOnInsert: { userId } }, { upsert: true, session: databaseSession });
+            const account = await DashboardAccount.findOneAndUpdate(
+                { userId, $or: [{ lastVoteAt: null }, { lastVoteAt: { $lte: cutoff } }] },
+                { $set: { lastVoteAt: now }, $inc: { voteCount: 1 } },
+                { new: true, session: databaseSession }
+            );
+            if (!account) return;
+            await EconomyUser.findOneAndUpdate(
+                { guildId, userId },
+                { $inc: { wallet: amount }, $setOnInsert: { guildId, userId } },
+                { upsert: true, new: true, session: databaseSession }
+            );
+            credited = true;
+        });
+    } catch (error) {
+        console.error("[Dashboard Top.gg] No se pudo acreditar el voto:", error.message);
+        return res.status(500).json({ error: "No se pudo acreditar el voto." });
+    } finally {
+        await databaseSession.endSession();
+    }
+    return res.json({ ok: true, credited });
 });
 
 app.get("/api/guilds", requireLogin, async (req, res) => {

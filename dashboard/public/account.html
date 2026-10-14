@@ -29,6 +29,8 @@
                 <div class="account-nav-heading">CUENTA</div>
                 <a class="account-settings-nav-item active" href="#general" aria-current="page"><span aria-hidden="true">⚙</span> General</a>
                 <a class="account-settings-nav-item" href="#profile"><span aria-hidden="true">♙</span> Perfil</a>
+                <a class="account-settings-nav-item" href="#language"><span aria-hidden="true">文</span> Idioma</a>
+                <a class="account-settings-nav-item" href="#rewards"><span aria-hidden="true">♢</span> Recompensas</a>
             </aside>
 
             <main class="account-settings-main">
@@ -43,8 +45,9 @@
                     <div class="account-identity-row">
                         <img id="account-profile-avatar" class="account-profile-avatar" alt="" width="48" height="48">
                         <div class="account-identity-copy"><strong id="account-profile-name">Cargando cuenta…</strong><small><span class="online-dot"></span> CONECTADA CON DISCORD</small></div>
+                        <button id="account-logout" class="quiet-button account-logout" type="button">Cerrar sesión</button>
                     </div>
-                    <p class="account-description">La dashboard usa tu cuenta de Discord para mostrar los servidores en los que puedes administrar el bot.</p>
+                    <p class="account-description">Usamos tu identidad pública de Discord para mostrar los servidores que puedes administrar. Nunca recibimos tu contraseña.</p>
                 </section>
 
                 <section id="profile" class="settings-card account-section">
@@ -52,10 +55,34 @@
                         <div class="account-section-icon" aria-hidden="true">◉</div>
                         <div><h2>Perfil de Discord</h2><p>Información básica de la cuenta conectada.</p></div>
                     </div>
-                    <div class="account-profile-details">
-                        <div><span>Nombre visible</span><strong id="account-profile-display">Cargando…</strong></div>
-                        <div><span>ID de Discord</span><strong id="account-profile-id">Cargando…</strong></div>
-                    </div>
+                    <form id="account-profile-form" class="account-edit-form">
+                        <div class="account-profile-details">
+                            <div><span>Nombre de Discord</span><strong id="account-profile-display">Cargando…</strong></div>
+                            <div><span>ID de Discord</span><strong id="account-profile-id">Cargando…</strong></div>
+                        </div>
+                        <label class="field account-full-field"><span>Acerca de mí</span><textarea id="account-bio" name="bio" maxlength="2000" rows="4" placeholder="Cuéntale algo a la comunidad…"></textarea><small class="account-field-hint"><span id="bio-count">0</span>/2000</small></label>
+                        <div class="account-links-heading"><div><strong>Enlaces de perfil</strong><small>Añade hasta cinco enlaces públicos.</small></div><button id="account-add-link" class="quiet-button" type="button">＋ Añadir enlace</button></div>
+                        <div id="account-links" class="account-links-list"></div>
+                        <div class="form-actions"><button class="primary-button" type="submit">Guardar perfil</button><span id="profile-feedback" class="save-feedback" role="status" aria-live="polite"></span></div>
+                    </form>
+                </section>
+
+                <section id="language" class="settings-card account-section">
+                    <div class="account-section-heading"><div class="account-section-icon" aria-hidden="true">文</div><div><h2>Idioma</h2><p>Elige tu idioma preferido para la dashboard.</p></div></div>
+                    <form id="account-language-form" class="account-edit-form">
+                        <label class="field account-full-field"><span>Idioma preferido</span><select id="account-locale" name="locale" required>
+                            <option value="en">🇺🇸 English</option><option value="de">🇩🇪 Deutsch</option><option value="es">🇪🇸 Español</option><option value="pt">🇵🇹 Português</option><option value="fr">🇫🇷 Français</option><option value="pl">🇵🇱 Polski</option><option value="tr">🇹🇷 Türkçe</option><option value="ru">🇷🇺 Русский</option><option value="it">🇮🇹 Italiano</option><option value="nl">🇳🇱 Nederlands</option>
+                        </select><small class="account-field-hint">Tu preferencia queda guardada en tu cuenta.</small></label>
+                        <div class="form-actions"><button class="primary-button" type="submit">Guardar idioma</button><span id="language-feedback" class="save-feedback" role="status" aria-live="polite"></span></div>
+                    </form>
+                </section>
+
+                <section id="rewards" class="settings-card account-section">
+                    <div class="account-section-heading"><div class="account-section-icon" aria-hidden="true">♢</div><div><h2>Recompensas</h2><p>Gana monedas invitando a otros usuarios y votando por el bot.</p></div></div>
+                    <div class="account-reward-grid"><article><span>Referidos confirmados · +1.000 monedas c/u</span><strong id="referral-count">—</strong></article><article><span>Votos registrados · +250 monedas c/u</span><strong id="vote-count">—</strong></article></div>
+                    <div class="account-referral-box"><label class="field"><span>Tu enlace para invitar al bot</span><input id="referral-link" type="text" readonly value="Cargando enlace…"></label><button id="copy-referral" class="quiet-button" type="button">Copiar</button></div>
+                    <p id="rewards-description" class="account-description">Cada referido cuenta cuando añade el bot a un servidor por primera vez. Los votos se verifican con Top.gg y se acreditan en el servidor configurado.</p>
+                    <a id="topgg-vote" class="primary-button account-vote-link" href="https://top.gg" target="_blank" rel="noopener noreferrer">Votar en Top.gg <span aria-hidden="true">↗</span></a>
                 </section>
 
                 <section class="settings-card account-section account-server-card">
