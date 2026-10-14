@@ -742,8 +742,12 @@ function renderModule(key, modules) {
             showNotice(key === "voiceConnection"
                 ? "Canal guardado. El bot cambiará en unos segundos."
                 : "Configuración guardada.");
-            renderModule(key, modules);
-            showSavedState(content.querySelector("#settings-form"));
+            // A save can finish after the user has navigated elsewhere. Keep the data,
+            // but never replace the newly selected module with this form's old view.
+            if (currentModule === key && form.isConnected) {
+                renderModule(key, modules);
+                showSavedState(content.querySelector("#settings-form"));
+            }
         } catch (error) {
             showNotice(error.message, true);
             setSaveFeedback(form, error.message, "error");
