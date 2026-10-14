@@ -16,8 +16,10 @@ const POLL_INTERVAL_MS = 60_000;
 const VIEWER_REFRESH_MS = 5 * 60_000;
 let accessToken = null;
 let accessTokenExpiresAt = 0;
+let twitchAccessToken = null;
+let twitchAccessTokenExpiresAt = 0;
 let pollRunning = false;
-let warnedMissingCredentials = false;
+const warnedMissingCredentials = new Set();
 
 async function kickRequest(url, options = {}) {
     const response = await fetch(url, {
@@ -54,7 +56,9 @@ function escapePlatformText(value) {
 }
 
 function renderAlert(template, stream, slug, includeViewerCount, platform = "Kick") {
-    const isTikTok = platform === "TikTok";
+    const normalizedPlatform = ["TikTok", "Twitch"].includes(platform) ? platform : "Kick";
+    const isTikTok = normalizedPlatform === "TikTok";
+    const isTwitch = normalizedPlatform === "Twitch";
     const username = String(slug || "").replace(/^@+/, "");
     const values = {
         channel: escapePlatformText(stream.broadcaster?.username || stream.channel?.slug || username),
@@ -62,7 +66,7 @@ function renderAlert(template, stream, slug, includeViewerCount, platform = "Kic
         viewers: includeViewerCount ? Number(stream.viewer_count || 0).toLocaleString("es") : "",
         category: escapePlatformText(stream.category?.name || ""),
         platform,
-        url: isTikTok ? `https://www.tiktok.com/@${encodeURIComponent(username)}/live` : `https://kick.com/${encodeURIComponent(username)}`
+        url: isTikTok ? `https://www.tiktok.com/@${encodeURIComponent(username)}/live` : isTwitch ? `https://www.twitch.tv/${encodeURIComponent(username)}` : `https://kick.com/${encodeURIComponent(username)}`
     };
     return String(template || "").replace(/\{\{(channel|title|viewers|category|platform|url)\}\}/gi, (_match, token) => values[token.toLowerCase()] ?? "").slice(0, 2000);
 }
@@ -72,7 +76,7 @@ function makeComponents(title, content, image, color) {
     const parsedColor = /^#[0-9a-f]{6}$/i.test(color || "") ? Number.parseInt(color.slice(1), 16) : 0x53FC18;
     panel.setAccentColor(parsedColor);
     if (image) panel.addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(image)));
-    panel.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title || "🔴 Directo en Kick"}`));
+    panel.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title || "🔴 Directo en vivo"}`));
     panel.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small));
     panel.addTextDisplayComponents(new TextDisplayBuilder().setContent(content || "Canal en directo."));
     return [panel];
@@ -130,6 +134,53 @@ async function getTikTokLiveInfo(username) {
             category: { name: room.category || room.game_name || "" },
             broadcaster: { username: user.nickname || user.uniqueId || normalized },
             url: `https://www.tiktok.com/@${encodeURIComponent(normalized)}/live`
+        }
+    };
+}
+
+async function getTwitchAccessToken() {
+    if (twitchAccessToken && twitchAccessTokenExpiresAt > Date.now() + 30_000) return twitchAccessToken;
+    const clientId = process.env.TWITCH_CLIENT_ID;
+    const clientSecret = process.env.TWITCH_CLIENT_SECRET;
+    if (!clientId || !clientSecret) throw new Error("Faltan TWITCH_CLIENT_ID o TWITCH_CLIENT_SECRET.");
+    const body = new URLSearchParams({ client_id: clientId, client_secret: clientSecret, grant_type: "client_credentials" });
+    const response = await fetch("https://id.twitch.tv/oauth2/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body,
+        signal: AbortSignal.timeout(12_000)
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.access_token) throw new Error(`No pude autenticarme con Twitch (${response.status}).`);
+    twitchAccessToken = payload.access_token;
+    twitchAccessTokenExpiresAt = Date.now() + (Number(payload.expires_in) || 3600) * 1000;
+    return twitchAccessToken;
+}
+
+async function getTwitchLiveInfo(login) {
+    const normalized = String(login || "").trim().replace(/^@+/, "").toLowerCase();
+    if (!/^[a-z0-9_]{1,25}$/.test(normalized)) throw new Error("El usuario de Twitch no tiene un formato válido.");
+    const clientId = process.env.TWITCH_CLIENT_ID;
+    const token = await getTwitchAccessToken();
+    const url = new URL("https://api.twitch.tv/helix/streams");
+    url.searchParams.set("user_login", normalized);
+    const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}`, "Client-Id": clientId, Accept: "application/json" },
+        signal: AbortSignal.timeout(12_000)
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(`Twitch API respondió ${response.status}${payload?.message ? `: ${payload.message}` : ""}.`);
+    const data = payload?.data?.[0];
+    if (!data) return { stream: null };
+    return {
+        stream: {
+            id: String(data.id),
+            stream_title: data.title || "En directo",
+            viewer_count: Number(data.viewer_count || 0),
+            category: { name: data.game_name || "" },
+            broadcaster: { username: data.user_name || normalized },
+            start_time: data.started_at,
+            url: `https://www.twitch.tv/${encodeURIComponent(data.user_login || normalized)}`
         }
     };
 }
@@ -219,7 +270,7 @@ async function checkAlert(client, alert) {
         state.channelId = alert.channelId;
         state.messageId = null;
     }
-    const channelInfo = platform === "TikTok" ? await getTikTokLiveInfo(alert.slug) : await getKickStream(alert.slug);
+    const channelInfo = platform === "TikTok" ? await getTikTokLiveInfo(alert.slug) : platform === "Twitch" ? await getTwitchLiveInfo(alert.slug) : await getKickStream(alert.slug);
     if (platform === "Kick" && !channelInfo) {
         console.warn(`[SocialAlerts] Kick ${alert.slug} (${alert.guildId}): la API no devolvió ningún canal para ese nombre.`);
         return;
@@ -251,14 +302,16 @@ async function poll(client) {
     if (pollRunning) return;
     pollRunning = true;
     try {
-        const alerts = await SocialAlert.find({ platform: { $in: ["Kick", "TikTok"] }, enabled: { $ne: false } }).lean();
+        const alerts = await SocialAlert.find({ platform: { $in: ["Kick", "TikTok", "Twitch"] }, enabled: { $ne: false } }).lean();
         console.info(`[SocialAlerts] Revisando ${alerts.length} alerta(s) activa(s).`);
         for (const alert of alerts) {
             try { await checkAlert(client, alert); }
             catch (error) {
-                if (!warnedMissingCredentials || !/KICK_CLIENT_ID|KICK_CLIENT_SECRET/.test(error.message)) {
+                const platform = alert.platform || "Kick";
+                const missingCredentials = error.message.startsWith("Faltan ") && error.message.includes("_CLIENT_");
+                if (!missingCredentials || !warnedMissingCredentials.has(platform)) {
                     console.error(`[SocialAlerts] ${alert.platform || "Kick"} ${alert.slug} (${alert.guildId}):`, error.message);
-                    if (/KICK_CLIENT_ID|KICK_CLIENT_SECRET/.test(error.message)) warnedMissingCredentials = true;
+                    if (missingCredentials) warnedMissingCredentials.add(platform);
                 }
             }
         }
@@ -270,7 +323,7 @@ async function poll(client) {
 }
 
 module.exports = function startSocialAlerts(client) {
-    console.info("[SocialAlerts] Monitor de alertas de Kick y TikTok iniciado; comprobación cada 60 segundos.");
+    console.info("[SocialAlerts] Monitor de alertas de Kick, TikTok y Twitch iniciado; comprobación cada 60 segundos.");
     setTimeout(() => poll(client), 15_000);
     const timer = setInterval(() => poll(client), POLL_INTERVAL_MS);
     timer.unref?.();

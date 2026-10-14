@@ -503,12 +503,14 @@ function renderPreviewMarkup(key, values) {
 
     if (key === "socialAlerts") {
         const alertColor = /^#[\da-f]{6}$/i.test(String(values.color || "")) ? values.color : "#53fc18";
-        const platform = values.platform === "TikTok" ? "TikTok" : "Kick";
-        const sampleValues = platform === "TikTok" ? { channel: "usuario_demo", platform, url: "https://www.tiktok.com/@usuario_demo/live" } : { platform };
+        const platform = ["TikTok", "Twitch"].includes(values.platform) ? values.platform : "Kick";
+        const sampleLogin = platform === "TikTok" ? "usuario_demo" : platform === "Twitch" ? "streamer_demo" : "CanalDemo";
+        const sampleUrl = platform === "TikTok" ? "https://www.tiktok.com/@usuario_demo/live" : platform === "Twitch" ? "https://www.twitch.tv/streamer_demo" : "https://kick.com/CanalDemo";
+        const sampleValues = { channel: sampleLogin, platform, url: sampleUrl };
         const alertTitle = renderPreviewTemplate(values.title, sampleValues).trim();
         const alertMessage = renderPreviewTemplate(values.description, sampleValues).trim();
         const avatar = safePreviewImage(values.avatarUrl);
-        const sampleChannel = platform === "TikTok" ? "usuario_demo" : "CanalDemo";
+        const sampleChannel = sampleLogin;
         const author = escapeHtml(values.displayName || sampleChannel);
         const avatarBlock = avatar
             ? `<img class="message-preview-avatar" data-preview-image src="${escapeHtml(avatar)}" alt="Avatar configurado">`
@@ -975,8 +977,10 @@ function wireKickChannelPickers(form) {
         let requestId = 0;
 
         const setStatus = message => { status.textContent = message; };
-        const isTikTok = () => socialPicker && platformSelect?.value === "TikTok";
-        const updateTikTokValue = () => {
+        const isManualPlatform = () => socialPicker && ["TikTok", "Twitch"].includes(platformSelect?.value);
+        const updateManualValue = () => {
+            const platform = platformSelect.value;
+            const platformName = platform === "TikTok" ? "TikTok" : "Twitch";
             const username = queryInput.value.trim().replace(/^@+/, "");
             slugInput.value = username;
             results.hidden = true;
@@ -984,24 +988,25 @@ function wireKickChannelPickers(form) {
             selected.replaceChildren();
             if (username) {
                 const description = document.createElement("span");
-                description.textContent = `Usuario seleccionado: @${username} · tiktok.com/@${username}`;
+                description.textContent = `Usuario seleccionado: @${username} · ${platform === "TikTok" ? `tiktok.com/@${username}` : `twitch.tv/${username}`}`;
                 selected.append(description);
                 selected.hidden = false;
                 setStatus("");
             } else {
                 selected.hidden = true;
-                setStatus("Escribe el usuario de TikTok, con o sin @.");
+                setStatus(`Escribe el usuario de ${platformName}, con o sin @.`);
             }
             slugInput.dispatchEvent(new Event("input", { bubbles: true }));
             slugInput.dispatchEvent(new Event("change", { bubbles: true }));
         };
         const syncPlatform = () => {
             if (!socialPicker) return;
-            const tiktok = isTikTok();
-            label.textContent = tiktok ? "Usuario de TikTok" : "Canal de Kick";
-            queryInput.placeholder = tiktok ? "Escribe el usuario de TikTok" : "Buscar un canal de Kick";
+            const platform = platformSelect.value;
+            const manual = ["TikTok", "Twitch"].includes(platform);
+            label.textContent = platform === "TikTok" ? "Usuario de TikTok" : platform === "Twitch" ? "Usuario de Twitch" : "Canal de Kick";
+            queryInput.placeholder = manual ? `Escribe el usuario de ${platform}` : "Buscar un canal de Kick";
             queryInput.setAttribute("aria-label", label.textContent);
-            if (tiktok) updateTikTokValue();
+            if (manual) updateManualValue();
             else {
                 slugInput.value = "";
                 selected.hidden = true;
@@ -1106,7 +1111,7 @@ function wireKickChannelPickers(form) {
         };
 
         queryInput.addEventListener("input", () => {
-            if (isTikTok()) { updateTikTokValue(); return; }
+            if (isManualPlatform()) { updateManualValue(); return; }
             slugInput.value = "";
             selected.hidden = true;
             slugInput.dispatchEvent(new Event("input", { bubbles: true }));
@@ -1114,7 +1119,7 @@ function wireKickChannelPickers(form) {
             searchTimer = window.setTimeout(() => searchChannels(queryInput.value), 300);
         });
         queryInput.addEventListener("focus", () => {
-            if (isTikTok()) return;
+            if (isManualPlatform()) return;
             if (queryInput.value.trim().length >= 3 && !slugInput.value) searchChannels(queryInput.value);
         });
         platformSelect?.addEventListener("change", syncPlatform);
@@ -1124,7 +1129,7 @@ function wireKickChannelPickers(form) {
                 queryInput.setAttribute("aria-expanded", "false");
             }
         });
-        if (socialPicker && isTikTok()) updateTikTokValue();
+        if (socialPicker && isManualPlatform()) updateManualValue();
         else if (queryInput.value.trim().length >= 3 && slugInput.value) searchChannels(queryInput.value, true);
     });
 }

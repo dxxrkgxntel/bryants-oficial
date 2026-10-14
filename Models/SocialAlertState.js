@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const socialAlertStateSchema = new mongoose.Schema({
     guildId: { type: String, required: true },
     alertId: { type: mongoose.Schema.Types.ObjectId, required: true },
-    platform: { type: String, enum: ["Kick", "TikTok"], default: "Kick" },
+    platform: { type: String, enum: ["Kick", "TikTok", "Twitch"], default: "Kick" },
     channelId: { type: String, required: true },
     lastStreamId: { type: String, default: null },
     lastViewers: { type: Number, default: null },
