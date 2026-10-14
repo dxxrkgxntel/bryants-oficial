@@ -4,6 +4,8 @@ const publicNav = document.querySelector("#public-nav");
 const serversSection = document.querySelector("#servers-section");
 const serversList = document.querySelector("#servers");
 const userArea = document.querySelector("#user-area");
+let dashboardLoadSequence = 0;
+let loginRefreshPromise = null;
 
 function showError(message) {
     const error = document.querySelector("#servers-error");
@@ -11,7 +13,8 @@ function showError(message) {
     error.hidden = false;
 }
 
-async function loadDashboard() {
+async function loadDashboard({ waitForSession = false } = {}) {
+    const requestId = ++dashboardLoadSequence;
     const params = new URLSearchParams(window.location.search);
     if (params.get("login") === "failed") {
         document.querySelector("#login-error").hidden = false;
@@ -19,8 +22,14 @@ async function loadDashboard() {
     }
 
     try {
-        const sessionResponse = await fetch("/api/me", { credentials: "same-origin" });
-        const session = await sessionResponse.json();
+        let session;
+        for (let attempt = 0; attempt < (waitForSession ? 6 : 1); attempt += 1) {
+            const sessionResponse = await fetch("/api/me", { credentials: "same-origin", cache: "no-store" });
+            session = await sessionResponse.json();
+            if (session.user || !waitForSession) break;
+            await new Promise(resolve => window.setTimeout(resolve, 250));
+        }
+        if (requestId !== dashboardLoadSequence) return;
         if (!session.user) return;
 
         document.body.classList.add("server-selection");
@@ -30,9 +39,13 @@ async function loadDashboard() {
         serversSection.hidden = false;
         userArea.hidden = false;
         window.mountAccountMenu(userArea, session.user, showError);
+        serversList.replaceChildren();
+        document.querySelector("#servers-error").hidden = true;
+        document.querySelector("#empty-state").hidden = true;
 
-        const response = await fetch("/api/guilds", { credentials: "same-origin" });
+        const response = await fetch("/api/guilds", { credentials: "same-origin", cache: "no-store" });
         const result = await response.json();
+        if (requestId !== dashboardLoadSequence) return;
         if (!response.ok) return showError(result.error || "No pude cargar los servidores.");
 
         try {
@@ -73,8 +86,15 @@ async function loadDashboard() {
             serversList.append(card);
         }
     } catch {
+        if (requestId !== dashboardLoadSequence) return;
         showError("No pude conectar con la dashboard. Recarga la página e inténtalo de nuevo.");
     }
 }
+
+window.refreshDashboardAfterLogin = () => {
+    if (loginRefreshPromise) return loginRefreshPromise;
+    loginRefreshPromise = loadDashboard({ waitForSession: true }).finally(() => { loginRefreshPromise = null; });
+    return loginRefreshPromise;
+};
 
 loadDashboard();

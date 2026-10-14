@@ -19,13 +19,18 @@ window.mountAccountMenu = function (container, user, onError = message => window
     avatar.src = user.avatar
         ? `https://cdn.discordapp.com/avatars/${encodeURIComponent(user.id)}/${encodeURIComponent(user.avatar)}.${user.avatar.startsWith("a_") ? "gif" : "png"}?size=64`
         : `https://cdn.discordapp.com/embed/avatars/${defaultAvatarIndex}.png`;
-    const username = document.createElement("span");
+    const identity = document.createElement("span");
+    identity.className = "account-identity";
+    const status = document.createElement("small");
+    status.textContent = "Sesión iniciada como";
+    const username = document.createElement("strong");
     username.textContent = user.username;
+    identity.append(status, username);
     const chevron = document.createElement("span");
     chevron.className = "account-chevron";
     chevron.setAttribute("aria-hidden", "true");
     chevron.textContent = "⌄";
-    trigger.append(avatar, username, chevron);
+    trigger.append(avatar, identity, chevron);
 
     const dropdown = document.createElement("div");
     dropdown.className = "account-dropdown";

@@ -23,8 +23,18 @@
         });
     });
 
+    const completeLogin = () => window.refreshDashboardAfterLogin?.();
     window.addEventListener("message", event => {
         if (event.origin !== window.location.origin || event.data?.type !== "bryants-discord-login-complete") return;
-        window.location.reload();
+        completeLogin();
     });
+    window.addEventListener("storage", event => {
+        if (event.key === "bryants-discord-login-complete") completeLogin();
+    });
+    if ("BroadcastChannel" in window) {
+        const loginChannel = new BroadcastChannel("bryants-discord-login");
+        loginChannel.addEventListener("message", event => {
+            if (event.data?.type === "bryants-discord-login-complete") completeLogin();
+        });
+    }
 })();

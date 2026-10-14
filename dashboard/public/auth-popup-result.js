@@ -50,6 +50,16 @@
         title.textContent = localeStrings.success;
         userLine.textContent = localeStrings.user(username);
         note.textContent = localeStrings.closing;
+        if ("BroadcastChannel" in window) {
+            const loginChannel = new BroadcastChannel("bryants-discord-login");
+            loginChannel.postMessage({ type: "bryants-discord-login-complete" });
+            loginChannel.close();
+        }
+        try {
+            localStorage.setItem("bryants-discord-login-complete", `${Date.now()}-${Math.random()}`);
+        } catch {
+            // postMessage and BroadcastChannel still cover browsers that block storage.
+        }
         if (window.opener && !window.opener.closed) {
             window.opener.postMessage({ type: "bryants-discord-login-complete" }, window.location.origin);
         }
