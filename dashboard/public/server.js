@@ -749,12 +749,18 @@ async function initialize() {
         if (!sessionResult.user) return window.location.assign("/");
         csrfToken = sessionResult.csrfToken;
         window.mountAccountMenu(document.querySelector("#header-account"), sessionResult.user, message => showNotice(message, true));
-        const [guildsResult, resourcesResult, configResult] = await Promise.all([
-            api("/api/guilds"),
+        const [resourcesResult, configResult] = await Promise.all([
             api(`/api/guilds/${encodeURIComponent(guildId)}/resources`),
             api(`/api/guilds/${encodeURIComponent(guildId)}/config`)
         ]);
-        const guild = guildsResult.guilds.find(item => item.id === guildId);
+        let cachedGuilds = [];
+        try {
+            const savedGuilds = JSON.parse(sessionStorage.getItem("bryants-dashboard:guilds") || "[]");
+            if (Array.isArray(savedGuilds)) cachedGuilds = savedGuilds;
+        } catch {
+            // A direct link or restricted browser storage can omit the cached server preview.
+        }
+        const guild = cachedGuilds.find(item => item?.id === guildId) || null;
         activeGuild = guild || null;
         const serverName = guild?.name || "Servidor de Discord";
         const avatar = document.querySelector("#server-avatar");

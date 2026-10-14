@@ -35,6 +35,12 @@ async function loadDashboard() {
         const result = await response.json();
         if (!response.ok) return showError(result.error || "No pude cargar los servidores.");
 
+        try {
+            sessionStorage.setItem("bryants-dashboard:guilds", JSON.stringify(result.guilds));
+        } catch {
+            // La selección de servidor sigue funcionando aunque el navegador bloquee el almacenamiento local.
+        }
+
         if (result.guilds.length === 0) {
             document.querySelector("#empty-state").hidden = false;
             return;

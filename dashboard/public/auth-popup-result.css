@@ -1,0 +1,12 @@
+:root { color-scheme: dark; font-family: Inter, "Segoe UI", Arial, sans-serif; background: #0b0810; color: #f7f1fb; }
+* { box-sizing: border-box; }
+body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; background: radial-gradient(ellipse at 50% 0%, #321241 0%, #170e20 45%, #0b0810 82%); }
+.result-card { width: min(100%, 410px); min-height: 320px; padding: 44px 32px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border: 1px solid #382842; border-radius: 28px; background: rgba(12, 10, 15, .92); box-shadow: 0 24px 80px #0008; }
+.result-mark { width: 68px; height: 68px; display: grid; place-items: center; margin-bottom: 22px; border: 2px solid #30daa0; border-radius: 22px; color: #30daa0; font-size: 36px; font-weight: 700; box-shadow: 0 0 35px #30daa033; }
+.result-mark.failed { border-color: #ff7088; color: #ff7088; box-shadow: 0 0 35px #ff708833; }
+h1 { margin: 0; font-size: clamp(23px, 6vw, 29px); letter-spacing: -.04em; }
+p { color: #aaa1b4; line-height: 1.6; }
+#result-user { margin: 12px 0 0; color: #e3d9eb; }
+#result-note { margin: 14px 0 0; font-size: 14px; }
+button { margin-top: 18px; padding: 12px 20px; border: 1px solid #604076; border-radius: 12px; color: white; background: #752eb1; font: inherit; font-weight: 650; cursor: pointer; }
+button:hover { background: #8b3bca; }

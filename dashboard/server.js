@@ -414,6 +414,8 @@ app.get("/auth/login", (req, res) => {
     if (!getRedirectUri()) return res.status(503).send("Activa la dirección web de FadeHost para continuar.");
     const state = crypto.randomBytes(32).toString("hex");
     req.session.oauthState = state;
+    req.session.oauthPopup = req.query.popup === "1";
+    req.session.oauthLocale = supportedAccountLocales.has(req.query.locale) ? req.query.locale : "es";
     req.session.save(error => {
         if (error) return res.status(500).send("No se pudo iniciar el acceso con Discord.");
         return res.redirect(makeOAuthUrl(state));
@@ -423,10 +425,16 @@ app.get("/auth/login", (req, res) => {
 app.get("/auth/callback", async (req, res) => {
     const { code, state, error } = req.query;
     const expectedState = req.session.oauthState;
+    const isPopup = req.session.oauthPopup === true;
+    const requestedLocale = supportedAccountLocales.has(req.session.oauthLocale) ? req.session.oauthLocale : "es";
     delete req.session.oauthState;
+    delete req.session.oauthPopup;
+    delete req.session.oauthLocale;
 
     if (error || !code || !expectedState || state !== expectedState) {
-        return res.redirect("/?login=failed");
+        return res.redirect(isPopup
+            ? `/auth/popup-result?status=failed&locale=${encodeURIComponent(requestedLocale)}`
+            : "/?login=failed");
     }
 
     try {
@@ -459,11 +467,23 @@ app.get("/auth/callback", async (req, res) => {
             expiresAt: Date.now() + token.expires_in * 1000
         };
         req.session.csrfToken = crypto.randomBytes(32).toString("hex");
-        return req.session.save(error => error ? res.status(500).send("No se pudo guardar la sesión.") : res.redirect("/"));
+        return req.session.save(error => {
+            if (error) return res.status(500).send("No se pudo guardar la sesión.");
+            return res.redirect(isPopup
+                ? `/auth/popup-result?status=success&locale=${encodeURIComponent(requestedLocale)}`
+                : "/");
+        });
     } catch (requestError) {
         console.error("[Dashboard OAuth] Error al iniciar sesión:", requestError.message);
-        return res.redirect("/?login=failed");
+        return res.redirect(isPopup
+            ? `/auth/popup-result?status=failed&locale=${encodeURIComponent(requestedLocale)}`
+            : "/?login=failed");
     }
+});
+
+app.get("/auth/popup-result", (_req, res) => {
+    res.set("Cache-Control", "no-store");
+    return res.sendFile(path.join(publicDirectory, "auth-popup-result.html"));
 });
 
 app.get("/api/me", (req, res) => {
