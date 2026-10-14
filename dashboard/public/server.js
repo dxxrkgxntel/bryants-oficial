@@ -20,6 +20,65 @@ function showNotice(message, isError = false) {
     showNotice.timer = window.setTimeout(() => { notice.hidden = true; }, 5000);
 }
 
+function setSaveFeedback(form, message, state = "") {
+    const feedback = form?.querySelector(".save-feedback");
+    if (!feedback) return;
+    feedback.textContent = message;
+    feedback.className = `save-feedback${state ? ` ${state}` : ""}`;
+}
+
+function showSavedState(form) {
+    const button = form?.querySelector('button[type="submit"]');
+    if (button) {
+        const originalText = button.dataset.idleText || button.textContent;
+        button.dataset.idleText = originalText;
+        button.disabled = false;
+        button.textContent = "Guardado ✓";
+        window.setTimeout(() => {
+            if (!button.isConnected) return;
+            button.textContent = originalText;
+        }, 2200);
+    }
+    setSaveFeedback(form, "Cambios guardados", "success");
+}
+
+function renderHome(guild, modules) {
+    nav.querySelectorAll(".nav-item").forEach(button => button.classList.remove("active"));
+    const entries = [...Object.entries(modules.configurations), ...Object.entries(modules.lists)];
+    const total = entries.length;
+    const configured = entries.filter(([key]) => {
+        if (modules.lists[key]) return (configState.lists[key] || []).length > 0;
+        return Boolean(configState.configurations[key]?.configured);
+    }).length;
+    const categories = categoriesOrder.map(category => {
+        const group = entries.filter(([, definition]) => definition.category === category);
+        if (!group.length) return "";
+        const ready = group.filter(([key]) => modules.lists[key]
+            ? (configState.lists[key] || []).length > 0
+            : Boolean(configState.configurations[key]?.configured)).length;
+        const percent = Math.round(ready / group.length * 100);
+        const firstModule = group[0][0];
+        const preview = group.slice(0, 3).map(([key, definition]) =>
+            `<button class="overview-module-link" type="button" data-overview-module="${escapeHtml(key)}">${escapeHtml(definition.title)}</button>`
+        ).join("");
+        const extra = group.length > 3 ? `<span class="overview-more">+${group.length - 3} sistemas</span>` : "";
+        return `<article class="overview-card"><div class="overview-card-top"><span class="eyebrow">${escapeHtml(category)}</span><span class="overview-count">${ready}/${group.length}</span></div><div class="overview-progress"><span style="width:${percent}%"></span></div><div class="overview-module-links">${preview}${extra}</div><button class="overview-open" type="button" data-overview-module="${escapeHtml(firstModule)}">Explorar sección <span aria-hidden="true">→</span></button></article>`;
+    }).join("");
+    const avatar = guild?.icon
+        ? `<img src="${escapeHtml(guild.icon)}" alt="" width="64" height="64">`
+        : `<span aria-hidden="true">${escapeHtml((guild?.name || "S").trim().slice(0, 2).toUpperCase())}</span>`;
+    document.querySelector("#page-title").textContent = "Inicio";
+    content.innerHTML = `<div class="overview-page"><section class="overview-hero"><div class="overview-server-mark">${avatar}</div><div class="overview-welcome"><div class="eyebrow">TU ESPACIO DE TRABAJO</div><h2>Todo listo para tu comunidad.</h2><p>Administra los sistemas de <strong>${escapeHtml(guild?.name || "tu servidor")}</strong> desde un solo lugar.</p></div><div class="overview-hero-glow" aria-hidden="true"></div></section><section class="overview-stats" aria-label="Resumen del servidor"><article><span>Sistemas activos</span><strong>${configured}<small> / ${total}</small></strong></article><article><span>Secciones</span><strong>${categoriesOrder.filter(category => entries.some(([, item]) => item.category === category)).length}</strong></article><article><span>Servidor</span><strong class="overview-server-name">${escapeHtml(guild?.name || "Discord")}</strong></article></section><div class="overview-section-title"><div><div class="eyebrow">PANEL DE CONTROL</div><h3>Explora tus sistemas</h3></div><span>Elige una sección para empezar</span></div><section class="overview-grid">${categories}</section></div>`;
+    content.querySelectorAll("[data-overview-module]").forEach(button => button.addEventListener("click", () => renderModule(button.dataset.overviewModule, modules)));
+    const homeImage = content.querySelector(".overview-server-mark img");
+    homeImage?.addEventListener("error", () => {
+        const fallback = document.createElement("span");
+        fallback.setAttribute("aria-hidden", "true");
+        fallback.textContent = (guild?.name || "S").trim().slice(0, 2).toUpperCase();
+        homeImage.replaceWith(fallback);
+    }, { once: true });
+}
+
 async function api(url, options = {}) {
     const headers = { ...(options.body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) };
     if (!["GET", "HEAD"].includes((options.method || "GET").toUpperCase())) headers["x-csrf-token"] = csrfToken;
@@ -211,7 +270,7 @@ function renderModule(key, modules) {
         return renderField(field, value);
     }).join("");
     const description = definition.description || "Los cambios se guardan en la configuración del servidor y los canales y roles existentes se conservan.";
-    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div><span class="status-pill ${data.configured ? "configured" : "unconfigured"}">${data.configured ? "Configurado" : "Sin configurar"}</span></div><p class="card-description">${escapeHtml(description)}</p><form id="settings-form" class="fields-grid">${formFields}<div class="form-actions"><button class="primary-button" type="submit">Guardar cambios</button></div></form></article>`;
+    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div><span class="status-pill ${data.configured ? "configured" : "unconfigured"}">${data.configured ? "Configurado" : "Sin configurar"}</span></div><p class="card-description">${escapeHtml(description)}</p><form id="settings-form" class="fields-grid">${formFields}<div class="form-actions"><button class="primary-button" type="submit">Guardar cambios</button><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>`;
     const setupsEditor = content.querySelector("[data-setups-editor]");
     if (setupsEditor) {
         const updateSetupRows = setups => {
@@ -235,9 +294,13 @@ function renderModule(key, modules) {
     content.querySelector("#settings-form").addEventListener("submit", async event => {
         event.preventDefault();
         const button = event.currentTarget.querySelector("button[type=submit]");
+        const form = event.currentTarget;
         button.disabled = true;
+        button.dataset.idleText = button.textContent;
+        button.textContent = "Guardando…";
+        setSaveFeedback(form, "Guardando cambios…", "pending");
         try {
-            const payload = readForm(event.currentTarget, definition.fields);
+            const payload = readForm(form, definition.fields);
             const result = await api(`/api/guilds/${encodeURIComponent(guildId)}/config/${encodeURIComponent(key)}`, {
                 method: "PUT", body: JSON.stringify(payload)
             });
@@ -246,10 +309,13 @@ function renderModule(key, modules) {
                 ? "Canal guardado. El bot cambiará en unos segundos."
                 : "Configuración guardada.");
             renderModule(key, modules);
+            showSavedState(content.querySelector("#settings-form"));
         } catch (error) {
             showNotice(error.message, true);
+            setSaveFeedback(form, error.message, "error");
+            button.textContent = button.dataset.idleText;
         } finally {
-            button.disabled = false;
+            if (button.isConnected) button.disabled = false;
         }
     });
 }
@@ -266,7 +332,7 @@ function getRecordLabel(key, record, definition) {
 function renderList(key, definition, editItem = null) {
     const records = configState.lists[key] || [];
     const editing = Boolean(editItem);
-    const form = `<form id="list-form" class="fields-grid">${definition.fields.map(field => renderField(field, getNested(editItem, field.name), `${key}-`)).join("")}<div class="form-actions"><button class="primary-button" type="submit">${editing ? "Guardar elemento" : "Añadir elemento"}</button>${editing ? '<button class="quiet-button" id="cancel-edit" type="button">Cancelar</button>' : ""}</div></form>`;
+    const form = `<form id="list-form" class="fields-grid">${definition.fields.map(field => renderField(field, getNested(editItem, field.name), `${key}-`)).join("")}<div class="form-actions"><button class="primary-button" type="submit">${editing ? "Guardar elemento" : "Añadir elemento"}</button>${editing ? '<button class="quiet-button" id="cancel-edit" type="button">Cancelar</button>' : ""}<span class="save-feedback" role="status" aria-live="polite"></span></div></form>`;
     const rows = records.map(record => {
         const label = getRecordLabel(key, record, definition);
         return `<div class="record-row"><div class="record-title">${escapeHtml(label)}</div><div class="record-actions"><button type="button" class="quiet-button" data-edit="${escapeHtml(record._id)}">Editar</button><button type="button" class="quiet-button danger-text" data-delete="${escapeHtml(record._id)}">Eliminar</button></div></div>`;
@@ -289,17 +355,27 @@ function renderList(key, definition, editItem = null) {
     content.querySelector("#list-form").addEventListener("submit", async event => {
         event.preventDefault();
         const button = event.currentTarget.querySelector("button[type=submit]");
+        const form = event.currentTarget;
         button.disabled = true;
+        button.dataset.idleText = button.textContent;
+        button.textContent = "Guardando…";
+        setSaveFeedback(form, "Guardando cambios…", "pending");
         try {
-            const payload = readForm(event.currentTarget, definition.fields);
+            const payload = readForm(form, definition.fields);
             const url = `/api/guilds/${encodeURIComponent(guildId)}/lists/${encodeURIComponent(key)}${editing ? `/${encodeURIComponent(editItem._id)}` : ""}`;
             const result = await api(url, { method: editing ? "PUT" : "POST", body: JSON.stringify(payload) });
             if (editing) configState.lists[key] = records.map(item => item._id === editItem._id ? result.item : item);
             else configState.lists[key] = [...records, result.item];
             renderList(key, definition);
             showNotice(editing ? "Elemento actualizado." : "Elemento añadido.");
-        } catch (error) { showNotice(error.message, true); }
-        finally { button.disabled = false; }
+            showSavedState(content.querySelector("#list-form"));
+        } catch (error) {
+            showNotice(error.message, true);
+            setSaveFeedback(form, error.message, "error");
+            button.textContent = button.dataset.idleText;
+        } finally {
+            if (button.isConnected) button.disabled = false;
+        }
     });
     content.querySelector("#cancel-edit")?.addEventListener("click", () => renderList(key, definition));
 }
@@ -337,8 +413,7 @@ async function initialize() {
         resources = resourcesResult;
         configState = configResult;
         makeNav(configResult.modules);
-        const first = [...Object.keys(configResult.modules.configurations), ...Object.keys(configResult.modules.lists)][0];
-        if (first) renderModule(first, configResult.modules);
+        renderHome(guild, configResult.modules);
     } catch (error) {
         content.innerHTML = `<div class="loading-card error">${escapeHtml(error.message)} <a href="/">Volver a elegir servidor</a></div>`;
     }
