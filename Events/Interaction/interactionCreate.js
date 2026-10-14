@@ -92,10 +92,11 @@ if (interaction.isStringSelectMenu()) {
 
             if (interaction.isModalSubmit()) {
 
-                const modal =
-                    client.modals.get(
-                        interaction.customId
-                    );
+                const modal = [...client.modals.values()].find(candidate =>
+                    candidate.id instanceof RegExp
+                        ? candidate.id.test(interaction.customId)
+                        : interaction.customId === candidate.id || (typeof candidate.id === "string" && candidate.id.endsWith(":") && interaction.customId.startsWith(candidate.id))
+                );
 
                 if (modal) {
 

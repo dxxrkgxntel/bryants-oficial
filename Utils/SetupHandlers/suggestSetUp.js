@@ -69,6 +69,7 @@ module.exports = {
 
         const suggestChannel =
             options.getChannel('channel');
+        const createThreads = options.getBoolean('crear_hilos');
 
         //////////////////////////////////////////////////
         // VALIDAR CANAL
@@ -143,7 +144,8 @@ module.exports = {
                     guildChannel:
                         suggestChannel.id,
 
-                    Enabled: true
+                    Enabled: true,
+                    ...(createThreads !== null && { createThreads })
                 });
 
                 return interaction.reply({
@@ -170,7 +172,8 @@ module.exports = {
                     guildChannel:
                         suggestChannel.id,
 
-                    Enabled: true
+                    Enabled: true,
+                    ...(createThreads !== null && { createThreads })
                 }
             );
 

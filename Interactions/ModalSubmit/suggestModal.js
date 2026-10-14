@@ -66,6 +66,13 @@ module.exports = {
                 components: [buttons]
             });
 
+            if (data.createThreads) {
+                await msg.startThread({
+                    name: `Discusión: ${suggestDesc.slice(0, 80)}`,
+                    autoArchiveDuration: 1440
+                }).catch(error => console.error("[Sugerencias] No se pudo crear el hilo:", error));
+            }
+
             await suggestMessge.create({
                 guildId: interaction.guild.id,
                 messageId: msg.id,

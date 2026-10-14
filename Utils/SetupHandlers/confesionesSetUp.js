@@ -25,6 +25,8 @@ module.exports = {
         const { options, guild } = interaction;
 
         const channel = options.getChannel('channel');
+        const replyButtonsEnabled = options.getBoolean('respuestas');
+        const repliesInThreads = options.getBoolean('respuestas_en_hilos');
 
         try {
 
@@ -53,7 +55,9 @@ module.exports = {
                 await confesionesSchema.create({
                     guildId: guild.id,
                     channelId: channel.id,
-                    Enabled: true
+                    Enabled: true,
+                    ...(replyButtonsEnabled !== null && { replyButtonsEnabled }),
+                    ...(repliesInThreads !== null && { repliesInThreads })
                 });
 
                 return correReply(
@@ -68,7 +72,9 @@ module.exports = {
                 { guildId: guild.id },
                 {
                     channelId: channel.id,
-                    Enabled: true
+                    Enabled: true,
+                    ...(replyButtonsEnabled !== null && { replyButtonsEnabled }),
+                    ...(repliesInThreads !== null && { repliesInThreads })
                 },
                 { new: true }
             );

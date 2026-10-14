@@ -226,7 +226,9 @@ const configurations = {
         guildField: "guildId",
         fields: [
             { name: "channelId", label: "Canal", type: "channel", channelTypes: [0] },
-            { name: "Enabled", label: "Sistema activo", type: "boolean", default: true }
+            { name: "Enabled", label: "Sistema activo", type: "boolean", default: true },
+            { name: "replyButtonsEnabled", label: "Botones de respuesta", type: "boolean", help: "Añade un botón para responder anónimamente a cada confesión." },
+            { name: "repliesInThreads", label: "Respuestas en hilos", type: "boolean", help: "Actívalo para agrupar las respuestas en un hilo; desactívalo para publicarlas como mensajes separados." }
         ]
     },
     suggestions: {
@@ -236,7 +238,8 @@ const configurations = {
         guildField: "guildSuggest",
         fields: [
             { name: "guildChannel", label: "Canal", type: "channel", channelTypes: [0] },
-            { name: "Enabled", label: "Sistema activo", type: "boolean" }
+            { name: "Enabled", label: "Sistema activo", type: "boolean" },
+            { name: "createThreads", label: "Crear hilos", type: "boolean", help: "Inicia automáticamente un hilo de discusión para cada sugerencia." }
         ]
     },
     polls: {

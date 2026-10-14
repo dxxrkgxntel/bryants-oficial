@@ -1,7 +1,10 @@
 const {
     SlashCommandBuilder,
     ChatInputCommandInteraction,
-    EmbedBuilder
+    EmbedBuilder,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle
 } = require('discord.js');
 
 const errReply =
@@ -308,10 +311,10 @@ module.exports = {
 
                 //////////////////////////////////////////////////////
 
-                await channel.send({
-
-                    embeds: [embed]
-                });
+                const components = confesionesData.replyButtonsEnabled
+                    ? [new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`confession_reply:${confesionesData.repliesInThreads ? "thread" : "message"}`).setLabel("Responder anónimamente").setStyle(ButtonStyle.Secondary))]
+                    : [];
+                await channel.send({ embeds: [embed], components });
 
                 //////////////////////////////////////////////////////
 
@@ -348,10 +351,10 @@ module.exports = {
 
                 //////////////////////////////////////////////////////
 
-                await channel.send({
-
-                    embeds: [embed]
-                });
+                const components = confesionesData.replyButtonsEnabled
+                    ? [new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`confession_reply:${confesionesData.repliesInThreads ? "thread" : "message"}`).setLabel("Responder anónimamente").setStyle(ButtonStyle.Secondary))]
+                    : [];
+                await channel.send({ embeds: [embed], components });
 
                 //////////////////////////////////////////////////////
 
