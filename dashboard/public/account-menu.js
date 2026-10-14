@@ -24,6 +24,7 @@ window.mountAccountMenu = function (container, user, onError = message => window
     const status = document.createElement("small");
     status.textContent = "Sesión iniciada como";
     const username = document.createElement("strong");
+    username.dataset.localeFixed = "true";
     username.textContent = user.username;
     identity.append(status, username);
     const chevron = document.createElement("span");
@@ -109,7 +110,7 @@ window.mountAccountMenu = function (container, user, onError = message => window
                 if (!response.ok) throw new Error(result.error || "No se pudo cerrar la sesión.");
                 window.location.assign(button.dataset.accountAction === "switch" ? "/auth/login" : "/");
             } catch (error) {
-                onError(error.message);
+                onError(window.dashboardI18n?.translate(error.message) || error.message);
                 for (const item of actionButtons) item.disabled = false;
                 trigger.disabled = false;
             }

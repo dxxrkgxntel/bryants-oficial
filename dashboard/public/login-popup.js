@@ -1,7 +1,5 @@
 (() => {
     const supportedLocales = new Set(["en", "es", "de", "pt", "fr", "pl", "tr", "ru", "it", "nl"]);
-    const locale = (document.documentElement.lang || "es").toLowerCase().split("-")[0];
-    const pageLocale = supportedLocales.has(locale) ? locale : "es";
     const popupFeatures = () => {
         const width = 520;
         const height = 720;
@@ -16,7 +14,8 @@
             event.preventDefault();
             const url = new URL(link.href, window.location.origin);
             url.searchParams.set("popup", "1");
-            url.searchParams.set("locale", pageLocale);
+            const locale = (window.dashboardI18n?.locale || document.documentElement.lang || "es").toLowerCase().split("-")[0];
+            url.searchParams.set("locale", supportedLocales.has(locale) ? locale : "es");
             const popup = window.open(url.toString(), "bryants-discord-login", popupFeatures());
             if (!popup) window.location.assign(url.toString());
             else popup.focus();

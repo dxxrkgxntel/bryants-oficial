@@ -28,7 +28,7 @@ function saveFavorites() {
 }
 
 function normalizeSearch(value) {
-    return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es").trim();
+    return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase(window.dashboardI18n?.locale || "es").trim();
 }
 
 function applyModuleFilter() {
@@ -169,7 +169,7 @@ function renderHome(guild, modules) {
     const pendingSummary = pendingEntries.length
         ? `<section class="overview-pending"><div><span class="overview-pending-icon" aria-hidden="true">✦</span><div><strong>${pendingEntries.length} ${pendingEntries.length === 1 ? "sistema pendiente" : "sistemas pendientes"}</strong><small>Completa su configuración para dejar todo a tu gusto.</small></div></div><div class="overview-pending-links">${pendingEntries.slice(0, 5).map(([key, definition]) => `<button class="overview-pending-link" type="button" data-overview-module="${escapeHtml(key)}">${escapeHtml(definition.title)}<span>Configurar →</span></button>`).join("")}${pendingEntries.length > 5 ? `<span class="overview-more">y ${pendingEntries.length - 5} más</span>` : ""}</div></section>`
         : `<section class="overview-all-ready"><span aria-hidden="true">✓</span><div><strong>¡Todo está configurado!</strong><small>Tus sistemas principales ya están listos.</small></div></section>`;
-    content.innerHTML = `<div class="overview-page"><section class="overview-hero"><div class="overview-server-mark">${avatar}</div><div class="overview-welcome"><div class="eyebrow">TU ESPACIO DE TRABAJO</div><h2>Todo listo para tu comunidad.</h2><p>Administra los sistemas de <strong>${escapeHtml(guild?.name || "tu servidor")}</strong> desde un solo lugar.</p></div><div class="overview-hero-glow" aria-hidden="true"></div></section><section class="overview-stats" aria-label="Resumen del servidor"><article><span>Configurados</span><strong>${configured}<small> / ${total}</small></strong></article><article><span>Por configurar</span><strong>${pendingEntries.length}</strong></article><article><span>Servidor</span><strong class="overview-server-name">${escapeHtml(guild?.name || "Discord")}</strong></article></section>${pendingSummary}<div class="overview-section-title"><div><div class="eyebrow">PANEL DE CONTROL</div><h3>Explora tus sistemas</h3></div><span>Elige una sección para empezar</span></div><section class="overview-grid">${categories}</section></div>`;
+    content.innerHTML = `<div class="overview-page"><section class="overview-hero"><div class="overview-server-mark">${avatar}</div><div class="overview-welcome"><div class="eyebrow">TU ESPACIO DE TRABAJO</div><h2>Todo listo para tu comunidad.</h2><p>Administra los sistemas de <strong data-locale-fixed>${escapeHtml(guild?.name || "tu servidor")}</strong> desde un solo lugar.</p></div><div class="overview-hero-glow" aria-hidden="true"></div></section><section class="overview-stats" aria-label="Resumen del servidor"><article><span>Configurados</span><strong>${configured}<small> / ${total}</small></strong></article><article><span>Por configurar</span><strong>${pendingEntries.length}</strong></article><article><span>Servidor</span><strong class="overview-server-name" data-locale-fixed>${escapeHtml(guild?.name || "Discord")}</strong></article></section>${pendingSummary}<div class="overview-section-title"><div><div class="eyebrow">PANEL DE CONTROL</div><h3>Explora tus sistemas</h3></div><span>Elige una sección para empezar</span></div><section class="overview-grid">${categories}</section></div>`;
     content.querySelectorAll("[data-overview-module]").forEach(button => button.addEventListener("click", () => navigateToModule(button.dataset.overviewModule, modules)));
     const homeImage = content.querySelector(".overview-server-mark img");
     homeImage?.addEventListener("error", () => {
@@ -212,7 +212,7 @@ function renderSetupSelect(setup, key, label, type, channelTypes) {
     const options = optionsFor({ type, channelTypes });
     const hasCurrent = options.some(option => option.id === current);
     const stale = current && !hasCurrent ? `<option value="${escapeHtml(current)}" selected>ID guardado: ${escapeHtml(current)}</option>` : "";
-    return `<label class="field"><span>${escapeHtml(label)}</span><select data-setup-field="${key}" required><option value="">Elige una opción</option>${stale}${options.map(option => `<option value="${escapeHtml(option.id)}" ${current === option.id ? "selected" : ""}>${escapeHtml(option.name)}</option>`).join("")}</select></label>`;
+    return `<label class="field"><span>${escapeHtml(label)}</span><select data-setup-field="${key}" required><option value="">Elige una opción</option>${stale}${options.map(option => `<option data-locale-fixed value="${escapeHtml(option.id)}" ${current === option.id ? "selected" : ""}>${escapeHtml(option.name)}</option>`).join("")}</select></label>`;
 }
 
 function renderSetupRows(setups) {
@@ -244,7 +244,7 @@ function renderPrestigeMap(field, value) {
             const roles = optionsFor({ type: "role" });
             const hasCurrent = roles.some(role => role.id === current);
             const stale = current && !hasCurrent ? `<option value="${escapeHtml(current)}" selected>ID guardado: ${escapeHtml(current)}</option>` : "";
-            control = `<select data-prestige-level="${level}" required><option value="">Elige un rol</option>${stale}${roles.map(role => `<option value="${escapeHtml(role.id)}" ${current === role.id ? "selected" : ""}>${escapeHtml(role.name)}</option>`).join("")}</select>`;
+            control = `<select data-prestige-level="${level}" required><option value="">Elige un rol</option>${stale}${roles.map(role => `<option data-locale-fixed value="${escapeHtml(role.id)}" ${current === role.id ? "selected" : ""}>${escapeHtml(role.name)}</option>`).join("")}</select>`;
         } else {
             control = `<input data-prestige-level="${level}" type="number" min="0" step="1" value="${escapeHtml(current)}" required>`;
         }
@@ -274,13 +274,13 @@ function renderField(field, value, prefix = "") {
         const hasCurrent = options.some(option => option.id === current);
         const blank = field.optional ? `<option value="">Sin asignar</option>` : `<option value="">Elige una opción</option>`;
         const stale = current && !hasCurrent ? `<option value="${escapeHtml(current)}" selected>ID guardado: ${escapeHtml(current)}</option>` : "";
-        return `<label class="field" for="${id}"><span>${escapeHtml(field.label)}</span><select id="${id}" name="${escapeHtml(field.name)}" ${required}>${blank}${stale}${options.map(option => `<option value="${escapeHtml(option.id)}" ${current === option.id ? "selected" : ""}>${escapeHtml(option.name)}</option>`).join("")}</select>${help}</label>`;
+        return `<label class="field" for="${id}"><span>${escapeHtml(field.label)}</span><select id="${id}" name="${escapeHtml(field.name)}" ${required}>${blank}${stale}${options.map(option => `<option data-locale-fixed value="${escapeHtml(option.id)}" ${current === option.id ? "selected" : ""}>${escapeHtml(option.name)}</option>`).join("")}</select>${help}</label>`;
     }
     if (["channel-list", "role-list"].includes(field.type)) {
         const values = Array.isArray(value) ? value.map(String) : [];
         const options = optionsFor(field);
         const stale = values.filter(current => !options.some(option => option.id === current)).map(current => `<option value="${escapeHtml(current)}" selected>ID guardado: ${escapeHtml(current)}</option>`).join("");
-        return `<label class="field" for="${id}"><span>${escapeHtml(field.label)}</span><select id="${id}" name="${escapeHtml(field.name)}" multiple size="5">${stale}${options.map(option => `<option value="${escapeHtml(option.id)}" ${values.includes(option.id) ? "selected" : ""}>${escapeHtml(option.name)}</option>`).join("")}</select><small>Mantén Ctrl o Cmd para seleccionar varios.</small></label>`;
+        return `<label class="field" for="${id}"><span>${escapeHtml(field.label)}</span><select id="${id}" name="${escapeHtml(field.name)}" multiple size="5">${stale}${options.map(option => `<option data-locale-fixed value="${escapeHtml(option.id)}" ${values.includes(option.id) ? "selected" : ""}>${escapeHtml(option.name)}</option>`).join("")}</select><small>Mantén Ctrl o Cmd para seleccionar varios.</small></label>`;
     }
     if (["string-list", "json"].includes(field.type)) {
         let text = "";
@@ -397,7 +397,7 @@ function renderPreviewTemplate(template) {
         nivel: "5", level: "5", xp: "250", recompensa: "500", reward: "500", coins: "500", monedas: "500", rol: "Miembro VIP", role: "Miembro VIP", boosts: "12"
     };
     samples.boost = samples.boosts;
-    samples.date = new Intl.DateTimeFormat("es-ES", { dateStyle: "long" }).format(new Date());
+    samples.date = new Intl.DateTimeFormat(window.dashboardI18n?.locale || "es", { dateStyle: "long" }).format(new Date());
     samples.fecha = samples.date;
     samples.time = "18:30";
     samples.hora = samples.time;
@@ -414,13 +414,13 @@ function renderPreviewMarkup(key, values) {
     const thumbnail = safePreviewImage(values.thumbnail);
     const title = renderPreviewTemplate(values.title).trim();
     const description = renderPreviewTemplate(values.description).trim();
-    const configuredText = [title ? `<h3>${escapeHtml(title)}</h3>` : "", title && description ? '<hr class="discord-preview-separator">' : "", description ? `<p>${escapeHtml(description)}</p>` : ""].filter(Boolean).join("");
+    const configuredText = [title ? `<h3 data-locale-fixed>${escapeHtml(title)}</h3>` : "", title && description ? '<hr class="discord-preview-separator">' : "", description ? `<p data-locale-fixed>${escapeHtml(description)}</p>` : ""].filter(Boolean).join("");
     const media = banner ? `<div class="message-preview-banner"><img data-preview-image src="${escapeHtml(banner)}" alt="Vista previa del banner"></div>` : "";
     const thumbnailBlock = thumbnail ? `<img class="message-preview-avatar" data-preview-image src="${escapeHtml(thumbnail)}" alt="Miniatura configurada">` : "";
 
     if (["welcome", "leaves", "boosts", "birthday"].includes(key)) {
         const empty = !configuredText && !media && !thumbnailBlock;
-        const reminder = values.reminder ? `<p class="preview-reminder"><strong>Recordatorio:</strong> ${escapeHtml(renderPreviewTemplate(values.reminder))}</p>` : "";
+        const reminder = values.reminder ? `<p class="preview-reminder"><strong>Recordatorio:</strong> <span data-locale-fixed>${escapeHtml(renderPreviewTemplate(values.reminder))}</span></p>` : "";
         return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Contenido configurado para Discord</small></div><article class="discord-preview" style="--preview-accent:${color}">${media}<div class="discord-preview-body">${thumbnailBlock}<div class="discord-preview-copy">${configuredText || (empty ? '<p class="preview-empty">Todavía no hay contenido configurado para este aviso.</p>' : "")}</div></div></article>${reminder}</section>`;
     }
     if (key === "levelSettings") {
@@ -428,9 +428,9 @@ function renderPreviewMarkup(key, values) {
         const levelDescription = renderPreviewTemplate(values.levelDescription).trim();
         const roleTitle = renderPreviewTemplate(values.roleTitle).trim();
         const roleDescription = renderPreviewTemplate(values.roleDescription).trim();
-        const contentText = [levelTitle ? `<strong>${escapeHtml(levelTitle)}</strong>` : "", levelTitle && levelDescription ? '<hr class="discord-preview-separator">' : "", levelDescription ? `<span>${escapeHtml(levelDescription)}</span>` : ""].filter(Boolean).join("");
+        const contentText = [levelTitle ? `<strong data-locale-fixed>${escapeHtml(levelTitle)}</strong>` : "", levelTitle && levelDescription ? '<hr class="discord-preview-separator">' : "", levelDescription ? `<span data-locale-fixed>${escapeHtml(levelDescription)}</span>` : ""].filter(Boolean).join("");
         const empty = !contentText && !banner && !thumbnail;
-        const roleText = [roleTitle ? `<strong>${escapeHtml(roleTitle)}</strong>` : "", roleTitle && roleDescription ? '<hr class="discord-preview-separator">' : "", roleDescription ? `<span>${escapeHtml(roleDescription)}</span>` : ""].filter(Boolean).join("");
+        const roleText = [roleTitle ? `<strong data-locale-fixed>${escapeHtml(roleTitle)}</strong>` : "", roleTitle && roleDescription ? '<hr class="discord-preview-separator">' : "", roleDescription ? `<span data-locale-fixed>${escapeHtml(roleDescription)}</span>` : ""].filter(Boolean).join("");
         return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Contenido del aviso de nivel configurado</small></div><article class="level-preview" style="--preview-accent:${color}"><div class="level-preview-background">${banner ? `<img data-preview-image src="${escapeHtml(banner)}" alt="Imagen configurada">` : ""}</div>${thumbnailBlock}<div class="level-preview-copy">${contentText || (empty ? '<span class="preview-empty">Configura título, descripción o imagen para mostrar una vista previa.</span>' : "")}</div></article>${roleText ? `<div class="level-preview-role">${roleText}</div>` : ""}</section>`;
     }
     return "";
@@ -683,12 +683,12 @@ async function renderPollAdmin(editingPoll = null) {
         const activePolls = configuredPolls.filter(poll => !poll.ended).length;
         const registeredPolls = configuredPolls.length;
         const totalVotes = polls.reduce((total, poll) => total + poll.options.reduce((sum, option) => sum + option.voteCount, 0), 0);
-        const form = `<article class="settings-card poll-create-card"><div class="card-heading"><div><div class="eyebrow">PUBLICACIÓN EN DISCORD</div><h2>${editingPoll ? "Editar encuesta" : "Crear encuesta"}</h2></div>${editingPoll ? '<button class="quiet-button" type="button" data-poll-cancel>Cancelar</button>' : ""}</div><p class="card-description">${editingPoll ? `Se actualizará el mensaje en #${escapeHtml(channelName(editingPoll.channelId))}.` : `Se publicará en el canal guardado arriba: #${escapeHtml(channelName(result.configuredChannelId || ""))}.`} La duración se cuenta desde que guardes.</p><form id="poll-form" class="fields-grid"><label class="field poll-full-field"><span>Pregunta</span><input name="question" type="text" maxlength="256" required value="${escapeHtml(editingPoll?.question || "")}" placeholder="¿Qué te gustaría preguntarle al servidor?"></label><label class="field poll-full-field"><span>Opciones <small>(una por línea, entre 2 y 4)</small></span><textarea name="options" rows="4" required placeholder="Opción 1&#10;Opción 2">${escapeHtml(editingPoll?.options.map(option => option.text).join("\n") || "")}</textarea></label><label class="field"><span>Duración (minutos, máximo 7 días)</span><input name="duration" type="number" min="1" max="10080" required value="${editingPoll ? Math.max(1, Math.ceil((new Date(editingPoll.endAt).getTime() - Date.now()) / 60000)) : 60}"></label><div class="poll-form-note">${editingPoll ? "Si cambias las opciones, los votos existentes se reiniciarán para que los resultados no queden asociados a opciones distintas." : "Los miembros podrán cambiar su voto hasta que termine la encuesta."}</div><div class="form-actions poll-full-field"><button class="primary-button" type="submit">${editingPoll ? "Guardar encuesta" : "Publicar encuesta"}</button><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>`;
+        const form = `<article class="settings-card poll-create-card"><div class="card-heading"><div><div class="eyebrow">PUBLICACIÓN EN DISCORD</div><h2>${editingPoll ? "Editar encuesta" : "Crear encuesta"}</h2></div>${editingPoll ? '<button class="quiet-button" type="button" data-poll-cancel>Cancelar</button>' : ""}</div><p class="card-description">${editingPoll ? `Se actualizará el mensaje en #<span data-locale-fixed>${escapeHtml(channelName(editingPoll.channelId))}</span>.` : `Se publicará en el canal guardado arriba: #<span data-locale-fixed>${escapeHtml(channelName(result.configuredChannelId || ""))}</span>.`} La duración se cuenta desde que guardes.</p><form id="poll-form" class="fields-grid"><label class="field poll-full-field"><span>Pregunta</span><input name="question" type="text" maxlength="256" required value="${escapeHtml(editingPoll?.question || "")}" placeholder="¿Qué te gustaría preguntarle al servidor?"></label><label class="field poll-full-field"><span>Opciones <small>(una por línea, entre 2 y 4)</small></span><textarea name="options" rows="4" required placeholder="Opción 1&#10;Opción 2">${escapeHtml(editingPoll?.options.map(option => option.text).join("\n") || "")}</textarea></label><label class="field"><span>Duración (minutos, máximo 7 días)</span><input name="duration" type="number" min="1" max="10080" required value="${editingPoll ? Math.max(1, Math.ceil((new Date(editingPoll.endAt).getTime() - Date.now()) / 60000)) : 60}"></label><div class="poll-form-note">${editingPoll ? "Si cambias las opciones, los votos existentes se reiniciarán para que los resultados no queden asociados a opciones distintas." : "Los miembros podrán cambiar su voto hasta que termine la encuesta."}</div><div class="form-actions poll-full-field"><button class="primary-button" type="submit">${editingPoll ? "Guardar encuesta" : "Publicar encuesta"}</button><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>`;
         const rows = polls.map(poll => {
             const votes = poll.options.reduce((sum, option) => sum + option.voteCount, 0);
             const status = poll.ended ? "Finalizada" : "Activa";
-            const options = poll.options.map((option, index) => `<li><span>${index + 1}️⃣ ${escapeHtml(option.text)}</span><strong>${option.voteCount}</strong></li>`).join("");
-            return `<article class="poll-row"><div class="poll-row-main"><div class="poll-row-top"><span class="status-pill ${poll.ended ? "unconfigured" : "configured"}">${status}</span><span class="poll-channel">#${escapeHtml(channelName(poll.channelId))}</span><span class="poll-votes">${votes} ${votes === 1 ? "voto" : "votos"}</span></div><h3>${escapeHtml(poll.question)}</h3><ul>${options}</ul><small>${poll.endAt ? `${poll.ended ? "Terminó" : "Termina"} ${new Date(poll.endAt).toLocaleString("es", { dateStyle: "medium", timeStyle: "short" })}` : "Sin fecha de término"}</small></div><div class="record-actions">${poll.url ? `<a class="quiet-button" href="${escapeHtml(poll.url)}" target="_blank" rel="noopener noreferrer">Ver en Discord ↗</a>` : ""}${poll.ended ? "" : `<button class="quiet-button" type="button" data-poll-edit="${escapeHtml(poll._id)}">Editar</button>`}<button class="quiet-button danger-text" type="button" data-poll-delete="${escapeHtml(poll._id)}">Eliminar</button></div></article>`;
+            const options = poll.options.map((option, index) => `<li><span>${index + 1}️⃣ <span data-locale-fixed>${escapeHtml(option.text)}</span></span><strong>${option.voteCount}</strong></li>`).join("");
+            return `<article class="poll-row"><div class="poll-row-main"><div class="poll-row-top"><span class="status-pill ${poll.ended ? "unconfigured" : "configured"}">${status}</span><span class="poll-channel">#<span data-locale-fixed>${escapeHtml(channelName(poll.channelId))}</span></span><span class="poll-votes">${votes} ${votes === 1 ? "voto" : "votos"}</span></div><h3 data-locale-fixed>${escapeHtml(poll.question)}</h3><ul>${options}</ul><small>${poll.endAt ? `${poll.ended ? "Terminó" : "Termina"} ${new Date(poll.endAt).toLocaleString(window.dashboardI18n?.locale || "es", { dateStyle: "medium", timeStyle: "short" })}` : "Sin fecha de término"}</small></div><div class="record-actions">${poll.url ? `<a class="quiet-button" href="${escapeHtml(poll.url)}" target="_blank" rel="noopener noreferrer">Ver en Discord ↗</a>` : ""}${poll.ended ? "" : `<button class="quiet-button" type="button" data-poll-edit="${escapeHtml(poll._id)}">Editar</button>`}<button class="quiet-button danger-text" type="button" data-poll-delete="${escapeHtml(poll._id)}">Eliminar</button></div></article>`;
         }).join("");
         container.innerHTML = `${form}<article class="settings-card poll-list-card"><div class="card-heading"><div><div class="eyebrow">GESTIÓN</div><h2>Encuestas creadas</h2></div><button class="quiet-button" type="button" data-poll-refresh>Actualizar</button></div><div class="poll-stats"><div><span>Activas en el canal configurado</span><strong>${activePolls}</strong></div><div><span>Registradas en ese canal</span><strong>${registeredPolls}</strong></div><div><span>Votos acumulados</span><strong>${totalVotes}</strong></div></div><p class="card-description">Los contadores de arriba corresponden al canal configurado, como en <code>/poll list</code>. La lista incluye todas las encuestas del servidor y sus estados.</p><div class="poll-list">${rows || '<p class="empty-state">Todavía no hay encuestas registradas.</p>'}</div></article>`;
 
@@ -752,9 +752,9 @@ async function renderPollAdmin(editingPoll = null) {
 function getRecordLabel(key, record, definition) {
     const role = record.roleId ? resources.roles.find(item => item.id === record.roleId) : null;
     const roleName = role?.name || (record.roleId ? "Rol no disponible" : "");
-    if (key === "levelRewards") return `Nivel ${record.level} · ${roleName}`;
-    if (key === "shopItems") return `${roleName} · ${Number(record.price || 0).toLocaleString("es-DO")} monedas`;
-    if (key === "bankDonorRoles") return `${roleName} · bonificación desde ${Number(record.requiredAmount || 0).toLocaleString("es-DO")}`;
+    if (key === "levelRewards") return `${window.dashboardI18n?.translate("Nivel") || "Nivel"} ${record.level} · ${roleName}`;
+    if (key === "shopItems") return `${roleName} · ${Number(record.price || 0).toLocaleString(window.dashboardI18n?.locale || "es")} ${window.dashboardI18n?.translate("monedas") || "monedas"}`;
+    if (key === "bankDonorRoles") return `${roleName} · ${window.dashboardI18n?.translate("bonificación desde") || "bonificación desde"} ${Number(record.requiredAmount || 0).toLocaleString(window.dashboardI18n?.locale || "es")}`;
     if (key === "birthdayMembers") return record.discordName || (record.userId ? `Cargando nombre… · ${record.day}/${record.month}` : "Miembro sin ID de Discord");
     return record.name || record[definition.identity] || roleName || (record._id ? `Registro ${String(record._id).slice(-8)}` : "Registro sin identificar");
 }
@@ -778,7 +778,7 @@ function renderList(key, definition, editItem = null) {
     const form = `<form id="list-form" class="fields-grid">${definition.fields.map(field => renderField(field, getNested(editItem, field.name), `${key}-`)).join("")}<div class="form-actions"><button class="primary-button" type="submit">${editing ? "Guardar elemento" : "Añadir elemento"}</button>${editing ? '<button class="quiet-button" id="cancel-edit" type="button">Cancelar</button>' : ""}<span class="unsaved-indicator" hidden>● Cambios sin guardar</span><span class="save-feedback" role="status" aria-live="polite"></span></div></form>`;
     const rows = records.map(record => {
         const label = getRecordLabel(key, record, definition);
-        return `<div class="record-row" data-record-id="${escapeHtml(record._id)}" data-search="${escapeHtml(getRecordSearchText(key, record, definition))}"><div class="record-title">${escapeHtml(label)}</div><div class="record-actions"><button type="button" class="quiet-button" data-edit="${escapeHtml(record._id)}">Editar</button><button type="button" class="quiet-button danger-text" data-delete="${escapeHtml(record._id)}">Eliminar</button></div></div>`;
+        return `<div class="record-row" data-record-id="${escapeHtml(record._id)}" data-search="${escapeHtml(getRecordSearchText(key, record, definition))}"><div class="record-title" data-locale-fixed>${escapeHtml(label)}</div><div class="record-actions"><button type="button" class="quiet-button" data-edit="${escapeHtml(record._id)}">Editar</button><button type="button" class="quiet-button danger-text" data-delete="${escapeHtml(record._id)}">Eliminar</button></div></div>`;
     }).join("");
     const search = records.length > 3 ? `<div class="list-toolbar"><span>${records.length} elementos</span><label class="record-search"><span class="sr-only">Buscar en ${escapeHtml(definition.title)}</span><input type="search" id="record-search" placeholder="Buscar en la lista…" autocomplete="off"></label></div>` : "";
     content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div>${search}<div class="records-list">${rows || '<p class="empty-state">Todavía no hay elementos configurados.</p>'}<p id="list-no-results" class="empty-state" hidden>No hay elementos que coincidan con la búsqueda.</p></div><div class="form-divider"></div><h3>${editing ? "Editar elemento" : "Añadir elemento"}</h3>${form}</article>`;
@@ -880,6 +880,7 @@ async function initialize() {
         activeGuild = guild || null;
         const serverName = guild?.name || "Servidor de Discord";
         const avatar = document.querySelector("#server-avatar");
+        document.querySelector("#server-name").dataset.localeFixed = "true";
         document.querySelector("#server-name").textContent = serverName;
         avatar.textContent = serverName.trim().slice(0, 2).toUpperCase();
         if (guild?.icon) {

@@ -77,6 +77,7 @@ async function loadDashboard({ waitForSession = false } = {}) {
 
             const name = document.createElement("span");
             name.className = "server-name";
+            name.dataset.localeFixed = "true";
             name.textContent = guild.name;
             const action = document.createElement("span");
             action.className = "server-action";

@@ -64,6 +64,9 @@ async function loadAccountSettings() {
         window.mountAccountMenu(document.querySelector("#account-menu-host"), session.user);
 
         const user = session.user;
+        profileName.dataset.localeFixed = "true";
+        profileDisplay.dataset.localeFixed = "true";
+        profileId.dataset.localeFixed = "true";
         const defaultAvatarIndex = Number((BigInt(user.id) >> 22n) % 6n);
         profileAvatar.src = user.avatar
             ? `https://cdn.discordapp.com/avatars/${encodeURIComponent(user.id)}/${encodeURIComponent(user.avatar)}.${user.avatar.startsWith("a_") ? "gif" : "png"}?size=128`
@@ -72,6 +75,7 @@ async function loadAccountSettings() {
         profileDisplay.textContent = user.globalName || user.username;
         profileId.textContent = user.id;
         document.documentElement.lang = settings.locale;
+        window.dashboardI18n?.setLocale(settings.locale);
         document.querySelector("#account-bio").value = settings.bio;
         document.querySelector("#bio-count").textContent = settings.bio.length;
         document.querySelector("#account-locale").value = settings.locale;
@@ -82,10 +86,10 @@ async function loadAccountSettings() {
         document.querySelector("#referral-link").value = rewards.referralUrl;
         document.querySelector("#topgg-vote").href = rewards.topggUrl;
         const rewardNotes = [];
-        if (rewards.referralConfigured) rewardNotes.push(`Cada referido válido da ${rewards.referralReward.toLocaleString(settings.locale)} monedas en el servidor donde se instala el bot.`);
-        else rewardNotes.push("Los referidos se activarán cuando se registre la URL de retorno OAuth en Discord Developer Portal.");
-        if (rewards.voteConfigured) rewardNotes.push(`Cada voto verificado da ${rewards.voteReward.toLocaleString(settings.locale)} monedas en el servidor configurado.`);
-        else rewardNotes.push("Las recompensas por votar se activarán al configurar el webhook de Top.gg y el servidor de pago en el hosting.");
+        if (rewards.referralConfigured) rewardNotes.push(window.dashboardI18n.translate("Cada referido válido da {amount} monedas en el servidor donde se instala el bot.").replace("{amount}", rewards.referralReward.toLocaleString(settings.locale)));
+        else rewardNotes.push(window.dashboardI18n.translate("Los referidos se activarán cuando se registre la URL de retorno OAuth en Discord Developer Portal."));
+        if (rewards.voteConfigured) rewardNotes.push(window.dashboardI18n.translate("Cada voto verificado da {amount} monedas en el servidor configurado.").replace("{amount}", rewards.voteReward.toLocaleString(settings.locale)));
+        else rewardNotes.push(window.dashboardI18n.translate("Las recompensas por votar se activarán al configurar el webhook de Top.gg y el servidor de pago en el hosting."));
         document.querySelector("#rewards-description").textContent = rewardNotes.join(" ");
     } catch (error) {
         if (error.message.includes("Inicia sesión")) return window.location.assign("/");
@@ -148,22 +152,31 @@ languageForm.addEventListener("submit", async event => {
     event.preventDefault();
     const feedback = document.querySelector("#language-feedback");
     const button = languageForm.querySelector("button[type=submit]");
+    const localeSelect = document.querySelector("#account-locale");
     button.disabled = true;
+    localeSelect.disabled = true;
     setFeedback(feedback, "Guardando…");
     try {
         await api("/api/account/settings", {
             method: "PUT",
             body: JSON.stringify({
-                locale: document.querySelector("#account-locale").value
+                locale: localeSelect.value
             })
         });
-        document.documentElement.lang = document.querySelector("#account-locale").value;
-        setFeedback(feedback, "Idioma guardado.");
+        const locale = localeSelect.value;
+        window.dashboardI18n?.setLocale(locale);
+        setFeedback(feedback, window.dashboardI18n?.translate("Idioma guardado.") || "Idioma guardado.");
     } catch (error) {
+        localeSelect.value = window.dashboardI18n?.locale || "es";
         setFeedback(feedback, error.message, true);
     } finally {
         button.disabled = false;
+        localeSelect.disabled = false;
     }
+});
+
+document.querySelector("#account-locale").addEventListener("change", () => {
+    languageForm.requestSubmit();
 });
 
 document.querySelectorAll(".account-settings-nav-item").forEach(link => link.addEventListener("click", () => {
