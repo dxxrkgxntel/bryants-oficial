@@ -16,6 +16,11 @@ const autoRoleType = new Schema({
     botRole: {
         type: String,
         required: true
+    },
+
+    enabled: {
+        type: Boolean,
+        default: true
     }
 
 });

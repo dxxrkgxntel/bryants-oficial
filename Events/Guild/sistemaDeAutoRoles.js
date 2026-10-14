@@ -32,6 +32,9 @@ module.exports = {
 
             if (!autoRoleData) return;
 
+            // Los documentos anteriores no tienen `enabled`; se mantienen activos.
+            if (autoRoleData.enabled === false) return;
+
             //////////////////////////////////////////////////
             // ROLES
             //////////////////////////////////////////////////

@@ -83,7 +83,8 @@ const configurations = {
         guildField: "guildId",
         fields: [
             { name: "userRole", label: "Rol para miembros", type: "role" },
-            { name: "botRole", label: "Rol para bots", type: "role" }
+            { name: "botRole", label: "Rol para bots", type: "role" },
+            { name: "enabled", label: "Sistema activo", type: "boolean", default: true }
         ]
     },
     welcome: {
@@ -233,10 +234,10 @@ const configurations = {
         guildField: "guildId",
         fields: [
             { name: "channelId", label: "Canal", type: "channel", channelTypes: [0] },
-            { name: "Enabled", label: "Sistema activo", type: "boolean", default: true },
             { name: "replyButtonsEnabled", label: "Botones de respuesta", type: "boolean", help: "Añade un botón para responder anónimamente a cada confesión." },
             { name: "repliesInThreads", label: "Respuestas en hilos", type: "boolean", help: "Actívalo para agrupar las respuestas en un hilo; desactívalo para publicarlas como mensajes separados." },
-            { name: "rolesToMention", label: "Roles a mencionar", type: "role-list", maxItems: 5, help: "Selecciona hasta cinco roles; se mencionan al publicar una confesión nueva, no en las respuestas. Mantén Ctrl o Cmd para seleccionar varios." }
+            { name: "rolesToMention", label: "Roles a mencionar", type: "role-list", maxItems: 5, help: "Selecciona hasta cinco roles; se mencionan al publicar una confesión nueva, no en las respuestas." },
+            { name: "Enabled", label: "Sistema activo", type: "boolean", default: true }
         ]
     },
     suggestions: {
@@ -246,8 +247,8 @@ const configurations = {
         guildField: "guildSuggest",
         fields: [
             { name: "guildChannel", label: "Canal", type: "channel", channelTypes: [0] },
-            { name: "Enabled", label: "Sistema activo", type: "boolean" },
-            { name: "createThreads", label: "Crear hilos", type: "boolean", help: "Inicia automáticamente un hilo de discusión para cada sugerencia." }
+            { name: "createThreads", label: "Crear hilos", type: "boolean", help: "Inicia automáticamente un hilo de discusión para cada sugerencia." },
+            { name: "Enabled", label: "Sistema activo", type: "boolean", default: true }
         ]
     },
     polls: {

@@ -527,6 +527,27 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
 .prestige-settings-grid .prestige-rows { gap: 11px; margin-top: 12px; }
 .prestige-settings-grid [data-prestige-map="prestigeRoles"] .prestige-row { grid-template-columns: 88px minmax(0, 1fr); }
 .prestige-settings-grid .form-actions { grid-row: 3; }
+.community-autoroles-grid, .community-confessions-grid, .community-suggestions-grid { align-items: start; }
+.community-autoroles-grid [data-setting-field="enabled"],
+.community-confessions-grid [data-setting-field="Enabled"],
+.community-suggestions-grid [data-setting-field="Enabled"] { grid-column: 1 / -1; }
+.community-autoroles-grid [data-setting-field="enabled"] { grid-row: 2; }
+.community-autoroles-grid .form-actions { grid-row: 3; }
+.community-confessions-grid [data-setting-field="channelId"] { grid-column: 1; grid-row: 1; }
+.community-confessions-grid [data-setting-field="rolesToMention"] { grid-column: 2; grid-row: 1; }
+.community-confessions-grid [data-setting-field="replyButtonsEnabled"] { grid-column: 1; grid-row: 2; }
+.community-confessions-grid [data-setting-field="repliesInThreads"] { grid-column: 2; grid-row: 2; }
+.community-confessions-grid [data-setting-field="Enabled"] { grid-row: 3; }
+.community-confessions-grid .form-actions { grid-row: 4; }
+.community-suggestions-grid [data-setting-field="guildChannel"] { grid-column: 1; grid-row: 1; }
+.community-suggestions-grid [data-setting-field="createThreads"] { grid-column: 2; grid-row: 1; }
+.community-suggestions-grid [data-setting-field="Enabled"] { grid-row: 2; }
+.community-suggestions-grid .form-actions { grid-row: 3; }
+.community-boosts-grid [data-setting-field="boostButtons"] { grid-column: 1 / -1; }
+.community-welcome-grid .field, .community-leaves-grid .field, .community-birthday-grid .field, .community-boosts-grid .field { align-self: start; }
+.community-welcome-grid .checkbox-field, .community-confessions-grid .checkbox-field, .community-suggestions-grid .checkbox-field { align-self: stretch; }
+.community-welcome-grid .checkbox-field > span, .community-confessions-grid .checkbox-field > span, .community-suggestions-grid .checkbox-field > span { min-width: 0; }
+.community-welcome-grid .checkbox-field small, .community-confessions-grid .checkbox-field small, .community-suggestions-grid .checkbox-field small { display: block; margin-top: 4px; line-height: 1.45; }
 .member-search-panel { position: relative; width: min(100%, 500px); }
 .member-picker-trigger { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 46px; padding: 0 14px; border: 1px solid #ffffff18; border-radius: 9px; background: #1c1921; color: #f0e8f6; text-align: left; cursor: pointer; }
 .member-picker-trigger:hover, .member-picker-trigger[aria-expanded="true"] { border-color: #ae55e8; }
@@ -737,6 +758,9 @@ button:disabled { opacity: .55; cursor: wait !important; }
     .prestige-settings-grid { grid-template-columns: 1fr; }
     .prestige-settings-grid > .checkbox-field, .prestige-settings-grid [data-prestige-map="prestigeRoles"], .prestige-settings-grid [data-prestige-map="prestigeRewards"] { grid-column: 1; grid-row: auto; }
     .prestige-settings-grid .form-actions { grid-row: auto; }
+    .community-autoroles-grid [data-setting-field], .community-confessions-grid [data-setting-field], .community-suggestions-grid [data-setting-field] { grid-column: 1; grid-row: auto; }
+    .community-autoroles-grid .form-actions, .community-confessions-grid .form-actions, .community-suggestions-grid .form-actions { grid-row: auto; }
+    .community-boosts-grid [data-setting-field="boostButtons"] { grid-column: 1; }
     .member-balance-grid { grid-template-columns: 1fr; }
     .setup-row-fields { grid-template-columns: 1fr; }
     .special-content-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

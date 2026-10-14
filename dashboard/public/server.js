@@ -876,6 +876,7 @@ function renderModule(key, modules) {
     const formFields = definition.fields.map(field => {
         if (field.type === "section") return renderField(field);
         let value = getNested(data, field.name);
+        if (key === "autoroles" && field.name === "enabled" && value == null) value = true;
         if (key === "voiceConnection" && field.name === "enabled" && value == null) value = Boolean(data.channelId);
         if (key === "boosts" && field.name === "boostButtons" && !Array.isArray(value)) {
             value = boostButtonsFor(data);
@@ -888,10 +889,12 @@ function renderModule(key, modules) {
                 panelMessageId: data.panelMessageId || null
             }];
         }
-        return renderField(field, value);
+        const markup = renderField(field, value);
+        return markup.replace(/^(<[a-z][a-z0-9-]*\b)/i, `$1 data-setting-field="${escapeHtml(field.name)}"`);
     }).join("");
     const description = definition.description || "Los cambios se guardan en la configuración del servidor y los canales y roles existentes se conservan.";
-    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div><span class="status-pill ${data.configured ? "configured" : "unconfigured"}">${data.configured ? "Configurado" : "Sin configurar"}</span></div><p class="card-description">${escapeHtml(description)}</p>${renderPreview(key, data)}<form id="settings-form" class="fields-grid${key === "prestige" ? " prestige-settings-grid" : ""}">${formFields}<div class="form-actions"><button class="primary-button" type="submit">Guardar cambios</button><span class="unsaved-indicator" hidden>● Cambios sin guardar</span><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>${key === "polls" ? '<div id="poll-admin"><div class="loading-card">Cargando encuestas…</div></div>' : ""}`;
+    const communityLayout = ["autoroles", "welcome", "leaves", "birthday", "boosts", "confessions", "suggestions"].includes(key) ? ` community-${key}-grid` : "";
+    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div><span class="status-pill ${data.configured ? "configured" : "unconfigured"}">${data.configured ? "Configurado" : "Sin configurar"}</span></div><p class="card-description">${escapeHtml(description)}</p>${renderPreview(key, data)}<form id="settings-form" class="fields-grid${key === "prestige" ? " prestige-settings-grid" : ""}${communityLayout}">${formFields}<div class="form-actions"><button class="primary-button" type="submit">Guardar cambios</button><span class="unsaved-indicator" hidden>● Cambios sin guardar</span><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>${key === "polls" ? '<div id="poll-admin"><div class="loading-card">Cargando encuestas…</div></div>' : ""}`;
     const setupsEditor = content.querySelector("[data-setups-editor]");
     if (setupsEditor) {
         const updateSetupRows = setups => {
