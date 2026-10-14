@@ -745,6 +745,11 @@ app.get("/dashboard/:guildId", async (req, res) => {
     }
 });
 
+app.get("/settings", (req, res) => {
+    if (!req.session.user || !req.session.oauth) return res.redirect("/");
+    return res.sendFile(path.join(publicDirectory, "account.html"));
+});
+
 app.post("/auth/logout", requireLogin, requireCsrf, (req, res) => {
     req.session.destroy(error => {
         if (error) return res.status(500).json({ error: "No se pudo cerrar la sesión." });

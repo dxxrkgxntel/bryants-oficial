@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#100b18">
+    <title>Settings | Bryant's Oficial</title>
+    <link rel="icon" type="image/png" sizes="128x128" href="/bot-avatar.png">
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/account-menu.js" defer></script>
+    <script src="/account.js" defer></script>
+</head>
+<body class="account-page">
+    <div class="account-shell">
+        <header class="account-topbar">
+            <a class="brand" href="/" aria-label="Bryant's Oficial, elegir servidor">
+                <img class="brand-logo" src="/bot-avatar.png" alt="" width="44" height="44">
+                <span><strong>Bryant's Oficial</strong><small>Configuración de cuenta</small></span>
+            </a>
+            <div class="account-top-actions">
+                <a class="quiet-button account-dashboard-link" href="/">Panel de servidores <span aria-hidden="true">↗</span></a>
+                <div id="account-menu-host" class="user-area"></div>
+            </div>
+        </header>
+
+        <div class="account-settings-layout">
+            <aside class="account-settings-nav" aria-label="Configuración de cuenta">
+                <a class="account-settings-back" href="/">‹ <span>Panel de servidores</span></a>
+                <div class="account-nav-heading">CUENTA</div>
+                <a class="account-settings-nav-item active" href="#general" aria-current="page"><span aria-hidden="true">⚙</span> General</a>
+                <a class="account-settings-nav-item" href="#profile"><span aria-hidden="true">♙</span> Perfil</a>
+            </aside>
+
+            <main class="account-settings-main">
+                <div class="account-breadcrumb">Settings <span>›</span> General</div>
+                <div class="account-page-heading"><div><div class="eyebrow">CUENTA</div><h1>General</h1></div></div>
+
+                <section id="general" class="settings-card account-section">
+                    <div class="account-section-heading">
+                        <div class="account-section-icon" aria-hidden="true">♙</div>
+                        <div><h2>Cuenta</h2><p>Administra tu acceso a Bryant's Oficial.</p></div>
+                    </div>
+                    <div class="account-identity-row">
+                        <img id="account-profile-avatar" class="account-profile-avatar" alt="" width="48" height="48">
+                        <div class="account-identity-copy"><strong id="account-profile-name">Cargando cuenta…</strong><small><span class="online-dot"></span> CONECTADA CON DISCORD</small></div>
+                    </div>
+                    <p class="account-description">La dashboard usa tu cuenta de Discord para mostrar los servidores en los que puedes administrar el bot.</p>
+                </section>
+
+                <section id="profile" class="settings-card account-section">
+                    <div class="account-section-heading">
+                        <div class="account-section-icon" aria-hidden="true">◉</div>
+                        <div><h2>Perfil de Discord</h2><p>Información básica de la cuenta conectada.</p></div>
+                    </div>
+                    <div class="account-profile-details">
+                        <div><span>Nombre visible</span><strong id="account-profile-display">Cargando…</strong></div>
+                        <div><span>ID de Discord</span><strong id="account-profile-id">Cargando…</strong></div>
+                    </div>
+                </section>
+
+                <section class="settings-card account-section account-server-card">
+                    <div class="account-section-heading">
+                        <div class="account-section-icon" aria-hidden="true">▦</div>
+                        <div><h2>Panel de servidores</h2><p>Vuelve a elegir un servidor para administrar sus sistemas.</p></div>
+                    </div>
+                    <a class="primary-button" href="/">Elegir servidor <span aria-hidden="true">→</span></a>
+                </section>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

@@ -748,7 +748,7 @@ async function initialize() {
         const sessionResult = await api("/api/me");
         if (!sessionResult.user) return window.location.assign("/");
         csrfToken = sessionResult.csrfToken;
-        document.querySelector("#user-name").textContent = sessionResult.user.username;
+        window.mountAccountMenu(document.querySelector("#header-account"), sessionResult.user, message => showNotice(message, true));
         const [guildsResult, resourcesResult, configResult] = await Promise.all([
             api("/api/guilds"),
             api(`/api/guilds/${encodeURIComponent(guildId)}/resources`),
@@ -788,14 +788,6 @@ window.addEventListener("beforeunload", event => {
     if (!formIsDirty()) return;
     event.preventDefault();
     event.returnValue = "";
-});
-
-document.querySelector("#logout").addEventListener("click", async () => {
-    if (!confirmDiscardChanges()) return;
-    try {
-        await api("/auth/logout", { method: "POST" });
-        window.location.assign("/");
-    } catch (error) { showNotice(error.message, true); }
 });
 
 initialize();
