@@ -314,7 +314,9 @@ module.exports = {
                 const components = confesionesData.replyButtonsEnabled
                     ? [new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`confession_reply:${confesionesData.repliesInThreads ? "thread" : "message"}`).setLabel("Responder anónimamente").setStyle(ButtonStyle.Secondary))]
                     : [];
-                await channel.send({ embeds: [embed], components });
+                const roleIds = (confesionesData.rolesToMention || []).filter(roleId => interaction.guild.roles.cache.has(roleId)).slice(0, 5);
+                const roleMentions = roleIds.map(roleId => `<@&${roleId}>`).join(" ");
+                await channel.send({ content: roleMentions || undefined, embeds: [embed], components, allowedMentions: { parse: [], roles: roleIds, users: [] } });
 
                 //////////////////////////////////////////////////////
 
@@ -354,7 +356,9 @@ module.exports = {
                 const components = confesionesData.replyButtonsEnabled
                     ? [new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId(`confession_reply:${confesionesData.repliesInThreads ? "thread" : "message"}`).setLabel("Responder anónimamente").setStyle(ButtonStyle.Secondary))]
                     : [];
-                await channel.send({ embeds: [embed], components });
+                const roleIds = (confesionesData.rolesToMention || []).filter(roleId => interaction.guild.roles.cache.has(roleId)).slice(0, 5);
+                const roleMentions = roleIds.map(roleId => `<@&${roleId}>`).join(" ");
+                await channel.send({ content: roleMentions || undefined, embeds: [embed], components, allowedMentions: { parse: [], roles: roleIds, users: [] } });
 
                 //////////////////////////////////////////////////////
 

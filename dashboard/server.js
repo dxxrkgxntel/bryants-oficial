@@ -11,6 +11,7 @@ const PollConfig = require("../Models/PollConfig");
 const DashboardAccount = require("../Models/DashboardAccount");
 const DashboardReferral = require("../Models/DashboardReferral");
 const EconomyUser = require("../Models/EconomyUser");
+const SocialAlertState = require("../Models/SocialAlertState");
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -285,7 +286,7 @@ function cleanFields(fields, input, requireAll = false) {
                 return result;
             });
         } else if (field.type.endsWith("-list")) {
-            if (!Array.isArray(value) || value.length > 100 || value.some(item => typeof item !== "string" || item.length > 100)) {
+            if (!Array.isArray(value) || value.length > (field.maxItems || 100) || value.some(item => typeof item !== "string" || item.length > 100)) {
                 throw new Error(`${field.label} debe ser una lista válida.`);
             }
         } else if (value !== null) {
@@ -888,7 +889,7 @@ app.get("/api/guilds/:guildId/config", requireGuildAdmin, async (req, res) => {
             lists: Object.fromEntries(listResults),
             modules: {
                 configurations: Object.fromEntries(Object.entries(configurations).map(([key, value]) => [key, { title: value.title, category: value.category, description: value.description, fields: value.fields }])),
-                lists: Object.fromEntries(Object.entries(lists).map(([key, value]) => [key, { title: value.title, category: value.category, fields: value.fields }]))
+                lists: Object.fromEntries(Object.entries(lists).map(([key, value]) => [key, { title: value.title, category: value.category, description: value.description, fields: value.fields }]))
             }
         });
     } catch (error) {
@@ -1062,6 +1063,15 @@ app.delete("/api/guilds/:guildId/lists/:list/:recordId", requireLogin, requireCs
     const definition = lists[req.params.list];
     if (!definition) return res.status(404).json({ error: "No encontré esa lista." });
     const removed = await definition.model.findOneAndDelete({ _id: req.params.recordId, guildId: req.params.guildId });
+    if (removed && req.params.list === "socialAlerts") {
+        const state = await SocialAlertState.findOneAndDelete({ guildId: req.params.guildId, alertId: removed._id });
+        if (state?.webhookId && state?.webhookToken) {
+            await fetch(`https://discord.com/api/v10/webhooks/${state.webhookId}/${state.webhookToken}`, {
+                method: "DELETE",
+                signal: AbortSignal.timeout(8_000)
+            }).catch(error => console.warn("[Dashboard Social Alerts] No pude limpiar el webhook de la alerta eliminada:", error.message));
+        }
+    }
     return removed ? res.json({ ok: true }) : res.status(404).json({ error: "No encontré este elemento." });
 });
 

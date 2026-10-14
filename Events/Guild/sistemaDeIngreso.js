@@ -10,6 +10,7 @@ module.exports = {
         try {
             const data = await welcomeSchema.findOne({ Guild: member.guild.id }).lean();
             if (!data) return;
+            if (data.IgnoreBots && member.user.bot) return;
 
             const createdAt = Math.floor(member.user.createdTimestamp / 1000);
             const title = renderConfiguredMessage(data.Title, {

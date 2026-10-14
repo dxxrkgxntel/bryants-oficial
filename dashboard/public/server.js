@@ -282,7 +282,7 @@ function renderField(field, value, prefix = "") {
         const values = Array.isArray(value) ? value.map(String) : [];
         const options = optionsFor(field);
         const stale = values.filter(current => !options.some(option => option.id === current)).map(current => `<option value="${escapeHtml(current)}" selected>ID guardado: ${escapeHtml(current)}</option>`).join("");
-        return `<label class="field" for="${id}"><span>${escapeHtml(field.label)}</span><select id="${id}" name="${escapeHtml(field.name)}" multiple size="5">${stale}${options.map(option => `<option value="${escapeHtml(option.id)}" ${values.includes(option.id) ? "selected" : ""}>${escapeHtml(option.name)}</option>`).join("")}</select><small>Mantén Ctrl o Cmd para seleccionar varios.</small></label>`;
+        return `<label class="field" for="${id}"><span>${escapeHtml(field.label)}</span><select id="${id}" name="${escapeHtml(field.name)}" multiple size="5" ${field.maxItems ? `data-max-selected="${field.maxItems}"` : ""}>${stale}${options.map(option => `<option value="${escapeHtml(option.id)}" ${values.includes(option.id) ? "selected" : ""}>${escapeHtml(option.name)}</option>`).join("")}</select><small>${field.maxItems ? `Selecciona hasta ${field.maxItems} roles. ` : ""}Mantén Ctrl o Cmd para seleccionar varios.</small></label>`;
     }
     if (["string-list", "json"].includes(field.type)) {
         let text = "";
@@ -736,6 +736,7 @@ function renderModule(key, modules) {
         });
     }
     const settingsForm = content.querySelector("#settings-form");
+    wireMultiSelectLimits(settingsForm);
     registerFormGuard(settingsForm, definition.fields);
     setupButtonEditors(settingsForm, definition);
     setupTemplateComposers(settingsForm);
@@ -861,6 +862,7 @@ function getRecordLabel(key, record, definition) {
     if (key === "shopItems") return `${roleName} · ${Number(record.price || 0).toLocaleString("es")} monedas`;
     if (key === "bankDonorRoles") return `${roleName} · bonificación desde ${Number(record.requiredAmount || 0).toLocaleString("es")}`;
     if (key === "birthdayMembers") return record.discordName || (record.userId ? `Cargando nombre… · ${record.day}/${record.month}` : "Miembro sin ID de Discord");
+    if (key === "socialAlerts") return `${record.platform || "Kick"} · ${record.slug || "Canal sin nombre"}${record.enabled === false ? " · desactivada" : ""}`;
     return record.name || record[definition.identity] || roleName || (record._id ? `Registro ${String(record._id).slice(-8)}` : "Registro sin identificar");
 }
 
@@ -877,6 +879,20 @@ function getRecordSearchText(key, record, definition) {
     return normalizeSearch(`${getRecordLabel(key, record, definition)} ${values}`);
 }
 
+function wireMultiSelectLimits(form) {
+    form?.querySelectorAll("select[data-max-selected]").forEach(select => {
+        select.addEventListener("change", () => {
+            const limit = Number(select.dataset.maxSelected) || 0;
+            const selected = [...select.selectedOptions];
+            if (limit && selected.length > limit) {
+                const mostRecent = selected.find(option => option.value === select.value) || selected.at(-1);
+                if (mostRecent) mostRecent.selected = false;
+                showNotice(`Puedes seleccionar hasta ${limit} elementos.`, true);
+            }
+        });
+    });
+}
+
 function renderList(key, definition, editItem = null) {
     const records = configState.lists[key] || [];
     const editing = Boolean(editItem);
@@ -886,7 +902,7 @@ function renderList(key, definition, editItem = null) {
         return `<div class="record-row" data-record-id="${escapeHtml(record._id)}" data-search="${escapeHtml(getRecordSearchText(key, record, definition))}"><div class="record-title">${escapeHtml(label)}</div><div class="record-actions"><button type="button" class="quiet-button" data-edit="${escapeHtml(record._id)}">Editar</button><button type="button" class="quiet-button danger-text" data-delete="${escapeHtml(record._id)}">Eliminar</button></div></div>`;
     }).join("");
     const search = records.length > 3 ? `<div class="list-toolbar"><span>${records.length} elementos</span><label class="record-search"><span class="sr-only">Buscar en ${escapeHtml(definition.title)}</span><input type="search" id="record-search" placeholder="Buscar en la lista…" autocomplete="off"></label></div>` : "";
-    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div>${search}<div class="records-list">${rows || '<p class="empty-state">Todavía no hay elementos configurados.</p>'}<p id="list-no-results" class="empty-state" hidden>No hay elementos que coincidan con la búsqueda.</p></div><div class="form-divider"></div><h3>${editing ? "Editar elemento" : "Añadir elemento"}</h3>${form}</article>`;
+    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div>${definition.description ? `<p class="card-description">${escapeHtml(definition.description)}</p>` : ""}${search}<div class="records-list">${rows || '<p class="empty-state">Todavía no hay elementos configurados.</p>'}<p id="list-no-results" class="empty-state" hidden>No hay elementos que coincidan con la búsqueda.</p></div><div class="form-divider"></div><h3>${editing ? "Editar elemento" : "Añadir elemento"}</h3>${form}</article>`;
 
     if (key === "birthdayMembers" && !editing && records.length) {
         api(`/api/guilds/${encodeURIComponent(guildId)}/birthday-members/names`).then(result => {
@@ -930,6 +946,8 @@ function renderList(key, definition, editItem = null) {
         } catch (error) { showNotice(error.message, true); }
     }));
     const listForm = content.querySelector("#list-form");
+    wireMultiSelectLimits(listForm);
+    setupTemplateComposers(listForm);
     registerFormGuard(listForm, definition.fields);
     listForm.addEventListener("submit", async event => {
         event.preventDefault();

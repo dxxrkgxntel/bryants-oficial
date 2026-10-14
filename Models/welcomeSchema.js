@@ -7,6 +7,7 @@ let welcomeSchema = new Schema({
     MessageDes: String,
     Channel: String,
     Guild: String,
+    IgnoreBots: { type: Boolean, default: false },
     Title: String,
     SendDM: { type: Boolean, default: false },
     DMTitle: String,

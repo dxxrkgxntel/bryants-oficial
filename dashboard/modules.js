@@ -1,4 +1,11 @@
 const messageVariables = {
+    socialAlert: [
+        { token: "{{channel}}", label: "Canal", description: "Nombre del canal de Kick." },
+        { token: "{{title}}", label: "Título del directo", description: "Título actual del directo." },
+        { token: "{{viewers}}", label: "Espectadores", description: "Espectadores actuales (si está activada esa opción)." },
+        { token: "{{category}}", label: "Categoría", description: "Categoría actual del directo." },
+        { token: "{{url}}", label: "Enlace", description: "Enlace al canal de Kick." }
+    ],
     welcome: [
         { token: "{{user}}", label: "Miembro", description: "Mención al miembro que entra." },
         { token: "{{username}}", label: "Nombre", description: "Nombre de usuario, sin mención." },
@@ -85,6 +92,7 @@ const configurations = {
         guildField: "Guild",
         fields: [
             { name: "Channel", label: "Canal", type: "channel", channelTypes: [0] },
+            { name: "IgnoreBots", label: "Ignorar cuentas de bots", type: "boolean", help: "No envía mensajes de bienvenida en el servidor ni por DM cuando entra una cuenta bot." },
             { name: "Title", label: "Título", type: "text", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.welcome },
             { name: "MessageDes", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.welcome, help: "Admite variables con llaves dobles, por ejemplo {{user}}, {{server}} y {{members}}. También puedes insertarlas con los botones." },
             { name: "Color", label: "Color hexadecimal", type: "color", optional: true },
@@ -228,7 +236,8 @@ const configurations = {
             { name: "channelId", label: "Canal", type: "channel", channelTypes: [0] },
             { name: "Enabled", label: "Sistema activo", type: "boolean", default: true },
             { name: "replyButtonsEnabled", label: "Botones de respuesta", type: "boolean", help: "Añade un botón para responder anónimamente a cada confesión." },
-            { name: "repliesInThreads", label: "Respuestas en hilos", type: "boolean", help: "Actívalo para agrupar las respuestas en un hilo; desactívalo para publicarlas como mensajes separados." }
+            { name: "repliesInThreads", label: "Respuestas en hilos", type: "boolean", help: "Actívalo para agrupar las respuestas en un hilo; desactívalo para publicarlas como mensajes separados." },
+            { name: "rolesToMention", label: "Roles a mencionar", type: "role-list", maxItems: 5, help: "Selecciona hasta cinco roles; se mencionan al publicar una confesión nueva, no en las respuestas. Mantén Ctrl o Cmd para seleccionar varios." }
         ]
     },
     suggestions: {
@@ -416,6 +425,26 @@ const lists = {
             { name: "channelId", label: "Canal de anuncio personalizado", type: "channel", channelTypes: [0], optional: true }
         ],
         identity: "userId"
+    },
+    socialAlerts: {
+        title: "Alertas sociales · Kick",
+        category: "Comunidad",
+        description: "Sigue canales de Kick y envía una alerta Componentes V2 a Discord al comenzar un directo. Para usar la API oficial de Kick, configura KICK_CLIENT_ID y KICK_CLIENT_SECRET en el entorno del bot.",
+        model: require("../Models/SocialAlert"),
+        fields: [
+            { name: "platform", label: "Plataforma", type: "select", options: ["Kick"] },
+            { name: "slug", label: "Canal de Kick", type: "text", maxLength: 100, help: "Escribe el nombre del canal que aparece en su URL de Kick." },
+            { name: "channelId", label: "Canal de Discord", type: "channel", channelTypes: [0] },
+            { name: "includeViewerCount", label: "Cantidad de espectadores", type: "boolean", help: "Incluye los espectadores actuales y actualiza el mensaje cada cinco minutos." },
+            { name: "title", label: "Título de la alerta", type: "text", maxLength: 256, templateComposer: true, templateVariables: messageVariables.socialAlert },
+            { name: "messageTemplate", label: "Mensaje de alerta", type: "textarea", maxLength: 2000, templateComposer: true, templateVariables: messageVariables.socialAlert, help: "Variables: {{channel}}, {{title}}, {{viewers}}, {{category}} y {{url}}." },
+            { name: "image", label: "URL de banner", type: "url", optional: true },
+            { name: "color", label: "Color hexadecimal", type: "color", optional: true },
+            { name: "displayName", label: "Nombre para mostrar", type: "text", maxLength: 80, optional: true, help: "Opcional. Personaliza el nombre del webhook que publica la alerta y requiere permiso Administrar webhooks." },
+            { name: "avatarUrl", label: "Foto de perfil (URL HTTPS)", type: "url", optional: true, help: "Opcional. Personaliza el avatar del webhook y requiere permiso Administrar webhooks." },
+            { name: "enabled", label: "Sistema activo", type: "boolean", default: true }
+        ],
+        identity: "slug"
     }
 };
 

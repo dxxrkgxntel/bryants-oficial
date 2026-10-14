@@ -6,6 +6,7 @@ let confesionesSchema = new Schema({
     Enabled: { type: Boolean, default: true },
     replyButtonsEnabled: { type: Boolean, default: false },
     repliesInThreads: { type: Boolean, default: false },
+    rolesToMention: { type: [String], default: [] },
 })
 
 module.exports = model("confesiones", confesionesSchema)
