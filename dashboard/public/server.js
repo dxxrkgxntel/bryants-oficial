@@ -7,6 +7,7 @@ let csrfToken = "";
 let resources = { channels: [], roles: [] };
 let configState = null;
 let currentModule = "";
+let activeGuild = null;
 
 function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
@@ -43,7 +44,12 @@ function showSavedState(form) {
 }
 
 function renderHome(guild, modules) {
-    nav.querySelectorAll(".nav-item").forEach(button => button.classList.remove("active"));
+    nav.querySelectorAll(".nav-item").forEach(button => {
+        const active = button.dataset.module === "__home";
+        button.classList.toggle("active", active);
+        if (active) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
+    });
     const entries = [...Object.entries(modules.configurations), ...Object.entries(modules.lists)];
     const total = entries.length;
     const configured = entries.filter(([key]) => {
@@ -228,6 +234,13 @@ function readForm(form, fields) {
 
 function makeNav(modules) {
     nav.replaceChildren();
+    const homeButton = document.createElement("button");
+    homeButton.type = "button";
+    homeButton.className = "nav-item nav-home";
+    homeButton.textContent = "Inicio";
+    homeButton.dataset.module = "__home";
+    homeButton.addEventListener("click", () => renderHome(activeGuild, modules));
+    nav.append(homeButton);
     const all = [...Object.entries(modules.configurations), ...Object.entries(modules.lists)];
     for (const category of categoriesOrder) {
         const group = all.filter(([, definition]) => definition.category === category);
@@ -250,7 +263,12 @@ function makeNav(modules) {
 
 function renderModule(key, modules) {
     currentModule = key;
-    nav.querySelectorAll(".nav-item").forEach(button => button.classList.toggle("active", button.dataset.module === key));
+    nav.querySelectorAll(".nav-item").forEach(button => {
+        const active = button.dataset.module === key;
+        button.classList.toggle("active", active);
+        if (active) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
+    });
     const isList = Boolean(modules.lists[key]);
     const definition = isList ? modules.lists[key] : modules.configurations[key];
     document.querySelector("#page-title").textContent = definition.title;
@@ -392,6 +410,7 @@ async function initialize() {
             api(`/api/guilds/${encodeURIComponent(guildId)}/config`)
         ]);
         const guild = guildsResult.guilds.find(item => item.id === guildId);
+        activeGuild = guild || null;
         const serverName = guild?.name || "Servidor de Discord";
         const avatar = document.querySelector("#server-avatar");
         document.querySelector("#server-name").textContent = serverName;

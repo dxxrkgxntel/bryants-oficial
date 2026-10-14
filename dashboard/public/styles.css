@@ -213,6 +213,8 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
 .server-change:hover { gap: 9px; color: #e3c1ff; }
 .server-change span { font-size: 13px; }
 #module-nav { flex: 1; overflow: auto; padding-right: 3px; }
+#module-nav .nav-home { margin-bottom: 13px; }
+#module-nav .nav-heading:first-of-type { margin-top: 8px; }
 .nav-heading { margin: 20px 8px 7px; color: #8f829b; font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
 .nav-item { position: relative; display: block; width: 100%; margin: 3px 0; padding: 9px 11px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: #bdb2c7; text-align: left; font: inherit; font-size: 12px; cursor: pointer; transition: border-color .18s ease, background .18s ease, color .18s ease, transform .18s ease; }
 .nav-item:hover { transform: translateX(2px); border-color: #ffffff0d; background: #ffffff0a; color: #fff; }
