@@ -455,6 +455,12 @@ function renderPreviewTemplate(template) {
         miembros: "128", members: "128", membercount: "128", member_count: "128", memberscount: "128", members_count: "128", cuenta: "hace 2 años", createdat: "hace 2 años", created_at: "hace 2 años", accountcreated: "hace 2 años", account_created: "hace 2 años", accountage: "hace 2 años", account_age: "hace 2 años",
         nivel: "5", level: "5", xp: "250", recompensa: "500", reward: "500", coins: "500", monedas: "500", rol: "Miembro VIP", role: "Miembro VIP", boosts: "12"
     };
+    Object.assign(samples, {
+        users_rewarded: "65",
+        total_coins: "1.628.117",
+        days_until_drop: "7",
+        next_drop: "en 7 días"
+    });
     samples.boost = samples.boosts;
     samples.date = new Intl.DateTimeFormat("es", { dateStyle: "long" }).format(new Date());
     samples.fecha = samples.date;
@@ -476,6 +482,11 @@ function renderPreviewMarkup(key, values) {
     const configuredText = [title ? `<h3>${escapeHtml(title)}</h3>` : "", title && description ? '<hr class="discord-preview-separator">' : "", description ? `<p>${escapeHtml(description)}</p>` : ""].filter(Boolean).join("");
     const media = banner ? `<div class="message-preview-banner"><img data-preview-image src="${escapeHtml(banner)}" alt="Vista previa del banner"></div>` : "";
     const thumbnailBlock = thumbnail ? `<img class="message-preview-avatar" data-preview-image src="${escapeHtml(thumbnail)}" alt="Miniatura configurada">` : "";
+
+    if (key === "weeklyDrop") {
+        const description = renderPreviewTemplate(values.description).trim();
+        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Mensaje Componentes V2 para el drop</small></div><article class="discord-preview" style="--preview-accent:${color}"><div class="discord-preview-body"><div class="discord-preview-copy"><h3>🪙 Weekly Drop Repartido</h3><hr class="discord-preview-separator">${description ? `<p>${escapeHtml(description)}</p>` : '<p class="preview-empty">Escribe una descripción y añade variables dinámicas para ver el aviso.</p>'}</div></div></article></section>`;
+    }
 
     if (["welcome", "leaves", "boosts", "birthday"].includes(key)) {
         const empty = !configuredText && !media && !thumbnailBlock;
@@ -510,11 +521,12 @@ function previewValues(key, form) {
     if (key === "leaves") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail") };
     if (key === "birthday") return { title: read("birthdayTitle"), description: read("birthdayDescription"), color: read("birthdayColor"), banner: read("birthdayBanner"), reminder: read("birthdayReminder") };
     if (key === "boosts") return { title: read("boostTitle"), description: read("boostDescription"), color: read("boostColor"), banner: read("boostImage"), thumbnail: read("boostThumbnail"), buttons: form.querySelector('[data-button-list="boostButtons"]') ? readButtonRows(form.querySelector('[data-button-list="boostButtons"]')) : [] };
+    if (key === "weeklyDrop") return { description: read("description") };
     return { messageTitle: read("messageLevelTitle"), messageDescription: read("messageLevelDescription"), voiceTitle: read("voiceLevelTitle"), voiceDescription: read("voiceLevelDescription"), roleTitle: read("levelRoleTitle"), roleDescription: read("levelRoleDescription"), color: read("levelColor"), image: read("levelImage"), thumbnail: read("levelThumbnail") };
 }
 
 function renderPreview(key, data) {
-    if (!["welcome", "leaves", "boosts", "birthday", "levelSettings"].includes(key)) return "";
+    if (!["welcome", "leaves", "boosts", "birthday", "levelSettings", "weeklyDrop"].includes(key)) return "";
     const values = key === "welcome"
         ? { title: data.Title, description: data.MessageDes, color: data.Color, banner: data.Banner, thumbnail: data.Thumbnail, buttons: data.Buttons, sendDM: data.SendDM, dmTitle: data.DMTitle, dmDescription: data.DMMessage, dmColor: data.DMColor, dmBanner: data.DMBanner, dmThumbnail: data.DMThumbnail }
         : key === "leaves"
@@ -523,7 +535,9 @@ function renderPreview(key, data) {
                 ? { title: data.birthdayTitle, description: data.birthdayDescription, color: data.birthdayColor, banner: data.birthdayBanner, reminder: data.birthdayReminder }
         : key === "boosts"
                 ? { title: data.boostTitle, description: data.boostDescription, color: data.boostColor, banner: data.boostImage, thumbnail: data.boostThumbnail, buttons: boostButtonsFor(data) }
-                : { messageTitle: data.messageLevelTitle !== undefined ? data.messageLevelTitle : data.levelUpTitle, messageDescription: data.messageLevelDescription !== undefined ? data.messageLevelDescription : data.levelUpDescription, voiceTitle: data.voiceLevelTitle !== undefined ? data.voiceLevelTitle : data.levelUpTitle, voiceDescription: data.voiceLevelDescription !== undefined ? data.voiceLevelDescription : data.levelUpDescription, roleTitle: data.levelRoleTitle, roleDescription: data.levelRoleDescription, color: data.levelColor, image: data.levelImage, thumbnail: data.levelThumbnail };
+                : key === "weeklyDrop"
+                    ? { description: data.description }
+                    : { messageTitle: data.messageLevelTitle !== undefined ? data.messageLevelTitle : data.levelUpTitle, messageDescription: data.messageLevelDescription !== undefined ? data.messageLevelDescription : data.levelUpDescription, voiceTitle: data.voiceLevelTitle !== undefined ? data.voiceLevelTitle : data.levelUpTitle, voiceDescription: data.voiceLevelDescription !== undefined ? data.voiceLevelDescription : data.levelUpDescription, roleTitle: data.levelRoleTitle, roleDescription: data.levelRoleDescription, color: data.levelColor, image: data.levelImage, thumbnail: data.levelThumbnail };
     return renderPreviewMarkup(key, values);
 }
 

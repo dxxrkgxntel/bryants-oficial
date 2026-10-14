@@ -58,6 +58,12 @@ const messageVariables = {
         { token: "{{role}}", label: "Rol", description: "Rol concedido." },
         { token: "{{date}}", label: "Fecha", description: "Fecha actual." },
         { token: "{{time}}", label: "Hora", description: "Hora actual." }
+    ],
+    weeklyDrop: [
+        { token: "{{users_rewarded}}", label: "Usuarios recompensados", description: "Cantidad de usuarios que recibieron coins en este drop." },
+        { token: "{{total_coins}}", label: "Coins repartidos", description: "Total de coins entregados en este drop." },
+        { token: "{{days_until_drop}}", label: "Días hasta el próximo drop", description: "Días que faltan para el siguiente reparto." },
+        { token: "{{next_drop}}", label: "Próximo drop", description: "Cuenta atrás automática de Discord hasta el próximo drop." }
     ]
 };
 
@@ -330,6 +336,7 @@ const configurations = {
         guildField: "guildId",
         fields: [
             { name: "enabled", label: "Sistema activo", type: "boolean" },
+            { name: "description", label: "Descripción del aviso", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.weeklyDrop, help: "Personaliza el texto del drop e inserta variables como {{users_rewarded}}, {{total_coins}} y {{days_until_drop}}." },
             { name: "minAmount", label: "Cantidad mínima", type: "number", min: 1 },
             { name: "maxAmount", label: "Cantidad máxima", type: "number", min: 1 },
             { name: "logChannelId", label: "Canal de avisos", type: "channel", channelTypes: [0], optional: true }

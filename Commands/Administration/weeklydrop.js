@@ -19,10 +19,12 @@ require("../../Models/WeeklyDrop");
 const Economy =
 require("../../Models/EconomyUser");
 
+const { renderWeeklyDropDescription } = require("../../Functions/weeklyDropDescription");
+
 const WEEKLYDROP_BANNER = "https://i.imgur.com/w7LzzI0.png";
 
 function weeklyPanel(title, text, color = 0x8A2BE2) {
-    return new ContainerBuilder()
+    const panel = new ContainerBuilder()
         .setAccentColor(color)
         .addMediaGalleryComponents(
             new MediaGalleryBuilder().addItems(
@@ -32,8 +34,9 @@ function weeklyPanel(title, text, color = 0x8A2BE2) {
         .addTextDisplayComponents(new TextDisplayBuilder().setContent("## " + title))
         .addSeparatorComponents(
             new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
-        )
-        .addTextDisplayComponents(new TextDisplayBuilder().setContent(text));
+        );
+    if (text) panel.addTextDisplayComponents(new TextDisplayBuilder().setContent(text));
+    return panel;
 }
 
 function weeklyPayload(title, text, color = 0x8A2BE2) {
@@ -314,10 +317,11 @@ module.exports = {
                 data.nextDrop = new Date(Date.now() + 604800000);
                 await data.save();
                 const summary = "**Usuarios recompensados:** " + humans.length + "\n**Total distribuido:** " + totalDistributed.toLocaleString() + " coins\n**Rango:** " + data.minAmount.toLocaleString() + " - " + data.maxAmount.toLocaleString() + "\n**Próximo drop:** <t:" + Math.floor(data.nextDrop.getTime() / 1000) + ":R>";
+                const announcement = renderWeeklyDropDescription(data, humans.length, totalDistributed);
                 if (data.logChannelId) {
                     const channel = interaction.guild.channels.cache.get(data.logChannelId);
                     if (channel && channel.isTextBased()) {
-                        await channel.send(weeklyPayload("🪙 Drop semanal ejecutado", summary, 0xFFD700)).catch(error => console.error("[WeeklyDrop Log]", error));
+                        await channel.send(weeklyPayload("🪙 Drop semanal ejecutado", announcement, 0xFFD700)).catch(error => console.error("[WeeklyDrop Log]", error));
                     }
                 }
                 return weeklyReply(interaction, "✅ Drop semanal completado", summary, 0x00FF99);

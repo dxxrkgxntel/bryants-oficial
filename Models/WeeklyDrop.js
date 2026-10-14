@@ -13,6 +13,12 @@ const weeklyDropSchema = new mongoose.Schema({
         default: false
     },
 
+    description: {
+        type: String,
+        default: null,
+        maxlength: 4000
+    },
+
     minAmount: {
         type: Number,
         default: 500

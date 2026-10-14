@@ -14,6 +14,7 @@ const Welcome = require('../../Models/welcomeSchema');
 const startDailyPurgeScheduler = require('../../Handlers/dailyPurgeScheduler');
 const { restoreVoiceConnections, startVoiceConnectionSync } = require('../../Handlers/voiceConnectionManager');
 const { restoreServerStats } = require('../../Functions/serverStats');
+const { renderWeeklyDropDescription } = require('../../Functions/weeklyDropDescription');
 
 const WEEKLYDROP_BANNER = 'https://i.imgur.com/w7LzzI0.png';
 
@@ -119,6 +120,8 @@ module.exports = {
                         data.nextDrop = new Date(Date.now() + 604800000);
                         await data.save();
 
+                        const description = renderWeeklyDropDescription(data, humans.length, totalDistributed);
+
                         const channel = data.logChannelId ? guild.channels.cache.get(data.logChannelId) : null;
                         if (channel && channel.isTextBased()) {
                             await channel.send({
@@ -129,7 +132,7 @@ module.exports = {
                                         { type: 12, items: [{ media: { url: WEEKLYDROP_BANNER } }] },
                                         { type: 10, content: "## 🪙 Drop semanal automático" },
                                         { type: 14, divider: true, spacing: 1 },
-                                        { type: 10, content: "**Usuarios recompensados:** " + humans.length + "\n**Total distribuido:** " + totalDistributed.toLocaleString() + " coins\n**Rango:** " + data.minAmount.toLocaleString() + " - " + data.maxAmount.toLocaleString() + "\n**Próximo drop:** <t:" + Math.floor(data.nextDrop.getTime() / 1000) + ":R>" }
+                                        ...(description ? [{ type: 10, content: description }] : [])
                                     ]
                                 }],
                                 flags: 32768
