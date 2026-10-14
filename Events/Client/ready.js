@@ -16,8 +16,6 @@ const { restoreVoiceConnections, startVoiceConnectionSync } = require('../../Han
 const { restoreServerStats } = require('../../Functions/serverStats');
 const { renderWeeklyDropDescription } = require('../../Functions/weeklyDropDescription');
 
-const WEEKLYDROP_BANNER = 'https://i.imgur.com/w7LzzI0.png';
-
 require('colors');
 
 module.exports = {
@@ -124,12 +122,19 @@ module.exports = {
 
                         const channel = data.logChannelId ? guild.channels.cache.get(data.logChannelId) : null;
                         if (channel && channel.isTextBased()) {
+                            let banner = null;
+                            try {
+                                const imageUrl = new URL(String(data.image || ""));
+                                if (imageUrl.protocol === "https:") banner = imageUrl.toString();
+                            } catch {
+                                // Configuración vacía o URL antigua inválida: enviar el aviso sin banner.
+                            }
                             await channel.send({
                                 components: [{
                                     type: 17,
                                     accent_color: 0x8A2BE2,
                                     components: [
-                                        { type: 12, items: [{ media: { url: WEEKLYDROP_BANNER } }] },
+                                        ...(banner ? [{ type: 12, items: [{ media: { url: banner } }] }] : []),
                                         { type: 10, content: "## 🪙 Drop semanal automático" },
                                         { type: 14, divider: true, spacing: 1 },
                                         ...(description ? [{ type: 10, content: description }] : [])

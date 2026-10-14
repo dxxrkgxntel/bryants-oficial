@@ -19,6 +19,12 @@ const weeklyDropSchema = new mongoose.Schema({
         maxlength: 4000
     },
 
+    image: {
+        type: String,
+        default: null,
+        maxlength: 2048
+    },
+
     minAmount: {
         type: Number,
         default: 500

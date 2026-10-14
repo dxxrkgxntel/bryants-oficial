@@ -337,6 +337,7 @@ const configurations = {
         fields: [
             { name: "enabled", label: "Sistema activo", type: "boolean" },
             { name: "description", label: "Descripción del aviso", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.weeklyDrop, help: "Personaliza el texto del drop e inserta variables como {{users_rewarded}}, {{total_coins}} y {{days_until_drop}}." },
+            { name: "image", label: "URL del banner", type: "url", optional: true, help: "Añade el enlace HTTPS de la imagen que aparecerá encima del aviso." },
             { name: "minAmount", label: "Cantidad mínima", type: "number", min: 1 },
             { name: "maxAmount", label: "Cantidad máxima", type: "number", min: 1 },
             { name: "logChannelId", label: "Canal de avisos", type: "channel", channelTypes: [0], optional: true }

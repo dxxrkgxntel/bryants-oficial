@@ -21,27 +21,28 @@ require("../../Models/EconomyUser");
 
 const { renderWeeklyDropDescription } = require("../../Functions/weeklyDropDescription");
 
-const WEEKLYDROP_BANNER = "https://i.imgur.com/w7LzzI0.png";
-
-function weeklyPanel(title, text, color = 0x8A2BE2) {
+function weeklyPanel(title, text, color = 0x8A2BE2, imageUrl = null) {
     const panel = new ContainerBuilder()
-        .setAccentColor(color)
-        .addMediaGalleryComponents(
-            new MediaGalleryBuilder().addItems(
-                new MediaGalleryItemBuilder().setURL(WEEKLYDROP_BANNER)
-            )
-        )
-        .addTextDisplayComponents(new TextDisplayBuilder().setContent("## " + title))
-        .addSeparatorComponents(
-            new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
-        );
+        .setAccentColor(color);
+    try {
+        const url = new URL(String(imageUrl || ""));
+        if (url.protocol === "https:") {
+            panel.addMediaGalleryComponents(
+                new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(url.toString()))
+            );
+        }
+    } catch {
+        // Sin imagen configurada, el Component V2 se envía sin galería.
+    }
+    panel.addTextDisplayComponents(new TextDisplayBuilder().setContent("## " + title))
+        .addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small));
     if (text) panel.addTextDisplayComponents(new TextDisplayBuilder().setContent(text));
     return panel;
 }
 
-function weeklyPayload(title, text, color = 0x8A2BE2) {
+function weeklyPayload(title, text, color = 0x8A2BE2, imageUrl = null) {
     return {
-        components: [weeklyPanel(title, text, color)],
+        components: [weeklyPanel(title, text, color, imageUrl)],
         flags: MessageFlags.IsComponentsV2
     };
 }
@@ -321,7 +322,7 @@ module.exports = {
                 if (data.logChannelId) {
                     const channel = interaction.guild.channels.cache.get(data.logChannelId);
                     if (channel && channel.isTextBased()) {
-                        await channel.send(weeklyPayload("🪙 Drop semanal ejecutado", announcement, 0xFFD700)).catch(error => console.error("[WeeklyDrop Log]", error));
+                        await channel.send(weeklyPayload("🪙 Drop semanal ejecutado", announcement, 0xFFD700, data.image)).catch(error => console.error("[WeeklyDrop Log]", error));
                     }
                 }
                 return weeklyReply(interaction, "✅ Drop semanal completado", summary, 0x00FF99);

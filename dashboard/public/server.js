@@ -485,7 +485,9 @@ function renderPreviewMarkup(key, values) {
 
     if (key === "weeklyDrop") {
         const description = renderPreviewTemplate(values.description).trim();
-        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Mensaje Componentes V2 para el drop</small></div><article class="discord-preview" style="--preview-accent:${color}"><div class="discord-preview-body"><div class="discord-preview-copy"><h3>🪙 Weekly Drop Repartido</h3><hr class="discord-preview-separator">${description ? `<p>${escapeHtml(description)}</p>` : '<p class="preview-empty">Escribe una descripción y añade variables dinámicas para ver el aviso.</p>'}</div></div></article></section>`;
+        const banner = safePreviewImage(values.banner);
+        const media = banner ? `<div class="message-preview-banner"><img data-preview-image src="${escapeHtml(banner)}" alt="Banner del drop semanal"></div>` : "";
+        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Mensaje Componentes V2 para el drop</small></div><article class="discord-preview" style="--preview-accent:${color}">${media}<div class="discord-preview-body"><div class="discord-preview-copy"><h3>🪙 Weekly Drop Repartido</h3><hr class="discord-preview-separator">${description ? `<p>${escapeHtml(description)}</p>` : '<p class="preview-empty">Escribe una descripción y añade variables dinámicas para ver el aviso.</p>'}</div></div></article></section>`;
     }
 
     if (["welcome", "leaves", "boosts", "birthday"].includes(key)) {
@@ -521,7 +523,7 @@ function previewValues(key, form) {
     if (key === "leaves") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail") };
     if (key === "birthday") return { title: read("birthdayTitle"), description: read("birthdayDescription"), color: read("birthdayColor"), banner: read("birthdayBanner"), reminder: read("birthdayReminder") };
     if (key === "boosts") return { title: read("boostTitle"), description: read("boostDescription"), color: read("boostColor"), banner: read("boostImage"), thumbnail: read("boostThumbnail"), buttons: form.querySelector('[data-button-list="boostButtons"]') ? readButtonRows(form.querySelector('[data-button-list="boostButtons"]')) : [] };
-    if (key === "weeklyDrop") return { description: read("description") };
+    if (key === "weeklyDrop") return { description: read("description"), banner: read("image") };
     return { messageTitle: read("messageLevelTitle"), messageDescription: read("messageLevelDescription"), voiceTitle: read("voiceLevelTitle"), voiceDescription: read("voiceLevelDescription"), roleTitle: read("levelRoleTitle"), roleDescription: read("levelRoleDescription"), color: read("levelColor"), image: read("levelImage"), thumbnail: read("levelThumbnail") };
 }
 
@@ -536,7 +538,7 @@ function renderPreview(key, data) {
         : key === "boosts"
                 ? { title: data.boostTitle, description: data.boostDescription, color: data.boostColor, banner: data.boostImage, thumbnail: data.boostThumbnail, buttons: boostButtonsFor(data) }
                 : key === "weeklyDrop"
-                    ? { description: data.description }
+                    ? { description: data.description, banner: data.image }
                     : { messageTitle: data.messageLevelTitle !== undefined ? data.messageLevelTitle : data.levelUpTitle, messageDescription: data.messageLevelDescription !== undefined ? data.messageLevelDescription : data.levelUpDescription, voiceTitle: data.voiceLevelTitle !== undefined ? data.voiceLevelTitle : data.levelUpTitle, voiceDescription: data.voiceLevelDescription !== undefined ? data.voiceLevelDescription : data.levelUpDescription, roleTitle: data.levelRoleTitle, roleDescription: data.levelRoleDescription, color: data.levelColor, image: data.levelImage, thumbnail: data.levelThumbnail };
     return renderPreviewMarkup(key, values);
 }
