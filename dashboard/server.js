@@ -1045,6 +1045,27 @@ app.get("/api/guilds/:guildId/members/:userId/economy", requireGuildAdmin, async
     } catch (error) { return res.status(error.status === 404 ? 404 : 502).json({ error: error.status === 404 ? "El miembro ya no está en el servidor." : error.message || "No pude cargar la economía." }); }
 });
 
+app.put("/api/guilds/:guildId/members/:userId/economy", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    if (!/^\d{17,20}$/.test(req.params.userId)) return res.status(400).json({ error: "ID de miembro inválido." });
+    const { wallet, bank } = req.body || {};
+    const maxBalance = 99999999999;
+    if (![wallet, bank].every(value => Number.isSafeInteger(value) && value >= 0 && value <= maxBalance)) {
+        return res.status(400).json({ error: "La cartera y el banco deben ser números enteros entre 0 y 99.999.999.999." });
+    }
+    try {
+        await discordBotRequest(`https://discord.com/api/v10/guilds/${req.params.guildId}/members/${req.params.userId}`);
+        const economy = await EconomyUser.findOneAndUpdate(
+            { guildId: req.params.guildId, userId: req.params.userId },
+            { $set: { wallet, bank }, $setOnInsert: { guildId: req.params.guildId, userId: req.params.userId } },
+            { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+        ).lean();
+        await recordDashboardAudit(req, req.params.guildId, "Balance de miembro actualizado");
+        return res.json({ economy });
+    } catch (error) {
+        return res.status(error.status === 404 ? 404 : 502).json({ error: error.status === 404 ? "El miembro ya no está en el servidor." : error.message || "No pude actualizar el balance." });
+    }
+});
+
 app.put("/api/guilds/:guildId/config/:module", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
     const definition = configurations[req.params.module];
     if (!definition) return res.status(404).json({ error: "No encontré ese sistema." });

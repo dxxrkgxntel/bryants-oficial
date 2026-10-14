@@ -85,6 +85,8 @@ function confirmDiscardChanges() {
 
 function navigateToHome() {
     if (!confirmDiscardChanges()) return;
+    const memberBalanceButton = document.querySelector("#member-balance-update");
+    if (memberBalanceButton) memberBalanceButton.hidden = true;
     activeFormGuard = null;
     renderHome(activeGuild, currentModules);
 }
@@ -319,6 +321,8 @@ function renderField(field, value, prefix = "") {
 
 async function renderAudit(page = 1, perPage = 25) {
     if (!confirmDiscardChanges()) return;
+    const memberBalanceButton = document.querySelector("#member-balance-update");
+    if (memberBalanceButton) memberBalanceButton.hidden = true;
     activeFormGuard = null;
     currentModule = "__audit";
     nav.querySelectorAll(".nav-item").forEach(button => {
@@ -791,6 +795,9 @@ function makeNav(modules) {
 }
 
 function renderMemberEconomy(definition) {
+    const updateButton = document.querySelector("#member-balance-update");
+    updateButton.hidden = true;
+    updateButton.disabled = true;
     content.innerHTML = `<article class="settings-card member-economy-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div><p class="card-description">${escapeHtml(definition.description)}</p><section class="member-search-panel"><button class="member-picker-trigger" type="button" id="member-picker-trigger" aria-haspopup="listbox" aria-expanded="false"><span id="member-picker-label">Busca un miembro…</span><span aria-hidden="true">⌄</span></button><div class="member-picker-menu" id="member-picker-menu" hidden><label class="member-picker-search"><span aria-hidden="true">⌕</span><input type="search" id="member-economy-search" autocomplete="off" placeholder="Buscar un miembro…" aria-label="Buscar un miembro"></label><div id="member-economy-results" class="member-search-results" role="listbox"></div></div></section><section id="member-economy-detail" class="member-economy-detail" hidden></section></article>`;
     const trigger = content.querySelector("#member-picker-trigger");
     const label = content.querySelector("#member-picker-label");
@@ -800,6 +807,7 @@ function renderMemberEconomy(definition) {
     const detail = content.querySelector("#member-economy-detail");
     let timer;
     let selectedMemberId = null;
+    let savedBalance = null;
     const closePicker = () => {
         menu.hidden = true;
         trigger.setAttribute("aria-expanded", "false");
@@ -849,12 +857,56 @@ function renderMemberEconomy(definition) {
             const stats = [["Racha diaria", economy.dailyStreak], ["Apuestas ganadas", economy.gamblesWon], ["Apuestas perdidas", economy.gamblesLost], ["Racha de apuestas", economy.gambleStreak], ["Jackpots", economy.jackpots], ["Récord de ganancia", economy.biggestWin], ["Deuda", economy.debt], ["Préstamo activo", economy.loanTaken ? "Sí" : "No"], ["Donado al banco", economy.bankDonated], ["Victorias de dados", economy.diceWins], ["Derrotas de dados", economy.diceLosses], ["Potenciadores activos", Array.isArray(economy.activeBoosts) ? economy.activeBoosts.length : 0]]
                 .filter(([, value]) => value != null).map(([label, value]) => `<div class="member-economy-stat"><span>${label}</span><strong>${typeof value === "number" ? value.toLocaleString("es-ES") : value}</strong></div>`).join("");
             label.textContent = name;
-            detail.innerHTML = `<div class="member-economy-heading"><div><span class="eyebrow">Economía del miembro</span><h3>${escapeHtml(name)}</h3></div></div><div class="member-balance-grid"><article><span>Cartera</span><strong>${wallet.toLocaleString("es-ES")}</strong><small>Monedas disponibles en mano</small></article><article><span>Banco</span><strong>${bank.toLocaleString("es-ES")}</strong><small>Monedas guardadas</small></article></div><div class="member-economy-stats">${stats}</div><article class="member-backpack"><h3>Mochila</h3><p>La gestión del inventario estará disponible cuando se implemente el sistema de objetos.</p></article>`;
+            savedBalance = { wallet, bank };
+            updateButton.hidden = false;
+            const renderBalance = (balance) => {
+                detail.innerHTML = `<div class="member-economy-heading"><div><span class="eyebrow">Economía del miembro</span><h3>${escapeHtml(name)}</h3></div></div><div class="member-balance-grid"><label class="member-balance-field"><span>Cartera</span><input class="member-balance-input" name="wallet" type="number" min="0" max="99999999999" step="1" inputmode="numeric" value="${balance.wallet}"><small>Monedas disponibles en mano</small></label><label class="member-balance-field"><span>Banco</span><input class="member-balance-input" name="bank" type="number" min="0" max="99999999999" step="1" inputmode="numeric" value="${balance.bank}"><small>Monedas guardadas</small></label></div><div class="member-economy-stats">${stats}</div><article class="member-backpack"><h3>Mochila</h3><p>La gestión del inventario estará disponible cuando se implemente el sistema de objetos.</p></article>`;
+                detail.querySelectorAll(".member-balance-input").forEach(input => input.addEventListener("input", refreshSaveState));
+                refreshSaveState();
+            };
+            renderBalance({ wallet, bank });
         } catch (error) { if (detail.isConnected) detail.innerHTML = `<article class="empty-state">${escapeHtml(error.message)}</article>`; }
     });
+    function refreshSaveState() {
+        const walletInput = detail.querySelector('[name="wallet"]');
+        const bankInput = detail.querySelector('[name="bank"]');
+        if (!walletInput || !bankInput || !savedBalance) { updateButton.disabled = true; return; }
+        const wallet = Number(walletInput.value), bank = Number(bankInput.value);
+        const valid = [walletInput, bankInput].every(input => input.value !== "" && input.validity.valid && Number.isSafeInteger(Number(input.value)));
+        const changed = wallet !== savedBalance.wallet || bank !== savedBalance.bank;
+        updateButton.disabled = !valid || !changed;
+    }
+    updateButton.onclick = async () => {
+        const walletInput = detail.querySelector('[name="wallet"]');
+        const bankInput = detail.querySelector('[name="bank"]');
+        if (!selectedMemberId || !walletInput || !bankInput || updateButton.disabled) return;
+        updateButton.disabled = true;
+        updateButton.textContent = "Actualizando…";
+        try {
+            const response = await api(`/api/guilds/${encodeURIComponent(guildId)}/members/${encodeURIComponent(selectedMemberId)}/economy`, {
+                method: "PUT",
+                body: JSON.stringify({ wallet: Number(walletInput.value), bank: Number(bankInput.value) })
+            });
+            savedBalance = { wallet: Number(response.economy.wallet), bank: Number(response.economy.bank) };
+            walletInput.value = savedBalance.wallet;
+            bankInput.value = savedBalance.bank;
+            refreshSaveState();
+            showNotice("Balance actualizado.");
+        } catch (error) {
+            updateButton.disabled = false;
+            showNotice(error.message, true);
+        } finally {
+            updateButton.textContent = "Actualizar balance";
+        }
+    };
 }
 
 function renderModule(key, modules) {
+    const memberBalanceButton = document.querySelector("#member-balance-update");
+    if (memberBalanceButton && key !== "memberEconomy") {
+        memberBalanceButton.hidden = true;
+        memberBalanceButton.disabled = true;
+    }
     currentModule = key;
     nav.querySelectorAll(".nav-item").forEach(button => {
         const active = button.dataset.module === key;
