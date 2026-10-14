@@ -53,15 +53,18 @@ function escapePlatformText(value) {
     return String(value || "").replace(/@(?=everyone|here)/gi, "@\u200b").slice(0, 500);
 }
 
-function renderAlert(template, stream, slug, includeViewerCount) {
+function renderAlert(template, stream, slug, includeViewerCount, platform = "Kick") {
+    const isTikTok = platform === "TikTok";
+    const username = String(slug || "").replace(/^@+/, "");
     const values = {
-        channel: escapePlatformText(stream.broadcaster?.username || stream.channel?.slug || slug),
+        channel: escapePlatformText(stream.broadcaster?.username || stream.channel?.slug || username),
         title: escapePlatformText(stream.stream_title || stream.title || "En directo"),
         viewers: includeViewerCount ? Number(stream.viewer_count || 0).toLocaleString("es") : "",
         category: escapePlatformText(stream.category?.name || ""),
-        url: `https://kick.com/${encodeURIComponent(slug)}`
+        platform,
+        url: isTikTok ? `https://www.tiktok.com/@${encodeURIComponent(username)}/live` : `https://kick.com/${encodeURIComponent(username)}`
     };
-    return String(template || "").replace(/\{\{(channel|title|viewers|category|url)\}\}/gi, (_match, token) => values[token.toLowerCase()] ?? "").slice(0, 2000);
+    return String(template || "").replace(/\{\{(channel|title|viewers|category|platform|url)\}\}/gi, (_match, token) => values[token.toLowerCase()] ?? "").slice(0, 2000);
 }
 
 function makeComponents(title, content, image, color) {
@@ -79,11 +82,56 @@ function allowedMentionsFor(template) {
     return { parse: /@(everyone|here)/i.test(template) ? ["everyone"] : [], users: [], roles: [] };
 }
 
-async function getStream(slug) {
+async function getKickStream(slug) {
     const url = new URL("https://api.kick.com/public/v1/channels");
     url.searchParams.set("slug", slug);
     const payload = await kickRequest(url);
     return payload?.data?.[0] || null;
+}
+
+async function getTikTokLiveInfo(username) {
+    const normalized = String(username || "").trim().replace(/^@+/, "");
+    if (!/^[a-zA-Z0-9._-]{2,50}$/.test(normalized)) throw new Error("El usuario de TikTok no tiene un formato válido.");
+    const url = new URL("https://www.tiktok.com/api-live/user/room/");
+    url.searchParams.set("aid", "1988");
+    url.searchParams.set("app_name", "tiktok_web");
+    url.searchParams.set("app_language", "en-US");
+    url.searchParams.set("browser_language", "en-US");
+    url.searchParams.set("browser_name", "Mozilla");
+    url.searchParams.set("browser_online", "true");
+    url.searchParams.set("browser_platform", "Win32");
+    url.searchParams.set("device_platform", "web_pc");
+    url.searchParams.set("uniqueId", normalized);
+    url.searchParams.set("sourceType", "54");
+    const response = await fetch(url, {
+        headers: {
+            Accept: "application/json, text/plain, */*",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            Referer: `https://www.tiktok.com/@${encodeURIComponent(normalized)}`
+        },
+        signal: AbortSignal.timeout(12_000)
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(`TikTok respondió ${response.status}.`);
+    if (payload?.message === "user_not_found" || payload?.statusCode === 10221) throw new Error(`TikTok no encontró el usuario @${normalized}.`);
+    const data = payload?.data;
+    const room = data?.liveRoom;
+    const user = data?.user;
+    if (!data || (!room && !user)) throw new Error("TikTok devolvió una respuesta sin datos de directo; puede haber bloqueado o cambiado su API web.");
+    const roomStatus = Number(room?.status);
+    if (!room || roomStatus !== 2) return { isLive: false, stream: null };
+    const roomId = String(room.roomId || room.id || "");
+    return {
+        isLive: true,
+        stream: {
+            id: roomId || `${normalized}:${room.create_time || "live"}`,
+            stream_title: room.title || room.liveRoomUserInfo?.title || "En directo en TikTok",
+            viewer_count: Number(room.userCount || room.viewerCount || 0),
+            category: { name: room.category || room.game_name || "" },
+            broadcaster: { username: user.nickname || user.uniqueId || normalized },
+            url: `https://www.tiktok.com/@${encodeURIComponent(normalized)}/live`
+        }
+    };
 }
 
 async function ensureWebhook(channel, state, alert) {
@@ -113,16 +161,17 @@ async function ensureWebhook(channel, state, alert) {
 async function sendLiveAlert(client, alert, state, stream) {
     const channel = await client.channels.fetch(alert.channelId).catch(() => null);
     if (!channel?.isTextBased() || !channel.guild) throw new Error("El canal de Discord configurado ya no está disponible.");
-    const content = renderAlert(alert.messageTemplate, stream, alert.slug, alert.includeViewerCount);
+    const platform = alert.platform || "Kick";
+    const content = renderAlert(alert.messageTemplate, stream, alert.slug, alert.includeViewerCount, platform);
     const options = {
-        components: makeComponents(renderAlert(alert.title, stream, alert.slug, alert.includeViewerCount), content, alert.image, alert.color),
+        components: makeComponents(renderAlert(alert.title, stream, alert.slug, alert.includeViewerCount, platform), content, alert.image, alert.color),
         flags: MessageFlags.IsComponentsV2,
         allowedMentions: allowedMentionsFor(`${alert.title || ""} ${alert.messageTemplate || ""}`)
     };
     let message;
     if (alert.displayName || alert.avatarUrl) {
         const webhook = await ensureWebhook(channel, state, alert);
-        message = await webhook.send({ ...options, username: alert.displayName || `Kick · ${alert.slug}`, avatarURL: alert.avatarUrl || undefined });
+        message = await webhook.send({ ...options, username: alert.displayName || `${platform} · ${alert.slug}`, avatarURL: alert.avatarUrl || undefined });
     } else {
         message = await channel.send(options);
     }
@@ -139,8 +188,9 @@ async function updateViewerCount(client, alert, state, stream) {
     if (!alert.includeViewerCount || !state.messageId || state.lastViewers === viewers || Date.now() - new Date(state.lastViewerUpdateAt || 0).getTime() < VIEWER_REFRESH_MS) return;
     const channel = await client.channels.fetch(alert.channelId).catch(() => null);
     if (!channel?.isTextBased()) return;
-    const content = renderAlert(alert.messageTemplate, stream, alert.slug, true);
-    const options = { components: makeComponents(renderAlert(alert.title, stream, alert.slug, true), content, alert.image, alert.color), flags: MessageFlags.IsComponentsV2, allowedMentions: allowedMentionsFor(`${alert.title || ""} ${alert.messageTemplate || ""}`) };
+    const platform = alert.platform || "Kick";
+    const content = renderAlert(alert.messageTemplate, stream, alert.slug, true, platform);
+    const options = { components: makeComponents(renderAlert(alert.title, stream, alert.slug, true, platform), content, alert.image, alert.color), flags: MessageFlags.IsComponentsV2, allowedMentions: allowedMentionsFor(`${alert.title || ""} ${alert.messageTemplate || ""}`) };
     if (alert.displayName || alert.avatarUrl) {
         if (!state.webhookId || !state.webhookToken) return;
         const webhook = new WebhookClient({ id: state.webhookId, token: state.webhookToken });
@@ -158,20 +208,27 @@ async function updateViewerCount(client, alert, state, stream) {
 async function checkAlert(client, alert) {
     let state = await SocialAlertState.findOne({ guildId: alert.guildId, alertId: alert._id });
     if (!state) state = new SocialAlertState({ guildId: alert.guildId, alertId: alert._id, channelId: alert.channelId });
+    const platform = alert.platform || "Kick";
+    if (state.platform !== platform) {
+        state.platform = platform;
+        state.lastStreamId = null;
+        state.messageId = null;
+        state.lastViewers = null;
+    }
     if (state.channelId !== alert.channelId) {
         state.channelId = alert.channelId;
         state.messageId = null;
     }
-    const channelInfo = await getStream(alert.slug);
-    if (!channelInfo) {
+    const channelInfo = platform === "TikTok" ? await getTikTokLiveInfo(alert.slug) : await getKickStream(alert.slug);
+    if (platform === "Kick" && !channelInfo) {
         console.warn(`[SocialAlerts] Kick ${alert.slug} (${alert.guildId}): la API no devolvió ningún canal para ese nombre.`);
         return;
     }
-    const stream = channelInfo?.stream;
+    const stream = platform === "TikTok" ? channelInfo.stream : channelInfo?.stream;
     // Kick represents an offline channel with a null/missing `stream` object.
     // Some API responses omit `is_live` while returning the active stream.
     if (!stream || stream.is_live === false) {
-        console.info(`[SocialAlerts] Kick ${alert.slug} (${alert.guildId}): consulta correcta, Kick no reporta un directo activo.`);
+        console.info(`[SocialAlerts] ${platform} ${alert.slug} (${alert.guildId}): consulta correcta, no hay directo activo.`);
         if (state.lastStreamId) {
             state.lastStreamId = null;
             state.messageId = null;
@@ -180,27 +237,27 @@ async function checkAlert(client, alert) {
         }
         return;
     }
-    const streamId = String(stream.id || stream.start_time || `${alert.slug}:${channelInfo.stream_title || "live"}`);
+    const streamId = String(stream.id || stream.start_time || `${alert.slug}:${stream.stream_title || "live"}`);
     if (streamId !== state.lastStreamId) {
-        await sendLiveAlert(client, alert, state, { ...channelInfo, ...stream, stream_title: channelInfo.stream_title || stream.title });
-        console.info(`[SocialAlerts] Kick ${alert.slug} (${alert.guildId}): alerta enviada al canal ${alert.channelId}.`);
+        await sendLiveAlert(client, alert, state, { ...channelInfo, ...stream, stream_title: stream.stream_title || stream.title });
+        console.info(`[SocialAlerts] ${platform} ${alert.slug} (${alert.guildId}): alerta enviada al canal ${alert.channelId}.`);
         return;
     }
-    console.info(`[SocialAlerts] Kick ${alert.slug} (${alert.guildId}): directo detectado; la alerta ya fue enviada para este directo.`);
-    await updateViewerCount(client, alert, state, { ...channelInfo, ...stream, stream_title: channelInfo.stream_title || stream.title });
+    console.info(`[SocialAlerts] ${platform} ${alert.slug} (${alert.guildId}): directo detectado; la alerta ya fue enviada para este directo.`);
+    await updateViewerCount(client, alert, state, { ...channelInfo, ...stream, stream_title: stream.stream_title || stream.title });
 }
 
 async function poll(client) {
     if (pollRunning) return;
     pollRunning = true;
     try {
-        const alerts = await SocialAlert.find({ platform: "Kick", enabled: { $ne: false } }).lean();
-        console.info(`[SocialAlerts] Revisando ${alerts.length} alerta(s) de Kick activa(s).`);
+        const alerts = await SocialAlert.find({ platform: { $in: ["Kick", "TikTok"] }, enabled: { $ne: false } }).lean();
+        console.info(`[SocialAlerts] Revisando ${alerts.length} alerta(s) activa(s).`);
         for (const alert of alerts) {
             try { await checkAlert(client, alert); }
             catch (error) {
                 if (!warnedMissingCredentials || !/KICK_CLIENT_ID|KICK_CLIENT_SECRET/.test(error.message)) {
-                    console.error(`[SocialAlerts] Kick ${alert.slug} (${alert.guildId}):`, error.message);
+                    console.error(`[SocialAlerts] ${alert.platform || "Kick"} ${alert.slug} (${alert.guildId}):`, error.message);
                     if (/KICK_CLIENT_ID|KICK_CLIENT_SECRET/.test(error.message)) warnedMissingCredentials = true;
                 }
             }
@@ -213,7 +270,7 @@ async function poll(client) {
 }
 
 module.exports = function startSocialAlerts(client) {
-    console.info("[SocialAlerts] Monitor de alertas de Kick iniciado; comprobación cada 60 segundos.");
+    console.info("[SocialAlerts] Monitor de alertas de Kick y TikTok iniciado; comprobación cada 60 segundos.");
     setTimeout(() => poll(client), 15_000);
     const timer = setInterval(() => poll(client), POLL_INTERVAL_MS);
     timer.unref?.();

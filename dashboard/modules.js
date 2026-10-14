@@ -1,10 +1,11 @@
 const messageVariables = {
     socialAlert: [
-        { token: "{{channel}}", label: "Canal", description: "Nombre del canal de Kick." },
+        { token: "{{channel}}", label: "Canal", description: "Nombre del canal de Kick o TikTok." },
         { token: "{{title}}", label: "Título del directo", description: "Título actual del directo." },
         { token: "{{viewers}}", label: "Espectadores", description: "Espectadores actuales (si está activada esa opción)." },
         { token: "{{category}}", label: "Categoría", description: "Categoría actual del directo." },
-        { token: "{{url}}", label: "Enlace", description: "Enlace al canal de Kick." }
+        { token: "{{platform}}", label: "Plataforma", description: "Kick o TikTok." },
+        { token: "{{url}}", label: "Enlace", description: "Enlace al canal de Kick o TikTok." }
     ],
     welcome: [
         { token: "{{user}}", label: "Miembro", description: "Mención al miembro que entra." },
@@ -427,17 +428,17 @@ const lists = {
         identity: "userId"
     },
     socialAlerts: {
-        title: "Kick",
+        title: "Alertas sociales",
         category: "Alertas sociales",
-        description: "Sigue canales de Kick y envía una alerta Componentes V2 a Discord al comenzar un directo. Para usar la API oficial de Kick, configura KICK_CLIENT_ID y KICK_CLIENT_SECRET en el entorno del bot.",
+        description: "Sigue canales de Kick y cuentas de TikTok y envía una alerta Componentes V2 a Discord al comenzar un directo. Kick requiere sus credenciales de API; TikTok usa su endpoint web público, ya que no ofrece una API pública oficial para consultar directos.",
         model: require("../Models/SocialAlert"),
         fields: [
-            { name: "platform", label: "Plataforma", type: "select", options: ["Kick"] },
-            { name: "slug", label: "Canal de Kick", type: "kick-channel", maxLength: 25, help: "Busca por nombre y selecciona el canal correcto. Kick puede mostrar un nombre distinto del slug de su URL." },
+            { name: "platform", label: "Plataforma", type: "select", options: ["Kick", "TikTok"] },
+            { name: "slug", label: "Canal / usuario", type: "social-channel", maxLength: 50, help: "Selecciona un canal de Kick o escribe el usuario de TikTok, con o sin @." },
             { name: "channelId", label: "Canal de Discord", type: "channel", channelTypes: [0] },
             { name: "includeViewerCount", label: "Cantidad de espectadores", type: "boolean", help: "Incluye los espectadores actuales y actualiza el mensaje cada cinco minutos." },
-            { name: "title", label: "Título de la alerta", type: "text", maxLength: 256, templateComposer: true, templateVariables: messageVariables.socialAlert },
-            { name: "messageTemplate", label: "Mensaje de alerta", type: "textarea", maxLength: 2000, templateComposer: true, templateVariables: messageVariables.socialAlert, help: "Variables: {{channel}}, {{title}}, {{viewers}}, {{category}} y {{url}}." },
+            { name: "title", label: "Título de la alerta", type: "text", default: "🔴 {{channel}} está en vivo en {{platform}}", maxLength: 256, templateComposer: true, templateVariables: messageVariables.socialAlert },
+            { name: "messageTemplate", label: "Mensaje de alerta", type: "textarea", default: "¡El directo ya empezó! {{url}}", maxLength: 2000, templateComposer: true, templateVariables: messageVariables.socialAlert, help: "Variables: {{channel}}, {{title}}, {{viewers}}, {{category}}, {{platform}} y {{url}}." },
             { name: "image", label: "URL de banner", type: "url", optional: true },
             { name: "color", label: "Color hexadecimal", type: "color", optional: true },
             { name: "displayName", label: "Nombre para mostrar", type: "text", maxLength: 80, optional: true, help: "Opcional. Personaliza el nombre del webhook que publica la alerta y requiere permiso Administrar webhooks." },

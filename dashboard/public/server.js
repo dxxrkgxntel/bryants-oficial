@@ -270,9 +270,10 @@ function renderField(field, value, prefix = "") {
         const options = field.options.map(option => `<option value="${escapeHtml(option)}" ${safeValue === option ? "selected" : ""}>${escapeHtml(option)}</option>`).join("");
         return `<label class="field" for="${id}"><span>${escapeHtml(field.label)}</span><select id="${id}" name="${escapeHtml(field.name)}" ${required}><option value="">Elige una opción</option>${options}</select>${help}</label>`;
     }
-    if (field.type === "kick-channel") {
+    if (["kick-channel", "social-channel"].includes(field.type)) {
         const current = String(safeValue || "");
-        return `<div class="field kick-channel-field" data-kick-channel-picker><label for="${id}">${escapeHtml(field.label)}</label><div class="kick-channel-control"><input id="${id}" type="search" data-kick-channel-query value="${escapeHtml(current)}" maxlength="50" placeholder="Buscar un canal de Kick" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false"><input type="hidden" name="${escapeHtml(field.name)}" value="${escapeHtml(current)}"><div class="kick-channel-selected" data-kick-channel-selected ${current ? "" : "hidden"}></div><div class="kick-channel-results" data-kick-channel-results role="listbox" hidden></div><div class="kick-channel-status" data-kick-channel-status role="status" aria-live="polite"></div></div>${help}</div>`;
+        const pickerType = field.type === "social-channel" ? "data-social-channel-picker" : "data-kick-channel-picker";
+        return `<div class="field kick-channel-field" ${pickerType}><label for="${id}" data-channel-label>${escapeHtml(field.label)}</label><div class="kick-channel-control"><input id="${id}" type="search" data-kick-channel-query value="${escapeHtml(current)}" maxlength="50" placeholder="Buscar un canal de Kick" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false"><input type="hidden" name="${escapeHtml(field.name)}" value="${escapeHtml(current)}"><div class="kick-channel-selected" data-kick-channel-selected ${current ? "" : "hidden"}></div><div class="kick-channel-results" data-kick-channel-results role="listbox" hidden></div><div class="kick-channel-status" data-kick-channel-status role="status" aria-live="polite"></div></div>${help}</div>`;
     }
     if (["channel", "voice", "category", "role"].includes(field.type)) {
         const options = optionsFor(field);
@@ -454,7 +455,7 @@ function validPreviewColor(value) {
     return /^#[\da-f]{6}$/i.test(String(value || "")) ? value : "#352b3d";
 }
 
-function renderPreviewTemplate(template) {
+function renderPreviewTemplate(template, overrides = {}) {
     const samples = {
         usuario: "Bryant", user: "Bryant", member: "Bryant", mention: "Bryant",
         username: "Bryant", user_name: "Bryant", nombreusuario: "Bryant", nombre_usuario: "Bryant", name: "Bryant", usertag: "Bryant", user_tag: "Bryant",
@@ -477,6 +478,7 @@ function renderPreviewTemplate(template) {
         category: "Charlando",
         url: "https://kick.com/CanalDemo"
     });
+    Object.assign(samples, overrides);
     samples.boost = samples.boosts;
     samples.date = new Intl.DateTimeFormat("es", { dateStyle: "long" }).format(new Date());
     samples.fecha = samples.date;
@@ -501,15 +503,18 @@ function renderPreviewMarkup(key, values) {
 
     if (key === "socialAlerts") {
         const alertColor = /^#[\da-f]{6}$/i.test(String(values.color || "")) ? values.color : "#53fc18";
-        const alertTitle = renderPreviewTemplate(values.title).trim();
-        const alertMessage = renderPreviewTemplate(values.description).trim();
+        const platform = values.platform === "TikTok" ? "TikTok" : "Kick";
+        const sampleValues = platform === "TikTok" ? { channel: "usuario_demo", platform, url: "https://www.tiktok.com/@usuario_demo/live" } : { platform };
+        const alertTitle = renderPreviewTemplate(values.title, sampleValues).trim();
+        const alertMessage = renderPreviewTemplate(values.description, sampleValues).trim();
         const avatar = safePreviewImage(values.avatarUrl);
-        const author = escapeHtml(values.displayName || "CanalDemo");
+        const sampleChannel = platform === "TikTok" ? "usuario_demo" : "CanalDemo";
+        const author = escapeHtml(values.displayName || sampleChannel);
         const avatarBlock = avatar
             ? `<img class="message-preview-avatar" data-preview-image src="${escapeHtml(avatar)}" alt="Avatar configurado">`
             : '<span class="social-alert-preview-avatar" aria-hidden="true">🎥</span>';
         const header = `<div class="social-alert-preview-author">${avatarBlock}<strong>${author}</strong><span>APP</span><small>ahora</small></div>`;
-        const copy = [alertTitle ? `<h3>${escapeHtml(alertTitle)}</h3>` : '<h3>🔴 CanalDemo está en vivo en Kick</h3>', '<hr class="discord-preview-separator">', alertMessage ? `<p>${escapeHtml(alertMessage)}</p>` : '<p class="preview-empty">Escribe el mensaje para ver aquí la alerta de Kick.</p>'].join("");
+        const copy = [alertTitle ? `<h3>${escapeHtml(alertTitle)}</h3>` : `<h3>🔴 ${sampleChannel} está en vivo en ${platform}</h3>`, '<hr class="discord-preview-separator">', alertMessage ? `<p>${escapeHtml(alertMessage)}</p>` : `<p class="preview-empty">Escribe el mensaje para ver aquí la alerta de ${platform}.</p>`].join("");
         return `<section class="live-preview social-alert-live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Mensaje Componentes V2 que aparecerá en Discord</small></div>${header}<article class="discord-preview" style="--preview-accent:${alertColor}">${media}<div class="discord-preview-body"><div class="discord-preview-copy">${copy}</div></div></article></section>`;
     }
 
@@ -549,7 +554,7 @@ function renderPreviewMarkup(key, values) {
 
 function previewValues(key, form) {
     const read = name => form.elements.namedItem(name)?.value || "";
-    if (key === "socialAlerts") return { title: read("title"), description: read("messageTemplate"), color: read("color"), banner: read("image"), avatarUrl: read("avatarUrl"), displayName: read("displayName") };
+    if (key === "socialAlerts") return { title: read("title"), description: read("messageTemplate"), color: read("color"), banner: read("image"), avatarUrl: read("avatarUrl"), displayName: read("displayName"), platform: read("platform") };
     if (key === "welcome") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail"), buttons: form.querySelector('[data-button-list="Buttons"]') ? readButtonRows(form.querySelector('[data-button-list="Buttons"]')) : [], sendDM: form.elements.namedItem("SendDM")?.checked, dmTitle: read("DMTitle"), dmDescription: read("DMMessage"), dmColor: read("DMColor"), dmBanner: read("DMBanner"), dmThumbnail: read("DMThumbnail") };
     if (key === "leaves") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail") };
     if (key === "birthday") return { title: read("birthdayTitle"), description: read("birthdayDescription"), color: read("birthdayColor"), banner: read("birthdayBanner"), reminder: read("birthdayReminder") };
@@ -957,16 +962,53 @@ function wireRolePickers(form) {
 }
 
 function wireKickChannelPickers(form) {
-    form?.querySelectorAll("[data-kick-channel-picker]").forEach(picker => {
+    form?.querySelectorAll("[data-kick-channel-picker], [data-social-channel-picker]").forEach(picker => {
+        const socialPicker = picker.hasAttribute("data-social-channel-picker");
         const queryInput = picker.querySelector("[data-kick-channel-query]");
         const slugInput = picker.querySelector('input[type="hidden"]');
         const selected = picker.querySelector("[data-kick-channel-selected]");
         const results = picker.querySelector("[data-kick-channel-results]");
         const status = picker.querySelector("[data-kick-channel-status]");
+        const label = picker.querySelector("[data-channel-label]");
+        const platformSelect = socialPicker ? form.querySelector('select[name="platform"]') : null;
         let searchTimer = 0;
         let requestId = 0;
 
         const setStatus = message => { status.textContent = message; };
+        const isTikTok = () => socialPicker && platformSelect?.value === "TikTok";
+        const updateTikTokValue = () => {
+            const username = queryInput.value.trim().replace(/^@+/, "");
+            slugInput.value = username;
+            results.hidden = true;
+            queryInput.setAttribute("aria-expanded", "false");
+            selected.replaceChildren();
+            if (username) {
+                const description = document.createElement("span");
+                description.textContent = `Usuario seleccionado: @${username} · tiktok.com/@${username}`;
+                selected.append(description);
+                selected.hidden = false;
+                setStatus("");
+            } else {
+                selected.hidden = true;
+                setStatus("Escribe el usuario de TikTok, con o sin @.");
+            }
+            slugInput.dispatchEvent(new Event("input", { bubbles: true }));
+            slugInput.dispatchEvent(new Event("change", { bubbles: true }));
+        };
+        const syncPlatform = () => {
+            if (!socialPicker) return;
+            const tiktok = isTikTok();
+            label.textContent = tiktok ? "Usuario de TikTok" : "Canal de Kick";
+            queryInput.placeholder = tiktok ? "Escribe el usuario de TikTok" : "Buscar un canal de Kick";
+            queryInput.setAttribute("aria-label", label.textContent);
+            if (tiktok) updateTikTokValue();
+            else {
+                slugInput.value = "";
+                selected.hidden = true;
+                if (queryInput.value.trim().length >= 3) searchChannels(queryInput.value);
+                else setStatus("Busca el canal y selecciónalo en los resultados.");
+            }
+        };
         const selectChannel = channel => {
             slugInput.value = channel.slug;
             queryInput.value = channel.username;
@@ -1064,6 +1106,7 @@ function wireKickChannelPickers(form) {
         };
 
         queryInput.addEventListener("input", () => {
+            if (isTikTok()) { updateTikTokValue(); return; }
             slugInput.value = "";
             selected.hidden = true;
             slugInput.dispatchEvent(new Event("input", { bubbles: true }));
@@ -1071,15 +1114,18 @@ function wireKickChannelPickers(form) {
             searchTimer = window.setTimeout(() => searchChannels(queryInput.value), 300);
         });
         queryInput.addEventListener("focus", () => {
+            if (isTikTok()) return;
             if (queryInput.value.trim().length >= 3 && !slugInput.value) searchChannels(queryInput.value);
         });
+        platformSelect?.addEventListener("change", syncPlatform);
         form.addEventListener("click", event => {
             if (!picker.contains(event.target)) {
                 results.hidden = true;
                 queryInput.setAttribute("aria-expanded", "false");
             }
         });
-        if (queryInput.value.trim().length >= 3 && slugInput.value) searchChannels(queryInput.value, true);
+        if (socialPicker && isTikTok()) updateTikTokValue();
+        else if (queryInput.value.trim().length >= 3 && slugInput.value) searchChannels(queryInput.value, true);
     });
 }
 
@@ -1093,12 +1139,13 @@ function renderList(key, definition, editItem = null) {
     }).join("");
     const search = records.length > 3 ? `<div class="list-toolbar"><span>${records.length} elementos</span><label class="record-search"><span class="sr-only">Buscar en ${escapeHtml(definition.title)}</span><input type="search" id="record-search" placeholder="Buscar en la lista…" autocomplete="off"></label></div>` : "";
     const alertPreview = key === "socialAlerts" ? renderPreviewMarkup(key, {
-        title: editItem?.title || "",
-        description: editItem?.messageTemplate || "",
+        title: editItem?.title || definition.fields.find(field => field.name === "title")?.default || "",
+        description: editItem?.messageTemplate || definition.fields.find(field => field.name === "messageTemplate")?.default || "",
         color: editItem?.color || "",
         banner: editItem?.image || "",
         avatarUrl: editItem?.avatarUrl || "",
-        displayName: editItem?.displayName || ""
+        displayName: editItem?.displayName || "",
+        platform: editItem?.platform || "Kick"
     }) : "";
     content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div>${definition.description ? `<p class="card-description">${escapeHtml(definition.description)}</p>` : ""}${alertPreview}${search}<div class="records-list">${rows || '<p class="empty-state">Todavía no hay elementos configurados.</p>'}<p id="list-no-results" class="empty-state" hidden>No hay elementos que coincidan con la búsqueda.</p></div><div class="form-divider"></div><h3>${editing ? "Editar elemento" : "Añadir elemento"}</h3>${form}</article>`;
 
