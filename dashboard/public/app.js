@@ -1,4 +1,6 @@
 const welcome = document.querySelector("#welcome");
+const publicHome = document.querySelector("#public-home");
+const publicNav = document.querySelector("#public-nav");
 const serversSection = document.querySelector("#servers-section");
 const serversList = document.querySelector("#servers");
 const userArea = document.querySelector("#user-area");
@@ -21,7 +23,9 @@ async function loadDashboard() {
         const session = await sessionResponse.json();
         if (!session.user) return;
 
-        welcome.hidden = true;
+        if (publicHome) publicHome.hidden = true;
+        if (publicNav) publicNav.hidden = true;
+        if (welcome) welcome.hidden = true;
         serversSection.hidden = false;
         userArea.hidden = false;
         userArea.replaceChildren();

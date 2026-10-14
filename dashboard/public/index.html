@@ -4,28 +4,76 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#100b18">
+    <meta name="description" content="Administra Bryant's Family desde una dashboard privada conectada con Discord.">
     <title>Bryant's Oficial | Dashboard</title>
     <link rel="icon" type="image/png" sizes="128x128" href="/favicon.png">
     <link rel="stylesheet" href="/styles.css">
     <script src="/app.js" defer></script>
 </head>
-<body>
+<body class="home-page">
     <main class="shell">
         <header class="topbar">
             <a class="brand" href="/" aria-label="Bryant's Oficial, inicio">
-                <span class="brand-mark">BF</span>
+                <img class="brand-logo" src="/favicon.png" alt="" width="44" height="44">
                 <span><strong>Bryant's Oficial</strong><small>Panel de control</small></span>
             </a>
+            <nav id="public-nav" class="public-nav" aria-label="Navegación principal">
+                <a href="#funciones">Funciones</a>
+                <a href="#como-funciona">Cómo funciona</a>
+                <a class="nav-login" href="/auth/login">Iniciar sesión <span aria-hidden="true">↗</span></a>
+            </nav>
             <div id="user-area" class="user-area" hidden></div>
         </header>
 
-        <section id="welcome" class="welcome-card">
-            <div class="eyebrow">B R Y A N T ' S &nbsp; F A M I L Y</div>
-            <h1>Tu servidor,<br><span>bajo tu control.</span></h1>
-            <p>Administra los sistemas del bot desde un solo lugar. Inicia sesión con Discord para continuar.</p>
-            <a id="login" class="primary-button" href="/auth/login">Continuar con Discord <span aria-hidden="true">↗</span></a>
-            <p id="login-error" class="error" hidden>No se pudo completar el acceso. Inténtalo otra vez.</p>
-        </section>
+        <div id="public-home">
+            <section id="welcome" class="home-hero">
+                <div class="hero-copy">
+                    <div class="eyebrow"><span class="eyebrow-dot"></span> BRYANT'S FAMILY · PANEL PRIVADO</div>
+                    <h1>Tu comunidad,<br><span>bajo tu control.</span></h1>
+                    <p>Configura los sistemas de tu servidor de Discord desde un solo lugar. Entra con tu cuenta y administra cada espacio con claridad.</p>
+                    <div class="hero-actions">
+                        <a id="login" class="primary-button" href="/auth/login">Continuar con Discord <span aria-hidden="true">↗</span></a>
+                        <a class="text-link" href="#funciones">Conocer la dashboard <span aria-hidden="true">↓</span></a>
+                    </div>
+                    <p id="login-error" class="error" hidden>No se pudo completar el acceso. Inténtalo otra vez.</p>
+                    <div class="hero-note"><span class="secure-icon" aria-hidden="true">◈</span> Acceso seguro con Discord · Solo administradores autorizados</div>
+                </div>
+
+                <div class="hero-visual" aria-label="Vista previa ilustrativa de la dashboard">
+                    <div class="visual-glow"></div>
+                    <div class="preview-window">
+                        <div class="preview-topbar"><div class="window-dots"><i></i><i></i><i></i></div><span>BRYANT'S FAMILY</span><span class="preview-badge">VISTA PREVIA</span></div>
+                        <div class="preview-body">
+                            <aside class="preview-sidebar">
+                                <div class="preview-server"><img src="/favicon.png" alt="" width="30" height="30"><span><b>Bryant's Family</b><small>Panel de control</small></span></div>
+                                <div class="preview-label">COMUNIDAD</div><div class="preview-item active"><i>◈</i> Bienvenidas</div><div class="preview-item"><i>◇</i> Cumpleaños</div><div class="preview-item"><i>✦</i> Encuestas</div>
+                                <div class="preview-label">MODERACIÓN</div><div class="preview-item"><i>⌁</i> Protección</div><div class="preview-item"><i>▤</i> Registros</div>
+                                <div class="preview-label">SERVIDOR</div><div class="preview-item"><i>◉</i> TempVoice</div>
+                            </aside>
+                            <div class="preview-content"><div class="preview-heading"><div><small>COMUNIDAD</small><b>Bienvenidas</b></div><span>Configurado</span></div><div class="preview-field"><small>CANAL DE BIENVENIDA</small><div><i>#</i>・bienvenidas <b>⌄</b></div></div><div class="preview-field"><small>MENSAJE PARA NUEVOS MIEMBROS</small><div class="preview-message">¡Bienvenid@ a la familia! Nos alegra tenerte aquí.</div></div><div class="preview-bottom"><span>Los ajustes se guardan por servidor</span><b>Guardar cambios</b></div></div>
+                        </div>
+                    </div>
+                    <div class="floating-tag"><span>✦</span> Tus sistemas, en un solo panel</div>
+                </div>
+            </section>
+
+            <section id="funciones" class="features-section">
+                <div class="section-intro"><div class="eyebrow">TODO LO QUE NECESITAS</div><h2>Una dashboard para<br><span>cada parte de tu servidor.</span></h2><p>Encuentra tus herramientas organizadas por sistema y ajusta su configuración sin perderte entre comandos.</p></div>
+                <div class="feature-grid">
+                    <article class="feature-card feature-community"><div class="feature-icon">✦</div><div class="feature-kicker">01 · COMUNIDAD</div><h3>Haz que todos se sientan en casa.</h3><p>Gestiona bienvenidas, salidas, cumpleaños, sugerencias, encuestas y más.</p><div class="feature-tags"><span>Bienvenidas</span><span>Eventos</span><span>Participación</span></div><span class="feature-orbit orbit-one"></span><span class="feature-orbit orbit-two"></span></article>
+                    <article class="feature-card"><div class="feature-icon">⌁</div><div class="feature-kicker">02 · MODERACIÓN</div><h3>Cuida tu espacio con confianza.</h3><p>Configura protecciones y herramientas para mantener la comunidad segura.</p><div class="feature-tags"><span>AntiLinks</span><span>AntiScam</span><span>Reportes</span></div></article>
+                    <article class="feature-card"><div class="feature-icon">◉</div><div class="feature-kicker">03 · SERVIDOR</div><h3>Ten a mano lo importante.</h3><p>Administra TempVoice, estadísticas, canales y ajustes del servidor.</p><div class="feature-tags"><span>TempVoice</span><span>Estadísticas</span></div></article>
+                    <article class="feature-card"><div class="feature-icon">✧</div><div class="feature-kicker">04 · ECONOMÍA Y XP</div><h3>Dale vida a la actividad.</h3><p>Ajusta niveles, recompensas, economía, misiones y tienda de roles.</p><div class="feature-tags"><span>Niveles</span><span>Economía</span><span>Recompensas</span></div></article>
+                </div>
+            </section>
+
+            <section id="como-funciona" class="steps-section">
+                <div class="steps-heading"><div class="eyebrow">SENCILLO DESDE EL PRIMER PASO</div><h2>Entra. Elige. <span>Configura.</span></h2><p>Tu panel aparece cuando inicias sesión con Discord.</p></div>
+                <div class="steps-grid"><article><span class="step-number">01</span><div><h3>Inicia sesión con Discord</h3><p>Autoriza tu cuenta para consultar los servidores que administras.</p></div></article><article><span class="step-number">02</span><div><h3>Elige un servidor</h3><p>Verás los servidores permitidos donde está instalado el bot.</p></div></article><article><span class="step-number">03</span><div><h3>Ajusta tus sistemas</h3><p>Guarda los cambios de cada módulo desde una interfaz clara.</p></div></article></div>
+            </section>
+
+            <section class="closing-cta"><div><div class="eyebrow">BRYANT'S FAMILY</div><h2>Tu servidor ya está listo.<br><span>¿Y tú?</span></h2><p>Accede a la dashboard y sigue personalizando tu comunidad.</p></div><a class="primary-button" href="/auth/login">Entrar con Discord <span aria-hidden="true">↗</span></a><div class="cta-sparkle" aria-hidden="true">✦</div></section>
+        </div>
 
         <section id="servers-section" class="servers-section" hidden>
             <div class="section-heading">
@@ -37,7 +85,7 @@
             <p id="empty-state" class="empty-state" hidden>No encontré servidores disponibles para esta cuenta.</p>
         </section>
 
-        <footer>Las sesiones se protegen y los secretos permanecen en la configuración privada del hosting.</footer>
+        <footer class="site-footer"><span>© Bryant's Oficial</span><span>Las sesiones se protegen y los secretos permanecen en la configuración privada del hosting.</span></footer>
     </main>
 </body>
 </html>
