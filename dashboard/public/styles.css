@@ -364,6 +364,25 @@ button:disabled { opacity: .55; cursor: wait !important; }
 .level-preview-number { margin-left: auto; color: var(--preview-accent); font-size: 40px; text-shadow: 0 0 24px color-mix(in srgb, var(--preview-accent) 45%, transparent); }
 .dashboard-page .empty-state { color: #94899e; font-size: 12px; }
 .dashboard-page .error a { color: #dfb3ff; }
+.poll-create-card, .poll-list-card { margin-top: 16px; }
+.poll-full-field { grid-column: 1 / -1; }
+.poll-form-note { align-self: center; color: #a99bb0; font-size: 11px; line-height: 1.5; }
+.poll-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 18px 0; }
+.poll-stats > div { display: grid; gap: 7px; padding: 13px 15px; border: 1px solid #ffffff12; border-radius: 11px; background: #0e0b1280; }
+.poll-stats span { color: #a99bb0; font-size: 10px; }
+.poll-stats strong { color: #f1e5f7; font-size: 21px; }
+.poll-list { display: grid; gap: 10px; margin-top: 18px; }
+.poll-row { display: flex; justify-content: space-between; gap: 20px; padding: 17px; border: 1px solid #ffffff12; border-radius: 12px; background: #0e0b1270; }
+.poll-row-main { min-width: 0; flex: 1; }
+.poll-row-top { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
+.poll-channel, .poll-votes { color: #a99bb0; font-size: 10px; }
+.poll-row h3 { margin: 11px 0; color: #f0e7f3; font-size: 15px; overflow-wrap: anywhere; }
+.poll-row ul { display: grid; gap: 6px; margin: 0 0 11px; padding: 0; list-style: none; }
+.poll-row li { display: flex; justify-content: space-between; gap: 10px; color: #cbbfd1; font-size: 11px; }
+.poll-row li strong { color: #d4a5f4; }
+.poll-row-main > small { color: #8f8298; font-size: 10px; }
+.poll-row .record-actions { flex-wrap: wrap; align-content: flex-start; }
+.poll-row .record-actions a { text-decoration: none; }
 
 @media (max-width: 800px) {
     .app-layout { grid-template-columns: 220px minmax(0, 1fr); }
@@ -411,6 +430,11 @@ button:disabled { opacity: .55; cursor: wait !important; }
     .save-feedback { flex-basis: 100%; }
     .list-toolbar { align-items: flex-start; flex-direction: column; gap: 7px; }
     .record-search { width: 100%; }
+    .poll-row { flex-direction: column; gap: 14px; }
+    .poll-row .record-actions { justify-content: flex-start; }
+    .poll-stats { gap: 7px; }
+    .poll-stats > div { padding: 10px; }
+    .poll-stats strong { font-size: 18px; }
     .live-preview { padding: 11px; }
     .live-preview-heading { align-items: flex-start; flex-direction: column; gap: 5px; }
     .discord-preview-body { gap: 9px; padding: 11px; }

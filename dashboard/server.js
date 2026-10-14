@@ -6,6 +6,8 @@ const MongoStore = require("connect-mongo");
 const helmet = require("helmet");
 const mongoose = require("mongoose");
 const { configurations, lists } = require("./modules");
+const Poll = require("../Models/Poll");
+const PollConfig = require("../Models/PollConfig");
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -292,6 +294,64 @@ async function fetchGuildResources(guildId) {
     return { channels, roles };
 }
 
+function validatePollInput(input) {
+    const question = typeof input?.question === "string" ? input.question.trim() : "";
+    if (!question || question.length > 256) throw new Error("La pregunta debe tener entre 1 y 256 caracteres.");
+    if (!Array.isArray(input.options)) throw new Error("Escribe las opciones de la encuesta, una por línea.");
+    const options = input.options.map(option => typeof option === "string" ? option.trim() : "");
+    if (options.length < 2 || options.length > 4 || options.some(option => !option || option.length > 100)) {
+        throw new Error("La encuesta necesita entre 2 y 4 opciones de hasta 100 caracteres cada una.");
+    }
+    if (new Set(options.map(option => option.toLocaleLowerCase("es"))).size !== options.length) {
+        throw new Error("Las opciones no pueden repetirse.");
+    }
+    const duration = Number(input.duration);
+    if (!Number.isInteger(duration) || duration < 1 || duration > 10080) throw new Error("La duración debe estar entre 1 minuto y 7 días.");
+    return { question, options, duration };
+}
+
+function makePollMessage(question, options, footer) {
+    return {
+        embeds: [{
+            color: 0x8A2BE2,
+            title: "📊 Encuesta",
+            description: `## ${question}\n\n${options.map((option, index) => `${index + 1}️⃣ ${option.text} — **${option.votes?.length || 0}** votos`).join("\n")}`,
+            footer: { text: footer }
+        }],
+        components: [{
+            type: 1,
+            components: options.map((option, index) => ({
+                type: 2,
+                style: 2,
+                custom_id: `poll_${index}`,
+                label: `${index + 1}`
+            }))
+        }],
+        allowed_mentions: { parse: [] }
+    };
+}
+
+async function discordBotRequest(url, { method = "GET", body } = {}) {
+    const response = await fetch(url, {
+        method,
+        headers: {
+            Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+            ...(body ? { "Content-Type": "application/json" } : {})
+        },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+        signal: AbortSignal.timeout(12_000)
+    });
+    const payload = response.status === 204 ? null : await response.json().catch(() => null);
+    if (!response.ok) {
+        const error = new Error(response.status === 429
+            ? "Discord está limitando las solicitudes. Espera un momento e inténtalo otra vez."
+            : payload?.message || `Discord respondió ${response.status}.`);
+        error.status = response.status;
+        throw error;
+    }
+    return payload;
+}
+
 async function validateDiscordReferences(guildId, fields, values) {
     const referenceFields = fields.filter(field => ["channel", "voice", "category", "role", "channel-list", "role-list"].includes(field.type));
     if (!referenceFields.length && !fields.some(field => field.type === "setups" && values.setups)) return;
@@ -523,6 +583,108 @@ app.put("/api/guilds/:guildId/config/:module", requireLogin, requireCsrf, requir
     } catch (error) {
         if (error.code === 11000) return res.status(409).json({ error: "Este sistema ya tiene una configuración duplicada. Revísala desde Discord." });
         return res.status(400).json({ error: error.message || "No pude guardar la configuración." });
+    }
+});
+
+app.get("/api/guilds/:guildId/polls", requireGuildAdmin, async (req, res) => {
+    try {
+        const [pollConfig, polls] = await Promise.all([
+            PollConfig.findOne({ guildId: req.params.guildId }).lean(),
+            Poll.find({ guildId: req.params.guildId }).sort({ createdAt: -1 }).lean()
+        ]);
+        return res.json({
+            configuredChannelId: pollConfig?.channelId || null,
+            polls: polls.map(poll => ({
+                _id: String(poll._id),
+                channelId: poll.channelId,
+                messageId: poll.messageId,
+                question: poll.question,
+                options: (poll.options || []).map(option => ({ id: option.id, text: option.text, voteCount: option.votes?.length || 0 })),
+                ended: Boolean(poll.ended),
+                endAt: poll.endAt || null,
+                createdAt: poll.createdAt || null,
+                url: poll.channelId && poll.messageId ? `https://discord.com/channels/${req.params.guildId}/${poll.channelId}/${poll.messageId}` : null
+            }))
+        });
+    } catch (error) {
+        console.error("[Dashboard Polls] Error al cargar encuestas:", error.message);
+        return res.status(500).json({ error: "No pude cargar las encuestas del servidor." });
+    }
+});
+
+app.post("/api/guilds/:guildId/polls", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    let sentMessage;
+    try {
+        const pollConfig = await PollConfig.findOne({ guildId: req.params.guildId }).lean();
+        if (!pollConfig?.channelId) return res.status(400).json({ error: "Primero elige y guarda el canal de encuestas." });
+        const { question, options: optionTexts, duration } = validatePollInput(req.body);
+        const options = optionTexts.map((text, index) => ({ id: String(index), text, votes: [] }));
+        const endAt = new Date(Date.now() + duration * 60_000);
+        sentMessage = await discordBotRequest(`https://discord.com/api/v10/channels/${pollConfig.channelId}/messages`, {
+            method: "POST",
+            body: makePollMessage(question, options, `Termina en ${duration} minutos`)
+        });
+        const poll = await Poll.create({
+            guildId: req.params.guildId,
+            channelId: pollConfig.channelId,
+            messageId: sentMessage.id,
+            creatorId: req.session.user.id,
+            question,
+            options,
+            endAt
+        });
+        return res.status(201).json({ poll: serialize(poll), url: `https://discord.com/channels/${req.params.guildId}/${pollConfig.channelId}/${sentMessage.id}` });
+    } catch (error) {
+        if (sentMessage?.id) await discordBotRequest(`https://discord.com/api/v10/channels/${sentMessage.channel_id || ""}/messages/${sentMessage.id}`, { method: "DELETE" }).catch(() => {});
+        const status = error.status === 429 ? 429 : error.message?.startsWith("La ") || error.message?.startsWith("Escribe ") || error.message?.startsWith("Las ") ? 400 : 502;
+        return res.status(status).json({ error: error.message || "No pude publicar la encuesta." });
+    }
+});
+
+app.put("/api/guilds/:guildId/polls/:pollId", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    try {
+        const poll = await Poll.findOne({ _id: req.params.pollId, guildId: req.params.guildId });
+        if (!poll) return res.status(404).json({ error: "No encontré esa encuesta." });
+        if (poll.ended) return res.status(409).json({ error: "Las encuestas terminadas no se pueden editar." });
+        const { question, options: optionTexts, duration } = validatePollInput(req.body);
+        const optionsUnchanged = optionTexts.length === poll.options.length && optionTexts.every((text, index) => text === poll.options[index].text);
+        const options = optionTexts.map((text, index) => ({
+            id: String(index),
+            text,
+            votes: optionsUnchanged ? [...(poll.options[index].votes || [])] : []
+        }));
+        const endAt = new Date(Date.now() + duration * 60_000);
+        await discordBotRequest(`https://discord.com/api/v10/channels/${poll.channelId}/messages/${poll.messageId}`, {
+            method: "PATCH",
+            body: makePollMessage(question, options, `Termina en ${duration} minutos`)
+        });
+        poll.question = question;
+        poll.options = options;
+        poll.endAt = endAt;
+        await poll.save();
+        return res.json({ ok: true });
+    } catch (error) {
+        console.error("[Dashboard Polls] Error al editar encuesta:", error.message);
+        const status = error.status === 404 ? 404 : error.status === 429 ? 429 : error.status ? 502 : 400;
+        return res.status(status).json({ error: error.message || "No pude actualizar la encuesta." });
+    }
+});
+
+app.delete("/api/guilds/:guildId/polls/:pollId", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    try {
+        const poll = await Poll.findOne({ _id: req.params.pollId, guildId: req.params.guildId });
+        if (!poll) return res.status(404).json({ error: "No encontré esa encuesta." });
+        try {
+            await discordBotRequest(`https://discord.com/api/v10/channels/${poll.channelId}/messages/${poll.messageId}`, { method: "DELETE" });
+        } catch (error) {
+            if (error.status !== 404) throw error;
+        }
+        await Poll.deleteOne({ _id: poll._id, guildId: req.params.guildId });
+        return res.json({ ok: true });
+    } catch (error) {
+        console.error("[Dashboard Polls] Error al eliminar encuesta:", error.message);
+        const status = error.status === 429 ? 429 : error.status ? 502 : 500;
+        return res.status(status).json({ error: error.message || "No pude eliminar la encuesta." });
     }
 });
 

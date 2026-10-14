@@ -499,7 +499,7 @@ function renderModule(key, modules) {
         return renderField(field, value);
     }).join("");
     const description = definition.description || "Los cambios se guardan en la configuración del servidor y los canales y roles existentes se conservan.";
-    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div><span class="status-pill ${data.configured ? "configured" : "unconfigured"}">${data.configured ? "Configurado" : "Sin configurar"}</span></div><p class="card-description">${escapeHtml(description)}</p>${renderPreview(key, data)}<form id="settings-form" class="fields-grid">${formFields}<div class="form-actions"><button class="primary-button" type="submit">Guardar cambios</button><span class="unsaved-indicator" hidden>● Cambios sin guardar</span><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>`;
+    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div><span class="status-pill ${data.configured ? "configured" : "unconfigured"}">${data.configured ? "Configurado" : "Sin configurar"}</span></div><p class="card-description">${escapeHtml(description)}</p>${renderPreview(key, data)}<form id="settings-form" class="fields-grid">${formFields}<div class="form-actions"><button class="primary-button" type="submit">Guardar cambios</button><span class="unsaved-indicator" hidden>● Cambios sin guardar</span><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>${key === "polls" ? '<div id="poll-admin"><div class="loading-card">Cargando encuestas…</div></div>' : ""}`;
     const setupsEditor = content.querySelector("[data-setups-editor]");
     if (setupsEditor) {
         const updateSetupRows = setups => {
@@ -552,6 +552,85 @@ function renderModule(key, modules) {
             if (button.isConnected) button.disabled = false;
         }
     });
+    if (key === "polls") renderPollAdmin();
+}
+
+async function renderPollAdmin(editingPoll = null) {
+    const container = content.querySelector("#poll-admin");
+    if (!container) return;
+    try {
+        const result = await api(`/api/guilds/${encodeURIComponent(guildId)}/polls`);
+        if (!container.isConnected) return;
+        const polls = result.polls || [];
+        const channelName = channelId => resources.channels.find(channel => channel.id === channelId)?.name || "Canal no disponible";
+        const configuredPolls = polls.filter(poll => poll.channelId === result.configuredChannelId);
+        const activePolls = configuredPolls.filter(poll => !poll.ended).length;
+        const registeredPolls = configuredPolls.length;
+        const totalVotes = polls.reduce((total, poll) => total + poll.options.reduce((sum, option) => sum + option.voteCount, 0), 0);
+        const form = `<article class="settings-card poll-create-card"><div class="card-heading"><div><div class="eyebrow">PUBLICACIÓN EN DISCORD</div><h2>${editingPoll ? "Editar encuesta" : "Crear encuesta"}</h2></div>${editingPoll ? '<button class="quiet-button" type="button" data-poll-cancel>Cancelar</button>' : ""}</div><p class="card-description">${editingPoll ? `Se actualizará el mensaje en #${escapeHtml(channelName(editingPoll.channelId))}.` : `Se publicará en el canal guardado arriba: #${escapeHtml(channelName(result.configuredChannelId || ""))}.`} La duración se cuenta desde que guardes.</p><form id="poll-form" class="fields-grid"><label class="field poll-full-field"><span>Pregunta</span><input name="question" type="text" maxlength="256" required value="${escapeHtml(editingPoll?.question || "")}" placeholder="¿Qué te gustaría preguntarle al servidor?"></label><label class="field poll-full-field"><span>Opciones <small>(una por línea, entre 2 y 4)</small></span><textarea name="options" rows="4" required placeholder="Opción 1&#10;Opción 2">${escapeHtml(editingPoll?.options.map(option => option.text).join("\n") || "")}</textarea></label><label class="field"><span>Duración (minutos, máximo 7 días)</span><input name="duration" type="number" min="1" max="10080" required value="${editingPoll ? Math.max(1, Math.ceil((new Date(editingPoll.endAt).getTime() - Date.now()) / 60000)) : 60}"></label><div class="poll-form-note">${editingPoll ? "Si cambias las opciones, los votos existentes se reiniciarán para que los resultados no queden asociados a opciones distintas." : "Los miembros podrán cambiar su voto hasta que termine la encuesta."}</div><div class="form-actions poll-full-field"><button class="primary-button" type="submit">${editingPoll ? "Guardar encuesta" : "Publicar encuesta"}</button><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>`;
+        const rows = polls.map(poll => {
+            const votes = poll.options.reduce((sum, option) => sum + option.voteCount, 0);
+            const status = poll.ended ? "Finalizada" : "Activa";
+            const options = poll.options.map((option, index) => `<li><span>${index + 1}️⃣ ${escapeHtml(option.text)}</span><strong>${option.voteCount}</strong></li>`).join("");
+            return `<article class="poll-row"><div class="poll-row-main"><div class="poll-row-top"><span class="status-pill ${poll.ended ? "unconfigured" : "configured"}">${status}</span><span class="poll-channel">#${escapeHtml(channelName(poll.channelId))}</span><span class="poll-votes">${votes} ${votes === 1 ? "voto" : "votos"}</span></div><h3>${escapeHtml(poll.question)}</h3><ul>${options}</ul><small>${poll.endAt ? `${poll.ended ? "Terminó" : "Termina"} ${new Date(poll.endAt).toLocaleString("es", { dateStyle: "medium", timeStyle: "short" })}` : "Sin fecha de término"}</small></div><div class="record-actions">${poll.url ? `<a class="quiet-button" href="${escapeHtml(poll.url)}" target="_blank" rel="noopener noreferrer">Ver en Discord ↗</a>` : ""}${poll.ended ? "" : `<button class="quiet-button" type="button" data-poll-edit="${escapeHtml(poll._id)}">Editar</button>`}<button class="quiet-button danger-text" type="button" data-poll-delete="${escapeHtml(poll._id)}">Eliminar</button></div></article>`;
+        }).join("");
+        container.innerHTML = `${form}<article class="settings-card poll-list-card"><div class="card-heading"><div><div class="eyebrow">GESTIÓN</div><h2>Encuestas creadas</h2></div><button class="quiet-button" type="button" data-poll-refresh>Actualizar</button></div><div class="poll-stats"><div><span>Activas en el canal configurado</span><strong>${activePolls}</strong></div><div><span>Registradas en ese canal</span><strong>${registeredPolls}</strong></div><div><span>Votos acumulados</span><strong>${totalVotes}</strong></div></div><p class="card-description">Los contadores de arriba corresponden al canal configurado, como en <code>/poll list</code>. La lista incluye todas las encuestas del servidor y sus estados.</p><div class="poll-list">${rows || '<p class="empty-state">Todavía no hay encuestas registradas.</p>'}</div></article>`;
+
+        container.querySelector("[data-poll-refresh]").addEventListener("click", () => renderPollAdmin());
+        container.querySelector("[data-poll-cancel]")?.addEventListener("click", () => renderPollAdmin());
+        container.querySelectorAll("[data-poll-edit]").forEach(button => button.addEventListener("click", () => {
+            const poll = polls.find(item => item._id === button.dataset.pollEdit);
+            if (poll) renderPollAdmin(poll);
+        }));
+        container.querySelectorAll("[data-poll-delete]").forEach(button => button.addEventListener("click", async () => {
+            const poll = polls.find(item => item._id === button.dataset.pollDelete);
+            if (!poll || !window.confirm(`¿Eliminar la encuesta “${poll.question}” y su mensaje de Discord?`)) return;
+            button.disabled = true;
+            try {
+                await api(`/api/guilds/${encodeURIComponent(guildId)}/polls/${encodeURIComponent(poll._id)}`, { method: "DELETE" });
+                showNotice("Encuesta y mensaje eliminados.");
+                renderPollAdmin();
+            } catch (error) {
+                showNotice(error.message, true);
+                button.disabled = false;
+            }
+        }));
+        container.querySelector("#poll-form").addEventListener("submit", async event => {
+            event.preventDefault();
+            const formElement = event.currentTarget;
+            const button = formElement.querySelector("button[type=submit]");
+            const feedback = formElement.querySelector(".save-feedback");
+            const options = formElement.elements.options.value.split(/\r?\n/).map(option => option.trim()).filter(Boolean);
+            const selectedChannelId = content.querySelector("#field-channelId")?.value || "";
+            if (!editingPoll && !result.configuredChannelId) {
+                showNotice("Primero guarda un canal de encuestas arriba.", true);
+                return;
+            }
+            if (!editingPoll && selectedChannelId !== result.configuredChannelId) {
+                showNotice("Guarda primero el canal seleccionado arriba; luego podrás publicar la encuesta ahí.", true);
+                return;
+            }
+            button.disabled = true;
+            button.textContent = editingPoll ? "Guardando…" : "Publicando…";
+            feedback.textContent = editingPoll ? "Actualizando el mensaje de Discord…" : "Publicando en el canal…";
+            try {
+                const payload = JSON.stringify({ question: formElement.elements.question.value, options, duration: formElement.elements.duration.value });
+                await api(`/api/guilds/${encodeURIComponent(guildId)}/polls${editingPoll ? `/${encodeURIComponent(editingPoll._id)}` : ""}`, {
+                    method: editingPoll ? "PUT" : "POST", body: payload
+                });
+                showNotice(editingPoll ? "Encuesta actualizada en Discord." : "Encuesta publicada en Discord.");
+                renderPollAdmin();
+            } catch (error) {
+                feedback.textContent = error.message;
+                showNotice(error.message, true);
+                button.disabled = false;
+                button.textContent = editingPoll ? "Guardar encuesta" : "Publicar encuesta";
+            }
+        });
+    } catch (error) {
+        if (container.isConnected) container.innerHTML = `<article class="settings-card"><p class="error">${escapeHtml(error.message)}</p><button class="quiet-button" type="button" data-poll-retry>Reintentar</button></article>`;
+        container.querySelector("[data-poll-retry]")?.addEventListener("click", () => renderPollAdmin(editingPoll));
+    }
 }
 
 function getRecordLabel(key, record, definition) {
