@@ -560,6 +560,7 @@ function getRecordLabel(key, record, definition) {
     if (key === "levelRewards") return `Nivel ${record.level} · ${roleName}`;
     if (key === "shopItems") return `${roleName} · ${Number(record.price || 0).toLocaleString("es-DO")} monedas`;
     if (key === "bankDonorRoles") return `${roleName} · bonificación desde ${Number(record.requiredAmount || 0).toLocaleString("es-DO")}`;
+    if (key === "birthdayMembers") return record.discordName || (record.userId ? `Cargando nombre… · ${record.day}/${record.month}` : "Miembro sin ID de Discord");
     return record.name || record[definition.identity] || roleName || (record._id ? `Registro ${String(record._id).slice(-8)}` : "Registro sin identificar");
 }
 
@@ -582,10 +583,23 @@ function renderList(key, definition, editItem = null) {
     const form = `<form id="list-form" class="fields-grid">${definition.fields.map(field => renderField(field, getNested(editItem, field.name), `${key}-`)).join("")}<div class="form-actions"><button class="primary-button" type="submit">${editing ? "Guardar elemento" : "Añadir elemento"}</button>${editing ? '<button class="quiet-button" id="cancel-edit" type="button">Cancelar</button>' : ""}<span class="unsaved-indicator" hidden>● Cambios sin guardar</span><span class="save-feedback" role="status" aria-live="polite"></span></div></form>`;
     const rows = records.map(record => {
         const label = getRecordLabel(key, record, definition);
-        return `<div class="record-row" data-search="${escapeHtml(getRecordSearchText(key, record, definition))}"><div class="record-title">${escapeHtml(label)}</div><div class="record-actions"><button type="button" class="quiet-button" data-edit="${escapeHtml(record._id)}">Editar</button><button type="button" class="quiet-button danger-text" data-delete="${escapeHtml(record._id)}">Eliminar</button></div></div>`;
+        return `<div class="record-row" data-record-id="${escapeHtml(record._id)}" data-search="${escapeHtml(getRecordSearchText(key, record, definition))}"><div class="record-title">${escapeHtml(label)}</div><div class="record-actions"><button type="button" class="quiet-button" data-edit="${escapeHtml(record._id)}">Editar</button><button type="button" class="quiet-button danger-text" data-delete="${escapeHtml(record._id)}">Eliminar</button></div></div>`;
     }).join("");
     const search = records.length > 3 ? `<div class="list-toolbar"><span>${records.length} elementos</span><label class="record-search"><span class="sr-only">Buscar en ${escapeHtml(definition.title)}</span><input type="search" id="record-search" placeholder="Buscar en la lista…" autocomplete="off"></label></div>` : "";
     content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div>${search}<div class="records-list">${rows || '<p class="empty-state">Todavía no hay elementos configurados.</p>'}<p id="list-no-results" class="empty-state" hidden>No hay elementos que coincidan con la búsqueda.</p></div><div class="form-divider"></div><h3>${editing ? "Editar elemento" : "Añadir elemento"}</h3>${form}</article>`;
+
+    if (key === "birthdayMembers" && !editing && records.length) {
+        api(`/api/guilds/${encodeURIComponent(guildId)}/birthday-members/names`).then(result => {
+            for (const record of records) {
+                if (!record.userId || !result.names[record.userId]) continue;
+                record.discordName = result.names[record.userId];
+                const row = content.querySelector(`[data-record-id="${CSS.escape(record._id)}"]`);
+                if (!row) continue;
+                row.querySelector(".record-title").textContent = `${record.discordName} · ${record.day}/${record.month}`;
+                row.dataset.search = normalizeSearch(getRecordSearchText(key, record, definition));
+            }
+        }).catch(error => console.warn("No se pudieron cargar los nombres de cumpleaños:", error.message));
+    }
 
     content.querySelector("#record-search")?.addEventListener("input", event => {
         const query = normalizeSearch(event.currentTarget.value);

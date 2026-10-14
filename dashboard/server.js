@@ -61,6 +61,32 @@ app.use(session({
 }));
 
 const publicDirectory = path.join(__dirname, "public");
+const birthdayMemberNameCache = new Map();
+
+async function getBirthdayMemberName(guildId, userId) {
+    if (!/^\d{17,20}$/.test(String(userId || ""))) return null;
+    const cacheKey = `${guildId}:${userId}`;
+    const cached = birthdayMemberNameCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) return cached.name;
+
+    try {
+        const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${userId}`, {
+            headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
+            signal: AbortSignal.timeout(8000)
+        });
+        if (response.status === 404) {
+            birthdayMemberNameCache.set(cacheKey, { name: null, expiresAt: Date.now() + 5 * 60_000 });
+            return null;
+        }
+        if (!response.ok) return null;
+        const member = await response.json();
+        const name = member.user?.global_name || member.nick || member.user?.username || null;
+        if (name) birthdayMemberNameCache.set(cacheKey, { name, expiresAt: Date.now() + 60 * 60_000 });
+        return name;
+    } catch {
+        return null;
+    }
+}
 
 function getRedirectUri() {
     if (process.env.DASHBOARD_REDIRECT_URI) return process.env.DASHBOARD_REDIRECT_URI;
@@ -431,6 +457,28 @@ app.get("/api/guilds/:guildId/resources", requireGuildAdmin, async (req, res) =>
     } catch (error) {
         console.error("[Dashboard Resources] Error al cargar canales y roles:", error.message);
         return res.status(502).json({ error: "No pude cargar los canales y roles del servidor." });
+    }
+});
+
+app.get("/api/guilds/:guildId/birthday-members/names", requireGuildAdmin, async (req, res) => {
+    try {
+        const Birthday = lists.birthdayMembers.model;
+        const records = await Birthday.find({ guildId: req.params.guildId }).select("userId").lean();
+        const userIds = [...new Set(records.map(record => String(record.userId || "")).filter(id => /^\d{17,20}$/.test(id)))];
+        const names = {};
+        let next = 0;
+        const workers = Array.from({ length: Math.min(3, userIds.length) }, async () => {
+            while (next < userIds.length) {
+                const userId = userIds[next++];
+                const name = await getBirthdayMemberName(req.params.guildId, userId);
+                if (name) names[userId] = name;
+            }
+        });
+        await Promise.all(workers);
+        return res.json({ names });
+    } catch (error) {
+        console.error("[Dashboard Birthdays] Error al cargar nombres:", error.message);
+        return res.status(500).json({ error: "No pude cargar los nombres de los miembros." });
     }
 });
 
