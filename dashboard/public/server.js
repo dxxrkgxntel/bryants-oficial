@@ -73,12 +73,34 @@ function renderSetupsEditor(setups) {
     return `<div class="field setups-field" data-setups-editor><span>Canales creadores y paneles</span><div class="setup-rows">${renderSetupRows(setups)}</div><button class="quiet-button setup-add" type="button" data-add-setup ${setups.length >= 10 ? "disabled" : ""}>＋ Añadir configuración</button><small>Puedes gestionar hasta 10 configuraciones. El ID del mensaje se deja vacío si todavía no tienes un panel publicado.</small></div>`;
 }
 
+function renderPrestigeMap(field, value) {
+    const isRoleMap = field.name === "prestigeRoles";
+    const entries = value && typeof value === "object" ? value : {};
+    const rows = Array.from({ length: 5 }, (_unused, index) => {
+        const level = String(index + 1);
+        const current = entries[level] == null ? "" : String(entries[level]);
+        let control;
+        if (isRoleMap) {
+            const roles = optionsFor({ type: "role" });
+            const hasCurrent = roles.some(role => role.id === current);
+            const stale = current && !hasCurrent ? `<option value="${escapeHtml(current)}" selected>ID guardado: ${escapeHtml(current)}</option>` : "";
+            control = `<select data-prestige-level="${level}" required><option value="">Elige un rol</option>${stale}${roles.map(role => `<option value="${escapeHtml(role.id)}" ${current === role.id ? "selected" : ""}>${escapeHtml(role.name)}</option>`).join("")}</select>`;
+        } else {
+            control = `<input data-prestige-level="${level}" type="number" min="0" step="1" value="${escapeHtml(current)}" required>`;
+        }
+        return `<label class="prestige-row"><strong>Prestigio ${level}</strong>${control}</label>`;
+    }).join("");
+    const help = field.help ? `<small>${escapeHtml(field.help)}</small>` : "";
+    return `<div class="field prestige-map-field" data-prestige-map="${field.name}"><span>${escapeHtml(field.label)}</span><div class="prestige-rows">${rows}</div>${help}</div>`;
+}
+
 function renderField(field, value, prefix = "") {
     const id = `field-${prefix}${field.name}`.replace(/[^a-zA-Z0-9_-]/g, "-");
     const required = field.optional ? "" : "required";
     const safeValue = value ?? field.default ?? "";
     const help = field.help ? `<small>${escapeHtml(field.help)}</small>` : "";
     if (field.type === "setups") return renderSetupsEditor(Array.isArray(value) ? value : []);
+    if (field.type === "json" && ["prestigeRoles", "prestigeRewards"].includes(field.name)) return renderPrestigeMap(field, value);
     if (field.type === "boolean") {
         return `<label class="field checkbox-field" for="${id}"><span><strong>${escapeHtml(field.label)}</strong></span><input id="${id}" name="${escapeHtml(field.name)}" type="checkbox" ${value ? "checked" : ""}></label>`;
     }
@@ -119,6 +141,15 @@ function readForm(form, fields) {
     for (const field of fields) {
         if (field.type === "setups") {
             result[field.name] = readSetupRows(form.querySelector("[data-setups-editor]"));
+            continue;
+        }
+        if (field.type === "json" && ["prestigeRoles", "prestigeRewards"].includes(field.name)) {
+            const isRoleMap = field.name === "prestigeRoles";
+            const map = {};
+            form.querySelectorAll(`[data-prestige-map="${field.name}"] [data-prestige-level]`).forEach(input => {
+                map[input.dataset.prestigeLevel] = isRoleMap ? input.value : Number(input.value);
+            });
+            result[field.name] = map;
             continue;
         }
         const element = form.elements.namedItem(field.name);

@@ -213,8 +213,8 @@ const configurations = {
         guildField: "guildId",
         fields: [
             { name: "enabled", label: "Sistema activo", type: "boolean" },
-            { name: "prestigeRoles", label: "Roles de prestigio por nivel", type: "json" },
-            { name: "prestigeRewards", label: "Recompensas por nivel", type: "json" }
+            { name: "prestigeRoles", label: "Roles de prestigio", type: "json", help: "Elige el rol que recibirá cada miembro al alcanzar uno de los cinco prestigios." },
+            { name: "prestigeRewards", label: "Recompensas por prestigio", type: "json", help: "Indica las monedas que se entregarán en cada nivel de prestigio." }
         ]
     },
     weeklyDrop: {
