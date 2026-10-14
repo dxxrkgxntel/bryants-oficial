@@ -270,6 +270,10 @@ function renderField(field, value, prefix = "") {
         const options = field.options.map(option => `<option value="${escapeHtml(option)}" ${safeValue === option ? "selected" : ""}>${escapeHtml(option)}</option>`).join("");
         return `<label class="field" for="${id}"><span>${escapeHtml(field.label)}</span><select id="${id}" name="${escapeHtml(field.name)}" ${required}><option value="">Elige una opción</option>${options}</select>${help}</label>`;
     }
+    if (field.type === "kick-channel") {
+        const current = String(safeValue || "");
+        return `<div class="field kick-channel-field" data-kick-channel-picker><label for="${id}">${escapeHtml(field.label)}</label><div class="kick-channel-control"><input id="${id}" type="search" data-kick-channel-query value="${escapeHtml(current)}" maxlength="50" placeholder="Buscar un canal de Kick" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false"><input type="hidden" name="${escapeHtml(field.name)}" value="${escapeHtml(current)}"><div class="kick-channel-selected" data-kick-channel-selected ${current ? "" : "hidden"}></div><div class="kick-channel-results" data-kick-channel-results role="listbox" hidden></div><div class="kick-channel-status" data-kick-channel-status role="status" aria-live="polite"></div></div>${help}</div>`;
+    }
     if (["channel", "voice", "category", "role"].includes(field.type)) {
         const options = optionsFor(field);
         const current = String(safeValue || "");
@@ -952,6 +956,133 @@ function wireRolePickers(form) {
     });
 }
 
+function wireKickChannelPickers(form) {
+    form?.querySelectorAll("[data-kick-channel-picker]").forEach(picker => {
+        const queryInput = picker.querySelector("[data-kick-channel-query]");
+        const slugInput = picker.querySelector('input[type="hidden"]');
+        const selected = picker.querySelector("[data-kick-channel-selected]");
+        const results = picker.querySelector("[data-kick-channel-results]");
+        const status = picker.querySelector("[data-kick-channel-status]");
+        let searchTimer = 0;
+        let requestId = 0;
+
+        const setStatus = message => { status.textContent = message; };
+        const selectChannel = channel => {
+            slugInput.value = channel.slug;
+            queryInput.value = channel.username;
+            selected.replaceChildren();
+            if (channel.avatarUrl) {
+                const avatar = document.createElement("img");
+                avatar.src = channel.avatarUrl;
+                avatar.alt = "";
+                avatar.loading = "lazy";
+                selected.append(avatar);
+            } else {
+                const icon = document.createElement("span");
+                icon.className = "kick-channel-fallback";
+                icon.textContent = "K";
+                selected.append(icon);
+            }
+            const description = document.createElement("span");
+            description.textContent = `Canal seleccionado: @${channel.username} · kick.com/${channel.slug}${channel.isLive ? " · En directo" : ""}`;
+            selected.append(description);
+            selected.hidden = false;
+            results.hidden = true;
+            queryInput.setAttribute("aria-expanded", "false");
+            setStatus("");
+            slugInput.dispatchEvent(new Event("input", { bubbles: true }));
+            slugInput.dispatchEvent(new Event("change", { bubbles: true }));
+        };
+
+        const searchChannels = async (term, selectExact = false) => {
+            const currentRequest = ++requestId;
+            const trimmed = term.trim();
+            if (trimmed.length < 3) {
+                results.replaceChildren();
+                results.hidden = true;
+                queryInput.setAttribute("aria-expanded", "false");
+                setStatus(trimmed ? "Escribe al menos 3 caracteres para buscar." : "");
+                return;
+            }
+            results.replaceChildren();
+            results.hidden = false;
+            queryInput.setAttribute("aria-expanded", "true");
+            setStatus("Buscando canales de Kick…");
+            try {
+                const response = await api(`/api/kick/channels/search?q=${encodeURIComponent(trimmed)}`);
+                if (currentRequest !== requestId || !picker.isConnected) return;
+                const channels = response.channels || [];
+                if (selectExact) {
+                    const normalized = trimmed.replace(/^@/, "").toLocaleLowerCase("en");
+                    const exact = channels.filter(channel => channel.slug.toLocaleLowerCase("en") === normalized || channel.username.toLocaleLowerCase("en") === normalized);
+                    if (exact.length === 1) {
+                        selectChannel(exact[0]);
+                        return;
+                    }
+                }
+                if (!channels.length) {
+                    results.hidden = true;
+                    queryInput.setAttribute("aria-expanded", "false");
+                    setStatus("No encontré canales que coincidan. Prueba con otra parte del nombre.");
+                    return;
+                }
+                for (const channel of channels) {
+                    const option = document.createElement("button");
+                    option.type = "button";
+                    option.className = "kick-channel-option";
+                    option.setAttribute("role", "option");
+                    if (channel.avatarUrl) {
+                        const avatar = document.createElement("img");
+                        avatar.src = channel.avatarUrl;
+                        avatar.alt = "";
+                        avatar.loading = "lazy";
+                        option.append(avatar);
+                    } else {
+                        const icon = document.createElement("span");
+                        icon.className = "kick-channel-fallback";
+                        icon.textContent = "K";
+                        option.append(icon);
+                    }
+                    const names = document.createElement("span");
+                    names.className = "kick-channel-option-names";
+                    const username = document.createElement("strong");
+                    username.textContent = channel.username;
+                    const slug = document.createElement("small");
+                    slug.textContent = `kick.com/${channel.slug}${channel.isLive ? " · En directo" : ""}`;
+                    names.append(username, slug);
+                    option.append(names);
+                    option.addEventListener("click", () => selectChannel(channel));
+                    results.append(option);
+                }
+                setStatus(`${channels.length} coincidencia(s). Selecciona el canal correcto.`);
+            } catch (error) {
+                if (currentRequest !== requestId || !picker.isConnected) return;
+                results.hidden = true;
+                queryInput.setAttribute("aria-expanded", "false");
+                setStatus(error.message);
+            }
+        };
+
+        queryInput.addEventListener("input", () => {
+            slugInput.value = "";
+            selected.hidden = true;
+            slugInput.dispatchEvent(new Event("input", { bubbles: true }));
+            window.clearTimeout(searchTimer);
+            searchTimer = window.setTimeout(() => searchChannels(queryInput.value), 300);
+        });
+        queryInput.addEventListener("focus", () => {
+            if (queryInput.value.trim().length >= 3 && !slugInput.value) searchChannels(queryInput.value);
+        });
+        form.addEventListener("click", event => {
+            if (!picker.contains(event.target)) {
+                results.hidden = true;
+                queryInput.setAttribute("aria-expanded", "false");
+            }
+        });
+        if (queryInput.value.trim().length >= 3 && slugInput.value) searchChannels(queryInput.value, true);
+    });
+}
+
 function renderList(key, definition, editItem = null) {
     const records = configState.lists[key] || [];
     const editing = Boolean(editItem);
@@ -1015,6 +1146,7 @@ function renderList(key, definition, editItem = null) {
     const listForm = content.querySelector("#list-form");
     wireMultiSelectLimits(listForm);
     wireRolePickers(listForm);
+    wireKickChannelPickers(listForm);
     setupTemplateComposers(listForm);
     if (key === "socialAlerts") {
         updatePreview(key, listForm);

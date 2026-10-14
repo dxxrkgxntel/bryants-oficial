@@ -73,6 +73,7 @@ app.use(session({
 
 const publicDirectory = path.join(__dirname, "public");
 const birthdayMemberNameCache = new Map();
+const kickChannelSearchCache = new Map();
 
 async function getBirthdayMemberName(guildId, userId) {
     if (!/^\d{17,20}$/.test(String(userId || ""))) return null;
@@ -848,6 +849,42 @@ app.get("/api/guilds/:guildId/resources", requireGuildAdmin, async (req, res) =>
     } catch (error) {
         console.error("[Dashboard Resources] Error al cargar canales y roles:", error.message);
         return res.status(502).json({ error: "No pude cargar los canales y roles del servidor." });
+    }
+});
+
+app.get("/api/kick/channels/search", requireLogin, async (req, res) => {
+    const query = String(req.query.q || "").trim().slice(0, 50);
+    if (query.length < 3) return res.json({ channels: [] });
+    const cacheKey = query.toLocaleLowerCase("en");
+    const cached = kickChannelSearchCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) return res.json({ channels: cached.channels });
+
+    try {
+        // Kick's documented developer API resolves exact slugs only; use its own site search for autocomplete.
+        const url = new URL("https://kick.com/api/search");
+        url.searchParams.set("searched_word", query);
+        const response = await fetch(url, {
+            headers: {
+                Accept: "application/json",
+                "User-Agent": "Mozilla/5.0 (compatible; BryantsOfficialDashboard/1.0)",
+                Referer: "https://kick.com/"
+            },
+            signal: AbortSignal.timeout(8000)
+        });
+        if (!response.ok) throw new Error(`Kick respondió ${response.status}.`);
+        const payload = await response.json();
+        const channels = (Array.isArray(payload?.channels) ? payload.channels : []).map(channel => ({
+            slug: String(channel.slug || "").trim().toLowerCase(),
+            username: String(channel.user?.username || channel.name || channel.slug || "").trim(),
+            avatarUrl: typeof channel.user?.profilePic === "string" && channel.user.profilePic.startsWith("https://") ? channel.user.profilePic : "",
+            isLive: Boolean(channel.isLive)
+        })).filter(channel => /^[a-z0-9_-]{1,100}$/.test(channel.slug) && channel.username).slice(0, 20);
+        if (kickChannelSearchCache.size >= 200) kickChannelSearchCache.delete(kickChannelSearchCache.keys().next().value);
+        kickChannelSearchCache.set(cacheKey, { channels, expiresAt: Date.now() + 30_000 });
+        return res.json({ channels });
+    } catch (error) {
+        console.warn("[Dashboard Kick Search] No pude buscar canales:", error.message);
+        return res.status(502).json({ error: "No pude buscar canales en Kick ahora. Inténtalo de nuevo." });
     }
 });
 

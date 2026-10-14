@@ -433,7 +433,7 @@ const lists = {
         model: require("../Models/SocialAlert"),
         fields: [
             { name: "platform", label: "Plataforma", type: "select", options: ["Kick"] },
-            { name: "slug", label: "Canal de Kick", type: "text", maxLength: 100, help: "Escribe el nombre del canal que aparece en su URL de Kick." },
+            { name: "slug", label: "Canal de Kick", type: "kick-channel", maxLength: 25, help: "Busca por nombre y selecciona el canal correcto. Kick puede mostrar un nombre distinto del slug de su URL." },
             { name: "channelId", label: "Canal de Discord", type: "channel", channelTypes: [0] },
             { name: "includeViewerCount", label: "Cantidad de espectadores", type: "boolean", help: "Incluye los espectadores actuales y actualiza el mensaje cada cinco minutos." },
             { name: "title", label: "Título de la alerta", type: "text", maxLength: 256, templateComposer: true, templateVariables: messageVariables.socialAlert },
