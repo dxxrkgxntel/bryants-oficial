@@ -158,6 +158,7 @@ const configurations = {
     voiceConnection: {
         title: "Conexión de voz del bot",
         category: "Servidor",
+        description: "El bot aplicará el canal seleccionado en unos segundos después de guardar.",
         model: require("../Models/VoiceConnectConfig"),
         guildField: "guildId",
         fields: [{ name: "channelId", label: "Canal de voz", type: "voice" }]

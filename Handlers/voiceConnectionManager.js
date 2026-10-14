@@ -8,6 +8,10 @@ const VoiceConnectConfig = require("../Models/VoiceConnectConfig");
 
 const RECONNECT_DELAY_MS = 5_000;
 const READY_TIMEOUT_MS = 20_000;
+const CONFIG_SYNC_INTERVAL_MS = 5_000;
+let configSyncTimer = null;
+let configSyncRunning = false;
+const retryAfterByGuild = new Map();
 
 function watchConnection(connection, guildId, channelId) {
     connection._persistentVoiceTarget = { guildId, channelId };
@@ -109,7 +113,61 @@ async function restoreVoiceConnections(client) {
     }
 }
 
+async function syncVoiceConnections(client) {
+    const configs = await VoiceConnectConfig.find({}).lean();
+    for (const config of configs) {
+        const guild = client.guilds.cache.get(config.guildId)
+            || await client.guilds.fetch(config.guildId).catch(() => null);
+        if (!guild) continue;
+
+        const channel = guild.channels.cache.get(config.channelId)
+            || await guild.channels.fetch(config.channelId).catch(() => null);
+        if (!channel?.isVoiceBased()) continue;
+
+        const connection = getVoiceConnection(guild.id);
+        if (connection
+            && connection.state.status !== VoiceConnectionStatus.Destroyed
+            && connection.joinConfig.channelId === channel.id) {
+            watchConnection(connection, guild.id, channel.id);
+            continue;
+        }
+
+        const retry = retryAfterByGuild.get(guild.id);
+        if (retry?.channelId === channel.id && retry.nextAttemptAt > Date.now()) continue;
+
+        try {
+            await connectToVoiceChannel(guild, channel.id);
+            retryAfterByGuild.delete(guild.id);
+            console.log(`[VOICE CONNECT] Canal actualizado en ${guild.name} / ${channel.name}.`);
+        } catch (error) {
+            retryAfterByGuild.set(guild.id, { channelId: channel.id, nextAttemptAt: Date.now() + 15_000 });
+            console.error(`[VOICE CONNECT] No pude actualizar el canal en ${guild.id}/${channel.id}:`, error);
+        }
+    }
+}
+
+function startVoiceConnectionSync(client) {
+    if (configSyncTimer) return configSyncTimer;
+
+    const sync = async () => {
+        if (configSyncRunning) return;
+        configSyncRunning = true;
+        try {
+            await syncVoiceConnections(client);
+        } catch (error) {
+            console.error("[VOICE CONNECT] No pude revisar la configuración de voz:", error);
+        } finally {
+            configSyncRunning = false;
+        }
+    };
+
+    configSyncTimer = setInterval(sync, CONFIG_SYNC_INTERVAL_MS);
+    configSyncTimer.unref?.();
+    return configSyncTimer;
+}
+
 module.exports = {
     connectToVoiceChannel,
-    restoreVoiceConnections
+    restoreVoiceConnections,
+    startVoiceConnectionSync
 };

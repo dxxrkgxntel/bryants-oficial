@@ -242,7 +242,9 @@ function renderModule(key, modules) {
                 method: "PUT", body: JSON.stringify(payload)
             });
             configState.configurations[key] = { ...result.configuration, configured: true };
-            showNotice("Configuración guardada.");
+            showNotice(key === "voiceConnection"
+                ? "Canal guardado. El bot cambiará en unos segundos."
+                : "Configuración guardada.");
             renderModule(key, modules);
         } catch (error) {
             showNotice(error.message, true);
