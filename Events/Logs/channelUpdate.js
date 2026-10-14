@@ -29,7 +29,7 @@ module.exports = {
                     Guild: newChannel.guild.id
                 });
 
-            if (!data) return;
+            if (!data || data.Enabled === false) return;
 
             //////////////////////////////////////////////////
             // LOG CHANNEL

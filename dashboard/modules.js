@@ -157,14 +157,20 @@ const configurations = {
         category: "Moderación",
         model: require("../Models/logsSchema"),
         guildField: "Guild",
-        fields: [{ name: "Channel", label: "Canal de logs", type: "channel", channelTypes: [0] }]
+        fields: [
+            { name: "Enabled", label: "Sistema activo", type: "boolean", default: true },
+            { name: "Channel", label: "Canal de logs", type: "channel", channelTypes: [0] }
+        ]
     },
     reports: {
         title: "Reportes",
         category: "Moderación",
         model: require("../Models/reportGuildSchema"),
         guildField: "reportGuildId",
-        fields: [{ name: "reportChannelId", label: "Canal de reportes", type: "channel", channelTypes: [0] }]
+        fields: [
+            { name: "Enabled", label: "Sistema activo", type: "boolean", default: true },
+            { name: "reportChannelId", label: "Canal de reportes", type: "channel", channelTypes: [0] }
+        ]
     },
     antiLinks: {
         title: "AntiLinks",
@@ -198,6 +204,7 @@ const configurations = {
         model: require("../Models/ImageConfig"),
         guildField: "guildId",
         fields: [
+            { name: "enabled", label: "Sistema activo", type: "boolean", default: true },
             { name: "allowedChannels", label: "Canales multimedia", type: "channel-list", channelTypes: [0] },
             { name: "logChannel", label: "Canal de logs", type: "channel", channelTypes: [0], optional: true },
             { name: "thumbnail", label: "URL de miniatura para logs", type: "url", optional: true },
@@ -211,7 +218,7 @@ const configurations = {
         guildField: "guildId",
         fields: [
             { name: "channelId", label: "Canal", type: "channel", channelTypes: [0] },
-            { name: "Enabled", label: "Sistema activo", type: "boolean" }
+            { name: "Enabled", label: "Sistema activo", type: "boolean", default: true }
         ]
     },
     suggestions: {
@@ -236,7 +243,10 @@ const configurations = {
         category: "Moderación",
         model: require("../Models/PurgeConfig"),
         guildField: "guildId",
-        fields: [{ name: "channelId", label: "Canal que se limpia a medianoche (hora RD)", type: "channel", channelTypes: [0, 5] }]
+        fields: [
+            { name: "enabled", label: "Sistema activo", type: "boolean", default: true },
+            { name: "channelId", label: "Canal que se limpia a medianoche (hora RD)", type: "channel", channelTypes: [0, 5] }
+        ]
     },
     voiceConnection: {
         title: "Conexión de voz del bot",

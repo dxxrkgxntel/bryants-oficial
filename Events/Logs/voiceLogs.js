@@ -22,7 +22,7 @@ module.exports = {
                     Guild: newState.guild.id
                 });
 
-            if (!data) return;
+            if (!data || data.Enabled === false) return;
 
             //////////////////////////////////////////////////
             // CHANNEL

@@ -3,7 +3,8 @@ const mongoose = require("mongoose");
 const logsSchema = new mongoose.Schema({
 
     Guild: String,
-    Channel: String
+    Channel: String,
+    Enabled: { type: Boolean, default: true }
 
 });
 

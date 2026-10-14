@@ -106,7 +106,8 @@ module.exports = {
                         channelLogs.id,
 
                     reportGuildId:
-                        guild.id
+                        guild.id,
+                    Enabled: true
                 });
 
                 return correReply(
@@ -124,7 +125,8 @@ module.exports = {
                 { reportGuildId: guild.id },
                 {
                     reportChannelId:
-                        channelLogs.id
+                        channelLogs.id,
+                    Enabled: true
                 }
             );
 

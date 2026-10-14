@@ -34,7 +34,8 @@ module.exports = {
                 {
                     $set: {
                         channelId: channel.id,
-                        configuredAt: new Date()
+                        configuredAt: new Date(),
+                        enabled: true
                     },
                     $setOnInsert: {
                         lastPurgeDate: null,

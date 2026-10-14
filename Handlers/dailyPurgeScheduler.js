@@ -146,7 +146,7 @@ async function processDuePurges(client) {
 
     try {
         const today = dateKey(new Date());
-        const configurations = await PurgeConfig.find({ lastPurgeDate: { $ne: today } });
+        const configurations = await PurgeConfig.find({ enabled: { $ne: false }, lastPurgeDate: { $ne: today } });
 
         for (const config of configurations) {
             if (!config.configuredAt || dateKey(config.configuredAt) >= today) continue;

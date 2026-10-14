@@ -10,6 +10,10 @@ const purgeConfigSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    enabled: {
+        type: Boolean,
+        default: true
+    },
     configuredAt: {
         type: Date,
         default: Date.now

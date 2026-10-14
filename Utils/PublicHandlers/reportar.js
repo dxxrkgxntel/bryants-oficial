@@ -56,6 +56,14 @@ module.exports = {
                 );
             }
 
+            if (reportData.Enabled === false) {
+                return errReply(
+                    interaction,
+                    '❌ El sistema de reportes está desactivado.',
+                    true
+                );
+            }
+
             //////////////////////////////////////////////////
             // DATOS DEL REPORTE
             //////////////////////////////////////////////////

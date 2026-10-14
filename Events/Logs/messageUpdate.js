@@ -34,7 +34,7 @@ module.exports = {
                     Guild: oldMessage.guild.id
                 });
 
-            if (!data) return;
+            if (!data || data.Enabled === false) return;
 
             //////////////////////////////////////////////////
             // CHANNEL

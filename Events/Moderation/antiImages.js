@@ -55,7 +55,7 @@ module.exports = {
         if (message.author.bot || !message.guild) return;
 
         const config = await ImageConfig.findOne({ guildId: message.guild.id });
-        if (!config) return;
+        if (!config || config.enabled === false) return;
 
         const isAllowedChannel = (config.allowedChannels || []).includes(message.channel.id);
         const hasAllowedAttachment = message.attachments.some(isAllowedAttachment);

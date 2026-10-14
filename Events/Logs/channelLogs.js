@@ -34,7 +34,7 @@ module.exports = {
                     Guild: channel.guild.id
                 });
 
-            if (!data) return;
+            if (!data || data.Enabled === false) return;
 
             //////////////////////////////////////////////////
             // LOG CHANNEL

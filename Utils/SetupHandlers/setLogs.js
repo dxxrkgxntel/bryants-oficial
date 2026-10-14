@@ -125,7 +125,8 @@ module.exports = {
                             interaction.guild.id,
 
                         Channel:
-                            channel.id
+                            channel.id,
+                        Enabled: true
                     });
 
             } else {
@@ -136,6 +137,7 @@ module.exports = {
 
                 data.Channel =
                     channel.id;
+                data.Enabled = true;
 
                 await data.save();
             }
