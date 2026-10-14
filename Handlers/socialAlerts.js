@@ -163,10 +163,15 @@ async function checkAlert(client, alert) {
         state.messageId = null;
     }
     const channelInfo = await getStream(alert.slug);
+    if (!channelInfo) {
+        console.warn(`[SocialAlerts] Kick ${alert.slug} (${alert.guildId}): la API no devolvió ningún canal para ese nombre.`);
+        return;
+    }
     const stream = channelInfo?.stream;
     // Kick represents an offline channel with a null/missing `stream` object.
     // Some API responses omit `is_live` while returning the active stream.
     if (!stream || stream.is_live === false) {
+        console.info(`[SocialAlerts] Kick ${alert.slug} (${alert.guildId}): consulta correcta, Kick no reporta un directo activo.`);
         if (state.lastStreamId) {
             state.lastStreamId = null;
             state.messageId = null;
@@ -181,6 +186,7 @@ async function checkAlert(client, alert) {
         console.info(`[SocialAlerts] Kick ${alert.slug} (${alert.guildId}): alerta enviada al canal ${alert.channelId}.`);
         return;
     }
+    console.info(`[SocialAlerts] Kick ${alert.slug} (${alert.guildId}): directo detectado; la alerta ya fue enviada para este directo.`);
     await updateViewerCount(client, alert, state, { ...channelInfo, ...stream, stream_title: channelInfo.stream_title || stream.title });
 }
 
@@ -188,7 +194,8 @@ async function poll(client) {
     if (pollRunning) return;
     pollRunning = true;
     try {
-        const alerts = await SocialAlert.find({ platform: "Kick", enabled: true }).lean();
+        const alerts = await SocialAlert.find({ platform: "Kick", enabled: { $ne: false } }).lean();
+        console.info(`[SocialAlerts] Revisando ${alerts.length} alerta(s) de Kick activa(s).`);
         for (const alert of alerts) {
             try { await checkAlert(client, alert); }
             catch (error) {
