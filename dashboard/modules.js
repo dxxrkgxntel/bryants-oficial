@@ -89,7 +89,8 @@ const configurations = {
             { name: "DMMessage", label: "Mensaje de bienvenida al DM", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.welcome, help: "Usa {{user}}, {{username}}, {{server}} y las demás variables de bienvenida." },
             { name: "DMColor", label: "Color hexadecimal del DM", type: "color", optional: true },
             { name: "DMBanner", label: "URL del banner del DM", type: "url", optional: true },
-            { name: "DMThumbnail", label: "URL de miniatura del DM", type: "url", optional: true }
+              { name: "DMThumbnail", label: "URL de miniatura del DM", type: "url", optional: true },
+              { name: "Buttons", label: "Botones del mensaje de bienvenida", type: "buttons", optional: true, help: "Añade botones con un enlace o una acción para reclamar un rol." }
         ]
     },
     leaves: {
@@ -136,7 +137,8 @@ const configurations = {
             { name: "boostDescription", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.boost, help: "Puedes insertar variables como {{user}}, {{server}} y {{boost}} con los botones." },
             { name: "boostColor", label: "Color hexadecimal", type: "color", optional: true },
             { name: "boostThumbnail", label: "URL de miniatura", type: "url", optional: true },
-            { name: "boostImage", label: "URL del banner", type: "url", optional: true }
+              { name: "boostImage", label: "URL del banner", type: "url", optional: true },
+              { name: "boostButtons", label: "Botones del aviso de boost", type: "buttons", optional: true, help: "Configura hasta cinco botones para reclamar roles o abrir enlaces." }
         ]
     },
     stats: {

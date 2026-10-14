@@ -244,6 +244,30 @@ function cleanFields(fields, input, requireAll = false) {
                 try { value = JSON.parse(value); } catch { throw new Error(`${field.label} debe tener JSON válido.`); }
             }
             if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(`${field.label} debe ser un objeto JSON.`);
+        } else if (field.type === "buttons") {
+            if (!Array.isArray(value) || value.length > 5) throw new Error(`${field.label} admite hasta cinco botones.`);
+            value = value.map(button => {
+                if (!button || typeof button !== "object" || Array.isArray(button)) throw new Error(`${field.label} contiene un botón inválido.`);
+                const action = button.action;
+                const label = typeof button.label === "string" ? button.label.trim() : "";
+                const emoji = typeof button.emoji === "string" ? button.emoji.trim() : "";
+                if (!label || label.length > 80) throw new Error("Cada botón necesita un nombre de hasta 80 caracteres.");
+                if (emoji.length > 100) throw new Error("El emoji del botón es demasiado largo.");
+                if (emoji.startsWith("<") && !/^<a?:[a-zA-Z0-9_]{2,32}:\d{17,20}>$/.test(emoji)) throw new Error("Usa un emoji personalizado válido, como <:nombre:id>.");
+                if (action === "link") {
+                    let url;
+                    if (String(button.url || "").trim().length > 2048) throw new Error("La URL del botón supera el máximo de 2.048 caracteres.");
+                    try { url = new URL(String(button.url || "").trim()); } catch { throw new Error("Cada botón de enlace necesita una URL válida."); }
+                    if (url.protocol !== "https:") throw new Error("Los enlaces de botones deben comenzar con https://.");
+                    return { label, emoji, action, url: url.toString() };
+                }
+                if (action === "role") {
+                    const roleId = String(button.roleId || "").trim();
+                    if (!/^\d{17,20}$/.test(roleId)) throw new Error("Selecciona un rol válido para cada botón de reclamación.");
+                    return { label, emoji, action, roleId };
+                }
+                throw new Error("Elige si cada botón abre un enlace o reclama un rol.");
+            });
         } else if (field.type === "setups") {
             if (!Array.isArray(value) || value.length > 10) throw new Error("TempVoice acepta hasta 10 configuraciones.");
             value = value.map(setup => {
@@ -362,7 +386,8 @@ async function discordBotRequest(url, { method = "GET", body } = {}) {
 
 async function validateDiscordReferences(guildId, fields, values) {
     const referenceFields = fields.filter(field => ["channel", "voice", "category", "role", "channel-list", "role-list"].includes(field.type));
-    if (!referenceFields.length && !fields.some(field => field.type === "setups" && values.setups)) return;
+    const buttonFields = fields.filter(field => field.type === "buttons");
+    if (!referenceFields.length && !buttonFields.length && !fields.some(field => field.type === "setups" && values.setups)) return;
 
     const { channels, roles } = await fetchGuildResources(guildId);
     const channelTypes = new Map(channels.map(channel => [channel.id, channel.type]));
@@ -383,6 +408,15 @@ async function validateDiscordReferences(guildId, fields, values) {
                 if (!roleIds.has(id)) throw new Error(`${field.label} debe ser un rol de este servidor.`);
             } else if (!(field.channelTypes || expectedTypes[field.type]).includes(channelTypes.get(id))) {
                 throw new Error(`${field.label} debe ser un canal compatible de este servidor.`);
+            }
+        }
+    }
+
+    for (const field of buttonFields) {
+        const buttons = getFieldValue(values, field.name);
+        for (const button of Array.isArray(buttons) ? buttons : []) {
+            if (button.action === "role" && !roleIds.has(button.roleId)) {
+                throw new Error(`${field.label}: el rol debe pertenecer a este servidor.`);
             }
         }
     }
@@ -1062,7 +1096,10 @@ app.post("/auth/logout", requireLogin, requireCsrf, (req, res) => {
 app.use(express.static(publicDirectory, {
     extensions: ["html"],
     index: "index.html",
-    maxAge: isProduction ? "1h" : 0
+    maxAge: 0,
+    setHeaders(res, filePath) {
+        if (/\.(?:html|js|css)$/i.test(filePath)) res.setHeader("Cache-Control", "no-cache");
+    }
 }));
 
 app.use((error, _req, res, _next) => {

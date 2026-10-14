@@ -74,7 +74,7 @@ function registerFormGuard(form, fields) {
     form.addEventListener("input", guard.update);
     form.addEventListener("change", guard.update);
     form.addEventListener("click", event => {
-        if (event.target.closest("[data-add-setup], [data-remove-setup]")) window.setTimeout(guard.update, 0);
+        if (event.target.closest("[data-add-setup], [data-remove-setup], [data-add-config-button], [data-remove-config-button]")) window.setTimeout(guard.update, 0);
     });
 }
 
@@ -260,6 +260,7 @@ function renderField(field, value, prefix = "") {
     const safeValue = value ?? field.default ?? "";
     const help = field.help ? `<small>${escapeHtml(field.help)}</small>` : "";
     if (field.type === "setups") return renderSetupsEditor(Array.isArray(value) ? value : []);
+    if (field.type === "buttons") return renderButtonEditor(field, Array.isArray(value) ? value : [], prefix);
     if (field.type === "json" && ["prestigeRoles", "prestigeRewards"].includes(field.name)) return renderPrestigeMap(field, value);
     if (field.type === "boolean") {
         return `<label class="field checkbox-field" for="${id}"><span><strong>${escapeHtml(field.label)}</strong>${help}</span><input id="${id}" name="${escapeHtml(field.name)}" type="checkbox" ${safeValue ? "checked" : ""}></label>`;
@@ -296,6 +297,63 @@ function renderField(field, value, prefix = "") {
     const minMax = field.type === "number" ? `min="${field.min ?? 0}" ${field.max !== undefined ? `max="${field.max}"` : ""} step="1"` : "";
     const control = `<input id="${id}" name="${escapeHtml(field.name)}" type="${inputType}" value="${escapeHtml(safeValue)}" maxlength="${field.maxLength || 2000}" ${minMax} ${required}>`;
     return renderTextField(field, id, control, help);
+}
+
+function renderButtonEditor(field, buttons, prefix = "") {
+    const roles = resources.roles.map(role => `<option data-locale-fixed value="${escapeHtml(role.id)}">${escapeHtml(role.name)}</option>`).join("");
+    const rows = buttons.map((button, index) => `<div class="config-button-row" data-config-button>
+        <div class="config-button-row-heading"><strong>Botón ${index + 1}</strong><button type="button" class="quiet-button danger-text" data-remove-config-button>Eliminar</button></div>
+        <div class="config-button-fields">
+            <label class="field"><span>Nombre del botón</span><input data-button-label maxlength="80" value="${escapeHtml(button.label || "")}" placeholder="Ej. Reclamar rol"></label>
+            <label class="field"><span>Emoji (opcional)</span><input data-button-emoji maxlength="100" value="${escapeHtml(button.emoji || "")}" placeholder="🎉 o <:emoji:id>"></label>
+            <label class="field"><span>Acción</span><select data-button-action><option value="link" ${button.action === "link" ? "selected" : ""}>Abrir enlace</option><option value="role" ${button.action === "role" ? "selected" : ""}>Reclamar rol</option></select></label>
+            <label class="field button-role-field" ${button.action === "role" ? "" : "hidden"}><span>Rol que se reclama</span><select data-button-role><option value="">Elige un rol</option>${roles.replace(`value="${escapeHtml(button.roleId || "")}"`, `value="${escapeHtml(button.roleId || "")}" selected`)}</select></label>
+            <label class="field button-link-field" ${button.action === "link" || !button.action ? "" : "hidden"}><span>URL</span><input data-button-url type="url" value="${escapeHtml(button.url || "")}" placeholder="https://ejemplo.com"></label>
+        </div>
+    </div>`).join("");
+    return `<section class="field button-list-field" data-button-list="${escapeHtml(field.name)}" data-prefix="${escapeHtml(prefix)}"><div class="button-list-heading"><div><strong>${escapeHtml(field.label)}</strong>${field.help ? `<small>${escapeHtml(field.help)}</small>` : ""}</div><button class="quiet-button" type="button" data-add-config-button>Añadir botón</button></div><div class="config-button-rows">${rows || '<p class="setup-empty">Aún no hay botones. Puedes añadir hasta cinco.</p>'}</div></section>`;
+}
+
+function readButtonRows(editor) {
+    return [...editor.querySelectorAll("[data-config-button]")].map(row => ({
+        label: row.querySelector("[data-button-label]").value,
+        emoji: row.querySelector("[data-button-emoji]").value,
+        action: row.querySelector("[data-button-action]").value,
+        roleId: row.querySelector("[data-button-role]").value,
+        url: row.querySelector("[data-button-url]").value
+    }));
+}
+
+function setupButtonEditors(form, definition) {
+    form.querySelectorAll("[data-button-list]").forEach(editor => {
+        const field = definition.fields.find(item => item.name === editor.dataset.buttonList);
+        const rows = editor.querySelector(".config-button-rows");
+        const draw = buttons => {
+            rows.innerHTML = renderButtonEditor(field, buttons, editor.dataset.prefix).match(/<div class="config-button-rows">([\s\S]*)<\/div><\/section>$/)?.[1] || "";
+            editor.querySelector("[data-add-config-button]").disabled = buttons.length >= 5;
+        };
+        editor.addEventListener("click", event => {
+            if (event.target.closest("[data-add-config-button]")) {
+                const buttons = readButtonRows(editor);
+                if (buttons.length < 5) { buttons.push({ action: "link" }); draw(buttons); }
+                return;
+            }
+            if (event.target.closest("[data-remove-config-button]")) {
+                const button = event.target.closest("[data-config-button]");
+                const buttons = readButtonRows(editor);
+                buttons.splice([...editor.querySelectorAll("[data-config-button]")].indexOf(button), 1);
+                draw(buttons);
+            }
+        });
+        editor.addEventListener("change", event => {
+            if (!event.target.matches("[data-button-action]")) return;
+            const row = event.target.closest("[data-config-button]");
+            const isRole = event.target.value === "role";
+            row.querySelector(".button-role-field").hidden = !isRole;
+            row.querySelector(".button-link-field").hidden = isRole;
+        });
+        editor.querySelector("[data-add-config-button]").disabled = editor.querySelectorAll("[data-config-button]").length >= 5;
+    });
 }
 
 function renderTextField(field, id, control, help) {
@@ -428,7 +486,9 @@ function renderPreviewMarkup(key, values) {
         const dmDescription = renderPreviewTemplate(values.dmDescription).trim();
         const dmContent = [dmTitle ? `<h3 data-locale-fixed>${escapeHtml(dmTitle)}</h3>` : "", dmTitle && dmDescription ? '<hr class="discord-preview-separator">' : "", dmDescription ? `<p data-locale-fixed>${escapeHtml(dmDescription)}</p>` : ""].filter(Boolean).join("");
         const dmPreview = key === "welcome" ? `<div class="dm-preview-block"><div class="live-preview-heading"><span class="eyebrow">MENSAJE PRIVADO</span><small>${values.sendDM ? "Vista previa del DM" : "Desactivado"}</small></div><article class="discord-preview" style="--preview-accent:${dmColor}">${dmBanner ? `<div class="message-preview-banner"><img data-preview-image src="${escapeHtml(dmBanner)}" alt="Banner del mensaje privado"></div>` : ""}<div class="discord-preview-body">${dmThumbnail ? `<img class="message-preview-avatar" data-preview-image src="${escapeHtml(dmThumbnail)}" alt="Miniatura del DM">` : ""}<div class="discord-preview-copy">${dmContent || '<p class="preview-empty">Configura el contenido que recibirá el miembro por mensaje privado.</p>'}</div></div></article></div>` : "";
-        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Contenido configurado para Discord</small></div><article class="discord-preview" style="--preview-accent:${color}">${media}<div class="discord-preview-body">${thumbnailBlock}<div class="discord-preview-copy">${configuredText || (empty ? '<p class="preview-empty">Todavía no hay contenido configurado para este aviso.</p>' : "")}</div></div></article>${reminder}${dmPreview}</section>`;
+        const configuredButtons = Array.isArray(values.buttons) ? values.buttons.filter(button => button.label) : [];
+        const buttonPreview = configuredButtons.length ? `<div class="discord-preview-buttons">${configuredButtons.map(button => `<span class="discord-preview-button">${button.emoji ? `${escapeHtml(button.emoji)} ` : ""}${escapeHtml(button.label)}</span>`).join("")}</div>` : "";
+        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Contenido configurado para Discord</small></div><article class="discord-preview" style="--preview-accent:${color}">${media}<div class="discord-preview-body">${thumbnailBlock}<div class="discord-preview-copy">${configuredText || (empty ? '<p class="preview-empty">Todavía no hay contenido configurado para este aviso.</p>' : "")}</div></div>${buttonPreview}</article>${reminder}${dmPreview}</section>`;
     }
     if (key === "levelSettings") {
         const levelTitle = renderPreviewTemplate(values.levelTitle).trim();
@@ -445,25 +505,32 @@ function renderPreviewMarkup(key, values) {
 
 function previewValues(key, form) {
     const read = name => form.elements.namedItem(name)?.value || "";
-    if (key === "welcome") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail"), sendDM: form.elements.namedItem("SendDM")?.checked, dmTitle: read("DMTitle"), dmDescription: read("DMMessage"), dmColor: read("DMColor"), dmBanner: read("DMBanner"), dmThumbnail: read("DMThumbnail") };
+    if (key === "welcome") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail"), buttons: form.querySelector('[data-button-list="Buttons"]') ? readButtonRows(form.querySelector('[data-button-list="Buttons"]')) : [], sendDM: form.elements.namedItem("SendDM")?.checked, dmTitle: read("DMTitle"), dmDescription: read("DMMessage"), dmColor: read("DMColor"), dmBanner: read("DMBanner"), dmThumbnail: read("DMThumbnail") };
     if (key === "leaves") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail") };
     if (key === "birthday") return { title: read("birthdayTitle"), description: read("birthdayDescription"), color: read("birthdayColor"), banner: read("birthdayBanner"), reminder: read("birthdayReminder") };
-    if (key === "boosts") return { title: read("boostTitle"), description: read("boostDescription"), color: read("boostColor"), banner: read("boostImage"), thumbnail: read("boostThumbnail") };
+    if (key === "boosts") return { title: read("boostTitle"), description: read("boostDescription"), color: read("boostColor"), banner: read("boostImage"), thumbnail: read("boostThumbnail"), buttons: form.querySelector('[data-button-list="boostButtons"]') ? readButtonRows(form.querySelector('[data-button-list="boostButtons"]')) : [] };
     return { levelTitle: read("levelUpTitle"), levelDescription: read("levelUpDescription"), roleTitle: read("levelRoleTitle"), roleDescription: read("levelRoleDescription"), color: read("levelColor"), image: read("levelImage"), thumbnail: read("levelThumbnail") };
 }
 
 function renderPreview(key, data) {
     if (!["welcome", "leaves", "boosts", "birthday", "levelSettings"].includes(key)) return "";
     const values = key === "welcome"
-        ? { title: data.Title, description: data.MessageDes, color: data.Color, banner: data.Banner, thumbnail: data.Thumbnail, sendDM: data.SendDM, dmTitle: data.DMTitle, dmDescription: data.DMMessage, dmColor: data.DMColor, dmBanner: data.DMBanner, dmThumbnail: data.DMThumbnail }
+        ? { title: data.Title, description: data.MessageDes, color: data.Color, banner: data.Banner, thumbnail: data.Thumbnail, buttons: data.Buttons, sendDM: data.SendDM, dmTitle: data.DMTitle, dmDescription: data.DMMessage, dmColor: data.DMColor, dmBanner: data.DMBanner, dmThumbnail: data.DMThumbnail }
         : key === "leaves"
             ? { title: data.Title, description: data.MessageDes, color: data.Color, banner: data.Banner, thumbnail: data.Thumbnail }
             : key === "birthday"
                 ? { title: data.birthdayTitle, description: data.birthdayDescription, color: data.birthdayColor, banner: data.birthdayBanner, reminder: data.birthdayReminder }
-                : key === "boosts"
-                ? { title: data.boostTitle, description: data.boostDescription, color: data.boostColor, banner: data.boostImage, thumbnail: data.boostThumbnail }
+        : key === "boosts"
+                ? { title: data.boostTitle, description: data.boostDescription, color: data.boostColor, banner: data.boostImage, thumbnail: data.boostThumbnail, buttons: boostButtonsFor(data) }
                 : { levelTitle: data.levelUpTitle, levelDescription: data.levelUpDescription, roleTitle: data.levelRoleTitle, roleDescription: data.levelRoleDescription, color: data.levelColor, image: data.levelImage, thumbnail: data.levelThumbnail };
     return renderPreviewMarkup(key, values);
+}
+
+function boostButtonsFor(data) {
+    if (Array.isArray(data.boostButtons)) return data.boostButtons;
+    return [["boosterRole", "Booster"], ["boosterVipRole", "Booster VIP"], ["boosterLegendRole", "Booster Legend"]]
+        .filter(([roleKey]) => data[roleKey])
+        .map(([roleKey, label]) => ({ label: resources.roles.find(role => role.id === data[roleKey])?.name || label, emoji: "", action: "role", roleId: data[roleKey] }));
 }
 
 function updatePreview(key, form) {
@@ -487,6 +554,10 @@ function updatePreview(key, form) {
 function readForm(form, fields) {
     const result = {};
     for (const field of fields) {
+        if (field.type === "buttons") {
+            result[field.name] = readButtonRows(form.querySelector(`[data-button-list="${CSS.escape(field.name)}"]`));
+            continue;
+        }
         if (field.type === "setups") {
             result[field.name] = readSetupRows(form.querySelector("[data-setups-editor]"));
             continue;
@@ -610,6 +681,9 @@ function renderModule(key, modules) {
     const data = configState.configurations[key] || { configured: false };
     const formFields = definition.fields.map(field => {
         let value = getNested(data, field.name);
+        if (key === "boosts" && field.name === "boostButtons" && !Array.isArray(value)) {
+            value = boostButtonsFor(data);
+        }
         if (field.type === "setups" && (!Array.isArray(value) || value.length === 0) && data.creatorChannelId && data.panelChannelId) {
             value = [{
                 categoryId: data.categoryId || "",
@@ -644,6 +718,7 @@ function renderModule(key, modules) {
     }
     const settingsForm = content.querySelector("#settings-form");
     registerFormGuard(settingsForm, definition.fields);
+    setupButtonEditors(settingsForm, definition);
     setupTemplateComposers(settingsForm);
     updatePreview(key, settingsForm);
     settingsForm.addEventListener("input", () => updatePreview(key, settingsForm));

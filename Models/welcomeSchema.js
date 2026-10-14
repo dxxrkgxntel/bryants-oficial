@@ -14,6 +14,7 @@ let welcomeSchema = new Schema({
     DMColor: String,
     DMBanner: String,
     DMThumbnail: String,
+    Buttons: { type: Array, default: [] },
 })
 
 module.exports = model("welcome", welcomeSchema)

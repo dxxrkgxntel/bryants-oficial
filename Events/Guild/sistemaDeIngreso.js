@@ -2,6 +2,7 @@ const { MessageFlags } = require("discord.js");
 const welcomeSchema = require("../../Models/welcomeSchema");
 const { renderConfiguredMessage, parseConfiguredColor } = require("../../Functions/renderConfiguredMessage");
 const { buildV2MessageComponents } = require("../../Functions/buildV2MessageComponents");
+const { buildConfiguredButtonRows } = require("../../Functions/buildConfiguredButtons");
 
 module.exports = {
     name: "guildMemberAdd",
@@ -74,6 +75,7 @@ module.exports = {
             const channel = member.guild.channels.cache.get(data.Channel);
             if (!channel?.isTextBased()) return;
             const components = buildV2MessageComponents({ title, description, banner: data.Banner, thumbnail: data.Thumbnail });
+            components.push(...buildConfiguredButtonRows(data.Buttons, member.guild, "welcome"));
             if (!components.length) return;
 
             const container = { type: 17, components };

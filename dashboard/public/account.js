@@ -170,6 +170,9 @@ languageForm.addEventListener("submit", async event => {
         localeSelect.value = locale;
         window.dashboardI18n?.setLocale(locale);
         setFeedback(feedback, window.dashboardI18n?.translate("Idioma guardado.") || "Idioma guardado.");
+        // Rebuild the page from the persisted preference so every initial and dynamic label
+        // starts in the same locale after a language change.
+        window.setTimeout(() => window.location.reload(), 250);
     } catch (error) {
         localeSelect.value = savedLocale;
         window.dashboardI18n?.setLocale(savedLocale);

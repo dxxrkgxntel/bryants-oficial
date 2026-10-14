@@ -387,6 +387,17 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
 .card-description { margin: 13px 0 24px; color: #aaa0b2; font-size: 12px; line-height: 1.6; }
 .fields-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .field { display: grid; align-content: start; gap: 8px; color: #d6cddd; font-size: 12px; }
+.button-list-field { grid-column: 1 / -1; gap: 12px; }
+.button-list-heading, .config-button-row-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.button-list-heading > div { display: grid; gap: 5px; }
+.button-list-heading small { color: #a99fb2; font-size: 11px; font-weight: 400; }
+.config-button-rows { display: grid; gap: 10px; }
+.config-button-row { padding: 13px; border: 1px solid #ffffff18; border-radius: 11px; background: #0d0a11a8; }
+.config-button-row-heading { margin-bottom: 10px; color: #e8def0; }
+.config-button-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.button-role-field[hidden], .button-link-field[hidden] { display: none !important; }
+.discord-preview-buttons { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 12px; }
+.discord-preview-button { display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: 6px; background: #5865f2; color: white; font-size: 11px; }
 .field > span { font-weight: 650; }
 .field input, .field textarea, .field select { width: 100%; min-height: 40px; padding: 10px 11px; border: 1px solid #ffffff20; border-radius: 9px; outline: none; background: #0e0b12; color: #f7f3fc; font: inherit; font-size: 12px; }
 .field textarea { min-height: 100px; resize: vertical; line-height: 1.55; }
@@ -592,6 +603,7 @@ button:disabled { opacity: .55; cursor: wait !important; }
     .level-preview-number { font-size: 30px; }
     .fields-grid { grid-template-columns: 1fr; }
     .setup-row-fields { grid-template-columns: 1fr; }
+    .config-button-fields { grid-template-columns: 1fr; }
     .prestige-row { grid-template-columns: 82px minmax(0, 1fr); }
     .form-actions { flex-wrap: wrap; }
 }

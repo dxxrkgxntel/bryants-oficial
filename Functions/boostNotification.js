@@ -1,6 +1,7 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require("discord.js");
+const { MessageFlags } = require("discord.js");
 const { renderConfiguredMessage, parseConfiguredColor } = require("./renderConfiguredMessage");
 const { buildV2MessageComponents } = require("./buildV2MessageComponents");
+const { buildConfiguredButtonRows } = require("./buildConfiguredButtons");
 
 function buildBoostNotification(data, guild, booster) {
     const boosts = guild.premiumSubscriptionCount ?? guild.members.cache.filter(member => member.premiumSince).size;
@@ -18,14 +19,17 @@ function buildBoostNotification(data, guild, booster) {
     const description = renderConfiguredMessage(data.boostDescription, values);
     const components = buildV2MessageComponents({ title, description, banner: data.boostImage, thumbnail: data.boostThumbnail });
 
-    const roles = [
+    const legacyRoles = [
         ["claim_booster", data.boosterRole],
         ["claim_booster_vip", data.boosterVipRole],
         ["claim_booster_legend", data.boosterLegendRole]
     ].map(([customId, roleId]) => ({ customId, role: guild.roles.cache.get(roleId) }))
         .filter(item => item.role);
-    if (roles.length) {
-        const row = new ActionRowBuilder().addComponents(roles.map(({ customId, role }) =>
+    if (Array.isArray(data.boostButtons)) {
+        components.push(...buildConfiguredButtonRows(data.boostButtons, guild, "boost"));
+    } else if (legacyRoles.length) {
+        const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+        const row = new ActionRowBuilder().addComponents(legacyRoles.map(({ customId, role }) =>
             new ButtonBuilder().setCustomId(customId).setLabel(role.name.slice(0, 80)).setStyle(ButtonStyle.Secondary)
         ));
         components.push(row.toJSON());

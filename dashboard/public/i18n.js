@@ -483,6 +483,20 @@
         ,["Vista previa del DM", "DM preview", "DM-Vorschau", "Prévia do DM", "Aperçu du DM", "Podgląd DM", "DM önizlemesi", "Предпросмотр DM", "Anteprima DM", "DM-voorbeeld"]
         ,["Desactivado", "Disabled", "Deaktiviert", "Desativado", "Désactivé", "Wyłączone", "Devre dışı", "Отключено", "Disattivato", "Uitgeschakeld"]
         ,["Configura el contenido que recibirá el miembro por mensaje privado.", "Set the content the member will receive in a private message.", "Lege den Inhalt fest, den das Mitglied als private Nachricht erhält.", "Configure o conteúdo que o membro receberá por mensagem privada.", "Configurez le contenu que le membre recevra par message privé.", "Ustaw treść, którą członek otrzyma w wiadomości prywatnej.", "Üyenin özel mesajla alacağı içeriği ayarlayın.", "Настройте содержимое личного сообщения для участника.", "Configura il contenuto che il membro riceverà in un messaggio privato.", "Stel de inhoud in die het lid via een privébericht ontvangt."]
+        , ["Botones del mensaje de bienvenida", "Welcome message buttons", "Schaltflächen der Willkommensnachricht", "Botões da mensagem de boas-vindas", "Boutons du message de bienvenue", "Przyciski wiadomości powitalnej", "Karşılama mesajı düğmeleri", "Кнопки приветственного сообщения", "Pulsanti del messaggio di benvenuto", "Knoppen voor het welkomstbericht"]
+        , ["Botones del aviso de boost", "Boost notification buttons", "Boost-Benachrichtigungsschaltflächen", "Botões do aviso de boost", "Boutons de notification de boost", "Przyciski powiadomienia o boost", "Boost bildirimi düğmeleri", "Кнопки уведомления о бусте", "Pulsanti di notifica boost", "Knoppen voor boostmeldingen"]
+        , ["Añade botones con un enlace o una acción para reclamar un rol.", "Add buttons that open a link or let members claim a role.", "Füge Schaltflächen hinzu, die einen Link öffnen oder das Beanspruchen einer Rolle ermöglichen.", "Adicione botões para abrir um link ou permitir que membros resgatem um cargo.", "Ajoutez des boutons pour ouvrir un lien ou permettre aux membres de réclamer un rôle.", "Dodaj przyciski otwierające link lub umożliwiające odebranie roli.", "Bağlantı açan veya üyelerin rol almasını sağlayan düğmeler ekleyin.", "Добавьте кнопки для открытия ссылки или получения роли.", "Aggiungi pulsanti per aprire un link o permettere ai membri di richiedere un ruolo.", "Voeg knoppen toe om een link te openen of een rol te claimen."]
+        , ["Configura hasta cinco botones para reclamar roles o abrir enlaces.", "Configure up to five buttons to claim roles or open links.", "Konfiguriere bis zu fünf Schaltflächen, um Rollen zu beanspruchen oder Links zu öffnen.", "Configure até cinco botões para resgatar cargos ou abrir links.", "Configurez jusqu'à cinq boutons pour réclamer des rôles ou ouvrir des liens.", "Skonfiguruj do pięciu przycisków do odbierania ról lub otwierania linków.", "Rol almak veya bağlantı açmak için en fazla beş düğme yapılandırın.", "Настройте до пяти кнопок для получения ролей или открытия ссылок.", "Configura fino a cinque pulsanti per richiedere ruoli o aprire link.", "Stel maximaal vijf knoppen in om rollen te claimen of links te openen."]
+        , ["Añadir botón", "Add button", "Schaltfläche hinzufügen", "Adicionar botão", "Ajouter un bouton", "Dodaj przycisk", "Düğme ekle", "Добавить кнопку", "Aggiungi pulsante", "Knop toevoegen"]
+        , ["Aún no hay botones. Puedes añadir hasta cinco.", "There are no buttons yet. You can add up to five.", "Es gibt noch keine Schaltflächen. Du kannst bis zu fünf hinzufügen.", "Ainda não há botões. Você pode adicionar até cinco.", "Il n'y a pas encore de boutons. Vous pouvez en ajouter jusqu'à cinq.", "Nie ma jeszcze przycisków. Możesz dodać maksymalnie pięć.", "Henüz düğme yok. En fazla beş tane ekleyebilirsiniz.", "Кнопок пока нет. Можно добавить до пяти.", "Non ci sono ancora pulsanti. Puoi aggiungerne fino a cinque.", "Er zijn nog geen knoppen. Je kunt er maximaal vijf toevoegen."]
+        , ["Nombre del botón", "Button label", "Schaltflächenbeschriftung", "Texto do botão", "Libellé du bouton", "Etykieta przycisku", "Düğme etiketi", "Текст кнопки", "Etichetta del pulsante", "Knoptekst"]
+        , ["Emoji (opcional)", "Emoji (optional)", "Emoji (optional)", "Emoji (opcional)", "Emoji (facultatif)", "Emoji (opcjonalnie)", "Emoji (isteğe bağlı)", "Эмодзи (необязательно)", "Emoji (facoltativa)", "Emoji (optioneel)"]
+        , ["Acción", "Action", "Aktion", "Ação", "Action", "Działanie", "Eylem", "Действие", "Azione", "Actie"]
+        , ["Abrir enlace", "Open link", "Link öffnen", "Abrir link", "Ouvrir le lien", "Otwórz link", "Bağlantıyı aç", "Открыть ссылку", "Apri link", "Link openen"]
+        , ["Reclamar rol", "Claim role", "Rolle beanspruchen", "Resgatar cargo", "Réclamer un rôle", "Odbierz rolę", "Rolü al", "Получить роль", "Richiedi ruolo", "Rol claimen"]
+        , ["Rol que se reclama", "Role to claim", "Zu beanspruchende Rolle", "Cargo a resgatar", "Rôle à réclamer", "Rola do odebrania", "Alınacak rol", "Роль для получения", "Ruolo da richiedere", "Te claimen rol"]
+        , ["Elige un rol", "Choose a role", "Rolle auswählen", "Escolha um cargo", "Choisissez un rôle", "Wybierz rolę", "Bir rol seçin", "Выберите роль", "Scegli un ruolo", "Kies een rol"]
+        , ["Ej. Reclamar rol", "e.g. Claim role", "z. B. Rolle beanspruchen", "Ex.: Resgatar cargo", "Ex. : Réclamer un rôle", "np. Odbierz rolę", "Örn. Rolü al", "Например, получить роль", "Es. Richiedi ruolo", "bijv. Rol claimen"]
     ];
     const messages = Object.create(null);
     for (const row of rows) {
@@ -498,6 +512,7 @@
     const originals = new WeakMap();
     const translatedValues = new WeakMap();
     const normalize = value => String(value || "").replace(/\s+/g, " ").trim();
+    const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     function translate(value, target = locale) {
         const dictionary = messages[target] || messages.es;
         const clean = normalize(value);
@@ -510,7 +525,8 @@
         let result = String(value);
         for (const source of variants) {
             if (!source || !result.includes(source)) continue;
-            result = result.split(source).join(dictionary[source]);
+            const pattern = source.split(/\s+/).map(escapeRegExp).join("\\s+");
+            result = result.replace(new RegExp(pattern, "giu"), dictionary[source]);
         }
         const more = { en: "more", de: "weitere", pt: "mais", fr: "de plus", pl: "więcej", tr: "daha fazla", ru: "ещё", it: "altri", nl: "meer", es: "más" }[target] || "más";
         result = result.replace(/\by\s+(\d+)\s+más\b/gi, (_, count) => `${target === "en" ? "and " : target === "de" ? "und " : target === "fr" ? "et " : "e "}${count} ${more}`);
@@ -556,7 +572,7 @@
         window.dispatchEvent(new CustomEvent("dashboard:locale-change", { detail: { locale } }));
         return locale;
     }
-    window.dashboardI18n = { locales, translate, setLocale, get locale() { return locale; } };
+    window.dashboardI18n = { locales, translate, setLocale, scan, get locale() { return locale; } };
 
     try {
         const cached = localStorage.getItem("bryants-dashboard:locale");

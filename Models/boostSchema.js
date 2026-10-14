@@ -12,6 +12,7 @@ module.exports = mongoose.model(
         boostDescription: String,
         boostColor: String,
         boostThumbnail: String,
-        boostImage: String
+        boostImage: String,
+        boostButtons: { type: Array, default: undefined }
     })
 );
