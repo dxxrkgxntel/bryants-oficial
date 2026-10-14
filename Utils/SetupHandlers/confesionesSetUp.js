@@ -52,7 +52,8 @@ module.exports = {
 
                 await confesionesSchema.create({
                     guildId: guild.id,
-                    channelId: channel.id
+                    channelId: channel.id,
+                    Enabled: true
                 });
 
                 return correReply(
@@ -66,7 +67,8 @@ module.exports = {
             await confesionesSchema.findOneAndUpdate(
                 { guildId: guild.id },
                 {
-                    channelId: channel.id
+                    channelId: channel.id,
+                    Enabled: true
                 },
                 { new: true }
             );

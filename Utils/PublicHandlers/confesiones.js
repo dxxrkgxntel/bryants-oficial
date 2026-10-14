@@ -196,6 +196,14 @@ module.exports = {
                 );
             }
 
+            if (confesionesData.Enabled === false) {
+                return errReply(
+                    interaction,
+                    "❌ El sistema de confesiones está desactivado.",
+                    true
+                );
+            }
+
             //////////////////////////////////////////////////////
             // CHANNEL
             //////////////////////////////////////////////////////

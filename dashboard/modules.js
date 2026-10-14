@@ -209,7 +209,10 @@ const configurations = {
         category: "Comunidad",
         model: require("../Models/confesionesSetUp"),
         guildField: "guildId",
-        fields: [{ name: "channelId", label: "Canal", type: "channel", channelTypes: [0] }]
+        fields: [
+            { name: "channelId", label: "Canal", type: "channel", channelTypes: [0] },
+            { name: "Enabled", label: "Sistema activo", type: "boolean" }
+        ]
     },
     suggestions: {
         title: "Sugerencias",
