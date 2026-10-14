@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags, AttachmentBuilder } = require("discord.js");
+const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, MediaGalleryBuilder, MediaGalleryItemBuilder } = require("discord.js");
 const Level = require("../../Models/Level");
 const LevelConfig = require("../../Models/LevelConfig");
 const LevelReward = require("../../Models/LevelReward");
@@ -74,13 +74,65 @@ async function perfil(interaction) {
     ));
 }
 
+async function renderTop(interaction, page, ownerId, config) {
+    const pageSize = 10;
+    const total = await Level.countDocuments({ guildId: interaction.guild.id });
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    page = Math.min(Math.max(0, page), totalPages - 1);
+    const data = await Level.find({ guildId: interaction.guild.id })
+        .sort({ level: -1, xp: -1, userId: 1 }).skip(page * pageSize).limit(pageSize);
+    const color = /^#[\da-f]{6}$/i.test(config?.levelColor || "") ? parseInt(config.levelColor.slice(1), 16) : PURPLE;
+    const container = new ContainerBuilder().setAccentColor(color);
+    if (config?.levelImage) container.addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(config.levelImage)));
+    container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## 🏆 BF Levels • Top de niveles`));
+    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small));
+    container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`Clasificación del servidor · Página **${page + 1}/${totalPages}**`));
+    if (!data.length) container.addTextDisplayComponents(new TextDisplayBuilder().setContent("Todavía no hay datos de niveles."));
+    else {
+        const medals = ["🥇", "🥈", "🥉"];
+        const lines = data.map((user, index) => {
+            const position = page * pageSize + index + 1;
+            return `${medals[position - 1] || "🏅"} **#${position}** · <@${user.userId}>\n> ⭐ Nivel **${user.level}** · ✨ ${user.xp.toLocaleString()} XP`;
+        });
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(lines.join("\n\n")));
+    }
+    const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`leveltop_prev:${ownerId}`).setLabel("Anterior").setStyle(ButtonStyle.Secondary).setDisabled(page <= 0),
+        new ButtonBuilder().setCustomId(`leveltop_next:${ownerId}`).setLabel("Siguiente").setStyle(ButtonStyle.Secondary).setDisabled(page >= totalPages - 1)
+    );
+    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small));
+    container.addActionRowComponents(row);
+    return { flags: MessageFlags.IsComponentsV2, components: [container], page, totalPages };
+}
+
 async function top(interaction) {
     await interaction.deferReply();
-    const data = await Level.find({ guildId: interaction.guild.id }).sort({ level: -1, xp: -1 }).limit(10);
-    if (!data.length) return interaction.editReply(panel("## 🏆 BF Levels • Top\n❌ Todavía no hay datos de niveles.", 0xED4245));
-    const medals=["👑","🥈","🥉"];
-    const lines=data.map((u,i)=>`${medals[i]||"🏅"} **#${i+1}** • <@${u.userId}>\n> ⭐ Nivel **${u.level}** • ✨ ${u.xp.toLocaleString()} XP`).join("\n\n");
-    return interaction.editReply(panel(`## 🏆 BF Levels • Top 10\n${lines}`));
+    const config = await LevelConfig.findOne({ guildId: interaction.guild.id });
+    const initial = await renderTop(interaction, 0, interaction.user.id, config);
+    await interaction.editReply({ flags: initial.flags, components: initial.components });
+    const message = await interaction.fetchReply();
+    const collector = message.createMessageComponentCollector({ time: 15 * 60 * 1000 });
+    let page = initial.page;
+    collector.on("collect", async button => {
+        if (!button.customId.startsWith("leveltop_")) return;
+        const [, ownerId] = button.customId.split(":");
+        if (button.user.id !== ownerId) return button.reply({ content: "Solo quien abrió este top puede cambiar de página.", flags: MessageFlags.Ephemeral });
+        await button.deferUpdate();
+        page += button.customId.startsWith("leveltop_next:") ? 1 : -1;
+        const updated = await renderTop(interaction, page, ownerId, config);
+        page = updated.page;
+        await interaction.editReply({ flags: updated.flags, components: updated.components });
+    });
+    collector.on("end", async () => {
+        const final = await renderTop(interaction, page, interaction.user.id, config).catch(() => null);
+        if (final) await interaction.editReply({ flags: final.flags, components: final.components.map(component => {
+            const json = component.toJSON();
+            if (json.components?.[json.components.length - 1]?.type === 1) {
+                json.components[json.components.length - 1].components.forEach(button => { button.disabled = true; });
+            }
+            return json;
+        }) }).catch(() => {});
+    });
 }
 
 async function giveXp(interaction) {
@@ -104,8 +156,12 @@ async function removeXp(interaction) {
 async function channel(interaction) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const ch=interaction.options.getChannel("canal");
-    await LevelConfig.findOneAndUpdate({guildId:interaction.guild.id},{levelChannel:ch.id},{upsert:true,new:true,setDefaultsOnInsert:true});
-    return interaction.editReply(panel(`## ⚙️ BF Levels • Canal\n✅ Los mensajes de nivel se enviarán en ${ch}.`,0x57F287));
+    const banner=interaction.options.getString("banner");
+    if (banner && !/^https:\/\//i.test(banner)) return interaction.editReply(panel("## ⚙️ BF Levels • Configuración\n❌ El banner debe ser una URL HTTPS.",0xED4245));
+    const update = { levelChannel: ch.id };
+    if (banner !== null) update.levelImage = banner;
+    await LevelConfig.findOneAndUpdate({guildId:interaction.guild.id},update,{upsert:true,new:true,setDefaultsOnInsert:true});
+    return interaction.editReply(panel(`## ⚙️ BF Levels • Configuración\n✅ Los mensajes de nivel se enviarán en ${ch}.${banner !== null ? " Banner actualizado." : ""}`,0x57F287));
 }
 
 async function role(interaction) {
@@ -124,7 +180,7 @@ module.exports = {
         .addSubcommand(s=>s.setName("top").setDescription("Top de niveles del servidor"))
         .addSubcommand(s=>s.setName("give-xp").setDescription("Dar XP a un usuario").addUserOption(o=>o.setName("usuario").setDescription("Usuario").setRequired(true)).addIntegerOption(o=>o.setName("xp").setDescription("Cantidad de XP").setRequired(true).setMinValue(1)))
         .addSubcommand(s=>s.setName("remove-xp").setDescription("Remover XP a un usuario").addUserOption(o=>o.setName("usuario").setDescription("Usuario").setRequired(true)).addIntegerOption(o=>o.setName("xp").setDescription("Cantidad de XP").setRequired(true).setMinValue(1)))
-        .addSubcommand(s=>s.setName("channel").setDescription("Configura el canal de mensajes de nivel").addChannelOption(o=>o.setName("canal").setDescription("Canal donde se enviarán los niveles").addChannelTypes(ChannelType.GuildText).setRequired(true)))
+        .addSubcommand(s=>s.setName("channel").setDescription("Configura el canal y el banner de niveles").addChannelOption(o=>o.setName("canal").setDescription("Canal donde se enviarán los niveles").addChannelTypes(ChannelType.GuildText).setRequired(true)).addStringOption(o=>o.setName("banner").setDescription("URL de banner para avisos y el top (opcional)").setMaxLength(500)))
         .addSubcommand(s=>s.setName("role").setDescription("Configura un rol por nivel").addIntegerOption(o=>o.setName("nivel").setDescription("Nivel requerido").setRequired(true).setMinValue(1)).addRoleOption(o=>o.setName("rol").setDescription("Rol a otorgar").setRequired(true))),
     async execute(interaction) {
         const sub=interaction.options.getSubcommand();
