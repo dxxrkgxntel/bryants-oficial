@@ -791,11 +791,29 @@ function makeNav(modules) {
 }
 
 function renderMemberEconomy(definition) {
-    content.innerHTML = `<article class="settings-card member-economy-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div><p class="card-description">${escapeHtml(definition.description)}</p><section class="member-search-panel"><label class="field"><span>Buscar miembro</span><input type="search" id="member-economy-search" autocomplete="off" placeholder="Escribe un nombre o usuario…"></label><div id="member-economy-results" class="member-search-results" role="listbox"></div></section><section id="member-economy-detail" class="member-economy-detail"><p class="empty-state">Busca y selecciona un miembro para ver sus datos.</p></section></article>`;
+    content.innerHTML = `<article class="settings-card member-economy-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div><p class="card-description">${escapeHtml(definition.description)}</p><section class="member-search-panel"><button class="member-picker-trigger" type="button" id="member-picker-trigger" aria-haspopup="listbox" aria-expanded="false"><span id="member-picker-label">Busca un miembro…</span><span aria-hidden="true">⌄</span></button><div class="member-picker-menu" id="member-picker-menu" hidden><label class="member-picker-search"><span aria-hidden="true">⌕</span><input type="search" id="member-economy-search" autocomplete="off" placeholder="Buscar un miembro…" aria-label="Buscar un miembro"></label><div id="member-economy-results" class="member-search-results" role="listbox"></div></div></section><section id="member-economy-detail" class="member-economy-detail" hidden></section></article>`;
+    const trigger = content.querySelector("#member-picker-trigger");
+    const label = content.querySelector("#member-picker-label");
+    const menu = content.querySelector("#member-picker-menu");
     const input = content.querySelector("#member-economy-search");
     const results = content.querySelector("#member-economy-results");
     const detail = content.querySelector("#member-economy-detail");
     let timer;
+    let selectedMemberId = null;
+    const closePicker = () => {
+        menu.hidden = true;
+        trigger.setAttribute("aria-expanded", "false");
+    };
+    trigger.addEventListener("click", () => {
+        const open = menu.hidden;
+        menu.hidden = !open;
+        trigger.setAttribute("aria-expanded", String(open));
+        if (open) {
+            input.value = "";
+            results.replaceChildren();
+            requestAnimationFrame(() => input.focus());
+        }
+    });
     input.addEventListener("input", () => {
         clearTimeout(timer);
         const query = input.value.trim();
@@ -807,24 +825,32 @@ function renderMemberEconomy(definition) {
                 results.innerHTML = response.members.length ? response.members.map(member => {
                     const name = member.nick || member.globalName || member.username;
                     const avatar = member.avatar ? `https://cdn.discordapp.com/avatars/${member.id}/${member.avatar}.png?size=64` : "";
-                    return `<button class="member-search-result" type="button" data-member-id="${escapeHtml(member.id)}"><img src="${avatar}" alt="" onerror="this.hidden=true"><span><strong>${escapeHtml(name)}</strong><small>@${escapeHtml(member.username)}</small></span></button>`;
+                    return `<button class="member-search-result" type="button" role="option" aria-selected="false" data-member-id="${escapeHtml(member.id)}" data-member-name="${escapeHtml(name)}"><img src="${avatar}" alt="" onerror="this.hidden=true"><strong>${escapeHtml(name)}</strong></button>`;
                 }).join("") : '<p class="empty-state">No encontré miembros.</p>';
             } catch (error) { results.innerHTML = `<p class="empty-state">${escapeHtml(error.message)}</p>`; }
         }, 250);
     });
+    input.addEventListener("keydown", event => { if (event.key === "Escape") closePicker(); });
+    content.addEventListener("click", event => { if (!event.target.closest(".member-search-panel")) closePicker(); });
     results.addEventListener("click", async event => {
         const button = event.target.closest("[data-member-id]");
         if (!button) return;
-        detail.innerHTML = '<p class="loading-card">Cargando economía…</p>';
+        selectedMemberId = button.dataset.memberId;
+        label.textContent = button.dataset.memberName;
+        detail.hidden = false;
+        detail.innerHTML = '<article class="loading-card">Cargando economía…</article>';
+        closePicker();
         try {
-            const response = await api(`/api/guilds/${encodeURIComponent(guildId)}/members/${encodeURIComponent(button.dataset.memberId)}/economy`);
+            const response = await api(`/api/guilds/${encodeURIComponent(guildId)}/members/${encodeURIComponent(selectedMemberId)}/economy`);
+            if (!detail.isConnected || selectedMemberId !== button.dataset.memberId) return;
             const { member, economy } = response;
             const name = member.nick || member.globalName || member.username;
             const wallet = Number(economy.wallet || 0), bank = Number(economy.bank || 0);
             const stats = [["Racha diaria", economy.dailyStreak], ["Apuestas ganadas", economy.gamblesWon], ["Apuestas perdidas", economy.gamblesLost], ["Racha de apuestas", economy.gambleStreak], ["Jackpots", economy.jackpots], ["Récord de ganancia", economy.biggestWin], ["Deuda", economy.debt], ["Préstamo activo", economy.loanTaken ? "Sí" : "No"], ["Donado al banco", economy.bankDonated], ["Victorias de dados", economy.diceWins], ["Derrotas de dados", economy.diceLosses], ["Potenciadores activos", Array.isArray(economy.activeBoosts) ? economy.activeBoosts.length : 0]]
                 .filter(([, value]) => value != null).map(([label, value]) => `<div class="member-economy-stat"><span>${label}</span><strong>${typeof value === "number" ? value.toLocaleString("es-ES") : value}</strong></div>`).join("");
-            detail.innerHTML = `<div class="member-economy-heading"><div><span class="eyebrow">Economía de</span><h3>${escapeHtml(name)}</h3><small>@${escapeHtml(member.username)}</small></div></div><div class="member-balance-grid"><article><span>Cartera</span><strong>${wallet.toLocaleString("es-ES")}</strong><small>Monedas disponibles en mano</small></article><article><span>Banco</span><strong>${bank.toLocaleString("es-ES")}</strong><small>Monedas guardadas</small></article></div><div class="member-economy-stats">${stats}</div><article class="member-backpack"><h3>Mochila</h3><p>La gestión del inventario estará disponible cuando se implemente el sistema de objetos.</p></article>`;
-        } catch (error) { detail.innerHTML = `<p class="empty-state">${escapeHtml(error.message)}</p>`; }
+            label.textContent = name;
+            detail.innerHTML = `<div class="member-economy-heading"><div><span class="eyebrow">Economía del miembro</span><h3>${escapeHtml(name)}</h3></div></div><div class="member-balance-grid"><article><span>Cartera</span><strong>${wallet.toLocaleString("es-ES")}</strong><small>Monedas disponibles en mano</small></article><article><span>Banco</span><strong>${bank.toLocaleString("es-ES")}</strong><small>Monedas guardadas</small></article></div><div class="member-economy-stats">${stats}</div><article class="member-backpack"><h3>Mochila</h3><p>La gestión del inventario estará disponible cuando se implemente el sistema de objetos.</p></article>`;
+        } catch (error) { if (detail.isConnected) detail.innerHTML = `<article class="empty-state">${escapeHtml(error.message)}</article>`; }
     });
 }
 
@@ -836,14 +862,17 @@ function renderModule(key, modules) {
         if (active) button.setAttribute("aria-current", "page");
         else button.removeAttribute("aria-current");
     });
-    const isList = Boolean(modules.lists[key]);
-    const definition = isList ? modules.lists[key] : modules.configurations[key];
+    const isMemberEconomy = key === "memberEconomy";
+    const isList = !isMemberEconomy && Boolean(modules.lists[key]);
+    const definition = isMemberEconomy
+        ? (modules.configurations[key] || { title: "Miembros", category: "Economía y XP", description: "Busca a un miembro por su nombre visible o usuario para consultar su economía." })
+        : isList ? modules.lists[key] : modules.configurations[key];
     document.querySelector("#page-title").textContent = definition.title;
     if (isList) return renderList(key, definition);
 
     const data = configState.configurations[key] || { configured: false };
     if (key === "specialChannels") return renderSpecialChannels(definition, data);
-    if (key === "memberEconomy") return renderMemberEconomy(definition);
+    if (isMemberEconomy) return renderMemberEconomy(definition);
     const formFields = definition.fields.map(field => {
         if (field.type === "section") return renderField(field);
         let value = getNested(data, field.name);
