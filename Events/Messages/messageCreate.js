@@ -1,4 +1,6 @@
 const { EmbedBuilder } = require("discord.js");
+const SpecialChannelsConfig = require("../../Models/SpecialChannelsConfig");
+const { PermissionsBitField } = require("discord.js");
 
 const cooldown = new Set();
 
@@ -59,6 +61,21 @@ module.exports = {
 
 
         if (!command) return;
+
+        try {
+            const config = await SpecialChannelsConfig.findOne({ guildId: message.guild.id }).lean();
+            const rule = config?.channels?.find(item => item.channelId === message.channel.id);
+            const exempt = message.guild.ownerId === message.author.id ||
+                message.member?.permissions?.has(PermissionsBitField.Flags.Administrator) ||
+                message.member?.permissions?.has(PermissionsBitField.Flags.ManageMessages) ||
+                (rule?.immuneRoles || []).some(roleId => message.member?.roles?.cache?.has(roleId));
+            if (rule && !rule.commands && !exempt) {
+                await message.delete().catch(() => {});
+                return;
+            }
+        } catch (error) {
+            console.error(`[SpecialChannels] No pude revisar un comando en ${message.guild.id}:`, error.message);
+        }
 
 
 

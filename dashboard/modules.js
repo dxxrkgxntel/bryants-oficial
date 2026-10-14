@@ -189,17 +189,6 @@ const configurations = {
             { name: "reportChannelId", label: "Canal de reportes", type: "channel", channelTypes: [0] }
         ]
     },
-    antiLinks: {
-        title: "AntiLinks",
-        category: "Moderación",
-        model: require("../Models/AntiLinksConfig"),
-        guildField: "guildId",
-        fields: [
-            { name: "enabled", label: "Sistema activo", type: "boolean" },
-            { name: "allowedChannels", label: "Canales permitidos", type: "channel-list", channelTypes: [0] },
-            { name: "logsChannel", label: "Canal de logs", type: "channel", channelTypes: [0], optional: true }
-        ]
-    },
     antiScam: {
         title: "AntiScam",
         category: "Moderación",
@@ -215,18 +204,13 @@ const configurations = {
             { name: "ignoredRoles", label: "Roles ignorados", type: "role-list" }
         ]
     },
-    antiMultimedia: {
-        title: "AntiMultimedia",
+    specialChannels: {
+        title: "Canales especiales",
         category: "Moderación",
-        model: require("../Models/ImageConfig"),
+        description: "Define por canal qué contenido puede enviarse. Si un mensaje combina tipos permitidos y bloqueados, se eliminará por completo.",
+        model: require("../Models/SpecialChannelsConfig"),
         guildField: "guildId",
-        fields: [
-            { name: "enabled", label: "Sistema activo", type: "boolean", default: true },
-            { name: "allowedChannels", label: "Canales multimedia", type: "channel-list", channelTypes: [0] },
-            { name: "logChannel", label: "Canal de logs", type: "channel", channelTypes: [0], optional: true },
-            { name: "thumbnail", label: "URL de miniatura para logs", type: "url", optional: true },
-            { name: "image", label: "URL de imagen para logs", type: "url", optional: true }
-        ]
+        fields: [{ name: "channels", label: "Canales restringidos", type: "special-channels" }]
     },
     confessions: {
         title: "Confesiones",

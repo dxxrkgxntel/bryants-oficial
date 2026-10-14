@@ -802,6 +802,7 @@ function renderModule(key, modules) {
     if (isList) return renderList(key, definition);
 
     const data = configState.configurations[key] || { configured: false };
+    if (key === "specialChannels") return renderSpecialChannels(definition, data);
     const formFields = definition.fields.map(field => {
         if (field.type === "section") return renderField(field);
         let value = getNested(data, field.name);
@@ -996,6 +997,81 @@ function wireMultiSelectLimits(form) {
                 showNotice(`Puedes seleccionar hasta ${limit} elementos.`, true);
             }
         });
+    });
+}
+
+function renderSpecialChannels(definition, data) {
+    const channels = Array.isArray(data.channels) ? data.channels : [];
+    const contentTypes = [
+        ["images", "Imágenes"], ["videos", "Vídeos"], ["files", "Archivos"],
+        ["stickers", "Stickers"], ["links", "Enlaces"], ["commands", "Comandos"]
+    ];
+    const channelOptions = optionsFor({ type: "channel", channelTypes: [0] });
+    const roleOptions = optionsFor({ type: "role" });
+    const renderRows = () => channels.map((rule, index) => {
+        const name = channelOptions.find(item => item.id === rule.channelId)?.name || "Elige un canal";
+        return `<section class="setup-row special-channel-row" data-special-row="${index}">
+            <div class="setup-row-heading"><strong>Canal ${index + 1}${rule.channelId ? ` · #${escapeHtml(name)}` : ""}</strong><button class="quiet-button danger-text" type="button" data-special-remove="${index}">Quitar</button></div>
+            <label class="field"><span>Canal</span><select data-special-channel required><option value="">Elige un canal</option>${channelOptions.map(item => `<option value="${escapeHtml(item.id)}" ${item.id === rule.channelId ? "selected" : ""}>#${escapeHtml(item.name)}</option>`).join("")}</select></label>
+            <div class="field"><span>Contenido permitido</span><small>Si el mensaje incluye algún tipo desactivado, se eliminará. El texto normal se permite.</small><div class="special-content-grid">${contentTypes.map(([key, label]) => `<label class="field checkbox-field"><span><strong>${label}</strong></span><input type="checkbox" data-special-type="${key}" ${rule[key] ? "checked" : ""}></label>`).join("")}</div></div>
+            <label class="field"><span>Roles inmunes</span><select data-special-roles multiple size="5">${roleOptions.map(role => `<option value="${escapeHtml(role.id)}" ${(rule.immuneRoles || []).includes(role.id) ? "selected" : ""}>${escapeHtml(role.name)}</option>`).join("")}</select><small>Hasta 25 roles. El dueño, administradores y moderadores con permiso para gestionar mensajes también quedan exentos. Usa Ctrl o Cmd para seleccionar varios.</small></label>
+        </section>`;
+    }).join("");
+
+    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div><span class="status-pill ${data.configured ? "configured" : "unconfigured"}">${data.configured ? "Configurado" : "Sin configurar"}</span></div><p class="card-description">${escapeHtml(definition.description)}</p><form id="special-channels-form" class="fields-grid"><div class="field special-channel-editor"><span>Canales restringidos</span><small>Configura hasta 25 canales. Cada regla se aplica solo al canal seleccionado.</small><div class="setup-rows" data-special-rows>${renderRows() || '<p class="setup-empty">Todavía no hay canales configurados.</p>'}</div><div class="special-channel-add"><select data-special-new-channel aria-label="Selecciona un canal"><option value="">Elige un canal</option>${channelOptions.filter(item => !channels.some(rule => rule.channelId === item.id)).map(item => `<option value="${escapeHtml(item.id)}">#${escapeHtml(item.name)}</option>`).join("")}</select><button class="quiet-button" type="button" data-special-add ${channels.length >= 25 ? "disabled" : ""}>＋ Añadir canal</button></div></div><div class="form-actions"><button class="primary-button" type="submit">Guardar cambios</button><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>`;
+
+    const form = content.querySelector("#special-channels-form");
+    const redraw = () => renderSpecialChannels(definition, { ...data, channels });
+    form.querySelector("[data-special-add]").addEventListener("click", () => {
+        const channelId = form.querySelector("[data-special-new-channel]").value;
+        if (!channelId || channels.length >= 25 || channels.some(rule => rule.channelId === channelId)) return;
+        channels.push({ channelId, images: false, videos: false, files: false, stickers: false, links: false, commands: false, immuneRoles: [] });
+        redraw();
+    });
+    form.addEventListener("click", event => {
+        const remove = event.target.closest("[data-special-remove]");
+        if (!remove) return;
+        channels.splice(Number(remove.dataset.specialRemove), 1);
+        redraw();
+    });
+    form.addEventListener("change", event => {
+        const row = event.target.closest("[data-special-row]");
+        if (!row) return;
+        const rule = channels[Number(row.dataset.specialRow)];
+        if (event.target.matches("[data-special-channel]")) rule.channelId = event.target.value;
+        else if (event.target.matches("[data-special-type]")) rule[event.target.dataset.specialType] = event.target.checked;
+        else if (event.target.matches("[data-special-roles]")) {
+            const selected = [...event.target.selectedOptions].map(option => option.value);
+            if (selected.length > 25) {
+                [...event.target.options].forEach(option => { if (selected.slice(25).includes(option.value)) option.selected = false; });
+                showNotice("Puedes seleccionar hasta 25 roles por canal.", true);
+            }
+            rule.immuneRoles = [...event.target.selectedOptions].map(option => option.value);
+        }
+    });
+    form.addEventListener("submit", async event => {
+        event.preventDefault();
+        const button = form.querySelector("button[type=submit]");
+        const feedback = form.querySelector(".save-feedback");
+        if (channels.some(rule => !rule.channelId) || new Set(channels.map(rule => rule.channelId)).size !== channels.length) {
+            feedback.textContent = "Selecciona un canal diferente en cada regla.";
+            feedback.className = "save-feedback error";
+            return;
+        }
+        button.disabled = true;
+        button.textContent = "Guardando…";
+        try {
+            const result = await api(`/api/guilds/${encodeURIComponent(guildId)}/config/specialChannels`, { method: "PUT", body: JSON.stringify({ channels }) });
+            configState.configurations.specialChannels = { ...result.configuration, configured: true };
+            showNotice("Configuración guardada.");
+            if (currentModule === "specialChannels") renderSpecialChannels(definition, configState.configurations.specialChannels);
+        } catch (error) {
+            showNotice(error.message, true);
+            feedback.textContent = error.message;
+            feedback.className = "save-feedback error";
+            button.disabled = false;
+            button.textContent = "Guardar cambios";
+        }
     });
 }
 

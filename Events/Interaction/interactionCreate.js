@@ -1,5 +1,7 @@
 const { EmbedBuilder } = require('discord.js');
 const config = require('../../config.json');
+const SpecialChannelsConfig = require('../../Models/SpecialChannelsConfig');
+const { PermissionsBitField } = require('discord.js');
 
 const cooldown = new Set();
 
@@ -113,6 +115,22 @@ if (interaction.isStringSelectMenu()) {
 
             if (!interaction.isChatInputCommand())
                 return;
+
+            if (interaction.guild && interaction.member) {
+                try {
+                    const specialConfig = await SpecialChannelsConfig.findOne({ guildId: interaction.guild.id }).lean();
+                    const channelRule = specialConfig?.channels?.find(item => item.channelId === interaction.channelId);
+                    const exempt = interaction.guild.ownerId === interaction.user.id ||
+                        interaction.member.permissions?.has(PermissionsBitField.Flags.Administrator) ||
+                        interaction.member.permissions?.has(PermissionsBitField.Flags.ManageMessages) ||
+                        (channelRule?.immuneRoles || []).some(roleId => interaction.member.roles?.cache?.has(roleId));
+                    if (channelRule && !channelRule.commands && !exempt) {
+                        return interaction.reply({ content: "🚫 Los comandos están desactivados en este canal.", ephemeral: true }).catch(() => {});
+                    }
+                } catch (error) {
+                    console.error(`[SpecialChannels] No pude revisar un comando en ${interaction.guild.id}:`, error.message);
+                }
+            }
 
             const command =
                 client.commands.get(

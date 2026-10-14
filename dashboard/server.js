@@ -974,6 +974,39 @@ app.put("/api/guilds/:guildId/config/:module", requireLogin, requireCsrf, requir
     const definition = configurations[req.params.module];
     if (!definition) return res.status(404).json({ error: "No encontré ese sistema." });
     try {
+        if (req.params.module === "specialChannels") {
+            const channels = req.body.channels;
+            if (!Array.isArray(channels) || channels.length > 25) {
+                throw new Error("Puedes configurar hasta 25 canales.");
+            }
+            const channelIds = new Set();
+            const roleIds = new Set();
+            for (const rule of channels) {
+                if (!rule || typeof rule.channelId !== "string" || channelIds.has(rule.channelId)) {
+                    throw new Error("Cada canal debe ser válido y aparecer una sola vez.");
+                }
+                channelIds.add(rule.channelId);
+                if (!Array.isArray(rule.immuneRoles) || rule.immuneRoles.length > 25) {
+                    throw new Error("Puedes asignar hasta 25 roles inmunes por canal.");
+                }
+                rule.immuneRoles.forEach(id => roleIds.add(id));
+                for (const key of ["images", "videos", "files", "stickers", "links", "commands"]) {
+                    if (typeof rule[key] !== "boolean") throw new Error("Revisa los tipos de contenido seleccionados.");
+                }
+            }
+            const { channels: guildChannels, roles: guildRoles } = await fetchGuildResources(req.params.guildId);
+            const validChannelIds = new Set(guildChannels.filter(channel => channel.type === 0).map(channel => channel.id));
+            const validRoleIds = new Set(guildRoles.map(role => role.id));
+            if ([...channelIds].some(id => !validChannelIds.has(id))) throw new Error("Selecciona canales de texto de este servidor.");
+            if ([...roleIds].some(id => !validRoleIds.has(id))) throw new Error("Los roles inmunes deben pertenecer a este servidor.");
+            const document = await definition.model.findOneAndUpdate(
+                { guildId: req.params.guildId },
+                { $set: { channels }, $setOnInsert: { guildId: req.params.guildId } },
+                { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+            );
+            await recordDashboardAudit(req, req.params.guildId, "Canales especiales actualizados");
+            return res.json({ configuration: serialize(document) });
+        }
         const update = cleanFields(definition.fields, req.body);
         if (!Object.keys(update).length) return res.status(400).json({ error: "No hay cambios para guardar." });
         await validateDiscordReferences(req.params.guildId, definition.fields, update);

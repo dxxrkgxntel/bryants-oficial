@@ -11,8 +11,6 @@ const {
     MessageFlags
 } = require("discord.js");
 const moderationFeatureHandlers = {
-    antimultimedia: require("../../Utils/ModerationHandlers/antiMultimedia"),
-    antilinks: require("../../Utils/ModerationHandlers/antiLinks"),
     antiscam: require("../../Utils/ModerationHandlers/antiScam")
 };
 
@@ -372,35 +370,6 @@ module.exports = {
 
             .addSubcommandGroup(group =>
                 group
-                    .setName("antimultimedia")
-                    .setDescription("Configura el filtro de contenido multimedia")
-                    .addSubcommand(sub => sub.setName("add").setDescription("Configurar canal para imágenes, vídeos y documentos")
-                        .addChannelOption(option => option.setName("canal").setDescription("Canal").setRequired(true).addChannelTypes(ChannelType.GuildText)))
-                    .addSubcommand(sub => sub.setName("remove").setDescription("Quitar canal permitido")
-                        .addChannelOption(option => option.setName("canal").setDescription("Canal").setRequired(true).addChannelTypes(ChannelType.GuildText)))
-                    .addSubcommand(sub => sub.setName("list").setDescription("Ver canales permitidos"))
-                    .addSubcommand(sub => sub.setName("log").setDescription("Configurar logs")
-                        .addChannelOption(option => option.setName("canal").setDescription("Canal de logs").setRequired(true).addChannelTypes(ChannelType.GuildText))
-                        .addAttachmentOption(option => option.setName("thumbnail").setDescription("Thumbnail"))
-                        .addAttachmentOption(option => option.setName("image").setDescription("Imagen")))
-            )
-
-            .addSubcommandGroup(group =>
-                group
-                    .setName("antilinks")
-                    .setDescription("Configura el filtro de enlaces")
-                    .addSubcommand(sub => sub.setName("toggle").setDescription("Activar o desactivar AntiLinks"))
-                    .addSubcommand(sub => sub.setName("whitelist").setDescription("Agregar canal permitido")
-                        .addChannelOption(option => option.setName("canal").setDescription("Canal permitido").setRequired(true).addChannelTypes(ChannelType.GuildText)))
-                    .addSubcommand(sub => sub.setName("remove").setDescription("Quitar canal permitido")
-                        .addChannelOption(option => option.setName("canal").setDescription("Canal a quitar").setRequired(true).addChannelTypes(ChannelType.GuildText)))
-                    .addSubcommand(sub => sub.setName("list").setDescription("Ver configuración AntiLinks"))
-                    .addSubcommand(sub => sub.setName("logs").setDescription("Configurar canal de logs")
-                        .addChannelOption(option => option.setName("canal").setDescription("Canal de logs").setRequired(true).addChannelTypes(ChannelType.GuildText)))
-            )
-
-            .addSubcommandGroup(group =>
-                group
                     .setName("antiscam")
                     .setDescription("Configura la protección AntiScam")
                     .addSubcommand(sub => sub.setName("enable").setDescription("Activar AntiScam"))
@@ -433,7 +402,7 @@ module.exports = {
         if (featureGroup) {
             if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
                 return interaction.reply({
-                    content: "❌ Solo los administradores pueden configurar AntiMultimedia, AntiLinks y AntiScam.",
+                    content: "❌ Solo los administradores pueden configurar AntiScam.",
                     flags: MessageFlags.Ephemeral
                 });
             }
