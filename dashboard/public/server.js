@@ -262,7 +262,7 @@ function renderField(field, value, prefix = "") {
     if (field.type === "setups") return renderSetupsEditor(Array.isArray(value) ? value : []);
     if (field.type === "json" && ["prestigeRoles", "prestigeRewards"].includes(field.name)) return renderPrestigeMap(field, value);
     if (field.type === "boolean") {
-        return `<label class="field checkbox-field" for="${id}"><span><strong>${escapeHtml(field.label)}</strong></span><input id="${id}" name="${escapeHtml(field.name)}" type="checkbox" ${value ? "checked" : ""}></label>`;
+        return `<label class="field checkbox-field" for="${id}"><span><strong>${escapeHtml(field.label)}</strong>${help}</span><input id="${id}" name="${escapeHtml(field.name)}" type="checkbox" ${value ? "checked" : ""}></label>`;
     }
     if (field.type === "select") {
         const options = field.options.map(option => `<option value="${escapeHtml(option)}" ${safeValue === option ? "selected" : ""}>${escapeHtml(option)}</option>`).join("");
@@ -421,7 +421,14 @@ function renderPreviewMarkup(key, values) {
     if (["welcome", "leaves", "boosts", "birthday"].includes(key)) {
         const empty = !configuredText && !media && !thumbnailBlock;
         const reminder = values.reminder ? `<p class="preview-reminder"><strong>Recordatorio:</strong> <span data-locale-fixed>${escapeHtml(renderPreviewTemplate(values.reminder))}</span></p>` : "";
-        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Contenido configurado para Discord</small></div><article class="discord-preview" style="--preview-accent:${color}">${media}<div class="discord-preview-body">${thumbnailBlock}<div class="discord-preview-copy">${configuredText || (empty ? '<p class="preview-empty">Todavía no hay contenido configurado para este aviso.</p>' : "")}</div></div></article>${reminder}</section>`;
+        const dmColor = validPreviewColor(values.dmColor);
+        const dmBanner = safePreviewImage(values.dmBanner);
+        const dmThumbnail = safePreviewImage(values.dmThumbnail);
+        const dmTitle = renderPreviewTemplate(values.dmTitle).trim();
+        const dmDescription = renderPreviewTemplate(values.dmDescription).trim();
+        const dmContent = [dmTitle ? `<h3 data-locale-fixed>${escapeHtml(dmTitle)}</h3>` : "", dmTitle && dmDescription ? '<hr class="discord-preview-separator">' : "", dmDescription ? `<p data-locale-fixed>${escapeHtml(dmDescription)}</p>` : ""].filter(Boolean).join("");
+        const dmPreview = key === "welcome" ? `<div class="dm-preview-block"><div class="live-preview-heading"><span class="eyebrow">MENSAJE PRIVADO</span><small>${values.sendDM ? "Vista previa del DM" : "Desactivado"}</small></div><article class="discord-preview" style="--preview-accent:${dmColor}">${dmBanner ? `<div class="message-preview-banner"><img data-preview-image src="${escapeHtml(dmBanner)}" alt="Banner del mensaje privado"></div>` : ""}<div class="discord-preview-body">${dmThumbnail ? `<img class="message-preview-avatar" data-preview-image src="${escapeHtml(dmThumbnail)}" alt="Miniatura del DM">` : ""}<div class="discord-preview-copy">${dmContent || '<p class="preview-empty">Configura el contenido que recibirá el miembro por mensaje privado.</p>'}</div></div></article></div>` : "";
+        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Contenido configurado para Discord</small></div><article class="discord-preview" style="--preview-accent:${color}">${media}<div class="discord-preview-body">${thumbnailBlock}<div class="discord-preview-copy">${configuredText || (empty ? '<p class="preview-empty">Todavía no hay contenido configurado para este aviso.</p>' : "")}</div></div></article>${reminder}${dmPreview}</section>`;
     }
     if (key === "levelSettings") {
         const levelTitle = renderPreviewTemplate(values.levelTitle).trim();
@@ -438,7 +445,7 @@ function renderPreviewMarkup(key, values) {
 
 function previewValues(key, form) {
     const read = name => form.elements.namedItem(name)?.value || "";
-    if (key === "welcome") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail") };
+    if (key === "welcome") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail"), sendDM: form.elements.namedItem("SendDM")?.checked, dmTitle: read("DMTitle"), dmDescription: read("DMMessage"), dmColor: read("DMColor"), dmBanner: read("DMBanner"), dmThumbnail: read("DMThumbnail") };
     if (key === "leaves") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail") };
     if (key === "birthday") return { title: read("birthdayTitle"), description: read("birthdayDescription"), color: read("birthdayColor"), banner: read("birthdayBanner"), reminder: read("birthdayReminder") };
     if (key === "boosts") return { title: read("boostTitle"), description: read("boostDescription"), color: read("boostColor"), banner: read("boostImage"), thumbnail: read("boostThumbnail") };
@@ -448,7 +455,7 @@ function previewValues(key, form) {
 function renderPreview(key, data) {
     if (!["welcome", "leaves", "boosts", "birthday", "levelSettings"].includes(key)) return "";
     const values = key === "welcome"
-        ? { title: data.Title, description: data.MessageDes, color: data.Color, banner: data.Banner, thumbnail: data.Thumbnail }
+        ? { title: data.Title, description: data.MessageDes, color: data.Color, banner: data.Banner, thumbnail: data.Thumbnail, sendDM: data.SendDM, dmTitle: data.DMTitle, dmDescription: data.DMMessage, dmColor: data.DMColor, dmBanner: data.DMBanner, dmThumbnail: data.DMThumbnail }
         : key === "leaves"
             ? { title: data.Title, description: data.MessageDes, color: data.Color, banner: data.Banner, thumbnail: data.Thumbnail }
             : key === "birthday"

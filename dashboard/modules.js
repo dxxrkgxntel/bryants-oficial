@@ -83,7 +83,13 @@ const configurations = {
             { name: "MessageDes", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.welcome, help: "Admite variables con llaves dobles, por ejemplo {{user}}, {{server}} y {{members}}. También puedes insertarlas con los botones." },
             { name: "Color", label: "Color hexadecimal", type: "color", optional: true },
             { name: "Banner", label: "URL del banner", type: "url", optional: true },
-            { name: "Thumbnail", label: "URL de miniatura", type: "url", optional: true }
+            { name: "Thumbnail", label: "URL de miniatura", type: "url", optional: true },
+            { name: "SendDM", label: "Activar mensajes de bienvenida al DM", type: "boolean", help: "Cuando esté activo, el bot enviará también un mensaje privado al nuevo miembro." },
+            { name: "DMTitle", label: "Título del mensaje privado", type: "text", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.welcome },
+            { name: "DMMessage", label: "Mensaje de bienvenida al DM", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.welcome, help: "Usa {{user}}, {{username}}, {{server}} y las demás variables de bienvenida." },
+            { name: "DMColor", label: "Color hexadecimal del DM", type: "color", optional: true },
+            { name: "DMBanner", label: "URL del banner del DM", type: "url", optional: true },
+            { name: "DMThumbnail", label: "URL de miniatura del DM", type: "url", optional: true }
         ]
     },
     leaves: {

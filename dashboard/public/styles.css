@@ -451,6 +451,7 @@ button:disabled { opacity: .55; cursor: wait !important; }
 .live-preview { display: grid; gap: 11px; margin: 18px 0 22px; padding: 15px; border: 1px solid #ffffff14; border-radius: 13px; background: #0e0b1280; }
 .live-preview-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .live-preview-heading small { color: #8f8298; font-size: 10px; }
+.dm-preview-block { display: grid; gap: 11px; margin-top: 8px; padding-top: 14px; border-top: 1px solid #ffffff16; }
 .discord-preview { overflow: hidden; border: 1px solid #ffffff13; border-left: 3px solid var(--preview-accent); border-radius: 10px; background: #111015; }
 .message-preview-banner { display: grid; min-height: 54px; max-height: 138px; place-items: center; overflow: hidden; background: linear-gradient(110deg, color-mix(in srgb, var(--preview-accent) 20%, #17121d), #17121d); color: #8e8297; font-size: 10px; }
 .preview-empty { color: #8e8297; font-size: 12px; font-style: italic; }

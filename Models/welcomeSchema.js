@@ -8,6 +8,12 @@ let welcomeSchema = new Schema({
     Channel: String,
     Guild: String,
     Title: String,
+    SendDM: { type: Boolean, default: false },
+    DMTitle: String,
+    DMMessage: String,
+    DMColor: String,
+    DMBanner: String,
+    DMThumbnail: String,
 })
 
 module.exports = model("welcome", welcomeSchema)
