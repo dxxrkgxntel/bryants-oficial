@@ -23,6 +23,20 @@ body {
 .brand small { margin-top: 4px; color: #a99cb5; font-size: 12px; }
 .user-area { display: flex; align-items: center; gap: 10px; color: #c8bfce; font-size: 13px; }
 .user-avatar { width: 36px; height: 36px; border: 1px solid #c88cff66; border-radius: 50%; object-fit: cover; }
+.account-menu { position: relative; }
+.account-trigger { display: flex; align-items: center; gap: 10px; padding: 5px 9px; border: 1px solid transparent; border-radius: 12px; background: #ffffff05; color: #d8cedf; font: inherit; cursor: pointer; transition: border-color .16s ease, background .16s ease; }
+.account-trigger:hover, .account-trigger[aria-expanded="true"] { border-color: #c783f447; background: #ffffff0c; }
+.account-trigger:focus-visible, .account-menu-item:focus-visible { outline: 2px solid #cb8aff; outline-offset: 2px; }
+.account-trigger .user-avatar { flex: 0 0 36px; }
+.account-chevron { margin-left: 2px; color: #c78afa; font-size: 17px; transition: transform .16s ease; }
+.account-trigger[aria-expanded="true"] .account-chevron { transform: rotate(180deg); }
+.account-dropdown { position: absolute; z-index: 50; top: calc(100% + 9px); right: 0; display: grid; width: 205px; padding: 6px; border: 1px solid #ffffff1c; border-radius: 12px; background: linear-gradient(145deg, #211729, #120e17); box-shadow: 0 16px 42px #0009; }
+.account-dropdown[hidden] { display: none; }
+.account-menu-item { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; padding: 11px 10px; border: 0; border-radius: 8px; background: transparent; color: #e7ddeb; font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.account-menu-item:hover { background: #ffffff0c; color: #fff; }
+.account-menu-item > span:last-child { color: #c886f3; }
+.account-menu-item:last-child > span:last-child { color: #f193a1; }
+.account-menu-item:disabled, .account-trigger:disabled { opacity: .6; cursor: wait; }
 
 .welcome-card { max-width: 720px; padding: 100px 0 92px; }
 .eyebrow { color: #be7aff; font-size: 11px; font-weight: 800; letter-spacing: .2em; }
