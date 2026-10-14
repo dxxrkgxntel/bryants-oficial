@@ -1,3 +1,66 @@
+const messageVariables = {
+    welcome: [
+        { token: "{{user}}", label: "Miembro", description: "Mención al miembro que entra." },
+        { token: "{{username}}", label: "Nombre", description: "Nombre de usuario, sin mención." },
+        { token: "{{userid}}", label: "ID", description: "ID del miembro." },
+        { token: "{{server}}", label: "Servidor", description: "Nombre del servidor." },
+        { token: "{{members}}", label: "Miembros", description: "Cantidad de miembros." },
+        { token: "{{date}}", label: "Fecha", description: "Fecha actual." },
+        { token: "{{time}}", label: "Hora", description: "Hora actual." },
+        { token: "{{accountAge}}", label: "Cuenta", description: "Antigüedad de la cuenta." }
+    ],
+    leave: [
+        { token: "{{user}}", label: "Miembro", description: "Nombre del miembro que salió." },
+        { token: "{{username}}", label: "Nombre", description: "Nombre de usuario." },
+        { token: "{{userid}}", label: "ID", description: "ID del miembro." },
+        { token: "{{server}}", label: "Servidor", description: "Nombre del servidor." },
+        { token: "{{members}}", label: "Miembros", description: "Cantidad de miembros." },
+        { token: "{{date}}", label: "Fecha", description: "Fecha actual." },
+        { token: "{{time}}", label: "Hora", description: "Hora actual." }
+    ],
+    birthday: [
+        { token: "{{user}}", label: "Miembro", description: "Mención al cumpleañero." },
+        { token: "{{username}}", label: "Nombre", description: "Nombre de usuario." },
+        { token: "{{userid}}", label: "ID", description: "ID del miembro." },
+        { token: "{{server}}", label: "Servidor", description: "Nombre del servidor." },
+        { token: "{{members}}", label: "Miembros", description: "Cantidad de miembros." },
+        { token: "{{reward}}", label: "Recompensa", description: "Monedas otorgadas." },
+        { token: "{{date}}", label: "Fecha", description: "Fecha actual." },
+        { token: "{{time}}", label: "Hora", description: "Hora actual." }
+    ],
+    birthdayReminder: [
+        { token: "{{user}}", label: "Miembro", description: "Mención al cumpleañero." },
+        { token: "{{username}}", label: "Nombre", description: "Nombre de usuario." },
+        { token: "{{userid}}", label: "ID", description: "ID del miembro." },
+        { token: "{{server}}", label: "Servidor", description: "Nombre del servidor." },
+        { token: "{{members}}", label: "Miembros", description: "Cantidad de miembros." },
+        { token: "{{date}}", label: "Fecha", description: "Fecha actual." },
+        { token: "{{time}}", label: "Hora", description: "Hora actual." }
+    ],
+    boost: [
+        { token: "{{user}}", label: "Miembro", description: "Mención al booster." },
+        { token: "{{username}}", label: "Nombre", description: "Nombre de usuario." },
+        { token: "{{userid}}", label: "ID", description: "ID del miembro." },
+        { token: "{{server}}", label: "Servidor", description: "Nombre del servidor." },
+        { token: "{{members}}", label: "Miembros", description: "Cantidad de miembros." },
+        { token: "{{boost}}", label: "Boosts", description: "Boosts actuales del servidor." },
+        { token: "{{date}}", label: "Fecha", description: "Fecha actual." },
+        { token: "{{time}}", label: "Hora", description: "Hora actual." }
+    ],
+    level: [
+        { token: "{{user}}", label: "Miembro", description: "Mención al miembro." },
+        { token: "{{username}}", label: "Nombre", description: "Nombre de usuario." },
+        { token: "{{userid}}", label: "ID", description: "ID del miembro." },
+        { token: "{{server}}", label: "Servidor", description: "Nombre del servidor." },
+        { token: "{{level}}", label: "Nivel", description: "Nivel alcanzado." },
+        { token: "{{xp}}", label: "XP", description: "Experiencia del miembro." },
+        { token: "{{reward}}", label: "Recompensa", description: "Recompensa obtenida." },
+        { token: "{{role}}", label: "Rol", description: "Rol concedido." },
+        { token: "{{date}}", label: "Fecha", description: "Fecha actual." },
+        { token: "{{time}}", label: "Hora", description: "Hora actual." }
+    ]
+};
+
 const configurations = {
     autoroles: {
         title: "Autoroles",
@@ -16,8 +79,8 @@ const configurations = {
         guildField: "Guild",
         fields: [
             { name: "Channel", label: "Canal", type: "channel", channelTypes: [0] },
-            { name: "Title", label: "Título", type: "text", maxLength: 256, optional: true },
-            { name: "MessageDes", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, help: "Español o inglés: {usuario}/{username}/{user}, {id}, {servidor}/{server}, {miembros}/{memberCount}, {cuenta}/{accountAge}. La vista previa usa datos de ejemplo." },
+            { name: "Title", label: "Título", type: "text", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.welcome },
+            { name: "MessageDes", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.welcome, help: "Admite variables con llaves dobles, por ejemplo {{user}}, {{server}} y {{members}}. También puedes insertarlas con los botones." },
             { name: "Color", label: "Color hexadecimal", type: "color", optional: true },
             { name: "Banner", label: "URL del banner", type: "url", optional: true },
             { name: "Thumbnail", label: "URL de miniatura", type: "url", optional: true }
@@ -30,8 +93,8 @@ const configurations = {
         guildField: "Guild",
         fields: [
             { name: "Channel", label: "Canal", type: "channel", channelTypes: [0] },
-            { name: "Title", label: "Título", type: "text", maxLength: 256, optional: true },
-            { name: "MessageDes", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, help: "Español o inglés: {usuario}/{username}/{user}, {id}, {servidor}/{server}, {miembros}/{memberCount}. La vista previa usa datos de ejemplo." },
+            { name: "Title", label: "Título", type: "text", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.leave },
+            { name: "MessageDes", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.leave, help: "Admite variables con llaves dobles, por ejemplo {{user}}, {{server}} y {{members}}. También puedes insertarlas con los botones." },
             { name: "Color", label: "Color hexadecimal", type: "color", optional: true },
             { name: "Banner", label: "URL del banner", type: "url", optional: true },
             { name: "Thumbnail", label: "URL de miniatura", type: "url", optional: true }
@@ -45,11 +108,11 @@ const configurations = {
         fields: [
             { name: "channelId", label: "Canal de anuncios", type: "channel", channelTypes: [0], optional: true },
             { name: "roleId", label: "Rol de cumpleaños", type: "role", optional: true },
-            { name: "birthdayTitle", label: "Título del aviso", type: "text", maxLength: 256, optional: true },
-            { name: "birthdayDescription", label: "Descripción del aviso", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}/{username}/{id}, {servidor}/{server}, {recompensa}/{reward}." },
+            { name: "birthdayTitle", label: "Título del aviso", type: "text", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.birthday },
+            { name: "birthdayDescription", label: "Descripción del aviso", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.birthday, help: "Puedes insertar variables como {{user}}, {{server}} y {{reward}} con los botones." },
             { name: "birthdayBanner", label: "URL del banner", type: "url", optional: true },
             { name: "birthdayColor", label: "Color hexadecimal", type: "color", optional: true },
-            { name: "birthdayReminder", label: "Recordatorio del día anterior", type: "textarea", maxLength: 2000, optional: true, help: "Variables: {usuario}/{username}/{id}, {servidor}/{server}." },
+            { name: "birthdayReminder", label: "Recordatorio del día anterior", type: "textarea", maxLength: 2000, optional: true, templateComposer: true, templateVariables: messageVariables.birthdayReminder, help: "Puedes insertar variables como {{user}}, {{server}} y {{date}} con los botones." },
             { name: "birthdayReward", label: "Monedas de cumpleaños", type: "number", min: 0, max: 1000000, optional: true }
         ]
     },
@@ -63,8 +126,8 @@ const configurations = {
             { name: "boosterVipRole", label: "Rol Booster VIP", type: "role" },
             { name: "boosterLegendRole", label: "Rol Booster Legend", type: "role" },
             { name: "boostChannel", label: "Canal de avisos", type: "channel", channelTypes: [0, 5] },
-            { name: "boostTitle", label: "Título del aviso", type: "text", maxLength: 256, optional: true },
-            { name: "boostDescription", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}/{username}/{id}, {servidor}/{server}, {miembros}/{memberCount}, {boosts}." },
+            { name: "boostTitle", label: "Título del aviso", type: "text", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.boost },
+            { name: "boostDescription", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.boost, help: "Puedes insertar variables como {{user}}, {{server}} y {{boost}} con los botones." },
             { name: "boostColor", label: "Color hexadecimal", type: "color", optional: true },
             { name: "boostThumbnail", label: "URL de miniatura", type: "url", optional: true },
             { name: "boostImage", label: "URL del banner", type: "url", optional: true }
@@ -192,10 +255,10 @@ const configurations = {
         guildField: "guildId",
         fields: [
             { name: "levelChannel", label: "Canal de avisos", type: "channel", channelTypes: [0], optional: true },
-            { name: "levelUpTitle", label: "Título al subir de nivel", type: "text", maxLength: 256, optional: true },
-            { name: "levelUpDescription", label: "Descripción al subir de nivel", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}/{username}/{id}, {servidor}/{server}, {nivel}/{level}, {xp}, {recompensa}/{reward}." },
-            { name: "levelRoleTitle", label: "Título al recibir un rol", type: "text", maxLength: 256, optional: true },
-            { name: "levelRoleDescription", label: "Descripción al recibir un rol", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}/{username}/{id}, {servidor}/{server}, {nivel}/{level}, {rol}/{role}." },
+            { name: "levelUpTitle", label: "Título al subir de nivel", type: "text", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.level },
+            { name: "levelUpDescription", label: "Descripción al subir de nivel", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.level, help: "Puedes insertar variables como {{user}}, {{level}}, {{xp}} y {{reward}} con los botones." },
+            { name: "levelRoleTitle", label: "Título al recibir un rol", type: "text", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.level },
+            { name: "levelRoleDescription", label: "Descripción al recibir un rol", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.level, help: "Puedes insertar variables como {{user}}, {{level}} y {{role}} con los botones." },
             { name: "levelImage", label: "URL de imagen", type: "url", optional: true },
             { name: "levelThumbnail", label: "URL de miniatura", type: "url", optional: true },
             { name: "levelColor", label: "Color hexadecimal", type: "color", optional: true },

@@ -12,6 +12,7 @@ let currentModules = null;
 let favoritesOnly = false;
 let activeFormGuard = null;
 let favoriteModules = new Set();
+let templatePopoverListenerInstalled = false;
 
 function loadFavorites() {
     try {
@@ -288,11 +289,90 @@ function renderField(field, value, prefix = "") {
         return `<label class="field" for="${id}"><span>${escapeHtml(field.label)}</span><textarea id="${id}" name="${escapeHtml(field.name)}" rows="5" spellcheck="false" ${required}>${escapeHtml(text)}</textarea></label>`;
     }
     if (field.type === "textarea") {
-        return `<label class="field" for="${id}"><span>${escapeHtml(field.label)}</span><textarea id="${id}" name="${escapeHtml(field.name)}" maxlength="${field.maxLength || 4000}" rows="5" ${required}>${escapeHtml(safeValue)}</textarea>${help}</label>`;
+        const control = `<textarea id="${id}" name="${escapeHtml(field.name)}" maxlength="${field.maxLength || 4000}" rows="5" ${required}>${escapeHtml(safeValue)}</textarea>`;
+        return renderTextField(field, id, control, help);
     }
     const inputType = field.type === "number" ? "number" : field.type === "url" ? "url" : field.type === "color" ? "text" : "text";
     const minMax = field.type === "number" ? `min="${field.min ?? 0}" ${field.max !== undefined ? `max="${field.max}"` : ""} step="1"` : "";
-    return `<label class="field" for="${id}"><span>${escapeHtml(field.label)}</span><input id="${id}" name="${escapeHtml(field.name)}" type="${inputType}" value="${escapeHtml(safeValue)}" maxlength="${field.maxLength || 2000}" ${minMax} ${required}>${help}</label>`;
+    const control = `<input id="${id}" name="${escapeHtml(field.name)}" type="${inputType}" value="${escapeHtml(safeValue)}" maxlength="${field.maxLength || 2000}" ${minMax} ${required}>`;
+    return renderTextField(field, id, control, help);
+}
+
+function renderTextField(field, id, control, help) {
+    if (!field.templateComposer) return `<label class="field" for="${id}"><span>${escapeHtml(field.label)}</span>${control}${help}</label>`;
+    const variables = escapeHtml(JSON.stringify(field.templateVariables || []));
+    return `<div class="field template-field"><label for="${id}">${escapeHtml(field.label)}</label>${control}<div class="template-composer" data-template-composer data-variables="${variables}"><div class="template-popover" data-template-popover hidden></div><div class="template-toolbar" role="toolbar" aria-label="Insertar en ${escapeHtml(field.label)}"><button type="button" data-composer-action="emoji" aria-label="Insertar emoji" title="Emoji">☺</button><button type="button" data-composer-action="channel" aria-label="Insertar canal" title="Canal">#</button><button type="button" data-composer-action="role" aria-label="Insertar rol" title="Rol">🛡</button><button type="button" data-composer-action="variable" aria-label="Insertar variable" title="Variable dinámica">{ }</button></div></div>${help}</div>`;
+}
+
+function setupTemplateComposers(form) {
+    const emojis = ["👋", "🎉", "✨", "💜", "🎂", "🚀", "⭐", "🎁", "🥳", "📢", "🔥", "🏆"];
+    form.querySelectorAll("[data-template-composer]").forEach(composer => {
+        const target = composer.parentElement.querySelector("input, textarea");
+        const popover = composer.querySelector("[data-template-popover]");
+        if (!target || !popover) return;
+        let selectionStart = 0;
+        let selectionEnd = 0;
+        const rememberSelection = () => {
+            selectionStart = target.selectionStart ?? target.value.length;
+            selectionEnd = target.selectionEnd ?? selectionStart;
+        };
+        ["keyup", "click", "select", "focus"].forEach(eventName => target.addEventListener(eventName, rememberSelection));
+        const close = () => { popover.hidden = true; popover.replaceChildren(); };
+        const insert = value => {
+            target.focus();
+            if (typeof target.setRangeText === "function") target.setRangeText(value, selectionStart, selectionEnd, "end");
+            else target.value = `${target.value.slice(0, selectionStart)}${value}${target.value.slice(selectionEnd)}`;
+            rememberSelection();
+            target.dispatchEvent(new Event("input", { bubbles: true }));
+            close();
+        };
+        const renderItems = (items, query = "") => {
+            const filtered = items.filter(item => normalizeSearch(`${item.token} ${item.label} ${item.description}`)
+                .includes(normalizeSearch(query)));
+            const rows = filtered.map(item => `<button type="button" class="template-option" data-insert-value="${escapeHtml(item.value)}"><span class="template-option-icon">${escapeHtml(item.icon || "{ }")}</span><span><strong>${escapeHtml(item.token || item.label)}</strong><small>${escapeHtml(item.description || item.label)}</small></span></button>`).join("");
+            const list = popover.querySelector(".template-options");
+            if (list) list.innerHTML = rows || '<p class="template-empty">No hay resultados.</p>';
+        };
+        composer.querySelectorAll("[data-composer-action]").forEach(button => button.addEventListener("click", () => {
+            rememberSelection();
+            const action = button.dataset.composerAction;
+            if (!popover.hidden && popover.dataset.action === action) return close();
+            popover.dataset.action = action;
+            const variables = JSON.parse(composer.dataset.variables || "[]");
+            let items = [];
+            let heading = "";
+            let searchable = true;
+            if (action === "variable") {
+                heading = "Variables dinámicas";
+                items = variables.map(variable => ({ token: variable.token, label: variable.label, description: variable.description, value: variable.token }));
+            } else if (action === "channel") {
+                heading = "Insertar canal";
+                items = resources.channels.filter(channel => [0, 5].includes(channel.type)).map(channel => ({ token: `#${channel.name}`, label: channel.name, description: "Mención al canal", value: `<#${channel.id}>` }));
+            } else if (action === "role") {
+                heading = "Insertar rol";
+                items = resources.roles.map(role => ({ token: `@${role.name}`, label: role.name, description: "Mención al rol", value: `<@&${role.id}>` }));
+            } else {
+                heading = "Insertar emoji";
+                searchable = false;
+                items = emojis.map(emoji => ({ token: emoji, label: emoji, description: "Emoji", value: emoji }));
+            }
+            popover.innerHTML = `<div class="template-popover-heading">${escapeHtml(heading)}</div>${searchable ? '<input class="template-search" type="search" placeholder="Filtrar…" aria-label="Filtrar opciones">' : ""}<div class="template-options"></div>`;
+            popover.hidden = false;
+            renderItems(items);
+            popover.querySelector(".template-search")?.addEventListener("input", event => renderItems(items, event.target.value));
+            popover.querySelector(".template-options").addEventListener("click", event => {
+                const option = event.target.closest("[data-insert-value]");
+                if (option) insert(option.dataset.insertValue);
+            });
+            popover.querySelector(".template-search")?.focus();
+        }));
+    });
+    if (!templatePopoverListenerInstalled) {
+        document.addEventListener("click", event => {
+            if (!event.target.closest("[data-template-composer]")) document.querySelectorAll("[data-template-popover]").forEach(popover => { popover.hidden = true; });
+        });
+        templatePopoverListenerInstalled = true;
+    }
 }
 
 function safePreviewImage(value) {
@@ -316,7 +396,16 @@ function renderPreviewTemplate(template) {
         miembros: "128", members: "128", membercount: "128", member_count: "128", memberscount: "128", members_count: "128", cuenta: "hace 2 años", createdat: "hace 2 años", created_at: "hace 2 años", accountcreated: "hace 2 años", account_created: "hace 2 años", accountage: "hace 2 años", account_age: "hace 2 años",
         nivel: "5", level: "5", xp: "250", recompensa: "500", reward: "500", coins: "500", monedas: "500", rol: "Miembro VIP", role: "Miembro VIP", boosts: "12"
     };
-    return String(template || "").replace(/\{([a-zA-Z_]+)\}/g, (token, name) => samples[name.toLowerCase()] ?? token);
+    samples.boost = samples.boosts;
+    samples.date = new Intl.DateTimeFormat("es-ES", { dateStyle: "long" }).format(new Date());
+    samples.fecha = samples.date;
+    samples.time = "18:30";
+    samples.hora = samples.time;
+    return String(template || "").replace(/\{\{\s*([a-zA-Z_]+)\s*\}\}|\{\s*([a-zA-Z_]+)\s*\}/g, (token, doubleName, singleName) => {
+        const name = (doubleName || singleName).toLowerCase();
+        return samples[name] ?? token;
+    }).replace(/<@&(\d+)>/g, (_, id) => `@${resources.roles.find(role => role.id === id)?.name || "rol"}`)
+        .replace(/<#(\d+)>/g, (_, id) => `#${resources.channels.find(channel => channel.id === id)?.name || "canal"}`);
 }
 
 function renderPreviewMarkup(key, values) {
@@ -547,6 +636,7 @@ function renderModule(key, modules) {
     }
     const settingsForm = content.querySelector("#settings-form");
     registerFormGuard(settingsForm, definition.fields);
+    setupTemplateComposers(settingsForm);
     updatePreview(key, settingsForm);
     settingsForm.addEventListener("input", () => updatePreview(key, settingsForm));
     settingsForm.addEventListener("change", () => updatePreview(key, settingsForm));

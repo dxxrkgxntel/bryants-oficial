@@ -9,16 +9,24 @@ const variableAliases = new Map([
     ["cuenta", "cuenta"], ["createdat", "cuenta"], ["created_at", "cuenta"], ["accountcreated", "cuenta"], ["account_created", "cuenta"], ["accountage", "cuenta"], ["account_age", "cuenta"],
     ["nivel", "nivel"], ["level", "nivel"], ["xp", "xp"],
     ["recompensa", "recompensa"], ["reward", "recompensa"], ["coins", "recompensa"], ["monedas", "recompensa"],
-    ["rol", "rol"], ["role", "rol"], ["boosts", "boosts"]
+    ["rol", "rol"], ["role", "rol"], ["boosts", "boosts"], ["boost", "boosts"],
+    ["date", "date"], ["fecha", "date"], ["time", "time"], ["hora", "time"]
 ]);
 
 function renderConfiguredMessage(template, values = {}) {
     if (typeof template !== "string" || !template.trim()) return "";
-    return template.replace(/\{([a-zA-Z_]+)\}/g, (token, key) => {
-        if (Object.prototype.hasOwnProperty.call(values, key)) return String(values[key] ?? "");
+    const now = new Date();
+    const dynamicValues = {
+        ...values,
+        date: values.date ?? new Intl.DateTimeFormat("es-ES", { dateStyle: "long" }).format(now),
+        time: values.time ?? new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit" }).format(now)
+    };
+    return template.replace(/\{\{\s*([a-zA-Z_]+)\s*\}\}|\{\s*([a-zA-Z_]+)\s*\}/g, (token, doubleKey, singleKey) => {
+        const key = doubleKey || singleKey;
+        if (Object.prototype.hasOwnProperty.call(dynamicValues, key)) return String(dynamicValues[key] ?? "");
         const canonicalKey = variableAliases.get(key.toLowerCase());
         if (!canonicalKey) return token;
-        if (Object.prototype.hasOwnProperty.call(values, canonicalKey)) return String(values[canonicalKey] ?? "");
+        if (Object.prototype.hasOwnProperty.call(dynamicValues, canonicalKey)) return String(dynamicValues[canonicalKey] ?? "");
         return token;
     }).trim();
 }
