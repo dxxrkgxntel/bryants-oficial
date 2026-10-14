@@ -1010,12 +1010,13 @@ function renderSpecialChannels(definition, data) {
     const roleOptions = optionsFor({ type: "role" });
     const renderRows = () => channels.map((rule, index) => {
         const name = channelOptions.find(item => item.id === rule.channelId)?.name || "Elige un canal";
+        const selectedRoles = Array.isArray(rule.immuneRoles) ? rule.immuneRoles : [];
         return `<section class="setup-row special-channel-row" data-special-row="${index}">
             <div class="setup-row-heading"><strong>Canal ${index + 1}${rule.channelId ? ` · #${escapeHtml(name)}` : ""}</strong><button class="quiet-button danger-text" type="button" data-special-remove="${index}">Quitar</button></div>
             <label class="field"><span>Canal</span><select data-special-channel required><option value="">Elige un canal</option>${channelOptions.map(item => `<option value="${escapeHtml(item.id)}" ${item.id === rule.channelId ? "selected" : ""}>#${escapeHtml(item.name)}</option>`).join("")}</select></label>
             <div class="field"><span>Contenido permitido</span><small>Si el mensaje incluye algún tipo desactivado, se eliminará. Si desactivas Texto, también se eliminarán los mensajes de texto sin adjuntos.</small><div class="special-content-grid">${contentTypes.map(([key, label]) => `<label class="field checkbox-field"><span><strong>${label}</strong></span><input type="checkbox" data-special-type="${key}" ${key === "text" ? rule.text !== false ? "checked" : "" : rule[key] ? "checked" : ""}></label>`).join("")}</div></div>
             <label class="field"><span>Canal de registros <em>(opcional)</em></span><select data-special-log-channel><option value="">No registrar eliminaciones</option>${channelOptions.map(item => `<option value="${escapeHtml(item.id)}" ${item.id === rule.logChannelId ? "selected" : ""}>#${escapeHtml(item.name)}</option>`).join("")}</select><small>El bot enviará ahí el usuario, canal, contenido eliminado y la regla incumplida.</small></label>
-            <label class="field"><span>Roles inmunes</span><select data-special-roles multiple size="5">${roleOptions.map(role => `<option value="${escapeHtml(role.id)}" ${(rule.immuneRoles || []).includes(role.id) ? "selected" : ""}>${escapeHtml(role.name)}</option>`).join("")}</select><small>Hasta 25 roles. El dueño, administradores y moderadores con permiso para gestionar mensajes también quedan exentos. Usa Ctrl o Cmd para seleccionar varios.</small></label>
+            <div class="field role-picker-field" data-role-picker="special-immune-${index}" data-max-selected="25"><span>Roles inmunes</span><details class="role-picker"><summary class="role-picker-trigger"><span data-role-summary>${selectedRoles.length ? `${selectedRoles.length} de 25 roles seleccionados` : "Selecciona hasta 25 roles"}</span><span class="role-picker-chevron" aria-hidden="true">⌄</span></summary><div class="role-picker-menu"><input type="search" class="role-picker-search" placeholder="Buscar roles…" aria-label="Buscar roles"><div class="role-picker-options" role="group" aria-label="Roles inmunes">${roleOptions.map(role => `<label class="role-picker-option" data-role-name="${escapeHtml(normalizeSearch(role.name))}"><input type="checkbox" value="${escapeHtml(role.id)}" data-role-option ${selectedRoles.includes(role.id) ? "checked" : ""}><span>@</span><span>${escapeHtml(role.name)}</span></label>`).join("")}</div></div></details><small>Hasta 25 roles. El dueño, administradores y miembros con permiso para gestionar mensajes también quedan exentos.</small></div>
         </section>`;
     }).join("");
 
@@ -1042,15 +1043,11 @@ function renderSpecialChannels(definition, data) {
         if (event.target.matches("[data-special-channel]")) rule.channelId = event.target.value;
         else if (event.target.matches("[data-special-type]")) rule[event.target.dataset.specialType] = event.target.checked;
         else if (event.target.matches("[data-special-log-channel]")) rule.logChannelId = event.target.value || null;
-        else if (event.target.matches("[data-special-roles]")) {
-            const selected = [...event.target.selectedOptions].map(option => option.value);
-            if (selected.length > 25) {
-                [...event.target.options].forEach(option => { if (selected.slice(25).includes(option.value)) option.selected = false; });
-                showNotice("Puedes seleccionar hasta 25 roles por canal.", true);
-            }
-            rule.immuneRoles = [...event.target.selectedOptions].map(option => option.value);
+        else if (event.target.matches("[data-role-option]")) {
+            queueMicrotask(() => { rule.immuneRoles = [...row.querySelectorAll("[data-role-option]:checked")].map(option => option.value); });
         }
     });
+    wireRolePickers(form);
     form.addEventListener("submit", async event => {
         event.preventDefault();
         const button = form.querySelector("button[type=submit]");
