@@ -682,6 +682,7 @@ function renderModule(key, modules) {
 
     const data = configState.configurations[key] || { configured: false };
     const formFields = definition.fields.map(field => {
+        if (field.type === "section") return renderField(field);
         let value = getNested(data, field.name);
         if (key === "boosts" && field.name === "boostButtons" && !Array.isArray(value)) {
             value = boostButtonsFor(data);
