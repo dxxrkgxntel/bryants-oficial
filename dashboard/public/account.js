@@ -6,6 +6,8 @@ const profileForm = document.querySelector("#account-profile-form");
 const languageForm = document.querySelector("#account-language-form");
 const linksContainer = document.querySelector("#account-links");
 let csrfToken = "";
+let savedLocale = "es";
+let localeInteracted = false;
 
 function setFeedback(element, message, error = false) {
     element.textContent = message;
@@ -64,6 +66,7 @@ async function loadAccountSettings() {
         window.mountAccountMenu(document.querySelector("#account-menu-host"), session.user);
 
         const user = session.user;
+        savedLocale = settings.locale || "es";
         profileName.dataset.localeFixed = "true";
         profileDisplay.dataset.localeFixed = "true";
         profileId.dataset.localeFixed = "true";
@@ -74,11 +77,10 @@ async function loadAccountSettings() {
         profileName.textContent = user.username;
         profileDisplay.textContent = user.globalName || user.username;
         profileId.textContent = user.id;
-        document.documentElement.lang = settings.locale;
-        window.dashboardI18n?.setLocale(settings.locale);
+        if (!localeInteracted) window.dashboardI18n?.setLocale(savedLocale);
         document.querySelector("#account-bio").value = settings.bio;
         document.querySelector("#bio-count").textContent = settings.bio.length;
-        document.querySelector("#account-locale").value = settings.locale;
+        if (!localeInteracted) document.querySelector("#account-locale").value = savedLocale;
         settings.links.forEach(addProfileLink);
         document.querySelector("#account-add-link").disabled = settings.links.length >= 5;
         document.querySelector("#referral-count").textContent = rewards.referralCount.toLocaleString(settings.locale);
@@ -157,17 +159,20 @@ languageForm.addEventListener("submit", async event => {
     localeSelect.disabled = true;
     setFeedback(feedback, "Guardando…");
     try {
-        await api("/api/account/settings", {
+        const result = await api("/api/account/settings", {
             method: "PUT",
             body: JSON.stringify({
                 locale: localeSelect.value
             })
         });
-        const locale = localeSelect.value;
+        const locale = result.locale || localeSelect.value;
+        savedLocale = locale;
+        localeSelect.value = locale;
         window.dashboardI18n?.setLocale(locale);
         setFeedback(feedback, window.dashboardI18n?.translate("Idioma guardado.") || "Idioma guardado.");
     } catch (error) {
-        localeSelect.value = window.dashboardI18n?.locale || "es";
+        localeSelect.value = savedLocale;
+        window.dashboardI18n?.setLocale(savedLocale);
         setFeedback(feedback, error.message, true);
     } finally {
         button.disabled = false;
@@ -176,6 +181,8 @@ languageForm.addEventListener("submit", async event => {
 });
 
 document.querySelector("#account-locale").addEventListener("change", () => {
+    localeInteracted = true;
+    window.dashboardI18n?.setLocale(document.querySelector("#account-locale").value);
     languageForm.requestSubmit();
 });
 

@@ -494,6 +494,7 @@
     }
 
     let locale = "es";
+    let userSelectedLocale = false;
     const originals = new WeakMap();
     const translatedValues = new WeakMap();
     const normalize = value => String(value || "").replace(/\s+/g, " ").trim();
@@ -548,6 +549,7 @@
         document.documentElement.lang = target;
     }
     function setLocale(next) {
+        userSelectedLocale = true;
         locale = locales.includes(next) ? next : "es";
         try { localStorage.setItem("bryants-dashboard:locale", locale); } catch {}
         scan(document, locale);
@@ -572,6 +574,11 @@
     }).observe(document.documentElement, { childList: true, subtree: true, characterData: true });
 
     fetch("/api/account/settings", { credentials: "same-origin", cache: "no-store" }).then(response => response.ok ? response.json() : null).then(settings => {
-        if (settings?.locale && locales.includes(settings.locale)) setLocale(settings.locale);
+        if (!userSelectedLocale && settings?.locale && locales.includes(settings.locale)) {
+            locale = settings.locale;
+            try { localStorage.setItem("bryants-dashboard:locale", locale); } catch {}
+            scan(document, locale);
+            window.dispatchEvent(new CustomEvent("dashboard:locale-change", { detail: { locale } }));
+        }
     }).catch(() => {});
 })();

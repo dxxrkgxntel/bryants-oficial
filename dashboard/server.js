@@ -496,6 +496,7 @@ app.get("/api/me", (req, res) => {
 const supportedAccountLocales = new Set(["en", "es", "de", "pt", "fr", "pl", "tr", "ru", "it", "nl"]);
 
 app.get("/api/account/settings", requireLogin, async (req, res) => {
+    res.set("Cache-Control", "no-store");
     const settings = await DashboardAccount.findOne({ userId: req.session.user.id }).lean();
     return res.json({
         locale: settings?.locale || "es",
@@ -505,6 +506,7 @@ app.get("/api/account/settings", requireLogin, async (req, res) => {
 });
 
 app.put("/api/account/settings", requireLogin, requireCsrf, async (req, res) => {
+    res.set("Cache-Control", "no-store");
     const { locale, bio, links } = req.body || {};
     const update = {};
     if (locale !== undefined) {
