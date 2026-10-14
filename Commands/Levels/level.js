@@ -6,7 +6,6 @@ const EconomyUser = require("../../Models/EconomyUser");
 const { createCanvas, loadImage, GlobalFonts } = require("@napi-rs/canvas");
 const path = require("path");
 
-const BANNER = "https://i.imgur.com/V3VnbyI.png";
 const PURPLE = 0x8A2BE2;
 
 try {
@@ -20,8 +19,6 @@ function panel(body, accent = PURPLE, extra = []) {
             type: 17,
             accent_color: accent,
             components: [
-                { type: 12, items: [{ media: { url: BANNER } }] },
-                { type: 14, divider: true, spacing: 1 },
                 { type: 10, content: body },
                 ...extra
             ]

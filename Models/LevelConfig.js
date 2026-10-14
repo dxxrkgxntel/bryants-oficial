@@ -12,6 +12,11 @@ const levelConfigSchema =
         levelThumbnail: String,
 
         levelColor: String,
+        levelUpTitle: String,
+        levelUpDescription: String,
+        levelRoleTitle: String,
+        levelRoleDescription: String,
+        levelCoinReward: { type: Number, min: 0 },
         messageXpMin: { type: Number, default: 5 },
         messageXpMax: { type: Number, default: 14 },
         messageXpCooldownMs: { type: Number, default: 5000 },

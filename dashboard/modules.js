@@ -16,11 +16,11 @@ const configurations = {
         guildField: "Guild",
         fields: [
             { name: "Channel", label: "Canal", type: "channel", channelTypes: [0] },
-            { name: "Title", label: "Título", type: "text", maxLength: 256 },
-            { name: "MessageDes", label: "Descripción", type: "textarea", maxLength: 4000 },
-            { name: "Color", label: "Color hexadecimal", type: "color" },
-            { name: "Banner", label: "URL del banner", type: "url" },
-            { name: "Thumbnail", label: "URL de miniatura", type: "url" }
+            { name: "Title", label: "Título", type: "text", maxLength: 256, optional: true },
+            { name: "MessageDes", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}, {servidor}, {miembros}, {id}, {cuenta}." },
+            { name: "Color", label: "Color hexadecimal", type: "color", optional: true },
+            { name: "Banner", label: "URL del banner", type: "url", optional: true },
+            { name: "Thumbnail", label: "URL de miniatura", type: "url", optional: true }
         ]
     },
     leaves: {
@@ -30,8 +30,11 @@ const configurations = {
         guildField: "Guild",
         fields: [
             { name: "Channel", label: "Canal", type: "channel", channelTypes: [0] },
-            { name: "MessageDes", label: "Descripción", type: "textarea", maxLength: 4000 },
-            { name: "Banner", label: "URL del banner", type: "url" }
+            { name: "Title", label: "Título", type: "text", maxLength: 256, optional: true },
+            { name: "MessageDes", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}, {servidor}, {miembros}, {id}." },
+            { name: "Color", label: "Color hexadecimal", type: "color", optional: true },
+            { name: "Banner", label: "URL del banner", type: "url", optional: true },
+            { name: "Thumbnail", label: "URL de miniatura", type: "url", optional: true }
         ]
     },
     birthday: {
@@ -41,7 +44,13 @@ const configurations = {
         guildField: "guildId",
         fields: [
             { name: "channelId", label: "Canal de anuncios", type: "channel", channelTypes: [0], optional: true },
-            { name: "roleId", label: "Rol de cumpleaños", type: "role", optional: true }
+            { name: "roleId", label: "Rol de cumpleaños", type: "role", optional: true },
+            { name: "birthdayTitle", label: "Título del aviso", type: "text", maxLength: 256, optional: true },
+            { name: "birthdayDescription", label: "Descripción del aviso", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}, {servidor}, {recompensa}." },
+            { name: "birthdayBanner", label: "URL del banner", type: "url", optional: true },
+            { name: "birthdayColor", label: "Color hexadecimal", type: "color", optional: true },
+            { name: "birthdayReminder", label: "Recordatorio del día anterior", type: "textarea", maxLength: 2000, optional: true, help: "Variables: {usuario}, {servidor}." },
+            { name: "birthdayReward", label: "Monedas de cumpleaños", type: "number", min: 0, max: 1000000, optional: true }
         ]
     },
     boosts: {
@@ -54,7 +63,9 @@ const configurations = {
             { name: "boosterVipRole", label: "Rol Booster VIP", type: "role" },
             { name: "boosterLegendRole", label: "Rol Booster Legend", type: "role" },
             { name: "boostChannel", label: "Canal de avisos", type: "channel", channelTypes: [0, 5] },
-            { name: "boostDescription", label: "Descripción", type: "textarea", maxLength: 4000 },
+            { name: "boostTitle", label: "Título del aviso", type: "text", maxLength: 256, optional: true },
+            { name: "boostDescription", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}, {servidor}, {boosts}." },
+            { name: "boostColor", label: "Color hexadecimal", type: "color", optional: true },
             { name: "boostThumbnail", label: "URL de miniatura", type: "url", optional: true },
             { name: "boostImage", label: "URL del banner", type: "url", optional: true }
         ]
@@ -181,9 +192,14 @@ const configurations = {
         guildField: "guildId",
         fields: [
             { name: "levelChannel", label: "Canal de avisos", type: "channel", channelTypes: [0], optional: true },
+            { name: "levelUpTitle", label: "Título al subir de nivel", type: "text", maxLength: 256, optional: true },
+            { name: "levelUpDescription", label: "Descripción al subir de nivel", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}, {servidor}, {nivel}, {xp}, {recompensa}." },
+            { name: "levelRoleTitle", label: "Título al recibir un rol", type: "text", maxLength: 256, optional: true },
+            { name: "levelRoleDescription", label: "Descripción al recibir un rol", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}, {servidor}, {nivel}, {rol}." },
             { name: "levelImage", label: "URL de imagen", type: "url", optional: true },
             { name: "levelThumbnail", label: "URL de miniatura", type: "url", optional: true },
             { name: "levelColor", label: "Color hexadecimal", type: "color", optional: true },
+            { name: "levelCoinReward", label: "Monedas por cada nivel alcanzado", type: "number", min: 0, max: 1000000, optional: true },
             { name: "messageXpMin", label: "XP mínima por mensaje", type: "number", min: 0, max: 1000, default: 5 },
             { name: "messageXpMax", label: "XP máxima por mensaje", type: "number", min: 0, max: 1000, default: 14 },
             { name: "messageXpCooldownMs", label: "Espera entre XP de mensajes (ms)", type: "number", min: 0, max: 3600000, default: 5000 },

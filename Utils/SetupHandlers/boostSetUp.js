@@ -21,12 +21,14 @@ module.exports = {
                 .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
                 .setRequired(true)
         )
+        .addStringOption(option => option.setName("titulo").setDescription("Título del aviso de boost").setMaxLength(256))
         .addStringOption(option =>
             option.setName("descripcion")
                 .setDescription("Descripción del embed. Variables: {usuario}, {servidor}, {boosts}")
                 .setMaxLength(4000)
                 .setRequired(false)
         )
+        .addStringOption(option => option.setName("color").setDescription("Color hexadecimal, por ejemplo #8A2BE2").setMaxLength(7))
         .addStringOption(option =>
             option.setName("thumbnail")
                 .setDescription("URL del thumbnail del embed")
@@ -44,7 +46,9 @@ module.exports = {
             const boosterVipRole = interaction.options.getRole("boostervip");
             const boosterLegendRole = interaction.options.getRole("boosterlegend");
             const boostChannel = interaction.options.getChannel("canal");
+            const boostTitle = interaction.options.getString("titulo");
             const boostDescription = interaction.options.getString("descripcion");
+            const boostColor = interaction.options.getString("color");
             const boostThumbnail = interaction.options.getString("thumbnail");
             const boostImage = interaction.options.getString("banner");
 
@@ -76,6 +80,9 @@ module.exports = {
                     flags: 64
                 });
             }
+            if (boostColor && !/^#[\da-f]{6}$/i.test(boostColor)) {
+                return interaction.reply({ content: "El color debe tener formato hexadecimal #RRGGBB.", flags: 64 });
+            }
 
             const existing = await boostSchema.findOne({ guildId: interaction.guild.id });
 
@@ -86,7 +93,9 @@ module.exports = {
                     boosterVipRole: boosterVipRole.id,
                     boosterLegendRole: boosterLegendRole.id,
                     boostChannel: boostChannel.id,
+                    boostTitle: boostTitle ?? existing?.boostTitle ?? "",
                     boostDescription: boostDescription ?? existing?.boostDescription ?? "",
+                    boostColor: boostColor ?? existing?.boostColor ?? "",
                     boostThumbnail: boostThumbnail ?? existing?.boostThumbnail ?? "",
                     boostImage: boostImage ?? existing?.boostImage ?? ""
                 },
@@ -98,7 +107,7 @@ module.exports = {
                 `🚀 **Booster VIP:** ${boosterVipRole}\n` +
                 `👑 **Booster Legend:** ${boosterLegendRole}\n` +
                 `📢 **Canal:** ${boostChannel}\n\n` +
-                `📝 **Descripción:** ${boostDescription ? "Actualizada" : existing?.boostDescription ? "Se conserva la anterior" : "Predeterminada"}\n` +
+                `📝 **Descripción:** ${boostDescription ? "Actualizada" : existing?.boostDescription ? "Se conserva la anterior" : "Sin configurar"}\n` +
                 `🖼️ **Thumbnail:** ${boostThumbnail ? "Actualizado" : existing?.boostThumbnail ? "Se conserva el anterior" : "Sin configurar"}\n` +
                 `🌄 **Banner:** ${boostImage ? "Actualizado" : existing?.boostImage ? "Se conserva el anterior" : "Sin configurar"}`;
 

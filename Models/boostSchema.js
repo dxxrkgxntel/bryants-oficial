@@ -8,7 +8,9 @@ module.exports = mongoose.model(
         boosterVipRole: String,
         boosterLegendRole: String,
         boostChannel: String,
+        boostTitle: String,
         boostDescription: String,
+        boostColor: String,
         boostThumbnail: String,
         boostImage: String
     })

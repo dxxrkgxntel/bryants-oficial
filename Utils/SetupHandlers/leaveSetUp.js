@@ -43,6 +43,12 @@ module.exports = {
                 .setRequired(true)
         )
 
+        .addStringOption(option => option
+            .setName('titulo')
+            .setDescription('Título del mensaje de salida')
+            .setMaxLength(256)
+        )
+
         /*
         =========================
         DESCRIPCION
@@ -57,6 +63,19 @@ module.exports = {
                 .setDescription(
                     'Descripcion del mensaje'
                 )
+                .setMaxLength(4000)
+        )
+
+        .addStringOption(option => option
+            .setName('color')
+            .setDescription('Color hexadecimal, por ejemplo #8A2BE2')
+            .setMaxLength(7)
+        )
+
+        .addStringOption(option => option
+            .setName('thumbnail')
+            .setDescription('URL de miniatura')
+            .setMaxLength(300)
         )
 
         /*
@@ -88,11 +107,13 @@ module.exports = {
         const channel =
         options.getChannel('channel');
 
-        const description =
-        options.getString('descripcion') || ' ';
+        const title = options.getString('titulo') || '';
+        const description = options.getString('descripcion') || '';
+        const color = options.getString('color') || '';
 
         const bannerURL =
         options.getString('banner');
+        const thumbnailURL = options.getString('thumbnail');
 
         /*
         =========================
@@ -151,13 +172,7 @@ module.exports = {
         =========================
         */
 
-        if (
-
-            bannerURL &&
-
-            !bannerURL.startsWith('http')
-
-        ) {
+        if ([bannerURL, thumbnailURL].some(url => url && !/^https?:\/\//i.test(url))) {
 
             return interaction.reply({
 
@@ -168,6 +183,10 @@ module.exports = {
 
             });
 
+        }
+
+        if (color && !/^#[\da-f]{6}$/i.test(color)) {
+            return interaction.reply({ content: 'El color debe tener formato hexadecimal #RRGGBB.', flags: 64 });
         }
 
         /*
@@ -194,11 +213,20 @@ module.exports = {
                         Channel:
                         channel.id,
 
+                        Title:
+                        title,
+
                         MessageDes:
                         description,
 
                         Banner:
-                        bannerURL || null
+                        bannerURL || null,
+
+                        Thumbnail:
+                        thumbnailURL || null,
+
+                        Color:
+                        color
 
                     }
 

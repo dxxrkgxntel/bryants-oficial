@@ -1,0 +1,94 @@
+INVENTARIO DE CONTENIDO HARDCODEADO RETIRADO
+Proyecto: Bryant's Oficial
+Fecha: 2026-10-14
+
+Este archivo conserva los textos, etiquetas, banners y valores de recompensa que el bot enviaba automáticamente sin que el administrador los configurara. Se guardan aquí para poder reutilizarlos en la web o en la configuración del bot.
+
+IMPORTANTE SOBRE LA MIGRACIÓN
+- El antiguo texto predeterminado de bienvenida "Pasala muy bien" se elimina de las configuraciones existentes al iniciar el bot. El resto de los textos ya guardados por los administradores se conserva.
+- Bienvenidas, salidas, avisos de nivel, desbloqueos de rol y boosts ahora solo incluyen título, descripción, imagen/miniatura y color si se configuran en el panel web o mediante slash.
+- Si no hay texto ni imágenes configurados, no se envía un mensaje vacío ni un aviso de plantilla.
+- Variables que se pueden usar en textos:
+  Bienvenida: {usuario}, {servidor}, {miembros}, {id}, {cuenta}
+  Salida: {usuario}, {servidor}, {miembros}, {id}
+  Nivel: {usuario}, {servidor}, {nivel}, {xp}, {recompensa}
+  Rol por nivel: {usuario}, {servidor}, {nivel}, {rol}
+  Boost: {usuario}, {servidor}, {boosts}
+
+1. BIENVENIDAS — texto y elementos retirados
+- Título fijo: "✨・Bienvenido/a a {servidor}"
+- Descripción alternativa cuando no había una configurada: "Esperamos que disfrutes tu estadía en el servidor."
+- Bloque automático de datos:
+  "👤 Usuario: {usuario}"
+  "🆔 ID: {id}"
+  "📅 Cuenta creada: {cuenta}"
+  "👥 Miembro número: #{miembros}"
+- Cierre fijo: "💜 Esperamos que disfrutes tu estadía, participes en los chats y formes parte de esta increíble comunidad."
+- Botón fijo "Invitar Bot" con emoji 🚀 y enlace de invitación incrustado en el código.
+- Despedida adicional fija: "🎉 ¡Bienvenido {usuario}, llegaste al mejor server {servidor}!"
+- Color morado automático #8A2BE2 cuando no había color configurado.
+- El comando de configuración ya no inserta automáticamente "Pasala muy bien".
+
+2. SALIDAS — texto y elementos retirados
+- Descripción alternativa: "Gracias por haber formado parte de nuestra comunidad."
+- Título fijo: "👋・Un miembro se ha ido de {servidor}"
+- Bloque automático de datos:
+  "👤 Usuario: {usuario}"
+  "🆔 ID: {id}"
+  "💔 Ahora somos: {miembros} miembros"
+- Cierre fijo: "💨 {usuario} ha salido del servidor. Esperamos verte nuevamente algún día."
+- Color morado automático #8A2BE2.
+
+3. NIVELES — textos, imágenes y recompensa retirados
+- Banner fijo de subida de nivel: https://i.imgur.com/IyrUtlE.png
+- Título fijo: "🎉 ¡SUBISTE DE NIVEL!"
+- Subtítulo fijo: "✨ ¡Felicidades {usuario}!"
+- Texto fijo de nivel por mensajes: "Has alcanzado el nivel {nivel} gracias a tu actividad y participación dentro del servidor."
+- Texto fijo de nivel por voz: "Has alcanzado el nivel {nivel} gracias a tu actividad en los canales de voz y participación dentro del servidor."
+- Líneas automáticas: "💰 Recompensa recibida: {recompensa} coins" y "⭐ Nivel actual: {nivel}"
+- Cierre fijo: "🔥 Sigue participando para desbloquear más recompensas y nuevos roles."
+- Título fijo al desbloquear rol: "🎭 NUEVO ROL DESBLOQUEADO"
+- Texto fijo al desbloquear rol: "Has desbloqueado el rol {rol} al alcanzar el nivel {nivel}."
+- Cierre fijo al desbloquear rol: "🏆 Continúa participando para seguir avanzando en el sistema de niveles."
+- En el perfil/rango de nivel también se retiró el banner fijo: https://i.imgur.com/V3VnbyI.png
+- Recompensa fija anterior: 100 monedas por nivel (multiplicada por el nivel alcanzado). Ahora se configura como "Monedas por cada nivel alcanzado" en la web o como opción /level-setup monedas. Si queda sin configurar, la cantidad otorgada es 0.
+- Los valores de XP, cooldowns y requisitos de actividad se mantienen como valores técnicos de funcionamiento del sistema; no son textos enviados al usuario.
+
+4. BOOSTS — textos, menciones y adornos retirados
+- Descripción alternativa compuesta automáticamente:
+  "> {usuario} acaba de mejorar el servidor."
+  "💜 Gracias por apoyar nuestra comunidad."
+  "✨ Ya puedes reclamar tus recompensas utilizando los botones de abajo."
+  "🚀 Boosts actuales: {boosts}"
+- Título fijo: "🚀 Nuevo Boost"
+- Texto de miniatura fijo: "💜 Nuevo miembro de la familia Booster"
+- Mensaje separado con mención masiva: "NUEVA MEJORA EN EL SERVIDOR @everyone"
+- Etiquetas fijas de los botones: "BOOSTER", "BOOSTER VIP", "BOOSTER LEGEND".
+- Emojis fijos de los botones de booster incrustados en el código.
+- Color morado automático #8A2BE2.
+- Los botones conservan la función de reclamar roles, pero sus etiquetas ahora se toman del nombre actual del rol configurado en el servidor.
+
+4B. CUMPLEAÑOS — textos, imagen, mención y recompensa retirados
+- Banner fijo: https://i.imgur.com/bNyzRSD.png
+- Título fijo: "🎉 ¡Feliz Cumpleaños!"
+- Felicitación fija: "🎂 ¡Feliz cumpleaños {usuario}!"
+- Descripción fija: "🥳 Esperamos que tengas un día increíble lleno de felicidad y regalos."
+- Texto fijo de recompensa: "🎁 Has recibido {recompensa} monedas por tu cumpleaños."
+- Mensaje con mención masiva: "FELICITEN A ESTX CUMPLEAÑERX {usuario} @everyone"
+- Recordatorio fijo: "📢 ¡Mañana es el cumpleaños de {usuario}! 🎂🎉"
+- Color morado automático #8A2BE2.
+- Recompensa anterior fija: 5000 monedas. Ahora se configura en el panel o en `/birthday channel monedas`; sin configurar, se entregan 0 monedas.
+- El recordatorio del día anterior solo se envía si se configura el campo "Recordatorio del día anterior".
+5. VISTA PREVIA DE LA DASHBOARD — datos ficticios retirados
+- Títulos y descripciones de ejemplo que aparecían aunque los campos estuvieran vacíos.
+- Etiquetas de marca que se presentaban como texto del mensaje de Discord.
+- Nombre/avatar de muestra "BF" para miniaturas vacías.
+- Miembro de ejemplo "Miembro #128".
+- Tarjeta de nivel ficticia "Usuario de ejemplo · Nivel 5" y el número de nivel de muestra.
+- Color morado de muestra usado al no haber color configurado.
+
+6. NOTAS DE ALCANCE
+- Este inventario cubre el contenido automático de bienvenidas, salidas, niveles, roles de nivel, boosts y sus vistas previas que se modificaron en esta revisión.
+- No se quitaron textos de interfaz de los comandos ni mensajes de confirmación/errores: son instrucciones operativas necesarias para usar el bot, no contenido personalizado de los avisos del servidor.
+- Los sistemas no listados aquí no se modificaron en esta pasada. El inventario identifica exactamente el contenido retirado en las áreas indicadas, no afirma que cada frase fija de interfaz del bot haya desaparecido.
+

@@ -303,26 +303,31 @@ function safePreviewImage(value) {
 }
 
 function validPreviewColor(value) {
-    return /^#[\da-f]{6}$/i.test(String(value || "")) ? value : "#a85be0";
+    return /^#[\da-f]{6}$/i.test(String(value || "")) ? value : "#352b3d";
 }
 
 function renderPreviewMarkup(key, values) {
     const color = validPreviewColor(values.color);
-    const banner = safePreviewImage(values.banner);
+    const banner = safePreviewImage(values.banner || values.image);
     const thumbnail = safePreviewImage(values.thumbnail);
-    const title = String(values.title || "");
-    const description = String(values.description || "");
-    const bannerBlock = `<div class="message-preview-banner">${banner ? `<img data-preview-image src="${escapeHtml(banner)}" alt="Vista previa del banner">` : `<span>${key === "welcome" ? "Banner de bienvenida" : "Banner de despedida"}</span>`}</div>`;
-    const thumbnailBlock = thumbnail
-        ? `<img class="message-preview-avatar" data-preview-image src="${escapeHtml(thumbnail)}" alt="Miniatura">`
-        : `<span class="message-preview-avatar placeholder">BF</span>`;
-    if (key === "welcome" || key === "leaves") {
-        const isWelcome = key === "welcome";
-        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Así se verá el mensaje en Discord</small></div><article class="discord-preview" style="--preview-accent:${color}">${bannerBlock}<div class="discord-preview-body">${thumbnailBlock}<div class="discord-preview-copy"><small>${isWelcome ? "BRYANT'S OFICIAL · NUEVA INCORPORACIÓN" : "BRYANT'S OFICIAL · DESPEDIDA"}</small><h3>${escapeHtml(title || (isWelcome ? "¡Alguien llegó al servidor!" : "Alguien salió del servidor"))}</h3><p>${escapeHtml(description || (isWelcome ? "¡Bienvenid@ a la comunidad! Nos alegra tenerte aquí." : "Gracias por compartir este tiempo con nosotros."))}</p><span>${isWelcome ? "Miembro #128" : "Hasta pronto"}</span></div></div></article></section>`;
+    const title = String(values.title || "").trim();
+    const description = String(values.description || "").trim();
+    const configuredText = [title ? `<h3>${escapeHtml(title)}</h3>` : "", description ? `<p>${escapeHtml(description)}</p>` : ""].filter(Boolean).join("");
+    const media = banner ? `<div class="message-preview-banner"><img data-preview-image src="${escapeHtml(banner)}" alt="Vista previa del banner"></div>` : "";
+    const thumbnailBlock = thumbnail ? `<img class="message-preview-avatar" data-preview-image src="${escapeHtml(thumbnail)}" alt="Miniatura configurada">` : "";
+
+    if (["welcome", "leaves", "boosts"].includes(key)) {
+        const empty = !configuredText && !media && !thumbnailBlock;
+        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Contenido configurado para Discord</small></div><article class="discord-preview" style="--preview-accent:${color}">${media}<div class="discord-preview-body">${thumbnailBlock}<div class="discord-preview-copy">${configuredText || (empty ? '<p class="preview-empty">Todavía no hay contenido configurado para este aviso.</p>' : "")}</div></div></article></section>`;
     }
     if (key === "levelSettings") {
-        const image = safePreviewImage(values.image);
-        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Tarjeta de subida de nivel</small></div><article class="level-preview" style="--preview-accent:${color}"><div class="level-preview-background">${image ? `<img data-preview-image src="${escapeHtml(image)}" alt="Imagen de nivel">` : ""}</div>${thumbnailBlock}<div class="level-preview-copy"><small>BRYANT'S OFICIAL</small><strong>¡Has subido de nivel!</strong><span>Usuario de ejemplo · Nivel 5</span></div><b class="level-preview-number">05</b></article></section>`;
+        const levelTitle = String(values.levelTitle || "").trim();
+        const levelDescription = String(values.levelDescription || "").trim();
+        const roleTitle = String(values.roleTitle || "").trim();
+        const roleDescription = String(values.roleDescription || "").trim();
+        const contentText = [levelTitle ? `<strong>${escapeHtml(levelTitle)}</strong>` : "", levelDescription ? `<span>${escapeHtml(levelDescription)}</span>` : ""].filter(Boolean).join("");
+        const empty = !contentText && !banner && !thumbnail;
+        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Contenido del aviso de nivel configurado</small></div><article class="level-preview" style="--preview-accent:${color}"><div class="level-preview-background">${banner ? `<img data-preview-image src="${escapeHtml(banner)}" alt="Imagen configurada">` : ""}</div>${thumbnailBlock}<div class="level-preview-copy">${contentText || (empty ? '<span class="preview-empty">Configura título, descripción o imagen para mostrar una vista previa.</span>' : "")}</div></article>${roleTitle || roleDescription ? `<div class="level-preview-role">${roleTitle ? `<strong>${escapeHtml(roleTitle)}</strong>` : ""}${roleDescription ? `<span>${escapeHtml(roleDescription)}</span>` : ""}</div>` : ""}</section>`;
     }
     return "";
 }
@@ -330,17 +335,20 @@ function renderPreviewMarkup(key, values) {
 function previewValues(key, form) {
     const read = name => form.elements.namedItem(name)?.value || "";
     if (key === "welcome") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail") };
-    if (key === "leaves") return { description: read("MessageDes"), color: "#a85be0", banner: read("Banner") };
-    return { color: read("levelColor"), image: read("levelImage"), thumbnail: read("levelThumbnail") };
+    if (key === "leaves") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail") };
+    if (key === "boosts") return { title: read("boostTitle"), description: read("boostDescription"), color: read("boostColor"), banner: read("boostImage"), thumbnail: read("boostThumbnail") };
+    return { levelTitle: read("levelUpTitle"), levelDescription: read("levelUpDescription"), roleTitle: read("levelRoleTitle"), roleDescription: read("levelRoleDescription"), color: read("levelColor"), image: read("levelImage"), thumbnail: read("levelThumbnail") };
 }
 
 function renderPreview(key, data) {
-    if (!["welcome", "leaves", "levelSettings"].includes(key)) return "";
+    if (!["welcome", "leaves", "boosts", "levelSettings"].includes(key)) return "";
     const values = key === "welcome"
         ? { title: data.Title, description: data.MessageDes, color: data.Color, banner: data.Banner, thumbnail: data.Thumbnail }
         : key === "leaves"
-            ? { description: data.MessageDes, color: "#a85be0", banner: data.Banner }
-            : { color: data.levelColor, image: data.levelImage, thumbnail: data.levelThumbnail };
+            ? { title: data.Title, description: data.MessageDes, color: data.Color, banner: data.Banner, thumbnail: data.Thumbnail }
+            : key === "boosts"
+                ? { title: data.boostTitle, description: data.boostDescription, color: data.boostColor, banner: data.boostImage, thumbnail: data.boostThumbnail }
+                : { levelTitle: data.levelUpTitle, levelDescription: data.levelUpDescription, roleTitle: data.levelRoleTitle, roleDescription: data.levelRoleDescription, color: data.levelColor, image: data.levelImage, thumbnail: data.levelThumbnail };
     return renderPreviewMarkup(key, values);
 }
 
@@ -351,8 +359,8 @@ function updatePreview(key, form) {
     content.querySelectorAll("[data-preview-image]").forEach(image => image.addEventListener("error", () => {
         if (image.classList.contains("message-preview-avatar")) {
             const fallback = document.createElement("span");
-            fallback.className = "message-preview-avatar placeholder";
-            fallback.textContent = "BF";
+            fallback.className = "message-preview-avatar";
+            fallback.setAttribute("aria-hidden", "true");
             image.replaceWith(fallback);
         } else {
             const fallback = document.createElement("span");

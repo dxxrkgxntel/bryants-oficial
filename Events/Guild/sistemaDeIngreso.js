@@ -1,163 +1,51 @@
-const {
-    ActionRowBuilder,
-    ButtonBuilder,
-    ButtonStyle,
-    PermissionFlagsBits,
-    ContainerBuilder,
-    TextDisplayBuilder,
-    SeparatorBuilder,
-    MediaGalleryBuilder,
-    MediaGalleryItemBuilder,
-    MessageFlags,
-    SeparatorSpacingSize
-} = require("discord.js");
-
-const welcomeSchema =
-    require("../../Models/welcomeSchema");
-
-function hexToInt(color = "#8A2BE2") {
-    const parsed = Number.parseInt(String(color).replace("#", ""), 16);
-    return Number.isFinite(parsed) ? parsed : 0x8A2BE2;
-}
+const { MessageFlags } = require("discord.js");
+const welcomeSchema = require("../../Models/welcomeSchema");
+const { renderConfiguredMessage, parseConfiguredColor } = require("../../Functions/renderConfiguredMessage");
 
 module.exports = {
-
     name: "guildMemberAdd",
-
     async execute(member) {
-
         try {
+            const data = await welcomeSchema.findOne({ Guild: member.guild.id }).lean();
+            if (!data?.Channel) return;
 
-            const data =
-                await welcomeSchema.findOne({
-                    Guild: member.guild.id
-                });
+            const channel = member.guild.channels.cache.get(data.Channel);
+            if (!channel?.isTextBased()) return;
 
-            if (!data) return;
-
-            const channel =
-                member.guild.channels.cache.get(
-                    data.Channel
-                );
-
-            if (!channel) {
-                console.log(
-                    `❌ Canal de bienvenida no encontrado en ${member.guild.name}`
-                );
-                return;
-            }
-
-            const botMember =
-                member.guild.members.me;
-
-            if (
-                !channel.permissionsFor(botMember)
-                    .has(PermissionFlagsBits.SendMessages)
-            ) {
-                return console.log(
-                    `❌ Sin permisos en ${channel.name}`
-                );
-            }
-
-            const created =
-                Math.floor(
-                    member.user.createdTimestamp / 1000
-                );
-
-            const memberCount =
-                member.guild.memberCount;
-
-            const panel =
-                new ContainerBuilder()
-                    .setAccentColor(
-                        hexToInt(data.Color || "#8A2BE2")
-                    );
-
-            if (data.Banner) {
-                panel.addMediaGalleryComponents(
-                    new MediaGalleryBuilder()
-                        .addItems(
-                            new MediaGalleryItemBuilder()
-                                .setURL(data.Banner)
-                        )
-                );
-            }
-
-            panel.addTextDisplayComponents(
-                new TextDisplayBuilder()
-                    .setContent(
-                        `## ✨・Bienvenido/a a ${member.guild.name}`
-                    )
-            );
-
-            panel.addSeparatorComponents(
-                new SeparatorBuilder()
-                    .setDivider(true)
-                    .setSpacing(SeparatorSpacingSize.Small)
-            );
-
-            panel.addTextDisplayComponents(
-                new TextDisplayBuilder()
-                    .setContent(
-                        `${data.MessageDes || "Esperamos que disfrutes tu estadía en el servidor."}\n\n` +
-                        `👤 **Usuario:** ${member}\n` +
-                        `🆔 **ID:** \`${member.id}\`\n` +
-                        `📅 **Cuenta creada:** <t:${created}:R>\n` +
-                        `👥 **Miembro número:** **#${memberCount}**`
-                    )
-            );
-
-            panel.addSeparatorComponents(
-                new SeparatorBuilder()
-                    .setDivider(true)
-                    .setSpacing(SeparatorSpacingSize.Small)
-            );
-
-            panel.addTextDisplayComponents(
-                new TextDisplayBuilder()
-                    .setContent(
-                        "💜 Esperamos que disfrutes tu estadía, participes en los chats y formes parte de esta increíble comunidad."
-                    )
-            );
-
-            const row =
-                new ActionRowBuilder()
-                    .addComponents(
-                        new ButtonBuilder()
-                            .setLabel("Invitar Bot")
-                            .setEmoji("🚀")
-                            .setStyle(ButtonStyle.Link)
-                            .setURL(
-                                "https://discord.com/oauth2/authorize?client_id=1497973126569656540&permissions=8&scope=bot%20applications.commands"
-                            )
-                    );
-
-            panel.addSeparatorComponents(
-                new SeparatorBuilder()
-                    .setDivider(true)
-                    .setSpacing(SeparatorSpacingSize.Small)
-            );
-
-            panel.addActionRowComponents(row);
-
-            panel.addTextDisplayComponents(
-                new TextDisplayBuilder()
-                    .setContent(
-                        `🎉 ¡Bienvenido ${member}, llegaste al mejor server ${member.guild.name}!`
-                    )
-            );
-
-            await channel.send({
-                components: [panel],
-                flags: MessageFlags.IsComponentsV2
+            const createdAt = Math.floor(member.user.createdTimestamp / 1000);
+            const title = renderConfiguredMessage(data.Title, {
+                usuario: `${member}`,
+                servidor: member.guild.name,
+                miembros: member.guild.memberCount,
+                id: member.id,
+                cuenta: `<t:${createdAt}:R>`
             });
+            const description = renderConfiguredMessage(data.MessageDes, {
+                usuario: `${member}`,
+                servidor: member.guild.name,
+                miembros: member.guild.memberCount,
+                id: member.id,
+                cuenta: `<t:${createdAt}:R>`
+            });
+            const text = [title ? `## ${title}` : "", description].filter(Boolean).join("\n\n");
+            const components = [];
+            if (data.Banner) components.push({ type: 12, items: [{ media: { url: data.Banner } }] });
 
+            if (text && data.Thumbnail) {
+                components.push({ type: 9, components: [{ type: 10, content: text }], accessory: { type: 11, media: { url: data.Thumbnail } } });
+            } else if (text) {
+                components.push({ type: 10, content: text });
+            } else if (data.Thumbnail) {
+                components.push({ type: 12, items: [{ media: { url: data.Thumbnail } }] });
+            }
+            if (!components.length) return;
+
+            const container = { type: 17, components };
+            const accentColor = parseConfiguredColor(data.Color);
+            if (accentColor !== null) container.accent_color = accentColor;
+            await channel.send({ flags: MessageFlags.IsComponentsV2, components: [container] });
         } catch (error) {
-
-            console.log(
-                "❌ Error en sistemaDeIngreso:",
-                error
-            );
+            console.error("[Welcome] No se pudo enviar el mensaje configurado:", error);
         }
     }
 };

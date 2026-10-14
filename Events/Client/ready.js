@@ -10,6 +10,7 @@ const config =
 
 const WeeklyDrop = require('../../Models/WeeklyDrop');
 const Economy = require('../../Models/EconomyUser');
+const Welcome = require('../../Models/welcomeSchema');
 const startDailyPurgeScheduler = require('../../Handlers/dailyPurgeScheduler');
 const { restoreVoiceConnections, startVoiceConnectionSync } = require('../../Handlers/voiceConnectionManager');
 const { restoreServerStats } = require('../../Functions/serverStats');
@@ -59,6 +60,17 @@ module.exports = {
         }
 
         if (mongoose.connection.readyState === 1) {
+            try {
+                const legacyWelcomeCopy = await Welcome.updateMany(
+                    { MessageDes: 'Pasala muy bien' },
+                    { $set: { MessageDes: '' } }
+                );
+                if (legacyWelcomeCopy.modifiedCount) {
+                    console.log(`[Welcome] Quité el texto predeterminado antiguo de ${legacyWelcomeCopy.modifiedCount} configuración(es).`);
+                }
+            } catch (error) {
+                console.error('[Welcome] No pude limpiar el texto predeterminado antiguo:', error.message);
+            }
             startDailyPurgeScheduler(client);
             await restoreVoiceConnections(client);
             startVoiceConnectionSync(client);

@@ -2,10 +2,8 @@ const Level = require("../../Models/Level");
 const LevelReward = require("../../Models/LevelReward");
 const LevelConfig = require("../../Models/LevelConfig");
 const EconomyUser = require("../../Models/EconomyUser");
-const { MessageFlags } = require("discord.js");
 const { getLevelSettings } = require("../../Functions/levelSettings");
-
-const LEVEL_UP_BANNER = "https://i.imgur.com/IyrUtlE.png";
+const { sendLevelNotification } = require("../../Functions/levelNotification");
 
 function xpNeeded(level) {
     return 5 * (level ** 2) + 50 * level + 100;
@@ -135,130 +133,23 @@ module.exports = {
             neededXp =
             xpNeeded(data.level);
 
-            //////////////////////////////////////////////////
-            // RECOMPENSA ECONOMIA
-            //////////////////////////////////////////////////
-
-            let economy =
-                await EconomyUser.findOne({
-
-                    guildId:
-                        message.guild.id,
-
-                    userId:
-                        message.author.id
-                });
-
-            //////////////////////////////////////////////////
-
+            const levelConfig = await LevelConfig.findOne({ guildId: message.guild.id });
+            let economy = await EconomyUser.findOne({ guildId: message.guild.id, userId: message.author.id });
             if (!economy) {
-
-                economy =
-                    new EconomyUser({
-
-                        guildId:
-                            message.guild.id,
-
-                        userId:
-                            message.author.id,
-
-                        wallet: 0,
-
-                        bank: 0
-                    });
+                economy = new EconomyUser({ guildId: message.guild.id, userId: message.author.id, wallet: 0, bank: 0 });
             }
-
-            //////////////////////////////////////////////////
-            // RECOMPENSA
-            //////////////////////////////////////////////////
-
-            const reward =
-                data.level * 100;
-
-            //////////////////////////////////////////////////
-
+            const reward = data.level * (Number.isFinite(levelConfig?.levelCoinReward) ? levelConfig.levelCoinReward : 0);
             economy.wallet += reward;
-
             await economy.save();
 
-            ////////////////////////////////////////
-            // LEVEL CONFIG
-            ////////////////////////////////////////
-
-            const levelConfig =
-                await LevelConfig.findOne({
-
-                    guildId:
-                        message.guild.id
-                });
-
-            ////////////////////////////////////////
-            // LEVEL CHANNEL
-            ////////////////////////////////////////
-
-            const levelChannel =
-                message.guild.channels.cache.get(
-                    levelConfig?.levelChannel
-                );
-
-            ////////////////////////////////////////
-            // FALLBACK
-            ////////////////////////////////////////
-
-            const targetChannel =
-                levelChannel ||
-                message.channel;
-
-            ////////////////////////////////////////
-            // MENSAJE LEVEL UP
-            ////////////////////////////////////////
-
-            await targetChannel.send({
-
-                flags: MessageFlags.IsComponentsV2,
-
-                components: [{
-
-                    type: 17,
-
-                    accent_color: 0x8A2BE2,
-
-                    components: [
-
-                        {
-                            type: 12,
-
-                            items: [{
-
-                                media: {
-
-                                    url:
-                                        LEVEL_UP_BANNER
-                                }
-                            }]
-                        },
-
-                                        { type: 14, divider: true, spacing: 1 },
-{
-                            type: 10,
-
-                            content:
-
-                                `## 🎉 ¡SUBISTE DE NIVEL!\n` +
-
-                                `### ✨ ¡Felicidades ${message.author}!\n\n` +
-
-                                `Has alcanzado el **nivel ${data.level}** gracias a tu actividad y participación dentro del servidor.\n\n` +
-
-                                `💰 **Recompensa recibida:** ${reward.toLocaleString()} coins\n` +
-
-                                `⭐ **Nivel actual:** ${data.level}\n\n` +
-
-                                `🔥 Sigue participando para desbloquear más recompensas y nuevos roles.`
-                        }
-                    ]
-                }]
-            });
+            const levelChannel = message.guild.channels.cache.get(levelConfig?.levelChannel);
+            await sendLevelNotification(levelChannel, levelConfig, "level", {
+                usuario: `${message.author}`,
+                servidor: message.guild.name,
+                nivel: data.level,
+                xp: data.xp,
+                recompensa: reward
+            }).catch(error => console.error("[Levels] No se pudo enviar el aviso de nivel:", error.message));
 
             ////////////////////////////////////////
             // ROLES POR NIVEL
@@ -361,52 +252,13 @@ module.exports = {
                         .add(role)
                         .catch(() => {});
 
-                    ////////////////////////////////////////
-                    // MENSAJE ROL
-                    ////////////////////////////////////////
-
-                    await targetChannel.send({
-
-                        flags: MessageFlags.IsComponentsV2,
-
-                        components: [{
-
-                            type: 17,
-
-                            accent_color: 0x57F287,
-
-                            components: [
-
-                                {
-                                    type: 12,
-
-                                    items: [{
-
-                                        media: {
-
-                                            url:
-                                                LEVEL_UP_BANNER
-                                        }
-                                    }]
-                                },
-
-                                                { type: 14, divider: true, spacing: 1 },
-{
-                                    type: 10,
-
-                                    content:
-
-                                        `## 🎭 NUEVO ROL DESBLOQUEADO\n` +
-
-                                        `### ✨ ¡Felicidades ${message.author}!\n\n` +
-
-                                        `Has desbloqueado el rol **${role.name}** al alcanzar el **nivel ${data.level}**.\n\n` +
-
-                                        `🏆 Continúa participando para seguir avanzando en el sistema de niveles.`
-                                }
-                            ]
-                        }]
-                    });
+                    const levelChannel = message.guild.channels.cache.get(levelConfig?.levelChannel);
+                    await sendLevelNotification(levelChannel, levelConfig, "role", {
+                        usuario: `${message.author}`,
+                        servidor: message.guild.name,
+                        nivel: data.level,
+                        rol: role.name
+                    }).catch(error => console.error("[Levels] No se pudo enviar el aviso de rol:", error.message));
                 }
             }
         }

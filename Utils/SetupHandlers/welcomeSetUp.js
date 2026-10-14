@@ -52,6 +52,16 @@ module.exports = {
         .addStringOption(option =>
             option
 
+                .setName('titulo')
+
+                .setDescription('Título del mensaje de bienvenida')
+
+                .setMaxLength(256)
+        )
+
+        .addStringOption(option =>
+            option
+
                 .setName('color')
 
                 .setDescription(
@@ -82,7 +92,6 @@ module.exports = {
 
                 )
 
-                .setRequired(true)
         )
 
         /*
@@ -99,6 +108,7 @@ module.exports = {
                 .setDescription(
                     'Descripción del mensaje'
                 )
+                .setMaxLength(4000)
         )
 
         /*
@@ -115,6 +125,7 @@ module.exports = {
                 .setDescription(
                     'URL del banner superior'
                 )
+                .setMaxLength(300)
         )
 
         /*
@@ -131,6 +142,7 @@ module.exports = {
                 .setDescription(
                     'URL de la thumbnail'
                 )
+                .setMaxLength(300)
         ),
 
     async execute(interaction) {
@@ -173,12 +185,11 @@ module.exports = {
             const channel =
             options.getChannel('channel');
 
-            const color =
-            options.getString('color');
+            const title = options.getString('titulo') || '';
+            const color = options.getString('color') || '';
 
             const description =
-            options.getString('descripcion') ||
-            'Pasala muy bien';
+            options.getString('descripcion') || '';
 
             const bannerURL =
             options.getString('banner');
@@ -286,6 +297,9 @@ module.exports = {
 
                         MessageDes:
                         description,
+
+                        Title:
+                        title,
 
                         Banner:
                         bannerURL || null,

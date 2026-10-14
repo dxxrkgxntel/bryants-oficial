@@ -10,9 +10,7 @@ const BirthdayConfig =
 const EconomyUser =
     require("../Models/EconomyUser");
 
-const { MessageFlags } = require("discord.js");
-
-const BIRTHDAY_BANNER = "https://i.imgur.com/bNyzRSD.png";
+const { buildBirthdayNotification, renderBirthdayReminder } = require("../Functions/birthdayNotification");
 
 module.exports = (client) => {
 
@@ -198,8 +196,7 @@ module.exports = (client) => {
 
                         //////////////////////////////////////////////////
 
-                        const reward =
-                            5000;
+                        const reward = Number.isFinite(config.birthdayReward) ? config.birthdayReward : 0;
 
                         //////////////////////////////////////////////////
 
@@ -214,26 +211,8 @@ module.exports = (client) => {
                         // EMBED
                         //////////////////////////////////////////////////
 
-                        await channel.send({
-                            content: `FELICITEN A ESTX CUMPLEAÑERX ${member} @everyone`,
-                            allowedMentions: {
-                                parse: ["everyone"],
-                                users: [member.id]
-                            }
-                        });
-
-                        await channel.send({
-                            flags: MessageFlags.IsComponentsV2,
-                            components: [{
-                                type: 17,
-                                accent_color: 0x8A2BE2,
-                                components: [
-                                    { type: 12, items: [{ media: { url: BIRTHDAY_BANNER } }] },
-                                    { type: 14, divider: true, spacing: 1 },
-                                    { type: 10, content: "## 🎉 ¡Feliz Cumpleaños!\n🎂 ¡Feliz cumpleaños " + member + "!\n\n🥳 Esperamos que tengas un día increíble lleno de felicidad y regalos.\n\n🎁 Has recibido **" + reward.toLocaleString() + " monedas** por tu cumpleaños." }
-                                ]
-                            }]
-                        });
+                        const payload = buildBirthdayNotification(config, guild, member, reward);
+                        if (payload) await channel.send(payload);
 
                     } catch (err) {
 
@@ -292,11 +271,8 @@ module.exports = (client) => {
 
                         //////////////////////////////////////////////////
 
-                        await channel.send({
-
-                            content:
-                                `📢 ¡Mañana es el cumpleaños de <@${data.userId}>! 🎂🎉`
-                        });
+                        const reminder = renderBirthdayReminder(config, guild, { id: data.userId });
+                        if (reminder) await channel.send({ content: reminder, allowedMentions: { users: [data.userId] } });
 
                     } catch (err) {
 

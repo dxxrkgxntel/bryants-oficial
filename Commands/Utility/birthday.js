@@ -10,9 +10,7 @@ require("../../Models/Birthday");
 
 const BirthdayConfig =
 require("../../Models/BirthdayConfig");
-
-const BIRTHDAY_BANNER = "https://i.imgur.com/bNyzRSD.png";
-const v2 = (text, ephemeral = false) => ({ flags: MessageFlags.IsComponentsV2 | (ephemeral ? MessageFlags.Ephemeral : 0), components: [{ type: 17, accent_color: 0x8A2BE2, components: [{ type: 12, items: [{ media: { url: BIRTHDAY_BANNER } }] }, { type: 14, divider: true, spacing: 1 }, { type: 10, content: text }] }] });
+const { buildBirthdayNotification } = require("../../Functions/birthdayNotification");
 
 module.exports = {
 
@@ -191,6 +189,12 @@ module.exports = {
                             .setRequired(true)
 
                     )
+                    .addStringOption(option => option.setName("titulo").setDescription("Título del aviso de cumpleaños").setMaxLength(256))
+                    .addStringOption(option => option.setName("descripcion").setDescription("Variables: {usuario}, {servidor}, {recompensa}").setMaxLength(4000))
+                    .addStringOption(option => option.setName("banner").setDescription("URL del banner de cumpleaños").setMaxLength(300))
+                    .addStringOption(option => option.setName("color").setDescription("Color hexadecimal #RRGGBB").setMaxLength(7))
+                    .addStringOption(option => option.setName("recordatorio").setDescription("Variables: {usuario}, {servidor}").setMaxLength(2000))
+                    .addIntegerOption(option => option.setName("monedas").setDescription("Monedas entregadas en cumpleaños").setMinValue(0).setMaxValue(1000000))
 
             )
 
@@ -293,23 +297,10 @@ module.exports = {
 
             }
 
-            const reward = 5000;
-
-            await interaction.reply({
-                content: `FELICITEN A ESTX CUMPLEAÑERX ${interaction.user} @everyone`,
-                allowedMentions: { parse: [] },
-                flags: MessageFlags.Ephemeral
-            });
-
-            return interaction.followUp(
-                v2(
-                    "## 🎉 ¡Feliz Cumpleaños!\n" +
-                    `🎂 ¡Feliz cumpleaños ${interaction.user}!\n\n` +
-                    "🥳 Esperamos que tengas un día increíble lleno de felicidad y regalos.\n\n" +
-                    `🎁 Has recibido **${reward.toLocaleString()} monedas** por tu cumpleaños.`,
-                    true
-                )
-            );
+            const config = await BirthdayConfig.findOne({ guildId: interaction.guild.id }).lean();
+            const payload = buildBirthdayNotification(config || {}, interaction.guild, interaction.user);
+            if (!payload) return interaction.reply({ content: "Configura un título, una descripción o un banner en `/birthday channel` o en la web antes de previsualizar.", flags: MessageFlags.Ephemeral });
+            return interaction.reply({ ...payload, flags: payload.flags | MessageFlags.Ephemeral });
 
         }
 
@@ -884,6 +875,24 @@ module.exports = {
 
             data.channelId =
                 channel.id;
+
+            const optional = {
+                birthdayTitle: interaction.options.getString("titulo"),
+                birthdayDescription: interaction.options.getString("descripcion"),
+                birthdayBanner: interaction.options.getString("banner"),
+                birthdayColor: interaction.options.getString("color"),
+                birthdayReminder: interaction.options.getString("recordatorio"),
+                birthdayReward: interaction.options.getInteger("monedas")
+            };
+            for (const [field, value] of Object.entries(optional)) {
+                if (value !== null) data[field] = value;
+            }
+            if (data.birthdayBanner && !/^https?:\/\//i.test(data.birthdayBanner)) {
+                return interaction.reply({ content: "El banner debe tener una URL http:// o https:// válida.", flags: MessageFlags.Ephemeral });
+            }
+            if (data.birthdayColor && !/^#[\da-f]{6}$/i.test(data.birthdayColor)) {
+                return interaction.reply({ content: "El color debe tener formato hexadecimal #RRGGBB.", flags: MessageFlags.Ephemeral });
+            }
 
             //////////////////////////////////////////////////
 

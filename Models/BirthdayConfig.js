@@ -38,5 +38,11 @@ module.exports =
 
                 default: null
             },
+            birthdayTitle: String,
+            birthdayDescription: String,
+            birthdayBanner: String,
+            birthdayColor: String,
+            birthdayReminder: String,
+            birthdayReward: { type: Number, min: 0 },
         })
     );
