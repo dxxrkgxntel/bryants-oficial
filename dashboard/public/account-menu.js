@@ -24,7 +24,7 @@ window.mountAccountMenu = function (container, user, onError = message => window
     const status = document.createElement("small");
     status.textContent = "Sesión iniciada como";
     const username = document.createElement("strong");
-    username.textContent = user.username;
+    username.textContent = user.displayName || user.globalName || user.username;
     identity.append(status, username);
     const chevron = document.createElement("span");
     chevron.className = "account-chevron";

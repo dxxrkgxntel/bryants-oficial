@@ -10,6 +10,7 @@ const Poll = require("../Models/Poll");
 const PollConfig = require("../Models/PollConfig");
 const DashboardAccount = require("../Models/DashboardAccount");
 const DashboardReferral = require("../Models/DashboardReferral");
+const DashboardAuditLog = require("../Models/DashboardAuditLog");
 const EconomyUser = require("../Models/EconomyUser");
 const SocialAlertState = require("../Models/SocialAlertState");
 
@@ -128,6 +129,36 @@ async function discordRequest(url, accessToken) {
         throw error;
     }
     return response.json();
+}
+
+async function refreshDashboardUsername(req) {
+    if (!req.session.user || !req.session.oauth || (req.session.usernameVerified && Date.now() - (req.session.usernameVerifiedAt || 0) < 6 * 60 * 60_000)) return;
+    try {
+        if (!await refreshOAuthToken(req)) return;
+        const user = await discordRequest("https://discord.com/api/v10/users/@me", req.session.oauth.accessToken);
+        if (user.id !== req.session.user.id || !user.username) return;
+        req.session.user.username = user.username;
+        req.session.user.globalName = user.global_name || null;
+        req.session.user.displayName = user.global_name || user.username;
+        req.session.usernameVerified = true;
+        req.session.usernameVerifiedAt = Date.now();
+    } catch (error) {
+        console.warn("[Dashboard Identity] No pude actualizar el nombre de usuario de Discord:", error.message);
+    }
+}
+
+async function recordDashboardAudit(req, guildId, action) {
+    try {
+        await refreshDashboardUsername(req);
+        await DashboardAuditLog.create({
+            guildId,
+            actorId: req.session.user.id,
+            actorUsername: req.session.usernameVerified ? req.session.user.username : null,
+            action: String(action).slice(0, 160)
+        });
+    } catch (error) {
+        console.error("[Dashboard Audit] No pude guardar el registro:", error.message);
+    }
 }
 
 async function refreshOAuthToken(req) {
@@ -495,10 +526,13 @@ app.get("/auth/callback", async (req, res) => {
         await new Promise((resolve, reject) => req.session.regenerate(error => error ? reject(error) : resolve()));
         req.session.user = {
             id: user.id,
-            username: user.global_name || user.username,
+            username: user.username,
             globalName: user.global_name || null,
+            displayName: user.global_name || user.username,
             avatar: user.avatar
         };
+        req.session.usernameVerified = true;
+        req.session.usernameVerifiedAt = Date.now();
         req.session.oauth = {
             accessToken: token.access_token,
             refreshToken: token.refresh_token,
@@ -524,8 +558,9 @@ app.get("/auth/popup-result", (_req, res) => {
     return res.sendFile(path.join(publicDirectory, "auth-popup-result.html"));
 });
 
-app.get("/api/me", (req, res) => {
+app.get("/api/me", async (req, res) => {
     res.set("Cache-Control", "no-store");
+    await refreshDashboardUsername(req);
     res.json(req.session.user
         ? { user: req.session.user, csrfToken: req.session.csrfToken }
         : { user: null });
@@ -947,6 +982,7 @@ app.put("/api/guilds/:guildId/config/:module", requireLogin, requireCsrf, requir
             { $set: update, $setOnInsert: { [definition.guildField]: req.params.guildId } },
             { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
         );
+        await recordDashboardAudit(req, req.params.guildId, `${definition.title} actualizada`);
         return res.json({ configuration: serialize(document) });
     } catch (error) {
         if (error.code === 11000) return res.status(409).json({ error: "Este sistema ya tiene una configuración duplicada. Revísala desde Discord." });
@@ -1001,6 +1037,7 @@ app.post("/api/guilds/:guildId/polls", requireLogin, requireCsrf, requireGuildAd
             options,
             endAt
         });
+        await recordDashboardAudit(req, req.params.guildId, "Encuesta creada");
         return res.status(201).json({ poll: serialize(poll), url: `https://discord.com/channels/${req.params.guildId}/${pollConfig.channelId}/${sentMessage.id}` });
     } catch (error) {
         if (sentMessage?.id) await discordBotRequest(`https://discord.com/api/v10/channels/${sentMessage.channel_id || ""}/messages/${sentMessage.id}`, { method: "DELETE" }).catch(() => {});
@@ -1030,6 +1067,7 @@ app.put("/api/guilds/:guildId/polls/:pollId", requireLogin, requireCsrf, require
         poll.options = options;
         poll.endAt = endAt;
         await poll.save();
+        await recordDashboardAudit(req, req.params.guildId, "Encuesta actualizada");
         return res.json({ ok: true });
     } catch (error) {
         console.error("[Dashboard Polls] Error al editar encuesta:", error.message);
@@ -1048,6 +1086,7 @@ app.delete("/api/guilds/:guildId/polls/:pollId", requireLogin, requireCsrf, requ
             if (error.status !== 404) throw error;
         }
         await Poll.deleteOne({ _id: poll._id, guildId: req.params.guildId });
+        await recordDashboardAudit(req, req.params.guildId, "Encuesta eliminada");
         return res.json({ ok: true });
     } catch (error) {
         console.error("[Dashboard Polls] Error al eliminar encuesta:", error.message);
@@ -1067,6 +1106,7 @@ app.post("/api/guilds/:guildId/lists/:list", requireLogin, requireCsrf, requireG
             return res.status(409).json({ error: "Ya existe un elemento con ese identificador." });
         }
         const document = await definition.model.create({ ...data, guildId: req.params.guildId });
+        await recordDashboardAudit(req, req.params.guildId, `${definition.title}: elemento creado`);
         return res.status(201).json({ item: serialize(document) });
     } catch (error) {
         if (error.code === 11000) return res.status(409).json({ error: "Ya existe un elemento con ese identificador." });
@@ -1090,6 +1130,7 @@ app.put("/api/guilds/:guildId/lists/:list/:recordId", requireLogin, requireCsrf,
             { $set: data },
             { new: true, runValidators: true }
         );
+        if (item) await recordDashboardAudit(req, req.params.guildId, `${definition.title}: elemento actualizado`);
         return item ? res.json({ item: serialize(item) }) : res.status(404).json({ error: "No encontré este elemento." });
     } catch (error) {
         return res.status(400).json({ error: error.message || "No pude guardar este elemento." });
@@ -1100,6 +1141,7 @@ app.delete("/api/guilds/:guildId/lists/:list/:recordId", requireLogin, requireCs
     const definition = lists[req.params.list];
     if (!definition) return res.status(404).json({ error: "No encontré esa lista." });
     const removed = await definition.model.findOneAndDelete({ _id: req.params.recordId, guildId: req.params.guildId });
+    if (removed) await recordDashboardAudit(req, req.params.guildId, `${definition.title}: elemento eliminado`);
     if (removed && req.params.list === "socialAlerts") {
         const state = await SocialAlertState.findOneAndDelete({ guildId: req.params.guildId, alertId: removed._id });
         if (state?.webhookId && state?.webhookToken) {
@@ -1110,6 +1152,36 @@ app.delete("/api/guilds/:guildId/lists/:list/:recordId", requireLogin, requireCs
         }
     }
     return removed ? res.json({ ok: true }) : res.status(404).json({ error: "No encontré este elemento." });
+});
+
+app.get("/api/guilds/:guildId/audit", requireGuildAdmin, async (req, res) => {
+    const page = Math.max(1, Math.min(10_000, Number.parseInt(req.query.page, 10) || 1));
+    const allowedPageSizes = [10, 25, 50];
+    const requestedPageSize = Number.parseInt(req.query.perPage, 10) || 25;
+    const perPage = allowedPageSizes.includes(requestedPageSize) ? requestedPageSize : 25;
+    try {
+        const filter = { guildId: req.params.guildId };
+        const [total, entries] = await Promise.all([
+            DashboardAuditLog.countDocuments(filter),
+            DashboardAuditLog.find(filter).sort({ createdAt: -1, _id: -1 }).skip((page - 1) * perPage).limit(perPage).lean()
+        ]);
+        return res.json({
+            entries: entries.map(entry => ({
+                id: String(entry._id),
+                actorId: entry.actorId,
+                actorUsername: entry.actorUsername,
+                action: entry.action,
+                createdAt: entry.createdAt
+            })),
+            page,
+            perPage,
+            total,
+            totalPages: Math.max(1, Math.ceil(total / perPage))
+        });
+    } catch (error) {
+        console.error("[Dashboard Audit] No pude cargar el registro:", error.message);
+        return res.status(500).json({ error: "No pude cargar el registro de auditoría." });
+    }
 });
 
 app.get("/dashboard/:guildId", async (req, res) => {

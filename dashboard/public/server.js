@@ -35,7 +35,7 @@ function applyModuleFilter() {
     const query = normalizeSearch(document.querySelector("#module-search")?.value);
     let visibleCount = 0;
     nav.querySelectorAll(".nav-entry").forEach(entry => {
-        const visible = (!favoritesOnly || favoriteModules.has(entry.dataset.module))
+        const visible = (!favoritesOnly || (!entry.dataset.special && favoriteModules.has(entry.dataset.module)))
             && (!query || normalizeSearch(entry.dataset.search).includes(query));
         entry.hidden = !visible;
         if (visible) visibleCount += 1;
@@ -43,8 +43,6 @@ function applyModuleFilter() {
     nav.querySelectorAll(".nav-heading").forEach(heading => {
         heading.hidden = ![...nav.querySelectorAll(".nav-entry")].some(entry => entry.dataset.group === heading.dataset.category && !entry.hidden);
     });
-    const homeButton = nav.querySelector('[data-module="__home"]');
-    if (homeButton) homeButton.hidden = favoritesOnly || Boolean(query);
     const empty = nav.querySelector(".nav-empty");
     if (empty) {
         empty.hidden = visibleCount > 0;
@@ -315,6 +313,51 @@ function renderField(field, value, prefix = "") {
     const minMax = field.type === "number" ? `min="${field.min ?? 0}" ${field.max !== undefined ? `max="${field.max}"` : ""} step="1"` : "";
     const control = `<input id="${id}" name="${escapeHtml(field.name)}" type="${inputType}" value="${escapeHtml(safeValue)}" maxlength="${field.maxLength || 2000}" ${minMax} ${required}>`;
     return renderTextField(field, id, control, help);
+}
+
+async function renderAudit(page = 1, perPage = 25) {
+    if (!confirmDiscardChanges()) return;
+    activeFormGuard = null;
+    currentModule = "__audit";
+    nav.querySelectorAll(".nav-item").forEach(button => {
+        const active = button.dataset.module === currentModule;
+        button.classList.toggle("active", active);
+        if (active) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
+    });
+    document.querySelector("#page-title").textContent = "Auditoría";
+    content.innerHTML = `<section class="audit-card"><header class="audit-heading"><div><div class="eyebrow">PRINCIPAL</div><h2>Registro de actividad</h2><p>Consulta quién cambió la configuración de este servidor desde la web.</p></div><span class="audit-live-mark">● Registro activo</span></header><div class="audit-table-wrap"><table class="audit-table"><thead><tr><th>Fecha</th><th>Usuario de Discord</th><th>Acción</th></tr></thead><tbody><tr><td colspan="3"><div class="audit-loading">Cargando actividad…</div></td></tr></tbody></table></div><footer class="audit-pagination"><label>Filas por página<select data-audit-size><option value="10" ${perPage === 10 ? "selected" : ""}>10</option><option value="25" ${perPage === 25 ? "selected" : ""}>25</option><option value="50" ${perPage === 50 ? "selected" : ""}>50</option></select></label><div class="audit-page-actions"><span data-audit-page-label></span><button type="button" data-audit-page="${Math.max(1, page - 1)}" ${page <= 1 ? "disabled" : ""} aria-label="Página anterior">←</button><button type="button" data-audit-page="${page + 1}" aria-label="Página siguiente">→</button></div></footer></section>`;
+    const tbody = content.querySelector(".audit-table tbody");
+    try {
+        const result = await api(`/api/guilds/${encodeURIComponent(guildId)}/audit?page=${page}&perPage=${perPage}`);
+        if (currentModule !== "__audit") return;
+        const totalPages = result.totalPages || 1;
+        if (page > totalPages) return renderAudit(totalPages, perPage);
+        if (!result.entries.length) {
+            tbody.innerHTML = '<tr><td colspan="3"><div class="audit-empty">Todavía no hay cambios registrados desde la web.</div></td></tr>';
+        } else {
+            tbody.innerHTML = result.entries.map(entry => {
+                const created = new Date(entry.createdAt);
+                const validDate = !Number.isNaN(created.getTime());
+                const date = validDate ? new Intl.DateTimeFormat("es", { dateStyle: "short", timeStyle: "short" }).format(created) : "—";
+                const dateTime = validDate ? created.toISOString() : "";
+                const actor = entry.actorUsername
+                    ? `<a href="https://discord.com/users/${encodeURIComponent(entry.actorId)}" target="_blank" rel="noopener noreferrer">@${escapeHtml(entry.actorUsername)}</a>`
+                    : `<span class="audit-unknown-user">Usuario · ${escapeHtml(entry.actorId)}</span>`;
+                return `<tr><td><time datetime="${escapeHtml(dateTime)}">${escapeHtml(date)}</time></td><td>${actor}</td><td>${escapeHtml(entry.action)}</td></tr>`;
+            }).join("");
+        }
+        content.querySelector("[data-audit-page-label]").textContent = `Página ${page} de ${totalPages} · ${result.total} cambios`;
+        content.querySelectorAll("[data-audit-page]").forEach(button => {
+            const target = Number(button.dataset.auditPage);
+            button.disabled = target < 1 || target > totalPages;
+            button.addEventListener("click", () => renderAudit(target, perPage));
+        });
+        content.querySelector("[data-audit-size]").addEventListener("change", event => renderAudit(1, Number(event.currentTarget.value)));
+    } catch (error) {
+        if (currentModule !== "__audit") return;
+        tbody.innerHTML = `<tr><td colspan="3"><div class="audit-empty">${escapeHtml(error.message)}</div></td></tr>`;
+    }
 }
 
 function renderButtonEditor(field, buttons, prefix = "") {
@@ -656,13 +699,6 @@ function readForm(form, fields) {
 
 function makeNav(modules) {
     nav.replaceChildren();
-    const homeButton = document.createElement("button");
-    homeButton.type = "button";
-    homeButton.className = "nav-item nav-home";
-    homeButton.textContent = "Inicio";
-    homeButton.dataset.module = "__home";
-    homeButton.addEventListener("click", navigateToHome);
-    nav.append(homeButton);
     const all = [...Object.entries(modules.configurations), ...Object.entries(modules.lists)];
     const appendHeading = category => {
         const heading = document.createElement("div");
@@ -699,6 +735,25 @@ function makeNav(modules) {
         entry.append(button, favorite);
         nav.append(entry);
     };
+    const appendPrincipalEntry = (label, key, onClick) => {
+        const entry = document.createElement("div");
+        entry.className = "nav-entry";
+        entry.dataset.module = key;
+        entry.dataset.group = "Principal";
+        entry.dataset.special = "true";
+        entry.dataset.search = label;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "nav-item";
+        button.textContent = label;
+        button.dataset.module = key;
+        button.addEventListener("click", onClick);
+        entry.append(button);
+        nav.append(entry);
+    };
+    appendHeading("Principal");
+    appendPrincipalEntry("Inicio", "__home", navigateToHome);
+    appendPrincipalEntry("Auditoría", "__audit", () => renderAudit());
     const pinnedEntries = all.filter(([key]) => favoriteModules.has(key));
     if (pinnedEntries.length) {
         appendHeading("Favoritos");
