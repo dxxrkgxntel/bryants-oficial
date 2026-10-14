@@ -4,7 +4,12 @@ const profileDisplay = document.querySelector("#account-profile-display");
 const profileId = document.querySelector("#account-profile-id");
 const profileForm = document.querySelector("#account-profile-form");
 const linksContainer = document.querySelector("#account-links");
+const backgroundFile = document.querySelector("#background-file");
+const backgroundBlur = document.querySelector("#background-blur");
+const appearancePreview = document.querySelector("#appearance-preview");
 let csrfToken = "";
+let hasCustomBackground = false;
+let previewObjectUrl = null;
 
 function setFeedback(element, message, error = false) {
     element.textContent = message;
@@ -46,7 +51,7 @@ async function api(path, options = {}) {
         ...options,
         headers: {
             ...(options.body ? { "Content-Type": "application/json" } : {}),
-            ...(options.method === "PUT" || options.method === "POST" ? { "x-csrf-token": csrfToken } : {}),
+            ...(options.method === "PUT" || options.method === "POST" || options.method === "DELETE" ? { "x-csrf-token": csrfToken } : {}),
             ...options.headers
         }
     });
@@ -57,10 +62,15 @@ async function api(path, options = {}) {
 
 async function loadAccountSettings() {
     try {
-        const [session, settings, rewards] = await Promise.all([api("/api/me"), api("/api/account/settings"), api("/api/account/rewards")]);
+        const [session, settings, rewards, appearance] = await Promise.all([api("/api/me"), api("/api/account/settings"), api("/api/account/rewards"), api("/api/account/appearance")]);
         if (!session.user) return window.location.assign("/");
         csrfToken = session.csrfToken || "";
         window.mountAccountMenu(document.querySelector("#account-menu-host"), session.user);
+        hasCustomBackground = appearance.hasCustomBackground;
+        backgroundBlur.value = appearance.backgroundBlur;
+        document.querySelector("#background-blur-value").textContent = `${appearance.backgroundBlur} px`;
+        window.applyDashboardAppearance?.(appearance);
+        updateAppearancePreview();
 
         const user = session.user;
         const defaultAvatarIndex = Number((BigInt(user.id) >> 22n) % 6n);
@@ -89,6 +99,89 @@ async function loadAccountSettings() {
         setFeedback(document.querySelector("#profile-feedback"), error.message, true);
     }
 }
+
+function updateAppearancePreview() {
+    if (!appearancePreview) return;
+    const source = previewObjectUrl || (hasCustomBackground ? `/api/account/background-image?v=${Date.now()}` : "/dashboard-gaming-background.png");
+    appearancePreview.style.backgroundImage = `linear-gradient(110deg, #0a071170, #0a071140), url("${source}")`;
+    appearancePreview.style.setProperty("--preview-blur", `${backgroundBlur.value}px`);
+}
+
+backgroundBlur.addEventListener("input", () => {
+    document.querySelector("#background-blur-value").textContent = `${backgroundBlur.value} px`;
+    updateAppearancePreview();
+});
+
+backgroundFile.addEventListener("change", () => {
+    const file = backgroundFile.files?.[0];
+    if (!file) return;
+    const feedback = document.querySelector("#appearance-feedback");
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+        backgroundFile.value = "";
+        setFeedback(feedback, "Elige una imagen PNG, JPG o WebP.", true);
+        return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+        backgroundFile.value = "";
+        setFeedback(feedback, "La imagen no puede superar los 3 MB.", true);
+        return;
+    }
+    if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    previewObjectUrl = URL.createObjectURL(file);
+    updateAppearancePreview();
+    setFeedback(feedback, "Vista previa lista. Guarda para aplicar el fondo.");
+});
+
+document.querySelector("#save-appearance").addEventListener("click", async event => {
+    const button = event.currentTarget;
+    const feedback = document.querySelector("#appearance-feedback");
+    button.disabled = true;
+    setFeedback(feedback, "Guardando apariencia…");
+    try {
+        const file = backgroundFile.files?.[0];
+        if (file) {
+            const response = await fetch("/api/account/background", {
+                method: "PUT", credentials: "same-origin", body: file,
+                headers: { "Content-Type": "application/octet-stream", "x-csrf-token": csrfToken }
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(result.error || "No se pudo subir la imagen.");
+            hasCustomBackground = true;
+            backgroundFile.value = "";
+            if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+            previewObjectUrl = null;
+        }
+        const appearance = await api("/api/account/appearance", {
+            method: "PUT", body: JSON.stringify({ backgroundBlur: Number(backgroundBlur.value) })
+        });
+        window.applyDashboardAppearance?.({ ...appearance, hasCustomBackground });
+        updateAppearancePreview();
+        setFeedback(feedback, "Apariencia guardada.");
+    } catch (error) {
+        setFeedback(feedback, error.message, true);
+    } finally { button.disabled = false; }
+});
+
+document.querySelector("#reset-background").addEventListener("click", async event => {
+    const button = event.currentTarget;
+    const feedback = document.querySelector("#appearance-feedback");
+    button.disabled = true;
+    try {
+        const result = await api("/api/account/background", { method: "DELETE" });
+        hasCustomBackground = result.hasCustomBackground;
+        if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+        previewObjectUrl = null;
+        backgroundFile.value = "";
+        const appearance = await api("/api/account/appearance", {
+            method: "PUT", body: JSON.stringify({ backgroundBlur: Number(backgroundBlur.value) })
+        });
+        window.applyDashboardAppearance?.({ ...appearance, hasCustomBackground });
+        updateAppearancePreview();
+        setFeedback(feedback, "Fondo predeterminado restaurado.");
+    } catch (error) {
+        setFeedback(feedback, error.message, true);
+    } finally { button.disabled = false; }
+});
 
 document.querySelector("#account-bio").addEventListener("input", event => {
     document.querySelector("#bio-count").textContent = event.target.value.length;

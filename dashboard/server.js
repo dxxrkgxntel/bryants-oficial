@@ -42,7 +42,7 @@ app.use(helmet({
         directives: {
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'"],
-            imgSrc: ["'self'", "data:", "https://cdn.discordapp.com", "https:"],
+            imgSrc: ["'self'", "data:", "blob:", "https://cdn.discordapp.com", "https:"],
             scriptSrc: ["'self'"],
             connectSrc: ["'self'"]
         }
@@ -608,6 +608,60 @@ app.put("/api/account/settings", requireLogin, requireCsrf, async (req, res) => 
         { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
     ).lean();
     return res.json({ ok: true, bio: settings.bio, links: settings.links });
+});
+
+app.get("/api/account/appearance", requireLogin, async (req, res) => {
+    res.set("Cache-Control", "no-store");
+    const settings = await DashboardAccount.findOne({ userId: req.session.user.id }).select("backgroundBlur +backgroundMimeType").lean();
+    return res.json({ backgroundBlur: settings?.backgroundBlur || 0, hasCustomBackground: Boolean(settings?.backgroundMimeType) });
+});
+
+app.put("/api/account/appearance", requireLogin, requireCsrf, async (req, res) => {
+    res.set("Cache-Control", "no-store");
+    const backgroundBlur = Number(req.body?.backgroundBlur);
+    if (!Number.isFinite(backgroundBlur) || backgroundBlur < 0 || backgroundBlur > 20) {
+        return res.status(400).json({ error: "El difuminado debe estar entre 0 y 20 píxeles." });
+    }
+    const settings = await DashboardAccount.findOneAndUpdate(
+        { userId: req.session.user.id },
+        { $set: { backgroundBlur } },
+        { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+    ).select("backgroundBlur").lean();
+    return res.json({ ok: true, backgroundBlur: settings.backgroundBlur });
+});
+
+app.put("/api/account/background", requireLogin, requireCsrf, express.raw({ type: "application/octet-stream", limit: "3mb" }), async (req, res) => {
+    res.set("Cache-Control", "no-store");
+    const image = req.body;
+    if (!Buffer.isBuffer(image) || image.length < 16) return res.status(400).json({ error: "Selecciona una imagen válida en formato PNG, JPG o WebP." });
+    let mimeType = null;
+    if (image.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) mimeType = "image/png";
+    else if (image[0] === 0xff && image[1] === 0xd8 && image[2] === 0xff) mimeType = "image/jpeg";
+    else if (image.toString("ascii", 0, 4) === "RIFF" && image.toString("ascii", 8, 12) === "WEBP") mimeType = "image/webp";
+    if (!mimeType) return res.status(415).json({ error: "El archivo debe ser una imagen PNG, JPG o WebP." });
+    await DashboardAccount.findOneAndUpdate(
+        { userId: req.session.user.id },
+        { $set: { backgroundImage: image, backgroundMimeType: mimeType }, $setOnInsert: { userId: req.session.user.id } },
+        { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+    );
+    return res.json({ ok: true, hasCustomBackground: true });
+});
+
+app.get("/api/account/background-image", requireLogin, async (req, res) => {
+    res.set("Cache-Control", "private, no-store");
+    const settings = await DashboardAccount.findOne({ userId: req.session.user.id }).select("+backgroundImage +backgroundMimeType");
+    if (!settings?.backgroundImage || !settings.backgroundMimeType) return res.sendFile(path.join(publicDirectory, "dashboard-gaming-background.png"));
+    res.set("Content-Type", settings.backgroundMimeType);
+    res.set("X-Content-Type-Options", "nosniff");
+    return res.send(settings.backgroundImage);
+});
+
+app.delete("/api/account/background", requireLogin, requireCsrf, async (req, res) => {
+    await DashboardAccount.updateOne(
+        { userId: req.session.user.id },
+        { $unset: { backgroundImage: 1, backgroundMimeType: 1 } }
+    );
+    return res.json({ ok: true, hasCustomBackground: false });
 });
 
 const REFERRAL_REWARD = 1000;
@@ -1299,6 +1353,7 @@ app.use(express.static(publicDirectory, {
 
 app.use((error, _req, res, _next) => {
     console.error("[Dashboard] Error inesperado:", error);
+    if (error.type === "entity.too.large") return res.status(413).json({ error: "La imagen no puede superar los 3 MB." });
     return res.status(500).json({ error: "Ocurrió un error interno." });
 });
 
