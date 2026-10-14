@@ -198,18 +198,25 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
     *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
 
-.dashboard-page { background: #0c0911; }
+.dashboard-page { background: radial-gradient(ellipse at 0% 0%, #24133066, transparent 34%), #0c0911; }
 .app-layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); min-height: 100vh; }
-.sidebar { position: sticky; top: 0; display: flex; flex-direction: column; height: 100vh; padding: 22px 16px 14px; border-right: 1px solid #ffffff17; background: #100c15; }
+.sidebar { position: sticky; top: 0; display: flex; flex-direction: column; height: 100vh; padding: 22px 16px 14px; border-right: 1px solid #ffffff17; background: linear-gradient(180deg, #15101b, #100c15 44%); box-shadow: 12px 0 40px #00000012; }
 .sidebar .brand { padding: 0 8px 22px; border-bottom: 1px solid #ffffff17; }
-.server-switch { display: grid; gap: 8px; margin: 20px 4px 14px; padding: 14px; border: 1px solid #ffffff17; border-radius: 12px; background: #ffffff06; }
-.server-switch strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
-.server-switch a { color: #c890ff; font-size: 11px; text-decoration: none; }
+.server-switch { position: relative; display: grid; gap: 10px; margin: 20px 4px 14px; padding: 15px; overflow: hidden; border: 1px solid #bb75e52b; border-radius: 14px; background: radial-gradient(ellipse at 100% 0%, #8c38c51c, transparent 64%), linear-gradient(145deg, #ffffff0a, #ffffff04); box-shadow: inset 0 1px #ffffff08, 0 10px 24px #00000018; }
+.server-switch::before { position: absolute; top: 0; left: 14px; width: 34px; height: 1px; background: #cf91ff; content: ""; opacity: .8; }
+.active-server-row { display: flex; min-width: 0; align-items: center; gap: 11px; }
+.active-server-avatar { display: grid; width: 44px; height: 44px; flex: 0 0 44px; place-items: center; overflow: hidden; border: 1px solid #ffffff24; border-radius: 14px; background: linear-gradient(145deg, #8d38c9, #32134c); box-shadow: 0 4px 16px #0005; color: #f6eaff; font-size: 13px; font-weight: 800; }
+.active-server-avatar img { display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+.active-server-avatar.has-image { border-color: #c888f866; box-shadow: 0 0 0 3px #a54bd51c, 0 5px 18px #0006; }
+.server-switch strong { min-width: 0; overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.server-change { display: inline-flex; align-items: center; gap: 6px; width: fit-content; color: #c890ff; font-size: 11px; font-weight: 650; text-decoration: none; transition: color .18s ease, gap .18s ease; }
+.server-change:hover { gap: 9px; color: #e3c1ff; }
+.server-change span { font-size: 13px; }
 #module-nav { flex: 1; overflow: auto; padding-right: 3px; }
-.nav-heading { margin: 18px 8px 7px; color: #85798e; font-size: 10px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
-.nav-item { display: block; width: 100%; margin: 2px 0; padding: 9px 10px; border: 0; border-radius: 8px; background: transparent; color: #bdb2c7; text-align: left; font: inherit; font-size: 12px; cursor: pointer; }
-.nav-item:hover { background: #ffffff0c; color: #fff; }
-.nav-item.active { background: #a34ce322; color: #e6caff; }
+.nav-heading { margin: 20px 8px 7px; color: #8f829b; font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.nav-item { position: relative; display: block; width: 100%; margin: 3px 0; padding: 9px 11px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: #bdb2c7; text-align: left; font: inherit; font-size: 12px; cursor: pointer; transition: border-color .18s ease, background .18s ease, color .18s ease, transform .18s ease; }
+.nav-item:hover { transform: translateX(2px); border-color: #ffffff0d; background: #ffffff0a; color: #fff; }
+.nav-item.active { border-color: #bd75ec24; background: linear-gradient(90deg, #a34ce329, #a34ce30a); color: #ead3ff; box-shadow: inset 2px 0 #c47af2; }
 .sidebar-footer { padding: 14px 7px 2px; border-top: 1px solid #ffffff17; color: #9e92a8; font-size: 10px; }
 .online-dot { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: #52d88a; }
 .main-panel { min-width: 0; padding: 0 clamp(18px, 4vw, 54px) 50px; }

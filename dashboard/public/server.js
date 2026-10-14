@@ -316,7 +316,24 @@ async function initialize() {
             api(`/api/guilds/${encodeURIComponent(guildId)}/config`)
         ]);
         const guild = guildsResult.guilds.find(item => item.id === guildId);
-        document.querySelector("#server-name").textContent = guild?.name || "Servidor de Discord";
+        const serverName = guild?.name || "Servidor de Discord";
+        const avatar = document.querySelector("#server-avatar");
+        document.querySelector("#server-name").textContent = serverName;
+        avatar.textContent = serverName.trim().slice(0, 2).toUpperCase();
+        if (guild?.icon) {
+            const image = document.createElement("img");
+            image.src = guild.icon;
+            image.alt = "";
+            image.width = 44;
+            image.height = 44;
+            image.decoding = "async";
+            image.addEventListener("error", () => {
+                avatar.classList.remove("has-image");
+                avatar.replaceChildren(document.createTextNode(serverName.trim().slice(0, 2).toUpperCase()));
+            }, { once: true });
+            avatar.replaceChildren(image);
+            avatar.classList.add("has-image");
+        }
         resources = resourcesResult;
         configState = configResult;
         makeNav(configResult.modules);
