@@ -14,7 +14,10 @@ module.exports = {
 
             const values = {
                 usuario: member.user?.tag || member.user?.username || member.id,
+                username: member.user?.username || member.id,
+                userTag: member.user?.tag || member.user?.username || member.id,
                 servidor: member.guild.name,
+                serverId: member.guild.id,
                 miembros: member.guild.memberCount,
                 id: member.id
             };

@@ -61,7 +61,7 @@ module.exports = {
                 .setName('descripcion')
 
                 .setDescription(
-                    'Descripcion del mensaje'
+                    'Variables: {username}, {id}, {server}, {memberCount} y equivalentes en español'
                 )
                 .setMaxLength(4000)
         )

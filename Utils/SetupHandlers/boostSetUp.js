@@ -24,7 +24,7 @@ module.exports = {
         .addStringOption(option => option.setName("titulo").setDescription("Título del aviso de boost").setMaxLength(256))
         .addStringOption(option =>
             option.setName("descripcion")
-                .setDescription("Descripción del embed. Variables: {usuario}, {servidor}, {boosts}")
+                .setDescription("Variables ES/EN: {usuario}/{username}/{id}, {servidor}/{server}, {boosts}")
                 .setMaxLength(4000)
                 .setRequired(false)
         )

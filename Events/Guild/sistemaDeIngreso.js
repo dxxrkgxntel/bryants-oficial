@@ -15,17 +15,25 @@ module.exports = {
             const createdAt = Math.floor(member.user.createdTimestamp / 1000);
             const title = renderConfiguredMessage(data.Title, {
                 usuario: `${member}`,
+                username: member.user.username,
+                userTag: member.user.tag || member.user.username,
                 servidor: member.guild.name,
+                serverId: member.guild.id,
                 miembros: member.guild.memberCount,
                 id: member.id,
-                cuenta: `<t:${createdAt}:R>`
+                cuenta: `<t:${createdAt}:R>`,
+                accountCreated: `<t:${createdAt}:R>`
             });
             const description = renderConfiguredMessage(data.MessageDes, {
                 usuario: `${member}`,
+                username: member.user.username,
+                userTag: member.user.tag || member.user.username,
                 servidor: member.guild.name,
+                serverId: member.guild.id,
                 miembros: member.guild.memberCount,
                 id: member.id,
-                cuenta: `<t:${createdAt}:R>`
+                cuenta: `<t:${createdAt}:R>`,
+                accountCreated: `<t:${createdAt}:R>`
             });
             const text = [title ? `## ${title}` : "", description].filter(Boolean).join("\n\n");
             const components = [];

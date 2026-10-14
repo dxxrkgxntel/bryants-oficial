@@ -190,10 +190,10 @@ module.exports = {
 
                     )
                     .addStringOption(option => option.setName("titulo").setDescription("Título del aviso de cumpleaños").setMaxLength(256))
-                    .addStringOption(option => option.setName("descripcion").setDescription("Variables: {usuario}, {servidor}, {recompensa}").setMaxLength(4000))
+                    .addStringOption(option => option.setName("descripcion").setDescription("ES/EN: {username}/{id}, {server}, {reward}").setMaxLength(4000))
                     .addStringOption(option => option.setName("banner").setDescription("URL del banner de cumpleaños").setMaxLength(300))
                     .addStringOption(option => option.setName("color").setDescription("Color hexadecimal #RRGGBB").setMaxLength(7))
-                    .addStringOption(option => option.setName("recordatorio").setDescription("Variables: {usuario}, {servidor}").setMaxLength(2000))
+                    .addStringOption(option => option.setName("recordatorio").setDescription("ES/EN: {username}/{id}, {server}").setMaxLength(2000))
                     .addIntegerOption(option => option.setName("monedas").setDescription("Monedas entregadas en cumpleaños").setMinValue(0).setMaxValue(1000000))
 
             )

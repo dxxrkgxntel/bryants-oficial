@@ -3,7 +3,16 @@ const { renderConfiguredMessage, parseConfiguredColor } = require("./renderConfi
 
 function buildBoostNotification(data, guild, booster) {
     const boosts = guild.premiumSubscriptionCount ?? guild.members.cache.filter(member => member.premiumSince).size;
-    const values = { usuario: `${booster}`, servidor: guild.name, boosts };
+    const values = {
+        usuario: `${booster}`,
+        username: booster.user?.username || booster.username,
+        userTag: booster.user?.tag || booster.user?.username || booster.username,
+        id: booster.id,
+        servidor: guild.name,
+        serverId: guild.id,
+        miembros: guild.memberCount,
+        boosts
+    };
     const title = renderConfiguredMessage(data.boostTitle, values);
     const description = renderConfiguredMessage(data.boostDescription, values);
     const text = [title ? `## ${title}` : "", description].filter(Boolean).join("\n\n");

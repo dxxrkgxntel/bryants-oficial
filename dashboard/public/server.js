@@ -306,25 +306,39 @@ function validPreviewColor(value) {
     return /^#[\da-f]{6}$/i.test(String(value || "")) ? value : "#352b3d";
 }
 
+function renderPreviewTemplate(template) {
+    const samples = {
+        usuario: "Bryant", user: "Bryant", member: "Bryant", mention: "Bryant",
+        username: "Bryant", user_name: "Bryant", nombreusuario: "Bryant", nombre_usuario: "Bryant", name: "Bryant", usertag: "Bryant", user_tag: "Bryant",
+        id: "123456789012345678", userid: "123456789012345678", user_id: "123456789012345678", memberid: "123456789012345678", member_id: "123456789012345678",
+        servidor: "Bryant's Family", server: "Bryant's Family", servername: "Bryant's Family", server_name: "Bryant's Family", guild: "Bryant's Family", guildname: "Bryant's Family", guild_name: "Bryant's Family",
+        serverid: "1552352310418202717", server_id: "1552352310418202717", guildid: "1552352310418202717", guild_id: "1552352310418202717",
+        miembros: "128", members: "128", membercount: "128", member_count: "128", memberscount: "128", members_count: "128", cuenta: "hace 2 años", createdat: "hace 2 años", created_at: "hace 2 años", accountcreated: "hace 2 años", account_created: "hace 2 años", accountage: "hace 2 años", account_age: "hace 2 años",
+        nivel: "5", level: "5", xp: "250", recompensa: "500", reward: "500", coins: "500", monedas: "500", rol: "Miembro VIP", role: "Miembro VIP", boosts: "12"
+    };
+    return String(template || "").replace(/\{([a-zA-Z_]+)\}/g, (token, name) => samples[name.toLowerCase()] ?? token);
+}
+
 function renderPreviewMarkup(key, values) {
     const color = validPreviewColor(values.color);
     const banner = safePreviewImage(values.banner || values.image);
     const thumbnail = safePreviewImage(values.thumbnail);
-    const title = String(values.title || "").trim();
-    const description = String(values.description || "").trim();
+    const title = renderPreviewTemplate(values.title).trim();
+    const description = renderPreviewTemplate(values.description).trim();
     const configuredText = [title ? `<h3>${escapeHtml(title)}</h3>` : "", description ? `<p>${escapeHtml(description)}</p>` : ""].filter(Boolean).join("");
     const media = banner ? `<div class="message-preview-banner"><img data-preview-image src="${escapeHtml(banner)}" alt="Vista previa del banner"></div>` : "";
     const thumbnailBlock = thumbnail ? `<img class="message-preview-avatar" data-preview-image src="${escapeHtml(thumbnail)}" alt="Miniatura configurada">` : "";
 
-    if (["welcome", "leaves", "boosts"].includes(key)) {
+    if (["welcome", "leaves", "boosts", "birthday"].includes(key)) {
         const empty = !configuredText && !media && !thumbnailBlock;
-        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Contenido configurado para Discord</small></div><article class="discord-preview" style="--preview-accent:${color}">${media}<div class="discord-preview-body">${thumbnailBlock}<div class="discord-preview-copy">${configuredText || (empty ? '<p class="preview-empty">Todavía no hay contenido configurado para este aviso.</p>' : "")}</div></div></article></section>`;
+        const reminder = values.reminder ? `<p class="preview-reminder"><strong>Recordatorio:</strong> ${escapeHtml(renderPreviewTemplate(values.reminder))}</p>` : "";
+        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Contenido configurado para Discord</small></div><article class="discord-preview" style="--preview-accent:${color}">${media}<div class="discord-preview-body">${thumbnailBlock}<div class="discord-preview-copy">${configuredText || (empty ? '<p class="preview-empty">Todavía no hay contenido configurado para este aviso.</p>' : "")}</div></div></article>${reminder}</section>`;
     }
     if (key === "levelSettings") {
-        const levelTitle = String(values.levelTitle || "").trim();
-        const levelDescription = String(values.levelDescription || "").trim();
-        const roleTitle = String(values.roleTitle || "").trim();
-        const roleDescription = String(values.roleDescription || "").trim();
+        const levelTitle = renderPreviewTemplate(values.levelTitle).trim();
+        const levelDescription = renderPreviewTemplate(values.levelDescription).trim();
+        const roleTitle = renderPreviewTemplate(values.roleTitle).trim();
+        const roleDescription = renderPreviewTemplate(values.roleDescription).trim();
         const contentText = [levelTitle ? `<strong>${escapeHtml(levelTitle)}</strong>` : "", levelDescription ? `<span>${escapeHtml(levelDescription)}</span>` : ""].filter(Boolean).join("");
         const empty = !contentText && !banner && !thumbnail;
         return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Contenido del aviso de nivel configurado</small></div><article class="level-preview" style="--preview-accent:${color}"><div class="level-preview-background">${banner ? `<img data-preview-image src="${escapeHtml(banner)}" alt="Imagen configurada">` : ""}</div>${thumbnailBlock}<div class="level-preview-copy">${contentText || (empty ? '<span class="preview-empty">Configura título, descripción o imagen para mostrar una vista previa.</span>' : "")}</div></article>${roleTitle || roleDescription ? `<div class="level-preview-role">${roleTitle ? `<strong>${escapeHtml(roleTitle)}</strong>` : ""}${roleDescription ? `<span>${escapeHtml(roleDescription)}</span>` : ""}</div>` : ""}</section>`;
@@ -336,17 +350,20 @@ function previewValues(key, form) {
     const read = name => form.elements.namedItem(name)?.value || "";
     if (key === "welcome") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail") };
     if (key === "leaves") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail") };
+    if (key === "birthday") return { title: read("birthdayTitle"), description: read("birthdayDescription"), color: read("birthdayColor"), banner: read("birthdayBanner"), reminder: read("birthdayReminder") };
     if (key === "boosts") return { title: read("boostTitle"), description: read("boostDescription"), color: read("boostColor"), banner: read("boostImage"), thumbnail: read("boostThumbnail") };
     return { levelTitle: read("levelUpTitle"), levelDescription: read("levelUpDescription"), roleTitle: read("levelRoleTitle"), roleDescription: read("levelRoleDescription"), color: read("levelColor"), image: read("levelImage"), thumbnail: read("levelThumbnail") };
 }
 
 function renderPreview(key, data) {
-    if (!["welcome", "leaves", "boosts", "levelSettings"].includes(key)) return "";
+    if (!["welcome", "leaves", "boosts", "birthday", "levelSettings"].includes(key)) return "";
     const values = key === "welcome"
         ? { title: data.Title, description: data.MessageDes, color: data.Color, banner: data.Banner, thumbnail: data.Thumbnail }
         : key === "leaves"
             ? { title: data.Title, description: data.MessageDes, color: data.Color, banner: data.Banner, thumbnail: data.Thumbnail }
-            : key === "boosts"
+            : key === "birthday"
+                ? { title: data.birthdayTitle, description: data.birthdayDescription, color: data.birthdayColor, banner: data.birthdayBanner, reminder: data.birthdayReminder }
+                : key === "boosts"
                 ? { title: data.boostTitle, description: data.boostDescription, color: data.boostColor, banner: data.boostImage, thumbnail: data.boostThumbnail }
                 : { levelTitle: data.levelUpTitle, levelDescription: data.levelUpDescription, roleTitle: data.levelRoleTitle, roleDescription: data.levelRoleDescription, color: data.levelColor, image: data.levelImage, thumbnail: data.levelThumbnail };
     return renderPreviewMarkup(key, values);

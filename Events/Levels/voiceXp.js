@@ -253,7 +253,10 @@ module.exports = {
                                 const levelChannel = guild.channels.cache.get(levelConfig?.levelChannel);
                                 await sendLevelNotification(levelChannel, levelConfig, "level", {
                                     usuario: `${member}`,
+                                    username: member.user.username,
+                                    userTag: member.user.tag || member.user.username,
                                     servidor: guild.name,
+                                    serverId: guild.id,
                                     nivel: data.level,
                                     xp: data.xp,
                                     recompensa: reward
@@ -362,7 +365,10 @@ module.exports = {
 
                                         await sendLevelNotification(levelChannel, levelConfig, "role", {
                                             usuario: `${member}`,
+                                            username: member.user.username,
+                                            userTag: member.user.tag || member.user.username,
                                             servidor: guild.name,
+                                            serverId: guild.id,
                                             nivel: data.level,
                                             rol: role.name
                                         }).catch(error => console.error("[Levels] No se pudo enviar el aviso de rol:", error.message));

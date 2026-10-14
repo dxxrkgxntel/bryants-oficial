@@ -17,7 +17,7 @@ const configurations = {
         fields: [
             { name: "Channel", label: "Canal", type: "channel", channelTypes: [0] },
             { name: "Title", label: "Título", type: "text", maxLength: 256, optional: true },
-            { name: "MessageDes", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}, {servidor}, {miembros}, {id}, {cuenta}." },
+            { name: "MessageDes", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, help: "Español o inglés: {usuario}/{username}/{user}, {id}, {servidor}/{server}, {miembros}/{memberCount}, {cuenta}/{accountAge}. La vista previa usa datos de ejemplo." },
             { name: "Color", label: "Color hexadecimal", type: "color", optional: true },
             { name: "Banner", label: "URL del banner", type: "url", optional: true },
             { name: "Thumbnail", label: "URL de miniatura", type: "url", optional: true }
@@ -31,7 +31,7 @@ const configurations = {
         fields: [
             { name: "Channel", label: "Canal", type: "channel", channelTypes: [0] },
             { name: "Title", label: "Título", type: "text", maxLength: 256, optional: true },
-            { name: "MessageDes", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}, {servidor}, {miembros}, {id}." },
+            { name: "MessageDes", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, help: "Español o inglés: {usuario}/{username}/{user}, {id}, {servidor}/{server}, {miembros}/{memberCount}. La vista previa usa datos de ejemplo." },
             { name: "Color", label: "Color hexadecimal", type: "color", optional: true },
             { name: "Banner", label: "URL del banner", type: "url", optional: true },
             { name: "Thumbnail", label: "URL de miniatura", type: "url", optional: true }
@@ -46,10 +46,10 @@ const configurations = {
             { name: "channelId", label: "Canal de anuncios", type: "channel", channelTypes: [0], optional: true },
             { name: "roleId", label: "Rol de cumpleaños", type: "role", optional: true },
             { name: "birthdayTitle", label: "Título del aviso", type: "text", maxLength: 256, optional: true },
-            { name: "birthdayDescription", label: "Descripción del aviso", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}, {servidor}, {recompensa}." },
+            { name: "birthdayDescription", label: "Descripción del aviso", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}/{username}/{id}, {servidor}/{server}, {recompensa}/{reward}." },
             { name: "birthdayBanner", label: "URL del banner", type: "url", optional: true },
             { name: "birthdayColor", label: "Color hexadecimal", type: "color", optional: true },
-            { name: "birthdayReminder", label: "Recordatorio del día anterior", type: "textarea", maxLength: 2000, optional: true, help: "Variables: {usuario}, {servidor}." },
+            { name: "birthdayReminder", label: "Recordatorio del día anterior", type: "textarea", maxLength: 2000, optional: true, help: "Variables: {usuario}/{username}/{id}, {servidor}/{server}." },
             { name: "birthdayReward", label: "Monedas de cumpleaños", type: "number", min: 0, max: 1000000, optional: true }
         ]
     },
@@ -64,7 +64,7 @@ const configurations = {
             { name: "boosterLegendRole", label: "Rol Booster Legend", type: "role" },
             { name: "boostChannel", label: "Canal de avisos", type: "channel", channelTypes: [0, 5] },
             { name: "boostTitle", label: "Título del aviso", type: "text", maxLength: 256, optional: true },
-            { name: "boostDescription", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}, {servidor}, {boosts}." },
+            { name: "boostDescription", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}/{username}/{id}, {servidor}/{server}, {miembros}/{memberCount}, {boosts}." },
             { name: "boostColor", label: "Color hexadecimal", type: "color", optional: true },
             { name: "boostThumbnail", label: "URL de miniatura", type: "url", optional: true },
             { name: "boostImage", label: "URL del banner", type: "url", optional: true }
@@ -193,9 +193,9 @@ const configurations = {
         fields: [
             { name: "levelChannel", label: "Canal de avisos", type: "channel", channelTypes: [0], optional: true },
             { name: "levelUpTitle", label: "Título al subir de nivel", type: "text", maxLength: 256, optional: true },
-            { name: "levelUpDescription", label: "Descripción al subir de nivel", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}, {servidor}, {nivel}, {xp}, {recompensa}." },
+            { name: "levelUpDescription", label: "Descripción al subir de nivel", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}/{username}/{id}, {servidor}/{server}, {nivel}/{level}, {xp}, {recompensa}/{reward}." },
             { name: "levelRoleTitle", label: "Título al recibir un rol", type: "text", maxLength: 256, optional: true },
-            { name: "levelRoleDescription", label: "Descripción al recibir un rol", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}, {servidor}, {nivel}, {rol}." },
+            { name: "levelRoleDescription", label: "Descripción al recibir un rol", type: "textarea", maxLength: 4000, optional: true, help: "Variables: {usuario}/{username}/{id}, {servidor}/{server}, {nivel}/{level}, {rol}/{role}." },
             { name: "levelImage", label: "URL de imagen", type: "url", optional: true },
             { name: "levelThumbnail", label: "URL de miniatura", type: "url", optional: true },
             { name: "levelColor", label: "Color hexadecimal", type: "color", optional: true },
