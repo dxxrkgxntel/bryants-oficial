@@ -50,6 +50,8 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
 
 /* Public landing page */
 .home-page { overflow-x: hidden; background: radial-gradient(ellipse at 79% 7%, #38154f 0, #1b1025 27%, #0c0911 66%); }
+.home-page.server-selection { background: linear-gradient(120deg, #08060dc9, #09060da6 55%, #08060dcc), url("/dashboard-gaming-background.png") center / cover fixed no-repeat; }
+.server-selection .shell { position: relative; }
 .home-page .shell { width: min(1240px, calc(100% - 64px)); }
 .home-page .topbar { height: 88px; }
 .brand-logo { width: 44px; height: 44px; border: 1px solid #bb78f77d; border-radius: 50%; object-fit: cover; box-shadow: 0 0 28px #9b4bd52b; }
@@ -198,7 +200,7 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
     *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
 
-.dashboard-page { background: radial-gradient(ellipse at 0% 0%, #24133066, transparent 34%), #0c0911; }
+.dashboard-page { background: linear-gradient(120deg, #09060dba, #09060d9c 48%, #09060dc9), url("/dashboard-gaming-background.png") center / cover fixed no-repeat; }
 .app-layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); min-height: 100vh; }
 .sidebar { position: sticky; top: 0; display: flex; flex-direction: column; height: 100vh; padding: 22px 16px 14px; border-right: 1px solid #ffffff17; background: linear-gradient(180deg, #15101b, #100c15 44%); box-shadow: 12px 0 40px #00000012; }
 .sidebar .brand { padding: 0 8px 22px; border-bottom: 1px solid #ffffff17; }

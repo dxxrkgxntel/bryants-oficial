@@ -23,6 +23,7 @@ async function loadDashboard() {
         const session = await sessionResponse.json();
         if (!session.user) return;
 
+        document.body.classList.add("server-selection");
         if (publicHome) publicHome.hidden = true;
         if (publicNav) publicNav.hidden = true;
         if (welcome) welcome.hidden = true;
