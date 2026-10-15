@@ -297,14 +297,15 @@ const configurations = {
         guildField: "guildId",
         fields: [
             { type: "section", label: "Aviso al subir de nivel por mensaje" },
+            { name: "enabled", label: "Sistema activo", type: "boolean", default: true },
             { name: "levelChannel", label: "Canal de avisos", type: "channel", channelTypes: [0], optional: true },
-            { name: "messageLevelTitle", label: "Título del aviso por mensaje", type: "text", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.level },
+            { name: "messageLevelTitle", label: "Título del aviso por mensaje", type: "textarea", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.level },
             { name: "messageLevelDescription", label: "Descripción del aviso por mensaje", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.level, help: "Se muestra cuando el miembro sube de nivel por XP obtenida al escribir." },
             { type: "section", label: "Aviso al subir de nivel por voz" },
-            { name: "voiceLevelTitle", label: "Título del aviso por voz", type: "text", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.level },
+            { name: "voiceLevelTitle", label: "Título del aviso por voz", type: "textarea", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.level },
             { name: "voiceLevelDescription", label: "Descripción del aviso por voz", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.level, help: "Se muestra cuando el miembro sube de nivel por XP obtenida en canales de voz." },
             { type: "section", label: "Aviso al recibir un rol por nivel" },
-            { name: "levelRoleTitle", label: "Título al recibir un rol", type: "text", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.level },
+            { name: "levelRoleTitle", label: "Título al recibir un rol", type: "textarea", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.level },
             { name: "levelRoleDescription", label: "Descripción al recibir un rol", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.level, help: "Puedes insertar variables como {{user}}, {{level}} y {{role}} con los botones." },
             { name: "levelImage", label: "URL de imagen", type: "url", optional: true },
             { name: "levelTopImage", label: "URL del banner de /level top", type: "url", optional: true, help: "Esta imagen se usa exclusivamente en el ranking /level top." },
@@ -331,6 +332,7 @@ const configurations = {
         model: require("../Models/EconomyConfig"),
         guildField: "guildId",
         fields: [
+            { name: "enabled", label: "Sistema activo", type: "boolean", default: true },
             { name: "dailyAmount", label: "Recompensa diaria", type: "number", min: 0 },
             { name: "dailyCooldown", label: "Tiempo entre recompensas (ms)", type: "number", min: 0 },
             { name: "workMin", label: "Trabajo: mínimo", type: "number", min: 0 },
@@ -357,12 +359,12 @@ const configurations = {
         model: require("../Models/WeeklyDrop"),
         guildField: "guildId",
         fields: [
-            { name: "enabled", label: "Sistema activo", type: "boolean" },
             { name: "description", label: "Descripción del aviso", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.weeklyDrop, help: "Personaliza el texto del drop e inserta variables como {{users_rewarded}}, {{total_coins}} y {{days_until_drop}}." },
             { name: "image", label: "URL del banner", type: "url", optional: true, help: "Añade el enlace HTTPS de la imagen que aparecerá encima del aviso." },
             { name: "minAmount", label: "Cantidad mínima", type: "number", min: 1 },
             { name: "maxAmount", label: "Cantidad máxima", type: "number", min: 1 },
-            { name: "logChannelId", label: "Canal de avisos", type: "channel", channelTypes: [0], optional: true }
+            { name: "logChannelId", label: "Canal de avisos", type: "channel", channelTypes: [0], optional: true },
+            { name: "enabled", label: "Sistema activo", type: "boolean" }
         ]
     }
 };

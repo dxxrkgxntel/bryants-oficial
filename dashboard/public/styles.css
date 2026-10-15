@@ -431,6 +431,20 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
 .status-pill.unconfigured { background: #ffffff10; color: #a99fb2; }
 .card-description { margin: 13px 0 24px; color: #aaa0b2; font-size: 12px; line-height: 1.6; }
 .fields-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.aligned-toggle-grid > .checkbox-field { margin-top: 22px; }
+.levels-settings-grid > .form-section-heading { grid-column: 1 / -1; }
+.levels-settings-grid [data-setting-field="enabled"] { grid-column: 1; }
+.levels-settings-grid [data-setting-field="messageLevelTitle"],
+.levels-settings-grid [data-setting-field="voiceLevelTitle"],
+.levels-settings-grid [data-setting-field="levelRoleTitle"] { align-self: stretch; }
+.levels-settings-grid [data-setting-field="messageLevelTitle"] textarea,
+.levels-settings-grid [data-setting-field="voiceLevelTitle"] textarea,
+.levels-settings-grid [data-setting-field="levelRoleTitle"] textarea { min-height: 100px; }
+.economy-settings-grid [data-setting-field="enabled"] { grid-column: 1 / -1; }
+.weekly-drop-grid [data-setting-field="description"] textarea { min-height: 100px; }
+.weekly-drop-grid [data-setting-field="image"] input { height: 100px; }
+.tempvoice-settings-grid [data-setting-field="enabled"] { grid-column: 1 / -1; }
+.social-alerts-grid [data-setting-field="enabled"] { grid-column: 1 / -1; }
 .field { display: grid; align-content: start; gap: 8px; color: #d6cddd; font-size: 12px; }
 .button-list-field { grid-column: 1 / -1; gap: 12px; }
 .button-list-heading, .config-button-row-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -760,6 +774,7 @@ button:disabled { opacity: .55; cursor: wait !important; }
     .level-preview { min-height: 125px; gap: 9px; padding: 12px; }
     .level-preview-number { font-size: 30px; }
     .fields-grid { grid-template-columns: 1fr; }
+    .aligned-toggle-grid > .checkbox-field { margin-top: 0; }
     .prestige-settings-grid { grid-template-columns: 1fr; }
     .prestige-settings-grid > .checkbox-field, .prestige-settings-grid [data-prestige-map="prestigeRoles"], .prestige-settings-grid [data-prestige-map="prestigeRewards"] { grid-column: 1; grid-row: auto; }
     .prestige-settings-grid .form-actions { grid-row: auto; }

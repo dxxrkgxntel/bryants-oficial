@@ -38,6 +38,7 @@ module.exports = {
         ////////////////////////////////////////
 
         const levelSettings = await getLevelSettings(message.guild.id);
+        if (!levelSettings.enabled) return;
         const key =
             `${message.guild.id}_${message.author.id}`;
 

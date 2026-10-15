@@ -4,6 +4,7 @@ const SETTINGS_TTL = 30_000;
 const settingsCache = new Map();
 
 const defaults = {
+    enabled: true,
     messageXpMin: 5,
     messageXpMax: 14,
     messageXpCooldownMs: 5000,
@@ -18,6 +19,7 @@ async function getLevelSettings(guildId) {
 
     const config = await LevelConfig.findOne({ guildId }).lean();
     const value = { ...defaults };
+    value.enabled = config?.enabled !== false;
     for (const key of Object.keys(defaults)) {
         if (Number.isFinite(config?.[key])) value[key] = config[key];
     }

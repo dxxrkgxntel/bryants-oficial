@@ -991,6 +991,8 @@ module.exports = {
     .addSubcommand(s => s.setName("slots").setDescription("Juega a las tragamonedas").addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad a apostar").setRequired(true).setMinValue(1))),
  async execute(interaction) {
    const sub = interaction.options.getSubcommand();
+   const config = await getConfig(interaction.guildId);
+   if (config.enabled === false) return interaction.reply({ content: "El sistema de economía de este servidor está desactivado.", ephemeral: true });
    const handlers = { blackjack: run_blackjack, stats: run_stats, coinflip: run_coinflip, dados: run_dados, gamble: run_gamble, ruleta: run_ruleta, slots: run_slots };
    return handlers[sub](interaction);
  }

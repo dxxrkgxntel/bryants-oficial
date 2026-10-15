@@ -51,6 +51,7 @@ module.exports = {
                 async (guild) => {
 
                     const levelSettings = await getLevelSettings(guild.id);
+                    if (!levelSettings.enabled) return;
 
                     //////////////////////////////////////////////////
                     // VOICE CHANNELS

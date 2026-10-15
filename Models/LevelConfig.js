@@ -5,6 +5,8 @@ const levelConfigSchema =
 
         guildId: String,
 
+        enabled: { type: Boolean, default: true },
+
         levelChannel: String,
 
         levelImage: String,

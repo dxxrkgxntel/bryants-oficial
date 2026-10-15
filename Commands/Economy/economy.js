@@ -570,6 +570,10 @@ module.exports = {
    .addNumberOption(o=>o.setName("valor").setDescription("Nuevo valor").setRequired(true))),
  async execute(interaction) {
   const sub=interaction.options.getSubcommand();
+  if (sub !== "config") {
+   const config = await getConfig(interaction.guildId);
+   if (config.enabled === false) return replyV2(interaction, "⚙️ Economía desactivada", "El sistema de economía de este servidor está desactivado.", 0x8A2BE2, true);
+  }
   if(sub==="balance") return runBalance(interaction);
   if(sub==="daily") return runDaily(interaction);
   if(sub==="work") return runWork(interaction);
