@@ -163,21 +163,21 @@ module.exports = {
 
             {
                 name:
-                    `Estoy en ${client.guilds.cache.size} servidores`,
+                    `💜 -> Estoy en ${client.guilds.cache.size} servidores`,
                 type:
                     ActivityType.Watching
             },
 
             {
                 name:
-                    'Owner -> @elbryantdx_',
+                    '💜 -> Owner: @elbryantdx',
                 type:
                     ActivityType.Playing
             },
 
             {
                 name:
-                    'Staff 24/7',
+                    '💜 -> Staff 24/7',
                 type:
                     ActivityType.Competing
             },
