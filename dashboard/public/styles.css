@@ -170,6 +170,7 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
 .hero-note { display: flex; align-items: center; gap: 9px; margin-top: 29px; color: #8e8398; font-size: 10px; }
 .secure-icon { color: #c882ff; font-size: 16px; }
 .hero-visual { position: relative; padding: 34px 0 24px; }
+.bot-brand-banner { position: relative; display: block; width: min(74%, 420px); height: auto; margin: 18px auto 0; border: 1px solid #c58bdf38; border-radius: 12px; box-shadow: 0 18px 46px #0008; }
 .visual-glow { position: absolute; inset: 13% -5% 6%; border-radius: 50%; background: #a144e824; filter: blur(76px); }
 .preview-window { position: relative; overflow: hidden; border: 1px solid #c58bdf38; border-radius: 17px; background: linear-gradient(145deg, #1c1424, #100d15 75%); box-shadow: 0 32px 90px #0008, 0 0 65px #9c4fbd13; transform: perspective(1200px) rotateY(-4deg) rotateX(1deg); }
 .preview-topbar { display: flex; align-items: center; gap: 14px; height: 44px; padding: 0 15px; border-bottom: 1px solid #ffffff13; color: #95889e; font-size: 8px; font-weight: 800; letter-spacing: .11em; }
@@ -266,6 +267,7 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
     .hero-actions .primary-button { padding: 14px 15px; font-size: 12px; }
     .hero-note { align-items: flex-start; font-size: 9px; line-height: 1.5; }
     .hero-visual { padding: 22px 0 26px; }
+    .bot-brand-banner { width: min(82%, 420px); margin-top: 14px; }
     .preview-window { transform: none; }
     .preview-body { grid-template-columns: 112px minmax(0, 1fr); min-height: 282px; }
     .preview-sidebar { padding: 11px 6px; }

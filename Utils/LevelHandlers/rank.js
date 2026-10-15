@@ -456,7 +456,7 @@ const avatar =
             "#777";
 
         ctx.fillText(
-            "Bryant's Oficial • Level System V2",
+            "Bryvex Bot • Level System V2",
             40,
             335
         );

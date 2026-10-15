@@ -67,7 +67,7 @@ module.exports = {
                 "Las acciones de propietario solo funcionan en tu canal temporal."
             )
             .setImage("attachment://tempvoice.png")
-            .setFooter({ text: "Bryant's Oficial • TempVoice" });
+            .setFooter({ text: "Bryvex Bot • TempVoice" });
 
         const buttonDefinitions = [
             { customId: "temp_rename", emojiName: "01_nombre", fallback: "✏️" },

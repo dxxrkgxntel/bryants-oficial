@@ -981,7 +981,7 @@ async function run_slots(interaction) {
 module.exports = {
  data: new SlashCommandBuilder()
     .setName("casino")
-    .setDescription("Juegos y estadísticas de Bryant's Casino")
+    .setDescription("Juegos y estadísticas de Bryvex Bot")
     .addSubcommand(s => s.setName("blackjack").setDescription("Juega Blackjack").addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad a apostar").setRequired(true).setMinValue(1)))
     .addSubcommand(s => s.setName("stats").setDescription("Muestra tus estadísticas del casino"))
     .addSubcommand(s => s.setName("coinflip").setDescription("Desafía a un usuario a una apuesta").addUserOption(o => o.setName("usuario").setDescription("Usuario a desafiar").setRequired(true)).addIntegerOption(o => o.setName("cantidad").setDescription("Cantidad a apostar").setRequired(true).setMinValue(1)))

@@ -196,7 +196,7 @@ async function role(interaction) {
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName("level").setDescription("Sistema de niveles de Bryant's Oficial")
+        .setName("level").setDescription("Sistema de niveles de Bryvex Bot")
         .addSubcommand(s=>s.setName("rank").setDescription("Mira tu nivel y XP").addUserOption(o=>o.setName("usuario").setDescription("Usuario").setRequired(false)))
         .addSubcommand(s=>s.setName("perfil").setDescription("Muestra el perfil avanzado de un usuario").addUserOption(o=>o.setName("usuario").setDescription("Usuario").setRequired(false)))
         .addSubcommand(s=>s.setName("top").setDescription("Top de niveles del servidor"))

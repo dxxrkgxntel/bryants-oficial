@@ -113,7 +113,7 @@ patchPublicHandler("server-info", async interaction => {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("public")
-        .setDescription("Comandos públicos de Bryant's Oficial")
+        .setDescription("Comandos públicos de Bryvex Bot")
         .addSubcommand(s=>s.setName("botinfo").setDescription("Información sobre el bot"))
         .addSubcommand(s=>s.setName("confesiones").setDescription("Envía una confesión")
             .addStringOption(o=>o.setName("description").setDescription("Qué confesión deseas realizar").setMaxLength(2048).setRequired(true))

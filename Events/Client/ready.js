@@ -184,7 +184,7 @@ module.exports = {
 
             {
                 name:
-                    "💜 || Bryant's Oficial",
+                    "💜 || Bryvex Bot",
                 type:
                     ActivityType.Playing
             }

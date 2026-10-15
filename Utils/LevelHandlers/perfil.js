@@ -626,7 +626,7 @@ module.exports = {
             "#777";
 
         ctx.fillText(
-            "Bryant's Oficial • Advanced Profile System",
+            "Bryvex Bot • Advanced Profile System",
             45,
             535
         );

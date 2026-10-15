@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🔥 Bryant's Oficial
+# 🔥 Bryvex Bot
 
 ### Tu comunidad de Discord, con más herramientas y todo bajo control.
 
@@ -19,7 +19,7 @@ Un bot multifunción para **cuidar, organizar y darle vida** a tu servidor: mode
 
 ---
 
-## ✨ ¿Qué puedes hacer con Bryant's Oficial?
+## ✨ ¿Qué puedes hacer con Bryvex Bot?
 
 ### 🛡️ Moderación y protección
 
