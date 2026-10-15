@@ -767,6 +767,14 @@ function makeNav(modules) {
     }
     for (const category of categoriesOrder) {
         const group = all.filter(([key, definition]) => definition.category === category && !favoriteModules.has(key));
+        if (category === "Economía y XP") {
+            const memberIndex = group.findIndex(([key]) => key === "memberEconomy");
+            const economyIndex = group.findIndex(([key]) => key === "economy");
+            if (memberIndex !== -1 && economyIndex !== -1) {
+                const [memberEntry] = group.splice(memberIndex, 1);
+                group.splice(group.findIndex(([key]) => key === "economy") + 1, 0, memberEntry);
+            }
+        }
         if (!group.length) continue;
         appendHeading(category);
         group.forEach(([key, definition]) => appendEntry(key, definition, category));
