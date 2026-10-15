@@ -388,9 +388,9 @@ const lists = {
             { name: "questId", label: "ID de la misión", type: "text", maxLength: 80 },
             { name: "name", label: "Nombre", type: "text", maxLength: 100 },
             { name: "description", label: "Descripción", type: "textarea", maxLength: 1000 },
+            { name: "goal", label: "Objetivo", type: "number", min: 1 },
             { name: "type", label: "Frecuencia", type: "select", options: ["daily", "weekly"] },
             { name: "category", label: "Categoría", type: "select", options: ["messages", "voice", "economy", "games"] },
-            { name: "goal", label: "Objetivo", type: "number", min: 1 },
             { name: "reward.coins", label: "Recompensa en monedas", type: "number", min: 0 },
             { name: "reward.xp", label: "Recompensa en XP", type: "number", min: 0 },
             { name: "enabled", label: "Misión activa", type: "boolean" }
