@@ -1409,7 +1409,7 @@ function wireKickChannelPickers(form) {
 function renderList(key, definition, editItem = null) {
     const records = configState.lists[key] || [];
     const editing = Boolean(editItem);
-    const listLayout = key === "socialAlerts" ? " social-alerts-grid" : "";
+    const listLayout = key === "socialAlerts" ? " social-alerts-grid" : key === "missions" ? " missions-grid" : "";
     const form = `<form id="list-form" class="fields-grid${listLayout}">${definition.fields.map(field => renderField(field, getNested(editItem, field.name), `${key}-`).replace(/^(<[a-z][a-z0-9-]*\b)/i, `$1 data-setting-field="${escapeHtml(field.name)}"`)).join("")}<div class="form-actions"><button class="primary-button" type="submit">${editing ? "Guardar elemento" : "Añadir elemento"}</button>${editing ? '<button class="quiet-button" id="cancel-edit" type="button">Cancelar</button>' : ""}<span class="unsaved-indicator" hidden>● Cambios sin guardar</span><span class="save-feedback" role="status" aria-live="polite"></span></div></form>`;
     const rows = records.map(record => {
         const label = getRecordLabel(key, record, definition);

@@ -445,6 +445,7 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
 .weekly-drop-grid [data-setting-field="image"] input { height: 100px; }
 .tempvoice-settings-grid [data-setting-field="enabled"] { grid-column: 1 / -1; }
 .social-alerts-grid [data-setting-field="enabled"] { grid-column: 1 / -1; }
+.missions-grid [data-setting-field="enabled"] { grid-column: 1 / -1; }
 .field { display: grid; align-content: start; gap: 8px; color: #d6cddd; font-size: 12px; }
 .button-list-field { grid-column: 1 / -1; gap: 12px; }
 .button-list-heading, .config-button-row-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
