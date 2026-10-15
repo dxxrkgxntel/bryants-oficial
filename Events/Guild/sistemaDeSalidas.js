@@ -32,7 +32,7 @@ module.exports = {
             if (accentColor !== null) container.accent_color = accentColor;
             await channel.send({ flags: MessageFlags.IsComponentsV2, components: [container] });
         } catch (error) {
-            console.error("[Leave] No se pudo enviar el mensaje configurado:", error);
+            console.error("[LEAVE] No se pudo enviar el mensaje configurado:", error);
         }
     }
 };

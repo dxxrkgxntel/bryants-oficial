@@ -344,14 +344,14 @@ async function checkAlert(client, alert) {
     }
     const channelInfo = platform === "TikTok" ? await getTikTokLiveInfo(alert.slug) : platform === "Twitch" ? await getTwitchLiveInfo(alert.slug) : platform === "YouTube" ? await getYouTubeLiveInfo(alert.slug) : await getKickStream(alert.slug);
     if (platform === "Kick" && !channelInfo) {
-        console.warn(`[SocialAlerts] Kick ${alert.slug} (${alert.guildId}): la API no devolvió ningún canal para ese nombre.`);
+        console.warn(`[SOCIALALERTS] Kick ${alert.slug} (${alert.guildId}): la API no devolvió ningún canal para ese nombre.`);
         return;
     }
     const stream = platform === "TikTok" ? channelInfo.stream : channelInfo?.stream;
     // Kick represents an offline channel with a null/missing `stream` object.
     // Some API responses omit `is_live` while returning the active stream.
     if (!stream || stream.is_live === false) {
-        console.info(`[SocialAlerts] ${platform} ${alert.slug} (${alert.guildId}): consulta correcta, no hay directo activo.`);
+        console.info(`[SOCIALALERTS] ${platform} ${alert.slug} (${alert.guildId}): consulta correcta, no hay directo activo.`);
         if (state.lastStreamId) {
             state.lastStreamId = null;
             state.messageId = null;
@@ -363,10 +363,10 @@ async function checkAlert(client, alert) {
     const streamId = String(stream.id || stream.start_time || `${alert.slug}:${stream.stream_title || "live"}`);
     if (streamId !== state.lastStreamId) {
         await sendLiveAlert(client, alert, state, { ...channelInfo, ...stream, stream_title: stream.stream_title || stream.title });
-        console.info(`[SocialAlerts] ${platform} ${alert.slug} (${alert.guildId}): alerta enviada al canal ${alert.channelId}.`);
+        console.info(`[SOCIALALERTS] ${platform} ${alert.slug} (${alert.guildId}): alerta enviada al canal ${alert.channelId}.`);
         return;
     }
-    console.info(`[SocialAlerts] ${platform} ${alert.slug} (${alert.guildId}): directo detectado; la alerta ya fue enviada para este directo.`);
+    console.info(`[SOCIALALERTS] ${platform} ${alert.slug} (${alert.guildId}): directo detectado; la alerta ya fue enviada para este directo.`);
     await updateViewerCount(client, alert, state, { ...channelInfo, ...stream, stream_title: stream.stream_title || stream.title });
 }
 
@@ -375,27 +375,27 @@ async function poll(client) {
     pollRunning = true;
     try {
         const alerts = await SocialAlert.find({ platform: { $in: ["Kick", "TikTok", "Twitch", "YouTube"] }, enabled: { $ne: false } }).lean();
-        console.info(`[SocialAlerts] Revisando ${alerts.length} alerta(s) activa(s).`);
+        console.info(`[SOCIALALERTS] Revisando ${alerts.length} alerta(s) activa(s).`);
         for (const alert of alerts) {
             try { await checkAlert(client, alert); }
             catch (error) {
                 const platform = alert.platform || "Kick";
                 const missingCredentials = (error.message.startsWith("Faltan ") && error.message.includes("_CLIENT_")) || error.message === "Falta YOUTUBE_API_KEY.";
                 if (!missingCredentials || !warnedMissingCredentials.has(platform)) {
-                    console.error(`[SocialAlerts] ${alert.platform || "Kick"} ${alert.slug} (${alert.guildId}):`, error.message);
+                    console.error(`[SOCIALALERTS] ${alert.platform || "Kick"} ${alert.slug} (${alert.guildId}):`, error.message);
                     if (missingCredentials) warnedMissingCredentials.add(platform);
                 }
             }
         }
     } catch (error) {
-        console.error("[SocialAlerts] No pude cargar las alertas sociales:", error.message);
+        console.error("[SOCIALALERTS] No pude cargar las alertas sociales:", error.message);
     } finally {
         pollRunning = false;
     }
 }
 
 module.exports = function startSocialAlerts(client) {
-    console.info("[SocialAlerts] Monitor de alertas de Kick, TikTok, Twitch y YouTube iniciado; comprobación cada 60 segundos.");
+    console.info("[SOCIALALERTS] Monitor de alertas de Kick, TikTok, Twitch y YouTube iniciado; comprobación cada 60 segundos.");
     setTimeout(() => poll(client), 15_000);
     const timer = setInterval(() => poll(client), POLL_INTERVAL_MS);
     timer.unref?.();

@@ -46,7 +46,7 @@ module.exports = {
             if (category?.type !== ChannelType.GuildCategory) category = null;
             if (!category) {
                 category = await guild.channels.create({
-                    name: "「💀」FAMILY",
+                    name: "「📊」Server Stats",
                     type: ChannelType.GuildCategory
                 });
                 createdCategory = true;

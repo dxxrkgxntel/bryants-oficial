@@ -67,7 +67,7 @@ module.exports = {
                     try {
                         await member.send({ flags: MessageFlags.IsComponentsV2, components: [dmContainer] });
                     } catch (error) {
-                        console.warn(`[Welcome] No se pudo enviar el DM a ${member.id} en ${member.guild.id}:`, error.message);
+                        console.warn(`[WELCOME] No se pudo enviar el DM a ${member.id} en ${member.guild.id}:`, error.message);
                     }
                 }
             }
@@ -84,7 +84,7 @@ module.exports = {
             if (accentColor !== null) container.accent_color = accentColor;
             await channel.send({ flags: MessageFlags.IsComponentsV2, components: [container] });
         } catch (error) {
-            console.error("[Welcome] No se pudo enviar el mensaje configurado:", error);
+            console.error("[WELCOME] No se pudo enviar el mensaje configurado:", error);
         }
     }
 };
