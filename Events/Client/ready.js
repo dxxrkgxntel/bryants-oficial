@@ -65,10 +65,10 @@ module.exports = {
                     { $set: { MessageDes: '' } }
                 );
                 if (legacyWelcomeCopy.modifiedCount) {
-                    console.log(`[Welcome] Quité el texto predeterminado antiguo de ${legacyWelcomeCopy.modifiedCount} configuración(es).`);
+                    console.log(`[WELCOME] Quité el texto predeterminado antiguo de ${legacyWelcomeCopy.modifiedCount} configuración(es).`);
                 }
             } catch (error) {
-                console.error('[Welcome] No pude limpiar el texto predeterminado antiguo:', error.message);
+                console.error('[WELCOME] No pude limpiar el texto predeterminado antiguo:', error.message);
             }
             startDailyPurgeScheduler(client);
             await restoreVoiceConnections(client);
@@ -163,21 +163,21 @@ module.exports = {
 
             {
                 name:
-                    `💜 || Estoy en ${client.guilds.cache.size} servidores`,
+                    `Estoy en ${client.guilds.cache.size} servidores`,
                 type:
                     ActivityType.Watching
             },
 
             {
                 name:
-                    '💜 || Desenvolvido por @elbryantdx',
+                    'Owner -> @elbryantdx_',
                 type:
                     ActivityType.Playing
             },
 
             {
                 name:
-                    '💜 || Staff 24/7',
+                    'Staff 24/7',
                 type:
                     ActivityType.Competing
             },
@@ -248,7 +248,7 @@ module.exports = {
 
         setInterval(
             updatePresence,
-            2000
+            5000
         );
     }
 };
