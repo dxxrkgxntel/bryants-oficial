@@ -15,9 +15,12 @@ module.exports = {
             .addActionRowComponents(new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("support_ticket_open:bot").setLabel("Soporte de Bryvex Bot").setStyle(ButtonStyle.Primary), new ButtonBuilder().setCustomId("support_ticket_open:website").setLabel("Soporte de la página web").setStyle(ButtonStyle.Secondary)));
         try {
             await channel.send({ components: [container], flags: MessageFlags.IsComponentsV2 });
+            const configUpdate = { enabled: true, panelChannelId: channel.id };
+            if (category) configUpdate.categoryId = category.id;
+            if (staffRole) configUpdate.staffRoleId = staffRole.id;
             await SupportTicketConfig.findOneAndUpdate(
                 { guildId: interaction.guildId },
-                { $set: { enabled: true, panelChannelId: channel.id, categoryId: category?.id || null, staffRoleId: staffRole?.id || null } },
+                { $set: configUpdate },
                 { upsert: true, new: true, setDefaultsOnInsert: true }
             );
             return interaction.reply({ content: `Panel publicado en ${channel}. Los tickets y permisos se configuraron para **${interaction.guild.name}**.`, flags: MessageFlags.Ephemeral });
