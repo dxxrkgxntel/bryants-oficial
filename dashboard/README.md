@@ -44,6 +44,6 @@ En **cada servidor** donde quieras habilitar el sistema, un administrador debe e
 
 Cada ejecución guarda la configuración usando el ID de ese servidor. No se necesitan variables globales como `SUPPORT_GUILD_ID`, `SUPPORT_CATEGORY_ID` o `SUPPORT_STAFF_ROLE_ID`. Los administradores pueden volver a ejecutar el comando para actualizar la configuración de su servidor.
 
-En la web, el usuario inicia sesión con Discord y selecciona uno de los servidores donde está presente, Bryvex Bot está instalado y el sistema de tickets ha sido configurado. Los usuarios solo pueden ver sus propios tickets; el equipo del servidor puede ver y responder los tickets de su servidor mediante el rol configurado, una lista de miembros de soporte guardada en la configuración o permisos de administrador. Los tickets y respuestas de cada servidor permanecen aislados de los demás.
+En la web, el usuario inicia sesión con Discord y selecciona uno de los servidores donde está presente, Bryvex Bot está instalado y el sistema de tickets ha sido configurado. Los usuarios solo pueden ver sus propios tickets; el equipo del servidor puede ver y responder los tickets de su servidor mediante el rol configurado o permisos de administrador del servidor. Los tickets y respuestas de cada servidor permanecen aislados de los demás.
 
 El bot necesita permisos para administrar canales, ver canales, enviar mensajes, leer el historial y administrar los permisos de los canales. La dashboard debe usar la misma `MONGODB_URI` que el bot. Configura los paneles en cada servidor donde vayas a ofrecer soporte.
