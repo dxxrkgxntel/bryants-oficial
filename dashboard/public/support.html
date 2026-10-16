@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#100b18">
+<title>Centro de soporte | Bryant's Oficial</title><link rel="icon" type="image/png" href="/bot-avatar.png"><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/support.css"><script src="/support.js" defer></script>
+</head>
+<body class="support-page">
+<main class="support-shell">
+<header class="support-top"><a class="brand" href="/"><img class="brand-logo" src="/bot-avatar.png" alt="" width="44" height="44"><span><strong>Bryvex Bot</strong><small>Centro de soporte · Bryant's Oficial</small></span></a><nav><a href="/">Inicio</a><a href="/auth/login" id="support-login">Iniciar sesión con Discord</a><button id="support-logout" type="button" hidden>Cerrar sesión</button></nav></header>
+<section class="support-intro"><span class="support-eyebrow">SOPORTE OFICIAL</span><h1>¿En qué podemos <span>ayudarte?</span></h1><p>Abre un ticket para resolver dudas o problemas de Bryvex Bot o de la página web de Bryant's Oficial. Tus conversaciones se guardan y se comparten con el equipo de soporte.</p></section>
+<div id="support-notice" class="support-notice" role="status" hidden></div>
+<section id="support-login-card" class="support-card"><h2>Inicia sesión para continuar</h2><p>Utilizamos tu cuenta de Discord para identificarte y proteger tus conversaciones.</p><a class="support-primary" href="/auth/login">Continuar con Discord ↗</a></section>
+<div id="support-app" hidden class="support-grid">
+<section class="support-card"><div class="support-card-heading"><div><span class="support-eyebrow">NUEVA SOLICITUD</span><h2>Crear un ticket</h2></div></div>
+<form id="support-create-form"><label for="support-category">¿Sobre qué necesitas ayuda?</label><select id="support-category" required><option value="bot">Bryvex Bot</option><option value="website">Página web de Bryant's Oficial</option></select><label for="support-subject">Asunto</label><input id="support-subject" maxlength="120" required placeholder="Ej. No puedo configurar un comando"><label for="support-message">Describe tu duda o problema</label><textarea id="support-message" maxlength="4000" rows="5" required placeholder="Incluye los detalles necesarios para ayudarte…"></textarea><button class="support-primary" type="submit">Abrir ticket</button></form></section>
+<section class="support-card"><div class="support-card-heading"><div><span class="support-eyebrow">TUS SOLICITUDES</span><h2>Mis tickets</h2></div><button id="support-refresh" type="button" class="support-secondary">Actualizar</button></div><div id="support-ticket-list" class="support-ticket-list"><p class="support-muted">Cargando tickets…</p></div></section>
+<section id="support-conversation-card" class="support-card support-conversation" hidden><div class="support-card-heading"><div><span class="support-eyebrow" id="support-ticket-number">TICKET</span><h2 id="support-ticket-subject">Conversación</h2></div><button id="support-close" type="button" class="support-secondary">Cerrar ticket</button></div><div id="support-ticket-meta" class="support-muted"></div><div id="support-messages" class="support-messages"></div><form id="support-reply-form"><label for="support-reply">Tu respuesta</label><textarea id="support-reply" rows="3" maxlength="4000" required placeholder="Escribe un mensaje…"></textarea><button class="support-primary" type="submit">Enviar respuesta</button></form></section>
+</div><footer class="support-footer">Bryant's Oficial · El soporte está limitado a dudas y problemas de Bryvex Bot y de la página web.</footer>
+</main>
+</body></html>
