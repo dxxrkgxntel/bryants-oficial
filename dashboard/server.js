@@ -1482,7 +1482,10 @@ app.post("/api/support/tickets/:ticketId/close", requireLogin, requireCsrf, asyn
         ticket.status = "closed"; ticket.closedAt = new Date(); ticket.lastMessageAt = new Date();
         ticket.messages.push({ authorId: req.session.user.id, authorName: req.session.user.displayName || req.session.user.username, source: "system", content: "Ticket cerrado desde la web." });
         await ticket.save();
-        if (ticket.discordChannelId) {\n            await discordBotRequest(`/channels/${ticket.discordChannelId}/messages`, { method: "POST", body: JSON.stringify({ content: `Ticket #${ticket.ticketNumber} cerrado desde la web.` }) }).catch(() => {});\n            await discordBotRequest(`/channels/${ticket.discordChannelId}/permissions/${ticket.userId}`, { method: "PUT", body: JSON.stringify({ type: 1, allow: "68608", deny: "2048" }) }).catch(() => {});\n        }
+        if (ticket.discordChannelId) {
+            await discordBotRequest(`/channels/${ticket.discordChannelId}/messages`, { method: "POST", body: JSON.stringify({ content: `Ticket #${ticket.ticketNumber} cerrado desde la web.` }) }).catch(() => {});
+            await discordBotRequest(`/channels/${ticket.discordChannelId}/permissions/${ticket.userId}`, { method: "PUT", body: JSON.stringify({ type: 1, allow: "68608", deny: "2048" }) }).catch(() => {});
+        }
         return res.json({ ticket: publicTicket(ticket) });
     } catch (error) {
         console.error("[Support] No pude cerrar el ticket:", error.message);
