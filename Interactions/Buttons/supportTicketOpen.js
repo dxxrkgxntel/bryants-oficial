@@ -7,7 +7,7 @@ module.exports = {
         if (!interaction.inGuild()) return interaction.reply({ content: "Este panel solo funciona dentro del servidor de soporte.", flags: MessageFlags.Ephemeral });
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         try {
-            const existing = await SupportTicket.findOne({ userId: interaction.user.id, status: "open", source: "discord", discordGuildId: interaction.guildId });
+            const existing = await SupportTicket.findOne({ userId: interaction.user.id, status: "open", discordGuildId: interaction.guildId });
             if (existing?.discordChannelId) {
                 const channel = interaction.guild.channels.cache.get(existing.discordChannelId);
                 if (channel) return interaction.editReply({ content: `Ya tienes un ticket abierto: ${channel}` });
