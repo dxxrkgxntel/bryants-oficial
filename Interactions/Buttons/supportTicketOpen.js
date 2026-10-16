@@ -36,7 +36,7 @@ module.exports = {
             const ticket = await SupportTicket.create({
                 ticketNumber, userId: interaction.user.id, username,
                 userAvatar: interaction.user.displayAvatarURL(), subject: category === "website" ? "Soporte de la página web" : "Soporte de Bryvex Bot",
-                category, status: "open", source: "discord", guildId: interaction.guildId,
+                category, status: "open", source: "discord", guildId: interaction.guildId, guildName: interaction.guild.name,
                 discordGuildId: interaction.guildId, discordChannelId: channel.id,
                 messages: [{ authorId: interaction.user.id, authorName: username, authorAvatar: interaction.user.displayAvatarURL(), source: "system", content: "Ticket creado desde Discord. El canal y la web comparten el historial de esta conversación." }]
             });
