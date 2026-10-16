@@ -2,6 +2,7 @@ const $ = selector => document.querySelector(selector);
 let csrfToken = "";
 let activeTicketId = null;
 let currentUser = null;
+let availableGuilds = [];
 
 async function supportApi(url, options = {}) {
     const headers = { ...(options.headers || {}) };
@@ -21,9 +22,18 @@ function renderTickets(tickets) {
         const button=document.createElement("button"); button.type="button"; button.className="support-ticket-item"; button.setAttribute("aria-current",String(ticket.id===activeTicketId));
         const title=document.createElement("strong"); title.textContent=`#${ticket.ticketNumber} · ${ticket.subject}`;
         const status=document.createElement("span"); status.className=`support-status ${ticket.status}`; status.textContent=ticket.status==="open"?"Abierto":"Cerrado";
-        const meta=document.createElement("small"); meta.textContent=`${ticket.category==="bot"?"Bryvex Bot":"Página web"} · ${new Date(ticket.updatedAt).toLocaleString()}`;
+        const meta=document.createElement("small"); meta.textContent=`${ticket.guildName || "Servidor"} · ${ticket.category==="bot"?"Bryvex Bot":"Página web"} · ${new Date(ticket.updatedAt).toLocaleString()}`;
         title.append(" ",status); button.append(title,meta); button.addEventListener("click",()=>openTicket(ticket.id)); list.append(button);
     }
+}
+async function loadSupportGuilds() {
+    const result=await supportApi("/api/support/guilds");
+    availableGuilds=result.guilds || [];
+    const select=$("#support-guild"); select.replaceChildren();
+    const placeholder=document.createElement("option"); placeholder.value=""; placeholder.textContent=availableGuilds.length?"Selecciona un servidor":"No tienes servidores configurados para soporte"; placeholder.disabled=true; placeholder.selected=true; select.append(placeholder);
+    for(const guild of availableGuilds){const option=document.createElement("option");option.value=guild.id;option.textContent=guild.name;select.append(option);}
+    $("#support-create-form").querySelector("button[type=submit]").disabled=!availableGuilds.length;
+    if(!availableGuilds.length) notice("El soporte aún no está configurado en ninguno de los servidores a los que perteneces y donde está Bryvex Bot.");
 }
 async function loadTickets() {
     const result=await supportApi("/api/support/tickets"); renderTickets(result.tickets);
@@ -34,7 +44,7 @@ async function openTicket(id) {
     $("#support-conversation-card").hidden=false;
     $("#support-ticket-number").textContent=`TICKET #${result.ticket.ticketNumber}`;
     $("#support-ticket-subject").textContent=result.ticket.subject;
-    $("#support-ticket-meta").textContent=`${result.ticket.category==="bot"?"Bryvex Bot":"Página web"} · ${result.ticket.status==="open"?"Abierto":"Cerrado"}`;
+    $("#support-ticket-meta").textContent=`${result.ticket.guildName || "Servidor"} · ${result.ticket.category==="bot"?"Bryvex Bot":"Página web"} · ${result.ticket.status==="open"?"Abierto":"Cerrado"}`;
     $("#support-close").hidden=result.ticket.status!=="open";
     const messages=$("#support-messages"); messages.replaceChildren();
     for (const message of result.ticket.messages) {
@@ -55,6 +65,7 @@ async function init() {
         if (!session.user) { $("#support-login-card").hidden=false; $("#support-app").hidden=true; return; }
         currentUser=session.user; csrfToken=session.csrfToken || "";
         $("#support-login-card").hidden=true; $("#support-app").hidden=false; $("#support-login").hidden=true; $("#support-logout").hidden=false;
+        await loadSupportGuilds();
         await loadTickets();
     } catch(error) { notice(error.message); }
 }
@@ -62,7 +73,7 @@ $("#support-create-form").addEventListener("submit",async event=>{
     event.preventDefault();
     const button=event.currentTarget.querySelector("button[type=submit]"); button.disabled=true;
     try {
-        const result=await supportApi("/api/support/tickets",{method:"POST",body:JSON.stringify({category:$("#support-category").value,subject:$("#support-subject").value,message:$("#support-message").value})});
+        const result=await supportApi("/api/support/tickets",{method:"POST",body:JSON.stringify({guildId:$("#support-guild").value,category:$("#support-category").value,subject:$("#support-subject").value,message:$("#support-message").value})});
         $("#support-subject").value=""; $("#support-message").value="";
         notice(`Ticket #${result.ticket.ticketNumber} creado correctamente.`);
         await loadTickets(); await openTicket(result.ticket.id);
