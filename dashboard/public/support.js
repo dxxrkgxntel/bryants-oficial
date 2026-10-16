@@ -48,7 +48,7 @@ async function openTicket(id) {
     $("#support-close").hidden=result.ticket.status!=="open";
     const messages=$("#support-messages"); messages.replaceChildren();
     for (const message of result.ticket.messages) {
-        const item=document.createElement("article"); item.className=`support-message ${message.source==="web"&&message.authorId!==currentUser.id?"staff":""}`;
+        const item=document.createElement("article"); item.className=`support-message ${message.source==="web"&&message.authorId!==result.ticket.userId?"staff":""}`;
         const head=document.createElement("div"); head.className="support-message-head";
         const author=document.createElement("strong"); author.textContent=message.authorName;
         const time=document.createElement("time"); time.textContent=new Date(message.createdAt).toLocaleString();
