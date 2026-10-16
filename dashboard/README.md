@@ -26,3 +26,21 @@ Para los votos, configura en Top.gg el webhook `https://tu-dominio/integrations/
 FadeHost debe proporcionar `PORT`; el servidor escucha en `0.0.0.0`.
 
 Los ajustes de perfil, idioma, referidos y votos se sirven desde este servicio web y comparten MongoDB con el bot; no necesitan un cambio de código ni redeploy del proceso del bot. Sí debes desplegar la web actualizada y completar la configuración de OAuth2 y Top.gg indicada arriba para que se acrediten las recompensas.
+
+
+## Centro de soporte compartido
+
+El centro de soporte está disponible en `/support` y requiere iniciar sesión con Discord. Los tickets y sus mensajes se almacenan en la misma base de datos MongoDB que utiliza el bot. Los usuarios solo pueden consultar sus propios tickets; los miembros del equipo que figuren en `SUPPORT_STAFF_DISCORD_IDS` pueden consultar y responder a todos los tickets desde la web.
+
+Configura también estas variables privadas en **ambos servicios** (bot y dashboard) para habilitar la sincronización con canales privados de Discord:
+
+| Variable | Valor |
+| --- | --- |
+| `SUPPORT_GUILD_ID` | ID del servidor de Discord donde se atenderán tickets creados desde la web |
+| `SUPPORT_CATEGORY_ID` | ID opcional de la categoría para los canales privados |
+| `SUPPORT_STAFF_ROLE_ID` | ID opcional del rol de soporte en Discord |
+| `SUPPORT_STAFF_DISCORD_IDS` | IDs de usuarios del equipo autorizados en la web, separados por comas |
+
+En Discord, publica el panel con `/setup support-tickets channel:#canal`. El bot necesita permisos para administrar canales, ver canales, enviar mensajes y leer el historial. El usuario que abre un ticket en Discord o en la web dispone de un canal privado; los mensajes humanos enviados en ese canal se guardan en MongoDB y se muestran en la conversación web. Las respuestas enviadas desde la web se publican en el canal asociado cuando existe.
+
+Si `SUPPORT_GUILD_ID` no está definido, los tickets creados desde la web se guardan en MongoDB, pero no se podrá crear su canal espejo en Discord; por tanto, configura esta variable para tener sincronización completa.
