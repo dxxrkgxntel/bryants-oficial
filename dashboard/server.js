@@ -1340,6 +1340,156 @@ app.get("/api/guilds/:guildId/audit", requireGuildAdmin, async (req, res) => {
     }
 });
 
+
+const SupportTicket = require("../Models/SupportTicket");
+const SUPPORT_STAFF_IDS = new Set(String(process.env.SUPPORT_STAFF_DISCORD_IDS || "").split(",").map(id => id.trim()).filter(id => /^\\d{17,20}$/.test(id)));
+function isSupportStaff(req) { return Boolean(req.session.user?.id && SUPPORT_STAFF_IDS.has(req.session.user.id)); }
+function publicTicket(ticket) {
+    return {
+        id: String(ticket._id), ticketNumber: ticket.ticketNumber, subject: ticket.subject,
+        category: ticket.category, status: ticket.status, source: ticket.source,
+        createdAt: ticket.createdAt, updatedAt: ticket.updatedAt, lastMessageAt: ticket.lastMessageAt,
+        messages: ticket.messages.map(message => ({
+            id: String(message._id), authorId: message.authorId, authorName: message.authorName,
+            authorAvatar: message.authorAvatar, source: message.source, content: message.content, createdAt: message.createdAt
+        }))
+    };
+}
+async function discordBotRequest(url, options = {}) {
+    return fetch(`https://discord.com/api/v10${url}`, {
+        ...options,
+        headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`, "Content-Type": "application/json", ...(options.headers || {}) },
+        signal: AbortSignal.timeout(8000)
+    });
+}
+async function createDiscordSupportChannel(ticket, userId) {
+    const guildId = process.env.SUPPORT_GUILD_ID;
+    if (!guildId) return null;
+    const staffRoleId = process.env.SUPPORT_STAFF_ROLE_ID;
+    const overwrites = [
+        { id: guildId, type: 0, deny: "1024" },
+        { id: userId, type: 1, allow: "68608" }
+    ];
+    if (staffRoleId) overwrites.push({ id: staffRoleId, type: 0, allow: "68608" });
+    const me = await discordBotRequest(`/guilds/${guildId}/channels`, {
+        method: "POST", body: JSON.stringify({
+            name: `soporte-web-${ticket.ticketNumber}`, type: 0,
+            parent_id: process.env.SUPPORT_CATEGORY_ID || undefined,
+            permission_overwrites: overwrites,
+            topic: `Ticket #${ticket.ticketNumber} · ${ticket.category === "bot" ? "Bryvex Bot" : "Web Bryant's Oficial"} · Usuario Discord ${userId}`
+        })
+    });
+    if (!me.ok) throw new Error(`Discord no pudo crear el canal de soporte (${me.status}).`);
+    const channel = await me.json();
+    ticket.discordGuildId = guildId;
+    ticket.discordChannelId = channel.id;
+    await ticket.save();
+    const greeting = `Ticket #${ticket.ticketNumber} creado desde la web. Categoría: ${ticket.category === "bot" ? "Bryvex Bot" : "Página web de Bryant's Oficial"}.\nUsuario: <@!${userId}>\nAsunto: ${ticket.subject}\n\nMensaje inicial:\n${ticket.messages[0]?.content || ""}`;
+    await discordBotRequest(`/channels/${channel.id}/messages`, { method: "POST", body: JSON.stringify({ content: greeting }) });
+    return channel.id;
+}
+
+app.get("/support", (_req, res) => res.sendFile(path.join(publicDirectory, "support.html")));
+
+app.get("/api/support/tickets", requireLogin, async (req, res) => {
+    try {
+        const filter = isSupportStaff(req) ? {} : { userId: req.session.user.id };
+        const tickets = await SupportTicket.find(filter).sort({ updatedAt: -1 }).limit(100).lean();
+        return res.json({ tickets: tickets.map(ticket => ({
+            id: String(ticket._id), ticketNumber: ticket.ticketNumber, subject: ticket.subject, category: ticket.category,
+            status: ticket.status, source: ticket.source, createdAt: ticket.createdAt, updatedAt: ticket.updatedAt
+        })) });
+    } catch (error) {
+        console.error("[Support] No pude cargar los tickets:", error.message);
+        return res.status(500).json({ error: "No pude cargar los tickets de soporte." });
+    }
+});
+
+app.post("/api/support/tickets", requireLogin, requireCsrf, async (req, res) => {
+    const category = req.body?.category;
+    const subject = String(req.body?.subject || "").trim();
+    const content = String(req.body?.message || "").trim();
+    if (!["bot", "website"].includes(category)) return res.status(400).json({ error: "Selecciona una categoría de soporte válida." });
+    if (subject.length < 4 || subject.length > 120) return res.status(400).json({ error: "El asunto debe tener entre 4 y 120 caracteres." });
+    if (content.length < 10 || content.length > 4000) return res.status(400).json({ error: "El mensaje debe tener entre 10 y 4.000 caracteres." });
+    try {
+        const openTicket = await SupportTicket.findOne({ userId: req.session.user.id, status: "open", category });
+        if (openTicket) return res.status(409).json({ error: `Ya tienes un ticket abierto de esta categoría (#${openTicket.ticketNumber}). Continúa la conversación existente.` });
+        const ticketNumber = (await SupportTicket.countDocuments({})) + 1;
+        const user = req.session.user;
+        const ticket = await SupportTicket.create({
+            ticketNumber, userId: user.id, username: user.displayName || user.globalName || user.username,
+            userAvatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : null,
+            subject, category, source: "web",
+            messages: [{ authorId: user.id, authorName: user.displayName || user.globalName || user.username, authorAvatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : null, source: "web", content }]
+        });
+        try { await createDiscordSupportChannel(ticket, user.id); }
+        catch (discordError) { console.error("[Support] Ticket guardado, pero no se pudo crear canal Discord:", discordError.message); }
+        return res.status(201).json({ ticket: publicTicket(ticket) });
+    } catch (error) {
+        console.error("[Support] No pude crear el ticket:", error.message);
+        return res.status(500).json({ error: "No pude crear el ticket. Inténtalo de nuevo." });
+    }
+});
+
+app.get("/api/support/tickets/:ticketId", requireLogin, async (req, res) => {
+    if (!/^[a-f\\d]{24}$/i.test(req.params.ticketId)) return res.status(404).json({ error: "Ticket no encontrado." });
+    try {
+        const ticket = await SupportTicket.findById(req.params.ticketId);
+        if (!ticket || (ticket.userId !== req.session.user.id && !isSupportStaff(req))) return res.status(404).json({ error: "Ticket no encontrado." });
+        return res.json({ ticket: publicTicket(ticket) });
+    } catch (error) {
+        console.error("[Support] No pude abrir el ticket:", error.message);
+        return res.status(500).json({ error: "No pude abrir el ticket." });
+    }
+});
+
+app.post("/api/support/tickets/:ticketId/messages", requireLogin, requireCsrf, async (req, res) => {
+    if (!/^[a-f\\d]{24}$/i.test(req.params.ticketId)) return res.status(404).json({ error: "Ticket no encontrado." });
+    const content = String(req.body?.content || "").trim();
+    if (!content || content.length > 4000) return res.status(400).json({ error: "El mensaje debe tener entre 1 y 4.000 caracteres." });
+    try {
+        const ticket = await SupportTicket.findById(req.params.ticketId);
+        if (!ticket || (ticket.userId !== req.session.user.id && !isSupportStaff(req))) return res.status(404).json({ error: "Ticket no encontrado." });
+        if (ticket.status !== "open") return res.status(409).json({ error: "Este ticket está cerrado." });
+        const user = req.session.user;
+        const isStaff = isSupportStaff(req);
+        const authorName = isStaff ? (user.displayName || user.globalName || user.username) : ticket.username;
+        const message = { authorId: user.id, authorName, authorAvatar: null, source: "web", content };
+        if (ticket.discordChannelId) {
+            const discordResponse = await discordBotRequest(`/channels/${ticket.discordChannelId}/messages`, {
+                method: "POST", body: JSON.stringify({ content: `**${authorName}** · respuesta desde la web:\\n${content}` })
+            });
+            if (!discordResponse.ok) console.warn("[Support] No se pudo publicar la respuesta en Discord:", discordResponse.status);
+            else { const discordMessage = await discordResponse.json(); message.discordMessageId = discordMessage.id; }
+        }
+        ticket.messages.push(message);
+        ticket.lastMessageAt = new Date();
+        await ticket.save();
+        return res.json({ ticket: publicTicket(ticket) });
+    } catch (error) {
+        console.error("[Support] No pude guardar la respuesta:", error.message);
+        return res.status(500).json({ error: "No pude enviar la respuesta." });
+    }
+});
+
+app.post("/api/support/tickets/:ticketId/close", requireLogin, requireCsrf, async (req, res) => {
+    if (!/^[a-f\\d]{24}$/i.test(req.params.ticketId)) return res.status(404).json({ error: "Ticket no encontrado." });
+    try {
+        const ticket = await SupportTicket.findById(req.params.ticketId);
+        if (!ticket || (ticket.userId !== req.session.user.id && !isSupportStaff(req))) return res.status(404).json({ error: "Ticket no encontrado." });
+        if (ticket.status === "closed") return res.json({ ticket: publicTicket(ticket) });
+        ticket.status = "closed"; ticket.closedAt = new Date(); ticket.lastMessageAt = new Date();
+        ticket.messages.push({ authorId: req.session.user.id, authorName: req.session.user.displayName || req.session.user.username, source: "system", content: "Ticket cerrado desde la web." });
+        await ticket.save();
+        if (ticket.discordChannelId) await discordBotRequest(`/channels/${ticket.discordChannelId}/messages`, { method: "POST", body: JSON.stringify({ content: `Ticket #${ticket.ticketNumber} cerrado desde la web.` }) }).catch(() => {});
+        return res.json({ ticket: publicTicket(ticket) });
+    } catch (error) {
+        console.error("[Support] No pude cerrar el ticket:", error.message);
+        return res.status(500).json({ error: "No pude cerrar el ticket." });
+    }
+});
+
 app.get("/dashboard/:guildId", async (req, res) => {
     if (!req.session.user || !req.session.oauth) return res.redirect("/");
     try {
