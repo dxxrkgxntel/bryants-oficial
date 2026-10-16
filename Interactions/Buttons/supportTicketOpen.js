@@ -7,6 +7,7 @@ module.exports = {
         if (!interaction.inGuild()) return interaction.reply({ content: "Este panel solo funciona dentro del servidor de soporte.", flags: MessageFlags.Ephemeral });
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         try {
+            const category = interaction.customId.endsWith(":website") ? "website" : "bot";
             const existing = await SupportTicket.findOne({ userId: interaction.user.id, status: "open", discordGuildId: interaction.guildId });
             if (existing?.discordChannelId) {
                 const channel = interaction.guild.channels.cache.get(existing.discordChannelId);
@@ -31,7 +32,7 @@ module.exports = {
             const ticketNumber = (await SupportTicket.countDocuments({})) + 1;
             const ticket = await SupportTicket.create({
                 ticketNumber, userId: interaction.user.id, username: interaction.user.globalName || interaction.user.username,
-                userAvatar: interaction.user.displayAvatarURL(), subject: "Soporte desde Discord", category: "bot", source: "discord",
+                userAvatar: interaction.user.displayAvatarURL(), subject: category === "website" ? "Soporte de la página web" : "Soporte de Bryvex Bot", category, source: "discord",
                 discordGuildId: interaction.guildId, discordChannelId: channel.id,
                 messages: [{ authorId: interaction.user.id, authorName: interaction.user.globalName || interaction.user.username, authorAvatar: interaction.user.displayAvatarURL(), source: "system", content: "Ticket creado desde Discord. Este canal y la web comparten el historial de la conversación." }]
             });
