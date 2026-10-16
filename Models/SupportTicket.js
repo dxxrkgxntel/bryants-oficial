@@ -13,6 +13,8 @@ const supportMessageSchema = new mongoose.Schema({
 const supportTicketSchema = new mongoose.Schema({
     ticketNumber: { type: Number, required: true, unique: true, index: true },
     userId: { type: String, required: true, index: true },
+    guildId: { type: String, default: null, index: true },
+    guildName: { type: String, default: null, maxlength: 100 },
     username: { type: String, required: true, maxlength: 100 },
     userAvatar: { type: String, default: null, maxlength: 500 },
     subject: { type: String, required: true, trim: true, maxlength: 120 },
@@ -27,5 +29,6 @@ const supportTicketSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 supportTicketSchema.index({ userId: 1, status: 1, updatedAt: -1 });
+supportTicketSchema.index({ guildId: 1, status: 1, updatedAt: -1 });
 
 module.exports = mongoose.models.SupportTicket || mongoose.model("SupportTicket", supportTicketSchema);
