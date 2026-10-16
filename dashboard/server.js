@@ -1342,7 +1342,7 @@ app.get("/api/guilds/:guildId/audit", requireGuildAdmin, async (req, res) => {
 
 
 const SupportTicket = require("../Models/SupportTicket");
-const SUPPORT_STAFF_IDS = new Set(String(process.env.SUPPORT_STAFF_DISCORD_IDS || "").split(",").map(id => id.trim()).filter(id => /^\\d{17,20}$/.test(id)));
+const SUPPORT_STAFF_IDS = new Set(String(process.env.SUPPORT_STAFF_DISCORD_IDS || "").split(",").map(id => id.trim()).filter(id => /^\d{17,20}$/.test(id)));
 function isSupportStaff(req) { return Boolean(req.session.user?.id && SUPPORT_STAFF_IDS.has(req.session.user.id)); }
 function publicTicket(ticket) {
     return {
@@ -1433,7 +1433,7 @@ app.post("/api/support/tickets", requireLogin, requireCsrf, async (req, res) => 
 });
 
 app.get("/api/support/tickets/:ticketId", requireLogin, async (req, res) => {
-    if (!/^[a-f\\d]{24}$/i.test(req.params.ticketId)) return res.status(404).json({ error: "Ticket no encontrado." });
+    if (!/^[a-f\d]{24}$/i.test(req.params.ticketId)) return res.status(404).json({ error: "Ticket no encontrado." });
     try {
         const ticket = await SupportTicket.findById(req.params.ticketId);
         if (!ticket || (ticket.userId !== req.session.user.id && !isSupportStaff(req))) return res.status(404).json({ error: "Ticket no encontrado." });
@@ -1445,7 +1445,7 @@ app.get("/api/support/tickets/:ticketId", requireLogin, async (req, res) => {
 });
 
 app.post("/api/support/tickets/:ticketId/messages", requireLogin, requireCsrf, async (req, res) => {
-    if (!/^[a-f\\d]{24}$/i.test(req.params.ticketId)) return res.status(404).json({ error: "Ticket no encontrado." });
+    if (!/^[a-f\d]{24}$/i.test(req.params.ticketId)) return res.status(404).json({ error: "Ticket no encontrado." });
     const content = String(req.body?.content || "").trim();
     if (!content || content.length > 4000) return res.status(400).json({ error: "El mensaje debe tener entre 1 y 4.000 caracteres." });
     try {
@@ -1474,7 +1474,7 @@ app.post("/api/support/tickets/:ticketId/messages", requireLogin, requireCsrf, a
 });
 
 app.post("/api/support/tickets/:ticketId/close", requireLogin, requireCsrf, async (req, res) => {
-    if (!/^[a-f\\d]{24}$/i.test(req.params.ticketId)) return res.status(404).json({ error: "Ticket no encontrado." });
+    if (!/^[a-f\d]{24}$/i.test(req.params.ticketId)) return res.status(404).json({ error: "Ticket no encontrado." });
     try {
         const ticket = await SupportTicket.findById(req.params.ticketId);
         if (!ticket || (ticket.userId !== req.session.user.id && !isSupportStaff(req))) return res.status(404).json({ error: "Ticket no encontrado." });
