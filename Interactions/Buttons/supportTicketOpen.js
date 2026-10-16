@@ -12,7 +12,7 @@ module.exports = {
             const config = await SupportTicketConfig.findOne({ guildId: interaction.guildId, enabled: true });
             if (!config) return interaction.editReply({ content: "El sistema de tickets no está configurado en este servidor. Un administrador debe ejecutar /setup support-tickets." });
             const category = interaction.customId.endsWith(":website") ? "website" : "bot";
-            const existing = await SupportTicket.findOne({ userId: interaction.user.id, status: "open", guildId: interaction.guildId, category });
+            const existing = await SupportTicket.findOne({ userId: interaction.user.id, status: "open", category, $or: [{ guildId: interaction.guildId }, { discordGuildId: interaction.guildId }] });
             if (existing?.discordChannelId) {
                 const existingChannel = await interaction.guild.channels.fetch(existing.discordChannelId).catch(() => null);
                 if (existingChannel) return interaction.editReply({ content: `Ya tienes un ticket abierto para esta categoría: ${existingChannel}` });
