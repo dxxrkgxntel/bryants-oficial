@@ -85,4 +85,9 @@ $("#support-logout").addEventListener("click",async()=>{
     catch(error){notice(error.message);}
 });
 init();
-\nwindow.setInterval(() => {\n    if (document.hidden || !currentUser) return;\n    loadTickets().catch(() => {});\n    if (activeTicketId && !$("#support-reply-form").hidden) openTicket(activeTicketId).catch(() => {});\n}, 15000);\n
+
+window.setInterval(() => {
+    if (document.hidden || !currentUser) return;
+    loadTickets().catch(() => {});
+    if (activeTicketId && !$("#support-reply-form").hidden) openTicket(activeTicketId).catch(() => {});
+}, 15000);
