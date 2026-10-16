@@ -1409,6 +1409,7 @@ app.post("/api/support/tickets", requireLogin, requireCsrf, async (req, res) => 
     const category = req.body?.category;
     const subject = String(req.body?.subject || "").trim();
     const content = String(req.body?.message || "").trim();
+    if (!process.env.SUPPORT_GUILD_ID) return res.status(503).json({ error: "El soporte compartido aún no está configurado. Inténtalo más tarde." });
     if (!["bot", "website"].includes(category)) return res.status(400).json({ error: "Selecciona una categoría de soporte válida." });
     if (subject.length < 4 || subject.length > 120) return res.status(400).json({ error: "El asunto debe tener entre 4 y 120 caracteres." });
     if (content.length < 10 || content.length > 4000) return res.status(400).json({ error: "El mensaje debe tener entre 10 y 4.000 caracteres." });
@@ -1424,7 +1425,7 @@ app.post("/api/support/tickets", requireLogin, requireCsrf, async (req, res) => 
             messages: [{ authorId: user.id, authorName: user.displayName || user.globalName || user.username, authorAvatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : null, source: "web", content }]
         });
         try { await createDiscordSupportChannel(ticket, user.id); }
-        catch (discordError) { console.error("[Support] Ticket guardado, pero no se pudo crear canal Discord:", discordError.message); }
+        catch (discordError) { await SupportTicket.deleteOne({ _id: ticket._id }).catch(() => {}); throw discordError; }
         return res.status(201).json({ ticket: publicTicket(ticket) });
     } catch (error) {
         console.error("[Support] No pude crear el ticket:", error.message);
@@ -1484,7 +1485,7 @@ app.post("/api/support/tickets/:ticketId/close", requireLogin, requireCsrf, asyn
         await ticket.save();
         if (ticket.discordChannelId) {
             await discordBotRequest(`/channels/${ticket.discordChannelId}/messages`, { method: "POST", body: JSON.stringify({ content: `Ticket #${ticket.ticketNumber} cerrado desde la web.` }) }).catch(() => {});
-            await discordBotRequest(`/channels/${ticket.discordChannelId}/permissions/${ticket.userId}`, { method: "PUT", body: JSON.stringify({ type: 1, allow: "68608", deny: "2048" }) }).catch(() => {});
+            await discordBotRequest(`/channels/${ticket.discordChannelId}/permissions/${ticket.userId}`, { method: "PUT", body: JSON.stringify({ type: 1, allow: "66560", deny: "2048" }) }).catch(() => {});
         }
         return res.json({ ticket: publicTicket(ticket) });
     } catch (error) {
