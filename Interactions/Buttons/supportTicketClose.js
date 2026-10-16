@@ -6,7 +6,7 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         const ticketId = interaction.customId.slice("support_ticket_close:".length);
-        const ticket = await SupportTicket.findOne({ _id: ticketId, guildId: interaction.guildId, discordChannelId: interaction.channelId });
+        const ticket = await SupportTicket.findOne({ _id: ticketId, discordGuildId: interaction.guildId, discordChannelId: interaction.channelId });
         if (!ticket || ticket.status !== "open") return interaction.editReply({ content: "Este ticket ya está cerrado o no existe." });
         const config = await SupportTicketConfig.findOne({ guildId: interaction.guildId });
         const isOwner = ticket.userId === interaction.user.id;
