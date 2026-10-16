@@ -28,19 +28,22 @@ FadeHost debe proporcionar `PORT`; el servidor escucha en `0.0.0.0`.
 Los ajustes de perfil, idioma, referidos y votos se sirven desde este servicio web y comparten MongoDB con el bot; no necesitan un cambio de código ni redeploy del proceso del bot. Sí debes desplegar la web actualizada y completar la configuración de OAuth2 y Top.gg indicada arriba para que se acrediten las recompensas.
 
 
-## Centro de soporte compartido
+## Centro de soporte multi-servidor
 
-El centro de soporte está disponible en `/support` y requiere iniciar sesión con Discord. Los tickets y sus mensajes se almacenan en la misma base de datos MongoDB que utiliza el bot. Los usuarios solo pueden consultar sus propios tickets; los miembros del equipo que figuren en `SUPPORT_STAFF_DISCORD_IDS` pueden consultar y responder a todos los tickets desde la web.
+El centro de soporte está disponible en `/support` y requiere iniciar sesión con Discord. Los tickets se almacenan en MongoDB compartida con el bot, se vinculan al servidor de Discord que eligió el usuario y sincronizan sus mensajes con un canal privado de ese mismo servidor.
 
-Configura también estas variables privadas en **ambos servicios** (bot y dashboard) para habilitar la sincronización con canales privados de Discord:
+### Configuración por servidor
 
-| Variable | Valor |
-| --- | --- |
-| `SUPPORT_GUILD_ID` | ID del servidor de Discord donde se atenderán tickets creados desde la web |
-| `SUPPORT_CATEGORY_ID` | ID opcional de la categoría para los canales privados |
-| `SUPPORT_STAFF_ROLE_ID` | ID opcional del rol de soporte en Discord |
-| `SUPPORT_STAFF_DISCORD_IDS` | IDs de usuarios del equipo autorizados en la web, separados por comas |
+En **cada servidor** donde quieras habilitar el sistema, un administrador debe ejecutar:
 
-En Discord, publica el panel con `/setup support-tickets channel:#canal`. El bot necesita permisos para administrar canales, ver canales, enviar mensajes y leer el historial. El usuario que abre un ticket en Discord o en la web dispone de un canal privado; los mensajes humanos enviados en ese canal se guardan en MongoDB y se muestran en la conversación web. Las respuestas enviadas desde la web se publican en el canal asociado cuando existe.
+`/setup support-tickets channel:#canal category:Categoría staff-role:@Soporte`
 
-Si `SUPPORT_GUILD_ID` no está definido, los tickets creados desde la web se guardan en MongoDB, pero no se podrá crear su canal espejo en Discord; por tanto, configura esta variable para tener sincronización completa.
+- `channel`: canal público donde se publica el panel.
+- `category`: categoría opcional donde se crearán los canales privados de tickets.
+- `staff-role`: rol opcional que podrá ver y atender los tickets de ese servidor.
+
+Cada ejecución guarda la configuración usando el ID de ese servidor. No se necesitan variables globales como `SUPPORT_GUILD_ID`, `SUPPORT_CATEGORY_ID` o `SUPPORT_STAFF_ROLE_ID`. Los administradores pueden volver a ejecutar el comando para actualizar la configuración de su servidor.
+
+En la web, el usuario inicia sesión con Discord y selecciona uno de los servidores donde está presente, Bryvex Bot está instalado y el sistema de tickets ha sido configurado. Los usuarios solo pueden ver sus propios tickets; el equipo del servidor puede ver y responder los tickets de su servidor mediante el rol configurado, una lista de miembros de soporte guardada en la configuración o permisos de administrador. Los tickets y respuestas de cada servidor permanecen aislados de los demás.
+
+El bot necesita permisos para administrar canales, ver canales, enviar mensajes, leer el historial y administrar los permisos de los canales. La dashboard debe usar la misma `MONGODB_URI` que el bot. Configura los paneles en cada servidor donde vayas a ofrecer soporte.
