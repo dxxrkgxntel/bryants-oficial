@@ -351,7 +351,6 @@ async function checkAlert(client, alert) {
     // Kick represents an offline channel with a null/missing `stream` object.
     // Some API responses omit `is_live` while returning the active stream.
     if (!stream || stream.is_live === false) {
-        console.info(`[SOCIALALERTS] ${platform} ${alert.slug} (${alert.guildId}): consulta correcta, no hay directo activo.`);
         if (state.lastStreamId) {
             state.lastStreamId = null;
             state.messageId = null;
@@ -366,7 +365,6 @@ async function checkAlert(client, alert) {
         console.info(`[SOCIALALERTS] ${platform} ${alert.slug} (${alert.guildId}): alerta enviada al canal ${alert.channelId}.`);
         return;
     }
-    console.info(`[SOCIALALERTS] ${platform} ${alert.slug} (${alert.guildId}): directo detectado; la alerta ya fue enviada para este directo.`);
     await updateViewerCount(client, alert, state, { ...channelInfo, ...stream, stream_title: stream.stream_title || stream.title });
 }
 
@@ -375,7 +373,6 @@ async function poll(client) {
     pollRunning = true;
     try {
         const alerts = await SocialAlert.find({ platform: { $in: ["Kick", "TikTok", "Twitch", "YouTube"] }, enabled: { $ne: false } }).lean();
-        console.info(`[SOCIALALERTS] Revisando ${alerts.length} alerta(s) activa(s).`);
         for (const alert of alerts) {
             try { await checkAlert(client, alert); }
             catch (error) {
@@ -395,7 +392,6 @@ async function poll(client) {
 }
 
 module.exports = function startSocialAlerts(client) {
-    console.info("[SOCIALALERTS] Monitor de alertas de Kick, TikTok, Twitch y YouTube iniciado; comprobación cada 60 segundos.");
     setTimeout(() => poll(client), 15_000);
     const timer = setInterval(() => poll(client), POLL_INTERVAL_MS);
     timer.unref?.();
