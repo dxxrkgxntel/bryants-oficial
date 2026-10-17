@@ -114,11 +114,24 @@ module.exports = {
                 trustedUserIds: []
             });
 
+            // El usuario puede salir del canal creador mientras se crea la sala.
+            // Comprueba su estado actual y trata el error 40032 como una carrera esperada.
             try {
+                if (!member.voice.channelId || member.voice.channelId !== newState.channelId) {
+                    await tempVoiceChannels.deleteOne({ channelId: channel.id }).catch(() => {});
+                    await channel.delete("El usuario salió del canal creador antes del traslado").catch(() => {});
+                    return;
+                }
+
                 await member.voice.setChannel(channel);
             } catch (error) {
                 await tempVoiceChannels.deleteOne({ channelId: channel.id }).catch(() => {});
                 await channel.delete("No se pudo mover al usuario al canal temporal").catch(() => {});
+
+                if (error?.code === 40032 || error?.rawError?.code === 40032) {
+                    return;
+                }
+
                 throw error;
             }
         }
