@@ -1224,7 +1224,7 @@ app.put("/api/guilds/:guildId/polls/:pollId", requireLogin, requireCsrf, require
         poll.endAt = endAt;
         await poll.save();
         await recordDashboardAudit(req, req.params.guildId, "Encuesta actualizada");
-        return res.json({ ok: true });
+        return res.json({ ok: true, url: `https://discord.com/channels/${req.params.guildId}/${poll.channelId}/${poll.messageId}` });
     } catch (error) {
         console.error("[Dashboard Polls] Error al editar encuesta:", error.message);
         const status = error.status === 404 ? 404 : error.status === 429 ? 429 : error.status ? 502 : 400;
