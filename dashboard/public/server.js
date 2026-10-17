@@ -1083,7 +1083,7 @@ async function renderPollAdmin(editingPoll = null) {
                 const response = await api(`/api/guilds/${encodeURIComponent(guildId)}/polls${editingPoll ? `/${encodeURIComponent(editingPoll._id)}` : ""}`, {
                     method: editingPoll ? "PUT" : "POST", body: payload
                 });
-                const discordUrl = response?.url || (editingPoll ? editingPoll.url : null);
+                const discordUrl = response?.url || (editingPoll?.channelId && editingPoll?.messageId ? `https://discord.com/channels/${guildId}/${editingPoll.channelId}/${editingPoll.messageId}` : editingPoll?.url || null);
                 let successMessage;
                 if (discordUrl) {
                     successMessage = editingPoll ? "Encuesta actualizada en Discord." : "Encuesta publicada en Discord.";
