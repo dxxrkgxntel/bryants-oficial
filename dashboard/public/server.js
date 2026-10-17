@@ -1084,16 +1084,23 @@ async function renderPollAdmin(editingPoll = null) {
                     method: editingPoll ? "PUT" : "POST", body: payload
                 });
                 const discordUrl = response?.url || (editingPoll ? editingPoll.url : null);
+                let successMessage;
                 if (discordUrl) {
-                    showNotice(editingPoll ? "Encuesta actualizada en Discord." : "Encuesta publicada en Discord.");
-                    feedback.innerHTML = `Enlace al mensaje: <a href="${escapeHtml(discordUrl)}" target="_blank" rel="noopener noreferrer">Abrir encuesta en Discord</a>`;
+                    successMessage = editingPoll ? "Encuesta actualizada en Discord." : "Encuesta publicada en Discord.";
+                    showNotice(successMessage);
                 } else {
-                    feedback.textContent = editingPoll
+                    successMessage = editingPoll
                         ? "Discord confirmó la actualización, pero no se recibió un enlace al mensaje."
                         : "La solicitud terminó sin devolver un enlace al mensaje. Actualiza la lista y comprueba el canal configurado.";
-                    showNotice(feedback.textContent, true);
+                    showNotice(successMessage, true);
                 }
-                renderPollAdmin();
+                await renderPollAdmin();
+                const refreshedFeedback = content.querySelector("#poll-form .save-feedback");
+                if (refreshedFeedback) {
+                    refreshedFeedback.innerHTML = discordUrl
+                        ? `Enlace al mensaje: <a href="${escapeHtml(discordUrl)}" target="_blank" rel="noopener noreferrer">Abrir encuesta en Discord</a>`
+                        : escapeHtml(successMessage);
+                }
             } catch (error) {
                 feedback.textContent = error.message;
                 showNotice(error.message, true);
