@@ -1080,10 +1080,19 @@ async function renderPollAdmin(editingPoll = null) {
             feedback.textContent = editingPoll ? "Actualizando el mensaje de Discord…" : "Publicando en el canal…";
             try {
                 const payload = JSON.stringify({ question: formElement.elements.question.value, options, duration: formElement.elements.duration.value });
-                await api(`/api/guilds/${encodeURIComponent(guildId)}/polls${editingPoll ? `/${encodeURIComponent(editingPoll._id)}` : ""}`, {
+                const response = await api(`/api/guilds/${encodeURIComponent(guildId)}/polls${editingPoll ? `/${encodeURIComponent(editingPoll._id)}` : ""}`, {
                     method: editingPoll ? "PUT" : "POST", body: payload
                 });
-                showNotice(editingPoll ? "Encuesta actualizada en Discord." : "Encuesta publicada en Discord.");
+                const discordUrl = response?.url || (editingPoll ? editingPoll.url : null);
+                if (discordUrl) {
+                    showNotice(editingPoll ? "Encuesta actualizada en Discord." : "Encuesta publicada en Discord.");
+                    feedback.innerHTML = `Enlace al mensaje: <a href="${escapeHtml(discordUrl)}" target="_blank" rel="noopener noreferrer">Abrir encuesta en Discord</a>`;
+                } else {
+                    feedback.textContent = editingPoll
+                        ? "Discord confirmó la actualización, pero no se recibió un enlace al mensaje."
+                        : "La solicitud terminó sin devolver un enlace al mensaje. Actualiza la lista y comprueba el canal configurado.";
+                    showNotice(feedback.textContent, true);
+                }
                 renderPollAdmin();
             } catch (error) {
                 feedback.textContent = error.message;
