@@ -2,6 +2,34 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, TextDisp
 const SupportTicketConfig = require("../../Models/SupportTicketConfig");
 const botConfig = require("../../config.json");
 
+async function isBotDeveloper(interaction) {
+    const configuredIds = [
+        process.env.DEVELOPER_ID,
+        botConfig.developer,
+        botConfig.developerId
+    ].filter(id => typeof id === "string" && id.trim());
+
+    if (configuredIds.includes(interaction.user.id)) return true;
+
+    try {
+        const application = await interaction.client.application.fetch();
+        const owner = application.owner;
+
+        if (owner?.id === interaction.user.id) return true;
+
+        const members = owner?.members;
+        if (members && Array.from(members.values()).some(member =>
+            member.id === interaction.user.id || member.user?.id === interaction.user.id
+        )) {
+            return true;
+        }
+    } catch (error) {
+        console.error("[Support Tickets] No se pudo verificar al propietario de la aplicación:", error.message);
+    }
+
+    return false;
+}
+
 module.exports = {
     async execute(interaction) {
         if (!interaction.guildId || !interaction.guild) {
@@ -14,7 +42,7 @@ module.exports = {
             console.error("[Support Tickets] No se pudo validar el servidor central:", error.message);
             return interaction.reply({ content: "No pude validar el servidor central de soporte. Inténtalo de nuevo más tarde.", flags: MessageFlags.Ephemeral });
         }
-        if (activeConfig && activeConfig.guildId !== interaction.guildId && interaction.user.id !== botConfig.developer) {
+        if (activeConfig && activeConfig.guildId !== interaction.guildId && !(await isBotDeveloper(interaction))) {
             return interaction.reply({ content: "El centro de soporte de Bryvex Bot ya está configurado en un servidor único. Solo el desarrollador del bot puede cambiar el servidor central.", flags: MessageFlags.Ephemeral });
         }
         const channel = interaction.options.getChannel("channel", true);
