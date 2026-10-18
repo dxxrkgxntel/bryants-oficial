@@ -9,7 +9,7 @@ const {
 } = require("discord.js");
 const AntiScam = require("../../Models/AntiScam");
 
-const BANNER = "https://i.imgur.com/BTSUMgG.png";
+const BANNER = "https://i.imgur.com/joAe57D.png";
 const punishmentNames = {
     delete: "Eliminar mensaje",
     timeout: "Timeout",
