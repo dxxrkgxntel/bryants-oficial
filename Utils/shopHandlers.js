@@ -1,10 +1,10 @@
 const {ContainerBuilder,TextDisplayBuilder,SeparatorBuilder,MediaGalleryBuilder,MediaGalleryItemBuilder,MessageFlags,SeparatorSpacingSize,ActionRowBuilder,ButtonBuilder,ButtonStyle,StringSelectMenuBuilder,PermissionFlagsBits}=require("discord.js");
 const ShopItem=require("../Models/ShopItem");
 const EconomyUser=require("../Models/EconomyUser");
-const VIEW_BANNER="https://i.imgur.com/QvQFAzE.png";
-const BUY_BANNER="https://i.imgur.com/EMNdEQk.png";
-const ADD_BANNER="https://i.imgur.com/IXt8ptY.png";
-const REMOVE_BANNER="https://i.imgur.com/kyVJQka.png";
+const VIEW_BANNER="https://i.imgur.com/joAe57D.png";
+const BUY_BANNER="https://i.imgur.com/joAe57D.png";
+const ADD_BANNER="https://i.imgur.com/joAe57D.png";
+const REMOVE_BANNER="https://i.imgur.com/joAe57D.png";
 const BANNER=VIEW_BANNER;
 function panel(t,c,row=null,color=0x8A2BE2,banner=BANNER){const p=new ContainerBuilder().setAccentColor(color);p.addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(banner)));p.addTextDisplayComponents(new TextDisplayBuilder().setContent("## "+t));p.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small));p.addTextDisplayComponents(new TextDisplayBuilder().setContent(c));if(row){p.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small));p.addActionRowComponents(row);}return p;}
 function reply(i,t,c,color=0x8A2BE2,e=false,banner=BANNER){return i.reply({components:[panel(t,c,null,color,banner)],flags:e?MessageFlags.IsComponentsV2|MessageFlags.Ephemeral:MessageFlags.IsComponentsV2});}
