@@ -6,10 +6,10 @@ const {
 const Quest = require("../../Models/Quest");
 const UserQuest = require("../../Models/UserQuest");
 
-const QUEST_LIST_BANNER = "https://i.imgur.com/W9cabP5.png";
-const QUEST_CREATE_BANNER = "https://i.imgur.com/LP0v169.png";
-const QUEST_EDIT_BANNER = "https://i.imgur.com/wb9F4Kz.png";
-const QUEST_REMOVE_BANNER = "https://i.imgur.com/VhVn6nb.png";
+const QUEST_LIST_BANNER = "https://i.imgur.com/joAe57D.png";
+const QUEST_CREATE_BANNER = "https://i.imgur.com/joAe57D.png";
+const QUEST_EDIT_BANNER = "https://i.imgur.com/joAe57D.png";
+const QUEST_REMOVE_BANNER = "https://i.imgur.com/joAe57D.png";
 
 function panel(title, text, row = null, color = 0x8A2BE2, banner = null) {
  const p = new ContainerBuilder().setAccentColor(color);
