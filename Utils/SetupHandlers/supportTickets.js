@@ -7,7 +7,13 @@ module.exports = {
         if (!interaction.guildId || !interaction.guild) {
             return interaction.reply({ content: "Este comando solo puede usarse dentro de un servidor.", flags: MessageFlags.Ephemeral });
         }
-        const activeConfig = await SupportTicketConfig.findOne({ enabled: true }).lean();
+        let activeConfig;
+        try {
+            activeConfig = await SupportTicketConfig.findOne({ enabled: true }).lean();
+        } catch (error) {
+            console.error("[Support Tickets] No se pudo validar el servidor central:", error.message);
+            return interaction.reply({ content: "No pude validar el servidor central de soporte. Inténtalo de nuevo más tarde.", flags: MessageFlags.Ephemeral });
+        }
         if (activeConfig && activeConfig.guildId !== interaction.guildId && interaction.user.id !== botConfig.developer) {
             return interaction.reply({ content: "El centro de soporte de Bryvex Bot ya está configurado en un servidor único. Solo el desarrollador del bot puede cambiar el servidor central.", flags: MessageFlags.Ephemeral });
         }
