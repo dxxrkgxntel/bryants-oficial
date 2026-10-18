@@ -17,8 +17,9 @@ module.exports = {
             // VALIDACIONES
             //////////////////////////////////////////////////
 
-            if (!oldMessage.guild) return;
-            if (oldMessage.author?.bot) return;
+            if (!oldMessage?.guild) return;
+            if (!oldMessage.author || oldMessage.author.bot) return;
+            if (!oldMessage.channelId || !oldMessage.id) return;
 
             //////////////////////////////////////////////////
             // IGNORAR SI NO CAMBIÓ
