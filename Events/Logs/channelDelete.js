@@ -48,7 +48,7 @@ module.exports = {
                     .setColor("#8A2BE2")
                     .setTitle("🗑️ - Canal Eliminado")
                     .setDescription(`📌 Nombre: \`${channel.name}\`\n` +`🆔 ID: \`${channel.id}\`\n` +`🛠️ Tipo: \`${ChannelType[channel.type]}\`\n\n` +`👤 Eliminado por: ${log?.executor || "Desconocido"}`)
-                    .setThumbnail('https://i.imgur.com/joAe57D.png')
+                    .setThumbnail('https://i.imgur.com/2xTDN4W.png')
                     .setImage('https://i.imgur.com/joAe57D.png')
 
             //////////////////////////////////////////////////
