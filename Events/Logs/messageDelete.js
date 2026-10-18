@@ -53,7 +53,7 @@ module.exports = {
                     .setColor("#8A2BE2")
                     .setTitle("🗑️ - Mensaje Eliminado")
                     .setDescription(`> Un mensaje fue eliminado.\n\n` +`👤 Autor: ${message.author}\n` +`📍 Canal: ${message.channel}\n\n` +`💬 Contenido:\n` +`\`\`\`\n${content}\n\`\`\``)
-                    .setThumbnail('https://i.imgur.com/joAe57D.png')
+                    .setThumbnail('https://i.imgur.com/2xTDN4W.png')
                     .setImage('https://i.imgur.com/joAe57D.png')
 
             //////////////////////////////////////////////////
