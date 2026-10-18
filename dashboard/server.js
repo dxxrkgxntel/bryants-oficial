@@ -1351,6 +1351,23 @@ async function discordBotRequest(url, options = {}) {
         signal: AbortSignal.timeout(8000)
     });
 }
+async function notifySupportTicketReply(userId, ticketNumber) {
+    try {
+        const dmResponse = await discordBotRequest("/users/@me/channels", {
+            method: "POST",
+            body: JSON.stringify({ recipient_id: userId })
+        });
+        if (!dmResponse.ok) throw new Error(`Discord no pudo abrir el DM (${dmResponse.status}).`);
+        const dmChannel = await dmResponse.json();
+        const messageResponse = await discordBotRequest(`/channels/${dmChannel.id}/messages`, {
+            method: "POST",
+            body: JSON.stringify({ content: `Te han respondido en tu ticket #${ticketNumber}, ve chequealo.` })
+        });
+        if (!messageResponse.ok) throw new Error(`Discord no pudo enviar el aviso por DM (${messageResponse.status}).`);
+    } catch (error) {
+        console.warn("[Support] No se pudo enviar el aviso por DM:", error.message);
+    }
+}
 async function getSupportUserGuilds(req) {
     if (!await refreshOAuthToken(req)) throw new Error("La sesión de Discord venció. Vuelve a iniciar sesión.");
     return discordRequest("https://discord.com/api/v10/users/@me/guilds", req.session.oauth.accessToken);
@@ -1548,6 +1565,9 @@ app.post("/api/support/tickets/:ticketId/messages", requireLogin, requireCsrf, a
         ticket.messages.push(message);
         ticket.lastMessageAt = new Date();
         await ticket.save();
+        if (isStaff && user.id !== ticket.userId) {
+            await notifySupportTicketReply(ticket.userId, ticket.ticketNumber);
+        }
         return res.json({ ticket: publicTicket(ticket) });
     } catch (error) {
         console.error("[Support] No pude guardar la respuesta:", error.message);
