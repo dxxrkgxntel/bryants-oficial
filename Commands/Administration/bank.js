@@ -299,7 +299,7 @@ module.exports = {
                         stale++;
                         continue;
                     }
-                    valid.push(role + " — **" + data.requiredAmount.toLocaleString() + " monedas**");
+                    valid.push("**" + role.name + "** — **" + data.requiredAmount.toLocaleString() + " monedas**");
                 }
 
                 let description = valid.length
