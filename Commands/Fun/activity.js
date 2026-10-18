@@ -45,7 +45,7 @@ async function runBanana(interaction) {
                                 { type: 14, divider: true, spacing: 1 },
 { type: 10, content: "## 🍌 BF Banana\n### 📏 Medición aleatoria\n\n👤 Usuario: <@" + user.id + ">\n🍌 Tamaño: **" + banana + " cm**" },
                 { type: 14, divider: true, spacing: 1 },
-                { type: 10, content: "🎲 **Resultado generado al azar por BF Activity**\n👤 Solicitado por <@" + interaction.user.id + ">" }
+                { type: 10, content: "🎲 **Resultado generado al azar por Bryvex Bot**\n👤 Solicitado por <@" + interaction.user.id + ">" }
             ]
         }]
     });
