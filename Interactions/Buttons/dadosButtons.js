@@ -58,7 +58,7 @@ module.exports = {
         await userData.save();
 
         return interaction.editReply(panel(
-            `## 🎲 Resultado — Dados\n### 👤 Tú\n🎲 Resultado: **${userDice}**\n\n### 🤖 BF Casino\n🎲 Resultado: **${botDice}**\n\n${result}\n👛 Wallet actual: **${userData.wallet.toLocaleString()} monedas**`,
+            `## 🎲 Resultado — Dados\n### 👤 Tú\n🎲 Resultado: **${userDice}**\n\n### 🤖 Bryvex Casino\n🎲 Resultado: **${botDice}**\n\n${result}\n👛 Wallet actual: **${userData.wallet.toLocaleString()} monedas**`,
             accent
         ));
     }
