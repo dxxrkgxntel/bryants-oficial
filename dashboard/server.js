@@ -1344,6 +1344,13 @@ app.get("/api/guilds/:guildId/audit", requireGuildAdmin, async (req, res) => {
 const SupportTicket = require("../Models/SupportTicket");
 const SupportTicketConfig = require("../Models/SupportTicketConfig");
 
+// Caché breve para evitar consultar la API de Discord en cada actualización de la página.
+const supportUserGuildsCache = new Map();
+const supportStaffGuildsCache = new Map();
+const supportStaffGuildsPending = new Map();
+const SUPPORT_GUILDS_CACHE_TTL = 60_000;
+const SUPPORT_STAFF_CACHE_TTL = 30_000;
+
 async function discordBotRequest(url, options = {}) {
     return fetch(`https://discord.com/api/v10${url}`, {
         ...options,
@@ -1370,7 +1377,13 @@ async function notifySupportTicketReply(userId, ticketNumber) {
 }
 async function getSupportUserGuilds(req) {
     if (!await refreshOAuthToken(req)) throw new Error("La sesión de Discord venció. Vuelve a iniciar sesión.");
-    return discordRequest("https://discord.com/api/v10/users/@me/guilds", req.session.oauth.accessToken);
+    const userId = req.session.user.id;
+    const cached = supportUserGuildsCache.get(userId);
+    if (cached && cached.expiresAt > Date.now()) return cached.guilds;
+
+    const guilds = await discordRequest("https://discord.com/api/v10/users/@me/guilds", req.session.oauth.accessToken);
+    supportUserGuildsCache.set(userId, { guilds, expiresAt: Date.now() + SUPPORT_GUILDS_CACHE_TTL });
+    return guilds;
 }
 async function getConfiguredSupportGuilds() {
     const config = await SupportTicketConfig.findOne({ enabled: true }).sort({ updatedAt: -1 }).lean();
@@ -1388,7 +1401,7 @@ async function getConfiguredSupportGuilds() {
         return [];
     }
 }
-async function getSupportStaffGuildIds(req) {
+async function getSupportStaffGuildIdsUncached(req) {
     const [userGuilds, configs] = await Promise.all([
         getSupportUserGuilds(req),
         SupportTicketConfig.find({ enabled: true }).lean()
@@ -1411,6 +1424,22 @@ async function getSupportStaffGuildIds(req) {
     }));
     return new Set(checks.filter(Boolean));
 }
+async function getSupportStaffGuildIds(req) {
+    const userId = req.session.user.id;
+    const cached = supportStaffGuildsCache.get(userId);
+    if (cached && cached.expiresAt > Date.now()) return cached.guildIds;
+    if (supportStaffGuildsPending.has(userId)) return supportStaffGuildsPending.get(userId);
+
+    const pending = getSupportStaffGuildIdsUncached(req)
+        .then(guildIds => {
+            supportStaffGuildsCache.set(userId, { guildIds, expiresAt: Date.now() + SUPPORT_STAFF_CACHE_TTL });
+            return guildIds;
+        })
+        .finally(() => supportStaffGuildsPending.delete(userId));
+    supportStaffGuildsPending.set(userId, pending);
+    return pending;
+}
+
 async function canAccessSupportTicket(req, ticket) {
     if (ticket.userId === req.session.user.id) return true;
     const guildId = ticket.guildId || ticket.discordGuildId;
