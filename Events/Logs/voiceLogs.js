@@ -59,7 +59,7 @@ module.exports = {
                         .setColor("#8A2BE2")
                         .setTitle("🔊 - Usuario entró a voz")
                         .setDescription(`👤 Usuario: ${user}\n` +`🎧 Canal: ${newState.channel}`)
-                        .setThumbnail('https://i.imgur.com/joAe57D.png')
+                        .setThumbnail('https://i.imgur.com/2xTDN4W.png')
                         .setImage('https://i.imgur.com/joAe57D.png')
 
                 return channel.send({embeds: [embed]});
@@ -80,7 +80,7 @@ module.exports = {
                         .setColor("#8A2BE2")
                         .setTitle("📤 - Usuario salió de voz")
                         .setDescription(`👤 Usuario: ${user}\n` +`🎧 Canal: ${oldState.channel}`)
-                        .setThumbnail('https://i.imgur.com/joAe57D.png')
+                        .setThumbnail('https://i.imgur.com/2xTDN4W.png')
                         .setImage('https://i.imgur.com/joAe57D.png')
 
                 return channel.send({embeds: [embed]});
@@ -103,7 +103,7 @@ module.exports = {
                         .setColor("#8A2BE2")
                         .setTitle("🔁 - Usuario cambió de canal")
                         .setDescription(`👤 Usuario: ${user}\n\n` +`📤 Antes: ${oldState.channel}\n` +`📥 Ahora: ${newState.channel}`)
-                        .setThumbnail('https://i.imgur.com/joAe57D.png')
+                        .setThumbnail('https://i.imgur.com/2xTDN4W.png')
                         .setImage('https://i.imgur.com/joAe57D.png')
 
                 return channel.send({embeds: [embed]});
@@ -124,7 +124,7 @@ module.exports = {
                         .setColor("#8A2BE2")
                         .setTitle("🔇 - Usuario se muteó")
                         .setDescription(`👤 ${user}`)
-                        .setThumbnail('https://i.imgur.com/joAe57D.png')
+                        .setThumbnail('https://i.imgur.com/2xTDN4W.png')
                         .setImage('https://i.imgur.com/joAe57D.png')
 
                 return channel.send({embeds: [embed]});
@@ -145,7 +145,7 @@ module.exports = {
                         .setColor("#8A2BE2")
                         .setTitle("🔊 - Usuario se desmuteó")
                         .setDescription(`👤 ${user}`)
-                        .setThumbnail('https://i.imgur.com/joAe57D.png')
+                        .setThumbnail('https://i.imgur.com/2xTDN4W.png')
                         .setImage('https://i.imgur.com/joAe57D.png')
 
                 return channel.send({embeds: [embed]});
@@ -166,7 +166,7 @@ module.exports = {
                         .setColor("#8A2BE2")
                         .setTitle("📺 - Usuario comenzó stream")
                         .setDescription(`👤 ${user}\n🎧 ${newState.channel}`)
-                        .setThumbnail('https://i.imgur.com/joAe57D.png')
+                        .setThumbnail('https://i.imgur.com/2xTDN4W.png')
                         .setImage('https://i.imgur.com/joAe57D.png')
 
                 return channel.send({embeds: [embed]});
