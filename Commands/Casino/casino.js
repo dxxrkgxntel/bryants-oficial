@@ -46,7 +46,7 @@ async function run_blackjack(interaction) {
                 type: 17,
                 accent_color: 0x8A2BE2,
                 components: [
-                    { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+                    { type: 12, items: [{ media: { url: "https://i.imgur.com/joAe57D.png" } }] },
                                     { type: 14, divider: true, spacing: 1 },
 { type: 10, content: "## ❌ Blackjack\nNo tienes datos económicos." }
                 ]
@@ -61,7 +61,7 @@ async function run_blackjack(interaction) {
                 type: 17,
                 accent_color: 0x8A2BE2,
                 components: [
-                    { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+                    { type: 12, items: [{ media: { url: "https://i.imgur.com/joAe57D.png" } }] },
                                     { type: 14, divider: true, spacing: 1 },
 { type: 10, content: `## ❌ Dinero insuficiente\nNecesitas **${amount.toLocaleString()} monedas** y tienes **${userData.wallet.toLocaleString()}** en tu wallet.` }
                 ]
@@ -92,7 +92,7 @@ async function run_blackjack(interaction) {
             type: 17,
             accent_color: 0x8A2BE2,
             components: [
-                { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+                { type: 12, items: [{ media: { url: "https://i.imgur.com/joAe57D.png" } }] },
                                 { type: 14, divider: true, spacing: 1 },
 { type: 10, content: `## 🃏 Blackjack\n### 🎴 Dealer\n❓  **${dealerHand[1]}**\n\n### 👤 ${interaction.user.username}\n**${playerHand.join("  •  ")}**\n\n💯 Total: **${playerTotal}**\n💰 Apuesta: **${amount.toLocaleString()} monedas**\n👛 Wallet: **${userData.wallet.toLocaleString()} monedas**` },
                 { type: 14, divider: true, spacing: 1 },
@@ -111,7 +111,7 @@ async function run_stats(interaction) {
         return interaction.editReply({
             flags: MessageFlags.IsComponentsV2,
             components: [{ type: 17, accent_color: 0x8A2BE2, components: [
-                { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+                { type: 12, items: [{ media: { url: "https://i.imgur.com/joAe57D.png" } }] },
                                 { type: 14, divider: true, spacing: 1 },
 { type: 10, content: "## 🎰 Estadísticas del Casino\n❌ Todavía no tienes estadísticas registradas en BF Casino." }
             ]}]
@@ -124,7 +124,7 @@ async function run_stats(interaction) {
     return interaction.editReply({
         flags: MessageFlags.IsComponentsV2,
         components: [{ type: 17, accent_color: 0x8A2BE2, components: [
-            { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+            { type: 12, items: [{ media: { url: "https://i.imgur.com/joAe57D.png" } }] },
                             { type: 14, divider: true, spacing: 1 },
 { type: 10, content: `## 🎰 Estadísticas de BF Casino\n### 👤 ${target.username}\n\n🎉 Victorias: **${data.totalWins.toLocaleString()}**\n💥 Derrotas: **${data.totalLosses.toLocaleString()}**\n📈 Winrate: **${winrate}%**\n🎲 Partidas: **${data.totalGames.toLocaleString()}**` },
             { type: 14, divider: true, spacing: 1 },
@@ -144,7 +144,7 @@ async function run_coinflip(interaction) {
     const errorPanel = (message) => ({
         flags: MessageFlags.IsComponentsV2,
         components: [{ type: 17, accent_color: 0x8A2BE2, components: [
-            { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+            { type: 12, items: [{ media: { url: "https://i.imgur.com/joAe57D.png" } }] },
                             { type: 14, divider: true, spacing: 1 },
 { type: 10, content: `## 🪙 Coinflip\n❌ ${message}` }
         ]}]
@@ -175,7 +175,7 @@ async function run_coinflip(interaction) {
     return interaction.editReply({
         flags: MessageFlags.IsComponentsV2,
         components: [{ type: 17, accent_color: 0x8A2BE2, components: [
-            { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+            { type: 12, items: [{ media: { url: "https://i.imgur.com/joAe57D.png" } }] },
                             { type: 14, divider: true, spacing: 1 },
 { type: 10, content: `## 🪙 Desafío Coinflip\n🎰 <@${interaction.user.id}> desafió a <@${target.id}>.\n\n💰 Apuesta por jugador: **${amount.toLocaleString()} monedas**\n🏆 Premio total: **${(amount * 2).toLocaleString()} monedas**\n\n<@${target.id}>, pulsa **Aceptar apuesta** para jugar.` },
             { type: 14, divider: true, spacing: 1 },
@@ -193,7 +193,7 @@ async function run_dados(interaction) {
         return interaction.editReply({
             flags: MessageFlags.IsComponentsV2,
             components: [{ type: 17, accent_color: 0xED4245, components: [
-                { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+                { type: 12, items: [{ media: { url: "https://i.imgur.com/joAe57D.png" } }] },
                                 { type: 14, divider: true, spacing: 1 },
 { type: 10, content: `## 🎲 Dados — Dinero insuficiente\n❌ Necesitas **${bet.toLocaleString()} monedas** y tienes **${userData.wallet.toLocaleString()}** en tu wallet.` }
             ]}]
@@ -208,7 +208,7 @@ async function run_dados(interaction) {
     return interaction.editReply({
         flags: MessageFlags.IsComponentsV2,
         components: [{ type: 17, accent_color: 0x8A2BE2, components: [
-            { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+            { type: 12, items: [{ media: { url: "https://i.imgur.com/joAe57D.png" } }] },
                             { type: 14, divider: true, spacing: 1 },
 { type: 10, content: `## 🎲 Confirmar apuesta\n💰 Apuesta: **${bet.toLocaleString()} monedas**\n👛 Wallet actual: **${userData.wallet.toLocaleString()} monedas**\n\n❓ ¿Quieres lanzar los dados?` },
             { type: 14, divider: true, spacing: 1 },
@@ -219,7 +219,7 @@ async function run_dados(interaction) {
 
 function gamblePanel(text, row = null, accent = 0x8A2BE2) {
     const components = [
-        { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+        { type: 12, items: [{ media: { url: "https://i.imgur.com/joAe57D.png" } }] },
                         { type: 14, divider: true, spacing: 1 },
 { type: 10, content: text }
     ];
@@ -775,7 +775,7 @@ async function run_ruleta(interaction) {
 
     const panel = (text, row = null, accent = 0x8A2BE2) => {
         const components = [
-            { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+            { type: 12, items: [{ media: { url: "https://i.imgur.com/joAe57D.png" } }] },
                             { type: 14, divider: true, spacing: 1 },
 { type: 10, content: text }
         ];
@@ -881,7 +881,7 @@ async function run_slots(interaction) {
 
     const panel = (text, row = null, accent = 0x8A2BE2) => {
         const components = [
-            { type: 12, items: [{ media: { url: "https://i.imgur.com/e8P0MAp.png" } }] },
+            { type: 12, items: [{ media: { url: "https://i.imgur.com/joAe57D.png" } }] },
                             { type: 14, divider: true, spacing: 1 },
 { type: 10, content: text }
         ];
