@@ -3,7 +3,7 @@ const {
  AutoModerationRuleEventType, AutoModerationRuleTriggerType, AutoModerationActionType,
  ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, MediaGalleryBuilder, MediaGalleryItemBuilder, MessageFlags
 }=require("discord.js");
-const AUTOMOD_BANNER="https://i.imgur.com/98lH1q4.png";
+const AUTOMOD_BANNER="https://i.imgur.com/joAe57D.png";
 
 function panel(title,text,color=0x8A2BE2){
  return new ContainerBuilder().setAccentColor(color)
