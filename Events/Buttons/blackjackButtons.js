@@ -8,7 +8,7 @@ const {
 const EconomyUser = require("../../Models/EconomyUser");
 const CasinoStats = require("../../Models/CasinoStats");
 
-const BANNER = "https://i.imgur.com/e8P0MAp.png";
+const BANNER = "https://i.imgur.com/joAe57D.png";
 const cards = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
 function drawCard() { return cards[Math.floor(Math.random() * cards.length)]; }
 function calculateHand(hand) {
