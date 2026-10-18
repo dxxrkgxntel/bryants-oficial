@@ -8,11 +8,11 @@ const updateDebt = require("./updateDebt");
 const GlobalBank = require("../Models/GlobalBank");
 const BankDonorRole = require("../Models/BankDonorRoles");
 
-const BANK_BANNER = "https://i.imgur.com/jzy7Lhn.png";
-const DONATE_BANNER = "https://i.imgur.com/BI516It.png";
-const LOAN_BANNER = "https://i.imgur.com/b9oRpan.png";
-const PAYDEBT_BANNER = "https://i.imgur.com/yQMRSip.png";
-const DISTRIBUTE_BANNER = "https://i.imgur.com/51zouSf.png";
+const BANK_BANNER = "https://i.imgur.com/joAe57D.png";
+const DONATE_BANNER = "https://i.imgur.com/joAe57D.png";
+const LOAN_BANNER = "https://i.imgur.com/joAe57D.png";
+const PAYDEBT_BANNER = "https://i.imgur.com/joAe57D.png";
+const DISTRIBUTE_BANNER = "https://i.imgur.com/joAe57D.png";
 const BANNER = BANK_BANNER;
 
 function panel(title, content, row=null, color=0x8A2BE2, banner=BANNER) {
