@@ -59,7 +59,7 @@ module.exports = {
                     .setColor("#8A2BE2")
                     .setTitle("🔨 - Usuario Baneado")
                     .addFields({name: "👤 Usuario", value: `${ban.user}`, inline: true}, {name: "🛡️ Moderador", value: `${log?.executor || "Desconocido"}`, inline: true}, {name: "📄 Razón", value: `${log?.reason || "Sin razón"}`})
-                    .setThumbnail('https://i.imgur.com/joAe57D.png')
+                    .setThumbnail('https://i.imgur.com/2xTDN4W.png')
                     .setImage('https://i.imgur.com/joAe57D.png')
                     
             //////////////////////////////////////////////////
