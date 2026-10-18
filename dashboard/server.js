@@ -1426,7 +1426,7 @@ async function createDiscordSupportChannel(ticket, userId, config, guildId) {
             name: `soporte-${ticket.category}-${ticket.ticketNumber}`, type: 0,
             parent_id: config.categoryId || undefined,
             permission_overwrites: overwrites,
-            topic: `Ticket #${ticket.ticketNumber} · ${ticket.category === "bot" ? "Bryvex Bot" : "Web Bryant's Oficial"} · Usuario Discord ${userId}`
+            topic: `Ticket #${ticket.ticketNumber} · ${ticket.category === "bot" ? "Bryvex Bot" : "Web de Bryvex Bot"} · Usuario Discord ${userId}`
         })
     });
     if (!response.ok) throw new Error(`Discord no pudo crear el canal de soporte (${response.status}).`);
@@ -1436,7 +1436,7 @@ async function createDiscordSupportChannel(ticket, userId, config, guildId) {
     ticket.discordChannelId = channel.id;
     await ticket.save();
     const initialMessage = ticket.messages[0]?.content || "";
-    const greeting = `Ticket #${ticket.ticketNumber} creado desde la web. Categoría: ${ticket.category === "bot" ? "Bryvex Bot" : "Página web de Bryant's Oficial"}.\nUsuario: <@!${userId}>\nAsunto: ${ticket.subject}\n\nMensaje inicial:\n${initialMessage}`;
+    const greeting = `Ticket #${ticket.ticketNumber} creado desde la web de Bryvex Bot. Categoría: ${ticket.category === "bot" ? "Bryvex Bot" : "Página web de Bryvex Bot"}.\nUsuario: <@!${userId}>\nAsunto: ${ticket.subject}\n\nMensaje inicial:\n${initialMessage}`;
     const messageResponse = await discordBotRequest(`/channels/${channel.id}/messages`, { method: "POST", body: JSON.stringify({ content: greeting }) });
     if (!messageResponse.ok) console.warn("[Support] Se creó el canal, pero no se pudo publicar el mensaje inicial:", messageResponse.status);
     return channel.id;
