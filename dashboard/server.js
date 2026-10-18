@@ -1028,10 +1028,45 @@ app.get("/api/guilds/:guildId/config", requireGuildAdmin, async (req, res) => {
 app.get("/api/guilds/:guildId/members/search", requireGuildAdmin, async (req, res) => {
     const query = String(req.query.q || "").trim();
     if (query.length < 2) return res.json({ members: [] });
+
     try {
-        const members = await discordBotRequest(`https://discord.com/api/v10/guilds/${req.params.guildId}/members/search?query=${encodeURIComponent(query)}&limit=10`);
-        return res.json({ members: members.map(member => ({ id: member.user.id, username: member.user.username, globalName: member.user.global_name, nick: member.nick, avatar: member.user.avatar })) });
-    } catch (error) { return res.status(502).json({ error: error.message || "No pude buscar miembros." }); }
+        const discordUrl = new URL(`https://discord.com/api/v10/guilds/${req.params.guildId}/members/search`);
+        discordUrl.searchParams.set("query", query);
+        discordUrl.searchParams.set("limit", "10");
+
+        const members = await discordBotRequest(discordUrl.toString());
+        if (!Array.isArray(members)) {
+            console.error("[Dashboard Members] Discord devolvió una respuesta inesperada al buscar miembros.", {
+                guildId: req.params.guildId,
+                queryLength: query.length
+            });
+            return res.status(502).json({ error: "Discord devolvió una respuesta inesperada al buscar miembros. Inténtalo de nuevo." });
+        }
+
+        return res.json({
+            members: members
+                .filter(member => member?.user?.id && member.user.username)
+                .map(member => ({
+                    id: member.user.id,
+                    username: member.user.username,
+                    globalName: member.user.global_name || null,
+                    nick: member.nick || null,
+                    avatar: member.user.avatar || null
+                }))
+        });
+    } catch (error) {
+        console.error("[Dashboard Members] Error buscando miembros en Discord:", {
+            guildId: req.params.guildId,
+            queryLength: query.length,
+            status: error.status || null,
+            message: error.message || "Error desconocido"
+        });
+        return res.status(error.status === 429 ? 429 : 502).json({
+            error: error.status === 429
+                ? "Discord está limitando las búsquedas. Espera unos segundos e inténtalo de nuevo."
+                : error.message || "No pude buscar miembros en Discord."
+        });
+    }
 });
 
 app.get("/api/guilds/:guildId/members/:userId/economy", requireGuildAdmin, async (req, res) => {
