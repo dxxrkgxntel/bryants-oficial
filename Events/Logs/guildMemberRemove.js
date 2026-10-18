@@ -72,7 +72,7 @@ module.exports = {
                     .setColor("#8A2BE2")
                     .setTitle("👢 - Usuario Expulsado")
                     .addFields({name: "👤 Usuario", value: `${member.user}`, inline: true}, {name: "🛡️ Moderador", value:`${log.executor}`, inline: true}, {name: "📄 Razón",value:`${log.reason || "Sin razón"}`})
-                    .setThumbnail('https://i.imgur.com/joAe57D.png')
+                    .setThumbnail('https://i.imgur.com/2xTDN4W.png')
                     .setImage('https://i.imgur.com/joAe57D.png')
 
             //////////////////////////////////////////////////
