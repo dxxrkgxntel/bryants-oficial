@@ -15,7 +15,7 @@ const {
 
 const BankDonorRole = require("../../Models/BankDonorRoles");
 
-const BANK_BANNER = "https://i.imgur.com/fHtidQP.png";
+const BANK_BANNER = "https://i.imgur.com/joAe57D.png";
 
 function bankPanel(title, text, color = 0x8A2BE2, rows = []) {
     const box = new ContainerBuilder()
