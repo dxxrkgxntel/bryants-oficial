@@ -25,7 +25,7 @@ module.exports = {
             });
             if (ticket) {
                 const attachmentUrls = [...message.attachments.values()].map(attachment => attachment.url);
-                const content = [message.content, ...attachmentUrls].filter(Boolean).join("\\n").slice(0, 4000);
+                const content = [message.content, ...attachmentUrls].filter(Boolean).join("\n").slice(0, 4000);
                 if (content) {
                     ticket.messages.push({
                         authorId: message.author.id,
