@@ -1386,7 +1386,7 @@ const supportStaffGuildsPending = new Map();
 const SUPPORT_GUILDS_CACHE_TTL = 60_000;
 const SUPPORT_STAFF_CACHE_TTL = 30_000;
 
-async function discordBotRequest(url, options = {}) {
+async function supportDiscordBotRequest(url, options = {}) {
     return fetch(`https://discord.com/api/v10${url}`, {
         ...options,
         headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`, "Content-Type": "application/json", ...(options.headers || {}) },
@@ -1395,13 +1395,13 @@ async function discordBotRequest(url, options = {}) {
 }
 async function notifySupportTicketReply(userId, ticketNumber) {
     try {
-        const dmResponse = await discordBotRequest("/users/@me/channels", {
+        const dmResponse = await supportDiscordBotRequest("/users/@me/channels", {
             method: "POST",
             body: JSON.stringify({ recipient_id: userId })
         });
         if (!dmResponse.ok) throw new Error(`Discord no pudo abrir el DM (${dmResponse.status}).`);
         const dmChannel = await dmResponse.json();
-        const messageResponse = await discordBotRequest(`/channels/${dmChannel.id}/messages`, {
+        const messageResponse = await supportDiscordBotRequest(`/channels/${dmChannel.id}/messages`, {
             method: "POST",
             body: JSON.stringify({ content: `Te han respondido en tu ticket #${ticketNumber}, ve chequealo.` })
         });
@@ -1424,7 +1424,7 @@ async function getConfiguredSupportGuilds() {
     const config = await SupportTicketConfig.findOne({ enabled: true }).sort({ updatedAt: -1 }).lean();
     if (!config) return [];
     try {
-        const response = await discordBotRequest(`/guilds/${config.guildId}`);
+        const response = await supportDiscordBotRequest(`/guilds/${config.guildId}`);
         if (!response.ok) return [];
         const guild = await response.json();
         return [{
@@ -1451,7 +1451,7 @@ async function getSupportStaffGuildIdsUncached(req) {
         if (isAdmin) return config.guildId;
         if (!config.staffRoleId) return null;
         try {
-            const response = await discordBotRequest(`/guilds/${config.guildId}/members/${req.session.user.id}`);
+            const response = await supportDiscordBotRequest(`/guilds/${config.guildId}/members/${req.session.user.id}`);
             if (!response.ok) return null;
             const member = await response.json();
             return member.roles?.includes(config.staffRoleId) ? config.guildId : null;
@@ -1502,7 +1502,7 @@ async function createDiscordSupportChannel(ticket, userId, config, guildId) {
         { id: process.env.DISCORD_CLIENT_ID, type: 1, allow: "68624" }
     ];
     if (staffRoleId) overwrites.push({ id: staffRoleId, type: 0, allow: "68608" });
-    const response = await discordBotRequest(`/guilds/${guildId}/channels`, {
+    const response = await supportDiscordBotRequest(`/guilds/${guildId}/channels`, {
         method: "POST", body: JSON.stringify({
             name: `soporte-${ticket.category}-${ticket.ticketNumber}`, type: 0,
             parent_id: config.categoryId || undefined,
@@ -1518,7 +1518,7 @@ async function createDiscordSupportChannel(ticket, userId, config, guildId) {
     await ticket.save();
     const initialMessage = ticket.messages[0]?.content || "";
     const greeting = `Ticket #${ticket.ticketNumber} creado desde la web de Bryvex Bot. Categoría: ${ticket.category === "bot" ? "Bryvex Bot" : "Página web de Bryvex Bot"}.\nUsuario: <@!${userId}>\nAsunto: ${ticket.subject}\n\nMensaje inicial:\n${initialMessage}`;
-    const messageResponse = await discordBotRequest(`/channels/${channel.id}/messages`, { method: "POST", body: JSON.stringify({ content: greeting }) });
+    const messageResponse = await supportDiscordBotRequest(`/channels/${channel.id}/messages`, { method: "POST", body: JSON.stringify({ content: greeting }) });
     if (!messageResponse.ok) console.warn("[Support] Se creó el canal, pero no se pudo publicar el mensaje inicial:", messageResponse.status);
     return channel.id;
 }
@@ -1567,7 +1567,7 @@ app.post("/api/support/tickets", requireLogin, requireCsrf, async (req, res) => 
     try {
         const config = await SupportTicketConfig.findOne({ enabled: true }).sort({ updatedAt: -1 }).lean();
         if (!config) return res.status(503).json({ error: "El centro de soporte de Bryvex Bot aún no está configurado. Vuelve a intentarlo más tarde." });
-        const guildResponse = await discordBotRequest(`/guilds/${config.guildId}`);
+        const guildResponse = await supportDiscordBotRequest(`/guilds/${config.guildId}`);
         if (!guildResponse.ok) return res.status(409).json({ error: "Bryvex Bot no está disponible en el servidor Bryvex Support." });
         const guildData = await guildResponse.json();
         const supportGuild = { id: config.guildId, name: guildData.name || "Bryvex Support" };
@@ -1619,7 +1619,7 @@ app.post("/api/support/tickets/:ticketId/messages", requireLogin, requireCsrf, a
         const authorName = isStaff ? (user.displayName || user.globalName || user.username) : ticket.username;
         const message = { authorId: user.id, authorName, authorAvatar: null, source: "web", content };
         if (ticket.discordChannelId) {
-            const discordResponse = await discordBotRequest(`/channels/${ticket.discordChannelId}/messages`, {
+            const discordResponse = await supportDiscordBotRequest(`/channels/${ticket.discordChannelId}/messages`, {
                 method: "POST", body: JSON.stringify({ content: `**${authorName}** · respuesta desde la web:\n${content}` })
             });
             if (!discordResponse.ok) return res.status(502).json({ error: "No pude publicar la respuesta en el canal de Discord. No se guardó el mensaje." });
@@ -1649,8 +1649,8 @@ app.post("/api/support/tickets/:ticketId/close", requireLogin, requireCsrf, asyn
         ticket.messages.push({ authorId: req.session.user.id, authorName: req.session.user.displayName || req.session.user.username, source: "system", content: "Ticket cerrado desde la web." });
         await ticket.save();
         if (ticket.discordChannelId) {
-            await discordBotRequest(`/channels/${ticket.discordChannelId}/messages`, { method: "POST", body: JSON.stringify({ content: `Ticket #${ticket.ticketNumber} cerrado desde la web.` }) }).catch(() => {});
-            await discordBotRequest(`/channels/${ticket.discordChannelId}/permissions/${ticket.userId}`, { method: "PUT", body: JSON.stringify({ type: 1, allow: "66560", deny: "2048" }) }).catch(() => {});
+            await supportDiscordBotRequest(`/channels/${ticket.discordChannelId}/messages`, { method: "POST", body: JSON.stringify({ content: `Ticket #${ticket.ticketNumber} cerrado desde la web.` }) }).catch(() => {});
+            await supportDiscordBotRequest(`/channels/${ticket.discordChannelId}/permissions/${ticket.userId}`, { method: "PUT", body: JSON.stringify({ type: 1, allow: "66560", deny: "2048" }) }).catch(() => {});
         }
         return res.json({ ticket: publicTicket(ticket) });
     } catch (error) {
