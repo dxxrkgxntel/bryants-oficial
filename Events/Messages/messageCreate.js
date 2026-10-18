@@ -1,5 +1,6 @@
 const { EmbedBuilder } = require("discord.js");
 const SpecialChannelsConfig = require("../../Models/SpecialChannelsConfig");
+const SupportTicket = require("../../Models/SupportTicket");
 const { PermissionsBitField } = require("discord.js");
 
 const cooldown = new Set();
@@ -13,9 +14,34 @@ module.exports = {
 
     async execute(message, client) {
 
-        if (message.author.bot) return;
+        if (message.author.bot || !message.guild) return;
 
-
+        // Sincronizar mensajes escritos directamente en canales de tickets con la web.
+        try {
+            const ticket = await SupportTicket.findOne({
+                discordGuildId: message.guild.id,
+                discordChannelId: message.channel.id,
+                status: "open"
+            });
+            if (ticket) {
+                const attachmentUrls = [...message.attachments.values()].map(attachment => attachment.url);
+                const content = [message.content, ...attachmentUrls].filter(Boolean).join("\\n").slice(0, 4000);
+                if (content) {
+                    ticket.messages.push({
+                        authorId: message.author.id,
+                        authorName: message.member?.displayName || message.author.globalName || message.author.username,
+                        authorAvatar: message.author.displayAvatarURL(),
+                        source: "discord",
+                        content,
+                        discordMessageId: message.id
+                    });
+                    ticket.lastMessageAt = new Date(message.createdTimestamp);
+                    await ticket.save();
+                }
+            }
+        } catch (error) {
+            console.error("[Support Tickets] No se pudo sincronizar el mensaje con la web:", error.message);
+        }
 
         // 🔥 QUESTS DE MENSAJES
         await questHandler(
