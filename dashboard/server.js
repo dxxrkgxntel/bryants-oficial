@@ -1359,7 +1359,9 @@ async function getConfiguredSupportGuilds() {
     const config = await SupportTicketConfig.findOne({ enabled: true }).sort({ updatedAt: -1 }).lean();
     if (!config) return [];
     try {
-        const guild = await discordBotRequest(`https://discord.com/api/v10/guilds/${config.guildId}`);
+        const response = await discordBotRequest(`/guilds/${config.guildId}`);
+        if (!response.ok) return [];
+        const guild = await response.json();
         return [{
             id: config.guildId,
             name: guild.name || "Bryvex Support",
@@ -1484,9 +1486,10 @@ app.post("/api/support/tickets", requireLogin, requireCsrf, async (req, res) => 
     try {
         const config = await SupportTicketConfig.findOne({ enabled: true }).sort({ updatedAt: -1 }).lean();
         if (!config) return res.status(503).json({ error: "El centro de soporte de Bryvex Bot aún no está configurado. Vuelve a intentarlo más tarde." });
-        const guildResponse = await discordBotRequest(`https://discord.com/api/v10/guilds/${config.guildId}`);
-        if (!guildResponse || !guildResponse.id) return res.status(409).json({ error: "Bryvex Bot no está disponible en el servidor Bryvex Support." });
-        const supportGuild = { id: config.guildId, name: guildResponse.name || "Bryvex Support" };
+        const guildResponse = await discordBotRequest(`/guilds/${config.guildId}`);
+        if (!guildResponse.ok) return res.status(409).json({ error: "Bryvex Bot no está disponible en el servidor Bryvex Support." });
+        const guildData = await guildResponse.json();
+        const supportGuild = { id: config.guildId, name: guildData.name || "Bryvex Support" };
         const openTicket = await SupportTicket.findOne({ userId: req.session.user.id, status: "open", category });
         if (openTicket) return res.status(409).json({ error: `Ya tienes un ticket abierto de esta categoría (#${openTicket.ticketNumber}). Continúa la conversación existente.` });
         const ticketNumber = (await SupportTicket.countDocuments({})) + 1;
