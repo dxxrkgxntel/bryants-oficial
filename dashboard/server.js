@@ -1355,28 +1355,19 @@ async function getSupportUserGuilds(req) {
     if (!await refreshOAuthToken(req)) throw new Error("La sesión de Discord venció. Vuelve a iniciar sesión.");
     return discordRequest("https://discord.com/api/v10/users/@me/guilds", req.session.oauth.accessToken);
 }
-async function getConfiguredSupportGuilds(req) {
-    const [userGuilds, configs] = await Promise.all([
-        getSupportUserGuilds(req),
-        SupportTicketConfig.find({ enabled: true }).lean()
-    ]);
-    const userGuildMap = new Map(userGuilds.map(guild => [guild.id, guild]));
-    const candidates = configs.filter(config => userGuildMap.has(config.guildId));
-    const available = await Promise.all(candidates.map(async config => {
-        const guild = userGuildMap.get(config.guildId);
-        try {
-            const response = await fetch(`https://discord.com/api/v10/guilds/${config.guildId}`, {
-                headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
-                signal: AbortSignal.timeout(8000)
-            });
-            if (!response.ok) return null;
-            return {
-                id: guild.id, name: guild.name,
-                icon: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128` : null
-            };
-        } catch { return null; }
-    }));
-    return available.filter(Boolean);
+async function getConfiguredSupportGuilds() {
+    const config = await SupportTicketConfig.findOne({ enabled: true }).sort({ updatedAt: -1 }).lean();
+    if (!config) return [];
+    try {
+        const guild = await discordBotRequest(`https://discord.com/api/v10/guilds/${config.guildId}`);
+        return [{
+            id: config.guildId,
+            name: guild.name || "Bryvex Support",
+            icon: guild.icon ? `https://cdn.discordapp.com/icons/${config.guildId}/${guild.icon}.png?size=128` : null
+        }];
+    } catch {
+        return [];
+    }
 }
 async function getSupportStaffGuildIds(req) {
     const [userGuilds, configs] = await Promise.all([
@@ -1485,42 +1476,35 @@ app.get("/api/support/tickets", requireLogin, async (req, res) => {
 
 app.post("/api/support/tickets", requireLogin, requireCsrf, async (req, res) => {
     const category = req.body?.category;
-    const guildId = String(req.body?.guildId || "");
     const subject = String(req.body?.subject || "").trim();
     const content = String(req.body?.message || "").trim();
-    if (!/^\d{17,20}$/.test(guildId)) return res.status(400).json({ error: "Selecciona un servidor válido." });
     if (!["bot", "website"].includes(category)) return res.status(400).json({ error: "Selecciona una categoría de soporte válida." });
     if (subject.length < 4 || subject.length > 120) return res.status(400).json({ error: "El asunto debe tener entre 4 y 120 caracteres." });
     if (content.length < 10 || content.length > 4000) return res.status(400).json({ error: "El mensaje debe tener entre 10 y 4.000 caracteres." });
     try {
-        const [userGuilds, config] = await Promise.all([
-            getSupportUserGuilds(req),
-            SupportTicketConfig.findOne({ guildId, enabled: true }).lean()
-        ]);
-        const selectedGuild = userGuilds.find(guild => guild.id === guildId);
-        if (!selectedGuild || !config) return res.status(403).json({ error: "No puedes abrir tickets en ese servidor o el soporte aún no está configurado allí." });
-        const botCheck = await fetch(`https://discord.com/api/v10/guilds/${guildId}`, {
-            headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` }, signal: AbortSignal.timeout(8000)
-        });
-        if (!botCheck.ok) return res.status(409).json({ error: "Bryvex Bot ya no está disponible en ese servidor." });
-        const openTicket = await SupportTicket.findOne({ userId: req.session.user.id, guildId, status: "open", category });
-        if (openTicket) return res.status(409).json({ error: `Ya tienes un ticket abierto de esta categoría en ${selectedGuild.name} (#${openTicket.ticketNumber}). Continúa la conversación existente.` });
+        const config = await SupportTicketConfig.findOne({ enabled: true }).sort({ updatedAt: -1 }).lean();
+        if (!config) return res.status(503).json({ error: "El centro de soporte de Bryvex Bot aún no está configurado. Vuelve a intentarlo más tarde." });
+        const guildResponse = await discordBotRequest(`https://discord.com/api/v10/guilds/${config.guildId}`);
+        if (!guildResponse || !guildResponse.id) return res.status(409).json({ error: "Bryvex Bot no está disponible en el servidor Bryvex Support." });
+        const supportGuild = { id: config.guildId, name: guildResponse.name || "Bryvex Support" };
+        const openTicket = await SupportTicket.findOne({ userId: req.session.user.id, status: "open", category });
+        if (openTicket) return res.status(409).json({ error: `Ya tienes un ticket abierto de esta categoría (#${openTicket.ticketNumber}). Continúa la conversación existente.` });
         const ticketNumber = (await SupportTicket.countDocuments({})) + 1;
         const user = req.session.user;
         const username = user.displayName || user.globalName || user.username;
         const avatar = user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : null;
         const ticket = await SupportTicket.create({
             ticketNumber, userId: user.id, username, userAvatar: avatar,
-            subject, category, status: "open", source: "web", guildId, guildName: selectedGuild.name,
-            discordGuildId: guildId,
+            subject, category, status: "open", source: "web", guildId: supportGuild.id, guildName: supportGuild.name,
+            discordGuildId: supportGuild.id,
             messages: [{ authorId: user.id, authorName: username, authorAvatar: avatar, source: "web", content }]
         });
-        try { await createDiscordSupportChannel(ticket, user.id, config, guildId); }
+        try { await createDiscordSupportChannel(ticket, user.id, config, supportGuild.id); }
         catch (discordError) { await SupportTicket.deleteOne({ _id: ticket._id }).catch(() => {}); throw discordError; }
         return res.status(201).json({ ticket: publicTicket(ticket) });
     } catch (error) {
         console.error("[Support] No pude crear el ticket:", error.message);
-        return res.status(500).json({ error: "No pude crear el ticket. Comprueba que el bot tenga permisos en el servidor seleccionado." });
+        return res.status(500).json({ error: "No pude crear el ticket en Bryvex Support. Comprueba que el bot tenga permisos en ese servidor." });
     }
 });
 
