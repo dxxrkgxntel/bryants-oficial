@@ -13,18 +13,18 @@ const RobCooldown = require("../../Models/RobCooldown");
 const { runGlobalBank, runDonate, runLoan, runPayDebt, runDistribute } = require("../../Utils/economyBankHandlers");
 const questHandler = require("../../Functions/questHandler");
 
-const BALANCE_BANNER = "https://i.imgur.com/IXKXRHL.png";
-const WORK_BANNER = "https://i.imgur.com/X7jFa3S.png";
-const DAILY_BANNER = "https://i.imgur.com/chBdO1Z.png";
-const DEPOSIT_BANNER = "https://i.imgur.com/Mv7sPGH.png";
-const WITHDRAW_BANNER = "https://i.imgur.com/emQw94y.png";
-const TRANSFER_BANNER = "https://i.imgur.com/D0RzS0Q.png";
-const ROB_BANNER = "https://i.imgur.com/qVeU3os.png";
-const LEADERBOARD_BANNER = "https://i.imgur.com/rHeU2b6.png";
-const ADDMONEY_BANNER = "https://i.imgur.com/BaeMyEP.png";
-const REMOVEMONEY_BANNER = "https://i.imgur.com/LRdF0mj.png";
-const CONFIG_BANNER = "https://i.imgur.com/zGMsUYR.png";
-const ECONOMY_BANNER = "https://media.discordapp.net/attachments/1499375657103392839/1501666280174915584/banner_bot.png";
+const BALANCE_BANNER = "https://i.imgur.com/joAe57D.png";
+const WORK_BANNER = "https://i.imgur.com/joAe57D.png";
+const DAILY_BANNER = "https://i.imgur.com/joAe57D.png";
+const DEPOSIT_BANNER = "https://i.imgur.com/joAe57D.png";
+const WITHDRAW_BANNER = "https://i.imgur.com/joAe57D.png";
+const TRANSFER_BANNER = "https://i.imgur.com/joAe57D.png";
+const ROB_BANNER = "https://i.imgur.com/joAe57D.png";
+const LEADERBOARD_BANNER = "https://i.imgur.com/joAe57D.png";
+const ADDMONEY_BANNER = "https://i.imgur.com/joAe57D.png";
+const REMOVEMONEY_BANNER = "https://i.imgur.com/joAe57D.png";
+const CONFIG_BANNER = "https://i.imgur.com/joAe57D.png";
+const ECONOMY_BANNER = "https://i.imgur.com/joAe57D.png";
 
 function economyPanel(title, content, color = 0x8A2BE2, banner = ECONOMY_BANNER) {
  const panel = new ContainerBuilder().setAccentColor(color);
