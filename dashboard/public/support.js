@@ -2,6 +2,8 @@ const $ = selector => document.querySelector(selector);
 let csrfToken = "";
 let activeTicketId = null;
 let currentUser = null;
+let ticketsLoadPromise = null;
+let supportPollRunning = false;
 
 async function supportApi(url, options = {}) {
     const headers = { ...(options.headers || {}) };
@@ -26,9 +28,14 @@ function renderTickets(tickets) {
     }
 }
 async function loadTickets() {
-    const result=await supportApi("/api/support/tickets"); renderTickets(result.tickets);
+    if (ticketsLoadPromise) return ticketsLoadPromise;
+    ticketsLoadPromise = (async () => {
+        const result = await supportApi("/api/support/tickets");
+        renderTickets(result.tickets);
+    })();
+    try { await ticketsLoadPromise; } finally { ticketsLoadPromise = null; }
 }
-async function openTicket(id) {
+async function openTicket(id, refreshList = true) {
     const result=await supportApi(`/api/support/tickets/${encodeURIComponent(id)}`);
     activeTicketId=result.ticket.id;
     $("#support-conversation-card").hidden=false;
@@ -47,7 +54,7 @@ async function openTicket(id) {
     }
     $("#support-reply-form").hidden=result.ticket.status!=="open";
     messages.scrollTop=messages.scrollHeight;
-    await loadTickets();
+    if (refreshList) await loadTickets();
 }
 async function init() {
     try {
@@ -86,8 +93,15 @@ $("#support-logout").addEventListener("click",async()=>{
 });
 init();
 
-window.setInterval(() => {
-    if (document.hidden || !currentUser) return;
-    loadTickets().catch(() => {});
-    if (activeTicketId && !$("#support-reply-form").hidden) openTicket(activeTicketId).catch(() => {});
-}, 15000);
+window.setInterval(async () => {
+    if (document.hidden || !currentUser || supportPollRunning) return;
+    supportPollRunning = true;
+    try {
+        await loadTickets();
+        if (activeTicketId && !$("#support-reply-form").hidden) await openTicket(activeTicketId, false);
+    } catch {
+        // No mostrar avisos repetitivos durante fallos transitorios del sondeo automático.
+    } finally {
+        supportPollRunning = false;
+    }
+}, 30000);
