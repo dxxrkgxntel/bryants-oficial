@@ -1,10 +1,15 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MessageFlags } = require("discord.js");
 const SupportTicketConfig = require("../../Models/SupportTicketConfig");
+const botConfig = require("../../config.json");
 
 module.exports = {
     async execute(interaction) {
         if (!interaction.guildId || !interaction.guild) {
             return interaction.reply({ content: "Este comando solo puede usarse dentro de un servidor.", flags: MessageFlags.Ephemeral });
+        }
+        const activeConfig = await SupportTicketConfig.findOne({ enabled: true }).lean();
+        if (activeConfig && activeConfig.guildId !== interaction.guildId && interaction.user.id !== botConfig.developer) {
+            return interaction.reply({ content: "El centro de soporte de Bryvex Bot ya está configurado en un servidor único. Solo el desarrollador del bot puede cambiar el servidor central.", flags: MessageFlags.Ephemeral });
         }
         const channel = interaction.options.getChannel("channel", true);
         const category = interaction.options.getChannel("category");
