@@ -60,7 +60,7 @@ module.exports = {
                         .setColor("#8A2BE2")
                         .setTitle("🔇 - Usuario Timeouteado")
                         .addFields({name: "👤 Usuario", value: `${newMember}`, inline: true}, {name: "🛡️ Moderador", value: `${log?.executor || "Desconocido"}`, inline: true}, {name: "📅 Finaliza", value: `<t:${Math.floor(new Date(newMember.communicationDisabledUntil).getTime() / 1000)}:R>`})
-                        .setThumbnail('https://i.imgur.com/joAe57D.png')
+                        .setThumbnail('https://i.imgur.com/2xTDN4W.png')
                         .setImage('https://i.imgur.com/joAe57D.png')
 
                 return channel.send({embeds: [embed]});
@@ -91,7 +91,7 @@ module.exports = {
                         .setColor("#8A2BE2")
                         .setTitle("🔊 - Timeout Removido")
                         .addFields({name: "👤 Usuario", value: `${newMember}`, inline: true }, {name: "🛡️ Moderador", value: `${log?.executor || "Desconocido"}`, inline: true})
-                        .setThumbnail('https://i.imgur.com/joAe57D.png')
+                        .setThumbnail('https://i.imgur.com/2xTDN4W.png')
                         .setImage('https://i.imgur.com/joAe57D.png')
 
                 return channel.send({embeds: [embed]});
