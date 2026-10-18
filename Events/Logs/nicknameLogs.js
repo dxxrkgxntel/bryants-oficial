@@ -84,7 +84,7 @@ module.exports = {
                     .setColor("#8A2BE2")
                     .setTitle("✏️ - Nickname Actualizado")
                     .addFields({name: "👤 Usuario",value: `${newMember}`,inline: true},{name: "📝 Antes",value:`\`${oldNick}\``,inline: true},{name: "✨ Ahora",value:`\`${newNick}\``,inline: true},{name: "🛡️ Cambiado por",value:`${log?.executor || "Desconocido"}`})
-                    .setThumbnail('https://i.imgur.com/joAe57D.png')
+                    .setThumbnail('https://i.imgur.com/2xTDN4W.png')
                     .setImage('https://i.imgur.com/joAe57D.png')
 
             //////////////////////////////////////////////////
