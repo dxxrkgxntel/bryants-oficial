@@ -1,6 +1,6 @@
 const { MessageFlags } = require("discord.js");
 const getUser = require("../../Utils/getUser");
-const BANNER = "https://i.imgur.com/e8P0MAp.png";
+const BANNER = "https://i.imgur.com/joAe57D.png";
 
 function panel(text, accent = 0x8A2BE2) {
     return {
