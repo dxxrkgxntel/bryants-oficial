@@ -113,7 +113,7 @@ async function run_stats(interaction) {
             components: [{ type: 17, accent_color: 0x8A2BE2, components: [
                 { type: 12, items: [{ media: { url: "https://i.imgur.com/joAe57D.png" } }] },
                                 { type: 14, divider: true, spacing: 1 },
-{ type: 10, content: "## 🎰 Estadísticas del Casino\n❌ Todavía no tienes estadísticas registradas en BF Casino." }
+{ type: 10, content: "## 🎰 Estadísticas del Casino\n❌ Todavía no tienes estadísticas registradas en Bryvex Casino." }
             ]}]
         });
     }
@@ -126,7 +126,7 @@ async function run_stats(interaction) {
         components: [{ type: 17, accent_color: 0x8A2BE2, components: [
             { type: 12, items: [{ media: { url: "https://i.imgur.com/joAe57D.png" } }] },
                             { type: 14, divider: true, spacing: 1 },
-{ type: 10, content: `## 🎰 Estadísticas de BF Casino\n### 👤 ${target.username}\n\n🎉 Victorias: **${data.totalWins.toLocaleString()}**\n💥 Derrotas: **${data.totalLosses.toLocaleString()}**\n📈 Winrate: **${winrate}%**\n🎲 Partidas: **${data.totalGames.toLocaleString()}**` },
+{ type: 10, content: `## 🎰 Estadísticas de Bryvex Casino\n### 👤 ${target.username}\n\n🎉 Victorias: **${data.totalWins.toLocaleString()}**\n💥 Derrotas: **${data.totalLosses.toLocaleString()}**\n📈 Winrate: **${winrate}%**\n🎲 Partidas: **${data.totalGames.toLocaleString()}**` },
             { type: 14, divider: true, spacing: 1 },
             { type: 10, content: `### 💰 Rendimiento\n💵 Dinero ganado: **${data.moneyWon.toLocaleString()}**\n💸 Dinero perdido: **${data.moneyLost.toLocaleString()}**\n💎 Mayor victoria: **${data.biggestWin.toLocaleString()} monedas**\n🌟 Jackpots: **${data.jackpots.toLocaleString()}**\n🔥 Racha actual: **${data.currentStreak.toLocaleString()}**` },
             { type: 14, divider: true, spacing: 1 },
@@ -436,7 +436,7 @@ async function run_gamble(interaction) {
             // GIRANDO
             //////////////////////////////////////////////////
 
-            await interaction.editReply(gamblePanel(`## 🎰 BF Casino\n### 🎲 Decidiendo tu suerte...\n💸 Apostando **${amount.toLocaleString()} monedas**\n🍀 La suerte está siendo decidida...`));
+            await interaction.editReply(gamblePanel(`## 🎰 Bryvex Casino\n### 🎲 Decidiendo tu suerte...\n💸 Apostando **${amount.toLocaleString()} monedas**\n🍀 La suerte está siendo decidida...`));
 
             //////////////////////////////////////////////////
             // DELAY
@@ -707,7 +707,7 @@ async function run_gamble(interaction) {
 
                 return interaction.editReply(gamblePanel(
                     jackpot
-                        ? `## 🌟 JACKPOT — BF Casino\n💸 Apostaste **${amount.toLocaleString()} monedas**\n💎 Multiplicador: **x${jackpotMultiplier}**\n💰 Ganaste **${winnings.toLocaleString()} monedas**\n👛 Balance actual: **${freshUser.wallet.toLocaleString()} monedas**`
+                        ? `## 🌟 JACKPOT — Bryvex Casino\n💸 Apostaste **${amount.toLocaleString()} monedas**\n💎 Multiplicador: **x${jackpotMultiplier}**\n💰 Ganaste **${winnings.toLocaleString()} monedas**\n👛 Balance actual: **${freshUser.wallet.toLocaleString()} monedas**`
                         : `## 🎰 Apuesta ganada\n💸 Apostaste **${amount.toLocaleString()} monedas**\n💎 Multiplicador: **x${jackpotMultiplier}**\n💰 Ganaste **${winnings.toLocaleString()} monedas**\n👛 Balance actual: **${freshUser.wallet.toLocaleString()} monedas**`,
                     null, jackpot ? 0xFEE75C : 0x57F287
                 ));
@@ -825,7 +825,7 @@ async function run_ruleta(interaction) {
     }
 
     await response.deferUpdate();
-    await interaction.editReply(panel(`## 🎡 BF Roulette\n### 🎲 Girando la ruleta...\n💰 Apostando **${amount.toLocaleString()} monedas**\n🍀 Buena suerte.`));
+    await interaction.editReply(panel(`## 🎡 Bryvex Roulette\n### 🎲 Girando la ruleta...\n💰 Apostando **${amount.toLocaleString()} monedas**\n🍀 Buena suerte.`));
     await new Promise(resolve => setTimeout(resolve, 3000));
 
     const freshUser = await EconomyUser.findOne({ guildId: interaction.guild.id, userId: interaction.user.id });
@@ -869,7 +869,7 @@ async function run_ruleta(interaction) {
     const colorEmoji = rolledColor === "rojo" ? "🔴" : rolledColor === "negro" ? "⚫" : "🟢";
 
     return interaction.editReply(panel(
-        `## 🎡 Resultado — BF Roulette\n# ${colorEmoji} ${rolledColor.toUpperCase()} ${rolledNumber}\n\n🎯 Tu apuesta: **${bet}**\n💰 Cantidad: **${amount.toLocaleString()} monedas**\n\n${won ? `🎉 Ganaste **${winnings.toLocaleString()} monedas** — multiplicador **x${multiplier}**` : `💸 Perdiste **${amount.toLocaleString()} monedas**`}\n👛 Balance actual: **${freshUser.wallet.toLocaleString()} monedas**`,
+        `## 🎡 Resultado — Bryvex Roulette\n# ${colorEmoji} ${rolledColor.toUpperCase()} ${rolledNumber}\n\n🎯 Tu apuesta: **${bet}**\n💰 Cantidad: **${amount.toLocaleString()} monedas**\n\n${won ? `🎉 Ganaste **${winnings.toLocaleString()} monedas** — multiplicador **x${multiplier}**` : `💸 Perdiste **${amount.toLocaleString()} monedas**`}\n👛 Balance actual: **${freshUser.wallet.toLocaleString()} monedas**`,
         null,
         won ? 0x57F287 : 0xED4245
     ));
@@ -923,7 +923,7 @@ async function run_slots(interaction) {
 
     await response.deferUpdate();
     await interaction.editReply(panel(
-        `## 🎰 BF Slots\n### 🎲 Girando tragamonedas...\n❔ │ ❔ │ ❔\n❔ │ ❔ │ ❔  ◀\n❔ │ ❔ │ ❔\n\n💰 Apostando **${amount.toLocaleString()} monedas**`
+        `## 🎰 Bryvex Slots\n### 🎲 Girando tragamonedas...\n❔ │ ❔ │ ❔\n❔ │ ❔ │ ❔  ◀\n❔ │ ❔ │ ❔\n\n💰 Apostando **${amount.toLocaleString()} monedas**`
     ));
     await new Promise(resolve => setTimeout(resolve, 2500));
 
@@ -972,7 +972,7 @@ async function run_slots(interaction) {
     await Promise.all([freshUser.save(), stats.save()]);
 
     return interaction.editReply(panel(
-        `## 🎰 Resultado — BF Slots\n${generateDisplay(grid)}\n\n🎯 Línea válida: **Fila central**\n${resultText}\n\n${multiplier > 0 ? `💰 Ganaste **${winnings.toLocaleString()} monedas**` : `💸 Perdiste **${amount.toLocaleString()} monedas**`}\n👛 Balance actual: **${freshUser.wallet.toLocaleString()} monedas**`,
+        `## 🎰 Resultado — Bryvex Slots\n${generateDisplay(grid)}\n\n🎯 Línea válida: **Fila central**\n${resultText}\n\n${multiplier > 0 ? `💰 Ganaste **${winnings.toLocaleString()} monedas**` : `💸 Perdiste **${amount.toLocaleString()} monedas**`}\n👛 Balance actual: **${freshUser.wallet.toLocaleString()} monedas**`,
         null,
         multiplier > 0 ? (multiplier === 15 ? 0xFEE75C : 0x57F287) : 0xED4245
     ));
