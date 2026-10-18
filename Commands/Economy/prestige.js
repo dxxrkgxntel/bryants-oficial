@@ -7,9 +7,9 @@ const PrestigeConfig=require("../../Models/PrestigeConfig");
 const Level=require("../../Models/Level");
 const Economy=require("../../Models/EconomyUser");
 
-const PRESTIGE_INFO_BANNER="https://i.imgur.com/K8A2QNz.png";
-const PRESTIGE_CLAIM_BANNER="https://i.imgur.com/82FA5VI.png";
-const PRESTIGE_ADMIN_BANNER="https://i.imgur.com/45XWMHw.png";
+const PRESTIGE_INFO_BANNER="https://i.imgur.com/joAe57D.png";
+const PRESTIGE_CLAIM_BANNER="https://i.imgur.com/joAe57D.png";
+const PRESTIGE_ADMIN_BANNER="https://i.imgur.com/joAe57D.png";
 
 function panel(title,text,color=0x8A2BE2,banner=null){
  const p=new ContainerBuilder().setAccentColor(color);
