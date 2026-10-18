@@ -17,7 +17,7 @@ const moderationFeatureHandlers = {
 const ms =
 require("ms");
 
-const MODERATION_BANNER = "https://i.imgur.com/w7iUuCq.png";
+const MODERATION_BANNER = "https://i.imgur.com/joAe57D.png";
 
 function moderationPanel(title, text, color = 0x8A2BE2) {
     return new ContainerBuilder()
