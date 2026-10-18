@@ -85,7 +85,7 @@ module.exports = {
                         }
                     )
 
-                    .setThumbnail('https://i.imgur.com/joAe57D.png')
+                    .setThumbnail('https://i.imgur.com/2xTDN4W.png')
                     .setImage('https://i.imgur.com/joAe57D.png')
 
             //////////////////////////////////////////////////
