@@ -52,13 +52,13 @@ async function rank(interaction) {
     await interaction.deferReply();
     const user = interaction.options.getUser("usuario") || interaction.user;
     const data = await Level.findOne({ guildId: interaction.guild.id, userId: user.id });
-    if (!data) return interaction.editReply(await configuredPanel(interaction, "levelRankImage", "## ⭐ BF Levels • Rank\n❌ Ese usuario todavía no tiene datos de nivel.", 0xED4245));
+    if (!data) return interaction.editReply(await configuredPanel(interaction, "levelRankImage", "## ⭐ Bryvex Levels • Rank\n❌ Ese usuario todavía no tiene datos de nivel.", 0xED4245));
     const needed = xpNeeded(data.level);
     const pos = await positionOf(interaction.guild.id, data);
     const pct = Math.min(100, Math.floor((data.xp / needed) * 100));
     const filled = Math.min(10, Math.floor(pct / 10));
     return interaction.editReply(await configuredPanel(interaction, "levelRankImage",
-        `## ⭐ BF Levels • Rank\n### <@${user.id}>\n🏆 **Posición:** #${pos}\n⭐ **Nivel:** ${data.level}\n✨ **XP:** ${data.xp.toLocaleString()} / ${needed.toLocaleString()}\n📈 ${"🟪".repeat(filled)}${"⬛".repeat(10-filled)} **${pct}%**`
+        `## ⭐ Bryvex Levels • Rank\n### <@${user.id}>\n🏆 **Posición:** #${pos}\n⭐ **Nivel:** ${data.level}\n✨ **XP:** ${data.xp.toLocaleString()} / ${needed.toLocaleString()}\n📈 ${"🟪".repeat(filled)}${"⬛".repeat(10-filled)} **${pct}%**`
     ));
 }
 
@@ -70,7 +70,7 @@ async function perfil(interaction) {
         EconomyUser.findOne({ guildId: interaction.guild.id, userId: user.id }),
         interaction.guild.members.fetch(user.id).catch(() => null)
     ]);
-    if (!data) return interaction.editReply(await configuredPanel(interaction, "levelProfileImage", "## 👤 BF Levels • Perfil\n❌ Este usuario todavía no tiene datos de nivel.", 0xED4245));
+    if (!data) return interaction.editReply(await configuredPanel(interaction, "levelProfileImage", "## 👤 Bryvex Levels • Perfil\n❌ Este usuario todavía no tiene datos de nivel.", 0xED4245));
     const pos = await positionOf(interaction.guild.id, data);
     const needed = xpNeeded(data.level);
     const badges = [];
@@ -81,7 +81,7 @@ async function perfil(interaction) {
     if ((economy?.wallet || 0) >= 100000) badges.push("💰 Magnate");
     if (data.level >= 25) badges.push("🔥 Nivel 25+");
     return interaction.editReply(await configuredPanel(interaction, "levelProfileImage",
-        `## 👤 BF Levels • Perfil\n### <@${user.id}>\n⭐ **Nivel:** ${data.level}\n🏆 **Ranking:** #${pos}\n✨ **XP:** ${data.xp.toLocaleString()} / ${needed.toLocaleString()}\n💰 **Wallet:** ${(economy?.wallet || 0).toLocaleString()}\n🏦 **Banco:** ${(economy?.bank || 0).toLocaleString()}\n🎖️ **Badges:** ${badges.join(" • ") || "Ninguno"}`
+        `## 👤 Bryvex Levels • Perfil\n### <@${user.id}>\n⭐ **Nivel:** ${data.level}\n🏆 **Ranking:** #${pos}\n✨ **XP:** ${data.xp.toLocaleString()} / ${needed.toLocaleString()}\n💰 **Wallet:** ${(economy?.wallet || 0).toLocaleString()}\n🏦 **Banco:** ${(economy?.bank || 0).toLocaleString()}\n🎖️ **Badges:** ${badges.join(" • ") || "Ninguno"}`
     ));
 }
 
@@ -95,7 +95,7 @@ async function renderTop(interaction, page, ownerId, config) {
     const color = /^#[\da-f]{6}$/i.test(config?.levelColor || "") ? parseInt(config.levelColor.slice(1), 16) : PURPLE;
     const container = new ContainerBuilder().setAccentColor(color);
     if (config?.levelTopImage) container.addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(config.levelTopImage)));
-    container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## 🏆 BF Levels • Top de niveles`));
+    container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## 🏆 Bryvex Levels • Top de niveles`));
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small));
     container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`Clasificación del servidor · Página **${page + 1}/${totalPages}**`));
     if (!data.length) container.addTextDisplayComponents(new TextDisplayBuilder().setContent("Todavía no hay datos de niveles."));
@@ -152,16 +152,16 @@ async function giveXp(interaction) {
     let data=await Level.findOne({guildId:interaction.guild.id,userId:user.id});
     if(!data) data=new Level({guildId:interaction.guild.id,userId:user.id,xp:0,level:0});
     data.xp += amount; await data.save();
-    return interaction.editReply(await configuredPanel(interaction, "levelGiveXpImage", `## 📈 BF Levels • Añadir XP\n✅ Se añadieron **${amount.toLocaleString()} XP** a <@${user.id}>.\n\n✨ **XP actual:** ${data.xp.toLocaleString()}`,0x57F287));
+    return interaction.editReply(await configuredPanel(interaction, "levelGiveXpImage", `## 📈 Bryvex Levels • Añadir XP\n✅ Se añadieron **${amount.toLocaleString()} XP** a <@${user.id}>.\n\n✨ **XP actual:** ${data.xp.toLocaleString()}`,0x57F287));
 }
 
 async function removeXp(interaction) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const user=interaction.options.getUser("usuario"), amount=interaction.options.getInteger("xp");
     const data=await Level.findOne({guildId:interaction.guild.id,userId:user.id});
-    if(!data) return interaction.editReply(await configuredPanel(interaction, "levelRemoveXpImage", "## 📉 BF Levels • Remover XP\n❌ Ese usuario no tiene XP.",0xED4245));
+    if(!data) return interaction.editReply(await configuredPanel(interaction, "levelRemoveXpImage", "## 📉 Bryvex Levels • Remover XP\n❌ Ese usuario no tiene XP.",0xED4245));
     const removed=Math.min(amount,data.xp); data.xp=Math.max(0,data.xp-amount); await data.save();
-    return interaction.editReply(await configuredPanel(interaction, "levelRemoveXpImage", `## 📉 BF Levels • Remover XP\n✅ Se removieron **${removed.toLocaleString()} XP** a <@${user.id}>.\n\n✨ **XP actual:** ${data.xp.toLocaleString()}`,0xED4245));
+    return interaction.editReply(await configuredPanel(interaction, "levelRemoveXpImage", `## 📉 Bryvex Levels • Remover XP\n✅ Se removieron **${removed.toLocaleString()} XP** a <@${user.id}>.\n\n✨ **XP actual:** ${data.xp.toLocaleString()}`,0xED4245));
 }
 
 async function channel(interaction) {
@@ -177,21 +177,21 @@ async function channel(interaction) {
         levelChannelImage: interaction.options.getString("channel_image"),
         levelRoleImage: interaction.options.getString("role_image")
     };
-    if ([banner, topBanner, ...Object.values(imageOptions)].some(url => url && !/^https:\/\//i.test(url))) return interaction.editReply(panel("## ⚙️ BF Levels • Configuración\n❌ Las imágenes deben ser URL HTTPS.",0xED4245));
+    if ([banner, topBanner, ...Object.values(imageOptions)].some(url => url && !/^https:\/\//i.test(url))) return interaction.editReply(panel("## ⚙️ Bryvex Levels • Configuración\n❌ Las imágenes deben ser URL HTTPS.",0xED4245));
     const update = { levelChannel: ch.id };
     if (banner !== null) update.levelImage = banner;
     if (topBanner !== null) update.levelTopImage = topBanner;
     for (const [key, value] of Object.entries(imageOptions)) if (value !== null) update[key] = value;
     await LevelConfig.findOneAndUpdate({guildId:interaction.guild.id},update,{upsert:true,new:true,setDefaultsOnInsert:true});
-    return interaction.editReply(await configuredPanel(interaction, "levelChannelImage", `## ⚙️ BF Levels • Configuración\n✅ Los mensajes de nivel se enviarán en ${ch}.${banner !== null ? " Banner de avisos actualizado." : ""}${topBanner !== null ? " Banner de /level top actualizado." : ""}${Object.values(imageOptions).some(value => value !== null) ? " Imágenes de subcomandos actualizadas." : ""}`,0x57F287));
+    return interaction.editReply(await configuredPanel(interaction, "levelChannelImage", `## ⚙️ Bryvex Levels • Configuración\n✅ Los mensajes de nivel se enviarán en ${ch}.${banner !== null ? " Banner de avisos actualizado." : ""}${topBanner !== null ? " Banner de /level top actualizado." : ""}${Object.values(imageOptions).some(value => value !== null) ? " Imágenes de subcomandos actualizadas." : ""}`,0x57F287));
 }
 
 async function role(interaction) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const level=interaction.options.getInteger("nivel"), r=interaction.options.getRole("rol");
-    if(r.managed) return interaction.editReply(await configuredPanel(interaction, "levelRoleImage", "## 🎖️ BF Levels • Rol\n❌ Ese rol está administrado por una integración y no puede usarse como recompensa.",0xED4245));
+    if(r.managed) return interaction.editReply(await configuredPanel(interaction, "levelRoleImage", "## 🎖️ Bryvex Levels • Rol\n❌ Ese rol está administrado por una integración y no puede usarse como recompensa.",0xED4245));
     await LevelReward.findOneAndUpdate({guildId:interaction.guild.id,level},{roleId:r.id},{upsert:true,new:true,setDefaultsOnInsert:true});
-    return interaction.editReply(await configuredPanel(interaction, "levelRoleImage", `## 🎖️ BF Levels • Rol por nivel\n✅ ${r} será otorgado al alcanzar el **nivel ${level}**.`,0x57F287));
+    return interaction.editReply(await configuredPanel(interaction, "levelRoleImage", `## 🎖️ Bryvex Levels • Rol por nivel\n✅ ${r} será otorgado al alcanzar el **nivel ${level}**.`,0x57F287));
 }
 
 module.exports = {
