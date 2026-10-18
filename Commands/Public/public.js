@@ -15,7 +15,7 @@ const handlers = {
 };
 
 const { MessageFlags } = require("discord.js");
-const PUBLIC_BANNER = "https://i.imgur.com/27zUS78.png";
+const PUBLIC_BANNER = "https://i.imgur.com/joAe57D.png";
 
 function publicPanel(body, accent = 0x8A2BE2, media = null) {
     const components = [
