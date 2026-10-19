@@ -2218,8 +2218,18 @@ function assistantReply(question) {
             : isConfigured ? "aparece configurado" : "todavía aparece pendiente de configuración";
         const issueText = related.length ? ` Además, detecté ${related.length} comprobación(es) relacionada(s): ${related[0].detail}` : " No detecté incidencias específicas en las comprobaciones disponibles para este módulo.";
         const asksHowTo = /\b(como|configurar|configuro|usar|uso|activar|activo|crear|funciona|ayuda|explica|explicame|para que sirve)\b/.test(q);
-        const guidance = asksHowTo ? ` ${getAssistantModuleGuidance(matched.definition)}` : "";
-        return { text: `“${matched.definition.title}” ${stateText}.${guidance}${issueText}`, actionKey: matched.key, actionLabel: "Abrir este módulo" };
+        const asksForHelp = /\b(error|errores|problema|problemas|falla|fallo|arreglar|solucionar|por que|porque)\b/.test(q);
+        let guidance = "";
+        if (asksForHelp) {
+            const moduleFindings = related.slice(0, 3);
+            guidance = moduleFindings.length
+                ? ` Las comprobaciones relacionadas indican: ${moduleFindings.map(item => item.detail).join(" ")} Corrige esos puntos y vuelve a comprobar el módulo.`
+                : " No se ha detectado una incidencia específica en este módulo. Comprueba que esté activado si corresponde, revisa sus canales, roles y permisos, guarda los cambios y prueba la función directamente en Discord.";
+            if (!isConfigured) guidance += " Este módulo aparece pendiente de configuración; empieza por completar sus ajustes.";
+        } else if (asksHowTo) {
+            guidance = ` ${getAssistantModuleGuidance(matched.definition)}`;
+        }
+        return { text: `“${matched.definition.title}” ${stateText}.${guidance}${asksForHelp ? "" : issueText}`, actionKey: matched.key, actionLabel: "Abrir este módulo" };
     }
     if (/\b(canal|canales|rol|roles|permiso|permisos)\b/.test(q)) {
         const matching = findings.filter(item => /canal|rol|permiso/i.test(item.title + " " + item.detail));
