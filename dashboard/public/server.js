@@ -2146,6 +2146,30 @@ function assistantReply(question) {
     if (/\b(ayuda|que puedes hacer|funciones|como funciona|bryvex)\b/.test(q)) {
         return { text: "Puedo resumir el estado de la configuración, mostrar incidencias detectables (campos obligatorios, canales, roles y permisos), explicar por qué conviene revisar algo y abrir el módulo relacionado. No ejecuto cambios ni puedo confirmar eventos en vivo que no estén disponibles en la dashboard." };
     }
+    if (/\\b(seguridad|seguro|proteger|proteccion|ataque|ataques|raid|spam|scam|estafa|malicioso|malware|vulnerabilidad|antifraude)\\b/.test(q)) {
+        const entries = [...Object.entries(currentModules?.configurations || {}), ...Object.entries(currentModules?.lists || {})];
+        const securityTerms = /anti.?scam|anti.?raid|anti.?spam|seguridad|moderacion|proteccion|verificacion|logs|registro|captcha|automod|filtro|bloqueo|autoroles|permisos/i;
+        const securityModules = entries.map(([key, definition]) => ({
+            key,
+            title: definition.title || key,
+            description: definition.description || "",
+            searchText: `${key} ${definition.title || ""} ${definition.category || ""} ${definition.description || ""}`
+        })).filter(item => securityTerms.test(item.searchText)).slice(0, 6);
+        const securityFindings = findings.filter(item => /scam|spam|raid|seguridad|permiso|canal|rol|moderacion|bloqueo/i.test(`${item.title} ${item.detail}`)).slice(0, 3);
+        const moduleList = securityModules.length
+            ? `Módulos relacionados que están disponibles en este panel: ${securityModules.map(item => item.title).join(", ")}.`
+            : "No he identificado módulos de seguridad por su nombre o descripción; no voy a asumir que una función existe si no aparece en el panel.";
+        const findingsText = securityFindings.length
+            ? ` Incidencias que conviene revisar: ${securityFindings.map(item => item.detail).join(" ")}`
+            : " Las comprobaciones cargadas no han señalado una incidencia específica de seguridad; eso no garantiza que el servidor esté protegido frente a todos los ataques.";
+        const guidance = "Prioriza activar y configurar las protecciones anti-spam/anti-raid/anti-scam que existan, limita quién puede administrar el servidor y asignar roles, revisa los permisos y canales de registro, y prueba las medidas en Discord. No compartas tokens ni credenciales.";
+        const preferred = securityModules.find(item => /anti.?scam|anti.?raid|anti.?spam|moderacion|verificacion|captcha|automod/i.test(item.searchText)) || securityModules[0];
+        return {
+            text: `Para mejorar la seguridad de ${activeGuild?.name || "tu servidor"}: ${guidance} ${moduleList}${findingsText}`,
+            actionKey: preferred?.key || "__checks",
+            actionLabel: preferred ? `Abrir ${preferred.title}` : "Abrir Comprobaciones"
+        };
+    }
     const matched = findAssistantModule(q);
     if (matched) {
         const isConfigured = currentModules.lists?.[matched.key]
