@@ -218,7 +218,7 @@ async function runAdd(interaction) {
     const emoji = interaction.options.getString("emoji") || "🛒";
     const description = interaction.options.getString("descripcion") || "Rol exclusivo";
     if (role.managed || role.id === interaction.guild.id) return reply(interaction, "❌ Rol no válido", "No puedes vender un rol administrado por una integración o @everyone.", 0xFF0000, true);
-    if (role.position >= interaction.guild.members.me.roles.highest.position) return reply(interaction, "❌ Jerarquía de roles", "Sube el rol de Bryvex Bot por encima del rol que quieres vender.", 0xFF0000, true);
+    if (role.position >= (interaction.guild.members.me?.roles.highest?.position ?? 0)) return reply(interaction, "❌ Jerarquía de roles", "Sube el rol de Bryvex Bot por encima del rol que quieres vender.", 0xFF0000, true);
     if (await ShopItem.findOne({ guildId: interaction.guild.id, roleId: role.id })) return reply(interaction, "❌ Rol duplicado", "Ese rol ya está en la tienda.", 0xFF0000, true);
 
     const buttons = new ActionRowBuilder().addComponents(
@@ -258,11 +258,13 @@ async function runRemove(interaction) {
     await interaction.reply({ components: [panel("🗑️ Eliminar rol", "Selecciona el rol que deseas retirar de la tienda.", new ActionRowBuilder().addComponents(menu))], flags: MessageFlags.IsComponentsV2, withResponse: true });
     const message = await interaction.fetchReply();
     const collector = message.createMessageComponentCollector({ time: 30000 });
+    let selectedRoleId = null;
     collector.on("collect", async component => {
         if (component.user.id !== interaction.user.id) return component.reply({ content: "❌ No puedes usar este menú.", flags: MessageFlags.Ephemeral });
         await component.deferUpdate();
         if (component.isStringSelectMenu()) {
             const roleId = component.values[0];
+            selectedRoleId = roleId;
             const role = interaction.guild.roles.cache.get(roleId);
             const buttons = new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId("shopremove_confirm").setLabel("Eliminar").setEmoji("🗑️").setStyle(ButtonStyle.Danger),
@@ -275,14 +277,7 @@ async function runRemove(interaction) {
             return interaction.editReply({ components: [panel("❌ Operación cancelada", "No se realizó ningún cambio.", null, 0xFF0000)] });
         }
         if (component.customId === "shopremove_confirm") {
-            const selected = options.find(option => true);
-            const current = await ShopItem.find({ guildId: interaction.guild.id }).lean();
-            const roleIds = current.map(item => item.roleId);
-            const roleId = roleIds.find(id => interaction.guild.roles.cache.get(id)?.name === interaction.guild.roles.cache.get(id)?.name);
-            // The selected ID is stored on the confirmation message to avoid removing an unrelated role.
-            const selectedRoleId = component.message.components?.[0]?.components?.find(part => part.type === 10)?.content?.match(/<@&(\d{17,20})>/)?.[1];
-            const targetId = selectedRoleId || roleId;
-            if (targetId) await ShopItem.deleteOne({ guildId: interaction.guild.id, roleId: targetId });
+            if (selectedRoleId) await ShopItem.deleteOne({ guildId: interaction.guild.id, roleId: selectedRoleId });
             collector.stop("removed");
             return interaction.editReply({ components: [panel("🗑️ Rol eliminado", "El rol se retiró de la tienda.", null, 0xFF003C)] });
         }
