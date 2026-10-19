@@ -14,6 +14,7 @@ const DashboardReferral = require("../Models/DashboardReferral");
 const DashboardAuditLog = require("../Models/DashboardAuditLog");
 const EconomyUser = require("../Models/EconomyUser");
 const SocialAlertState = require("../Models/SocialAlertState");
+const PersonalStatsDaily = require("../Models/PersonalStatsDaily");
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -663,6 +664,67 @@ app.delete("/api/account/background", requireLogin, requireCsrf, async (req, res
         { $unset: { backgroundImage: 1, backgroundMimeType: 1 } }
     );
     return res.json({ ok: true, hasCustomBackground: false });
+});
+
+app.get("/api/account/personal-stats", requireLogin, async (req, res) => {
+    res.set("Cache-Control", "private, no-store");
+    try {
+        const today = new Date();
+        const start = new Date(today);
+        start.setUTCDate(start.getUTCDate() - 29);
+        const startDay = start.toISOString().slice(0, 10);
+        const documents = await PersonalStatsDaily.find({
+            userId: req.session.user.id,
+            day: { $gte: startDay }
+        }).select("day messages voiceSeconds reactionsGiven reactionsReceived activitySeconds gamingSeconds channelMessages").lean();
+
+        const totals = {
+            messages: 0, voiceSeconds: 0, reactionsGiven: 0, reactionsReceived: 0,
+            activitySeconds: {}, gamingSeconds: {}, channelMessages: {}
+        };
+        const byDay = new Map();
+        const addMap = (target, source) => {
+            const entries = source instanceof Map ? [...source.entries()] : Object.entries(source || {});
+            for (const [key, value] of entries) target[key] = (target[key] || 0) + (Number(value) || 0);
+        };
+
+        for (const document of documents) {
+            totals.messages += Number(document.messages) || 0;
+            totals.voiceSeconds += Number(document.voiceSeconds) || 0;
+            totals.reactionsGiven += Number(document.reactionsGiven) || 0;
+            totals.reactionsReceived += Number(document.reactionsReceived) || 0;
+            addMap(totals.activitySeconds, document.activitySeconds);
+            addMap(totals.gamingSeconds, document.gamingSeconds);
+            addMap(totals.channelMessages, document.channelMessages);
+
+            const daily = byDay.get(document.day) || {
+                day: document.day, messages: 0, voiceSeconds: 0,
+                reactionsGiven: 0, reactionsReceived: 0
+            };
+            daily.messages += Number(document.messages) || 0;
+            daily.voiceSeconds += Number(document.voiceSeconds) || 0;
+            daily.reactionsGiven += Number(document.reactionsGiven) || 0;
+            daily.reactionsReceived += Number(document.reactionsReceived) || 0;
+            byDay.set(document.day, daily);
+        }
+
+        const daily = [];
+        for (let offset = 29; offset >= 0; offset--) {
+            const date = new Date(today);
+            date.setUTCHours(0, 0, 0, 0);
+            date.setUTCDate(date.getUTCDate() - offset);
+            const key = date.toISOString().slice(0, 10);
+            daily.push(byDay.get(key) || {
+                day: key, messages: 0, voiceSeconds: 0,
+                reactionsGiven: 0, reactionsReceived: 0
+            });
+        }
+
+        return res.json({ trackingStarted: documents.length > 0, periodDays: 30, totals, daily });
+    } catch (error) {
+        console.error("[Personal Stats] No se pudieron consultar las estadísticas:", error.message);
+        return res.status(500).json({ error: "No pude cargar tus estadísticas personales." });
+    }
 });
 
 const REFERRAL_REWARD = 1000;
