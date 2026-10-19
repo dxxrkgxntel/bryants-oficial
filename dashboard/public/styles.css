@@ -638,6 +638,18 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
 .member-economy-stat { display: flex; justify-content: space-between; gap: 8px; padding: 12px; border: 1px solid #ffffff14; border-radius: 9px; color: #b8adbf; font-size: 11px; }
 .member-economy-stat strong { color: #eadff1; }
 .member-backpack h3 { margin: 0; }
+.member-backpack-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.member-backpack-heading span { color: #b8adbf; font-size: 11px; }
+.member-backpack-item, .member-achievement-item { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #ffffff14; border-radius: 10px; background: #ffffff05; min-width: 0; }
+.member-backpack-emoji { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 38px; border-radius: 10px; background: #8a2be21f; font-size: 20px; }
+.member-backpack-copy, .member-achievement-item > div { display: grid; gap: 4px; min-width: 0; flex: 1; }
+.member-backpack-copy strong, .member-achievement-item strong { color: #eadff1; overflow-wrap: anywhere; }
+.member-backpack-copy small, .member-achievement-item small { color: #a99fb2; font-size: 11px; overflow-wrap: anywhere; }
+.member-backpack-quantity { color: #eadff1; font-weight: 700; white-space: nowrap; }
+.member-backpack-empty { margin: 0; color: #a99fb2; }
+.member-achievement-list { display: grid; gap: 8px; }
+.member-achievement-item > span { font-size: 20px; }
+.member-achievement-item b { color: #c4a7ff; font-size: 11px; text-align: right; }
 .checkbox-field { display: flex; align-items: center; justify-content: space-between; min-height: 46px; padding: 0 12px; border: 1px solid #ffffff20; border-radius: 9px; background: #0e0b12; }
 .checkbox-field { align-self: start; }
 .checkbox-field input { width: 18px; min-height: 18px; accent-color: #aa5ce3; }
