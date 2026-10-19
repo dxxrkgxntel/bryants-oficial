@@ -34,9 +34,9 @@ requirePattern(/app\.use\(helmet\(/, "Deben activarse cabeceras de seguridad HTT
 requirePattern(/express\.json\(\{\s*limit:\s*"32kb"/, "El cuerpo JSON debe tener un límite de tamaño");
 requirePattern(/req\.session\.regenerate\(/, "La sesión debe regenerarse al autenticar para mitigar session fixation");
 
-requirePattern(/app\.get\\(["']\/api\/public\/status["']/, "Debe existir el endpoint público de estado de Bryvex Bot");
+requirePattern(/app\.get\(["']\/api\/public\/status["']/, "Debe existir el endpoint público de estado de Bryvex Bot");
 requirePattern(/PUBLIC_STATUS_CACHE_TTL = 30_000/, "El estado público debe limitar la frecuencia de comprobaciones externas");
-requirePattern(/mongoose\.connection\\.readyState !== 1/, "El estado debe comprobar la conexión real a MongoDB");
+requirePattern(/mongoose\.connection\.readyState !== 1/, "El estado debe comprobar la conexión real a MongoDB");
 requirePattern(/discord\.com\/api\/v10\/users\/@me/, "El estado debe verificar la API de Discord");
 
 for (const route of [
