@@ -64,9 +64,11 @@ function searchSettingResults(query) {
 function renderModuleSearchResults(query) {
     const panel = document.querySelector("#module-search-results");
     if (!panel) return;
-    if (!query) { panel.hidden = true; panel.replaceChildren(); return; }
+    const input = document.querySelector("#module-search");
+    if (!query) { panel.hidden = true; panel.replaceChildren(); input?.setAttribute("aria-expanded", "false"); return; }
     const results = searchSettingResults(query);
     panel.hidden = false;
+    input?.setAttribute("aria-expanded", "true");
     if (!results.length) {
         panel.innerHTML = '<div class="module-search-empty">No se encontraron módulos ni ajustes.</div>';
         return;
@@ -1105,6 +1107,7 @@ function makeNav(modules) {
         if (!event.target.closest(".nav-tools")) {
             const panel = document.querySelector("#module-search-results");
             if (panel) panel.hidden = true;
+            document.querySelector("#module-search")?.setAttribute("aria-expanded", "false");
         }
     });
     searchInput.addEventListener("focus", () => renderModuleSearchResults(normalizeSearch(searchInput.value)));
