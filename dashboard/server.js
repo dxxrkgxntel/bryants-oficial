@@ -314,6 +314,9 @@ function cleanFields(fields, input, requireAll = false) {
         } else if (field.type === "setups") {
             if (!Array.isArray(value) || value.length > 10) throw new Error("TempVoice acepta hasta 10 configuraciones.");
             value = value.map(setup => {
+                if (!setup || typeof setup !== "object" || Array.isArray(setup)) {
+                    throw new Error("Cada configuración TempVoice debe ser un objeto válido.");
+                }
                 const result = {};
                 for (const key of ["categoryId", "creatorChannelId", "panelChannelId", "panelMessageId"]) {
                     if (key === "panelMessageId" && (setup[key] == null || setup[key] === "")) {
