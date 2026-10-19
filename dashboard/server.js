@@ -1763,6 +1763,40 @@ app.post("/auth/logout", requireLogin, requireCsrf, (req, res) => {
     });
 });
 
+const previewGuildIconCache = { value: null, expiresAt: 0 };
+
+app.get("/api/preview-server-icon", async (_req, res) => {
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+    if (previewGuildIconCache.expiresAt > Date.now()) return res.json(previewGuildIconCache.value);
+
+    try {
+        const inviteResponse = await fetch("https://discord.com/api/v10/invites/7zCzDCJUQ9?with_counts=true", {
+            headers: { "Accept": "application/json" },
+            signal: AbortSignal.timeout(8000)
+        });
+        if (!inviteResponse.ok) {
+            return res.status(502).json({ error: "No pude consultar la invitación del servidor." });
+        }
+        const invite = await inviteResponse.json();
+        const guild = invite.guild;
+        if (!guild || guild.id !== "1552132491391934527") {
+            return res.status(502).json({ error: "La invitación no corresponde al servidor de la vista previa." });
+        }
+
+        const icon = typeof guild.icon === "string" ? guild.icon : null;
+        const extension = icon?.startsWith("a_") ? "gif" : "png";
+        const payload = {
+            iconUrl: icon ? `https://cdn.discordapp.com/icons/${guild.id}/${icon}.${extension}?size=128` : null
+        };
+        previewGuildIconCache.value = payload;
+        previewGuildIconCache.expiresAt = Date.now() + 5 * 60_000;
+        return res.json(payload);
+    } catch (error) {
+        console.error("[Dashboard Preview] No pude actualizar el icono del servidor:", error.message);
+        return res.status(502).json({ error: "No pude actualizar el icono de la vista previa." });
+    }
+});
+
 app.get("/api/version", (_req, res) => {
     res.set("Cache-Control", "no-store, no-cache, must-revalidate");
     try {
@@ -1770,7 +1804,7 @@ app.get("/api/version", (_req, res) => {
             "index.html", "server.html", "account.html", "support.html",
             "server.js", "app.js", "account.js", "support.js",
             "appearance.js", "account-menu.js", "styles.css", "support.css",
-            "version-check.js", "personal-stats.js"
+            "version-check.js", "personal-stats.js", "preview-server-icon.js"
         ];
         const hash = crypto.createHash("sha256");
         for (const file of trackedFiles) {
