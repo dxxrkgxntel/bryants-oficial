@@ -236,7 +236,7 @@ function findConfiguredUnassignableRoles(modules) {
     const blockedById = new Map((roleManagement.unmanageableRoles || []).map(role => [String(role.id), role]));
     const add = (rawId, moduleKey, definition, source) => {
         const id = String(rawId || "");
-        if (!/^\\d{17,20}$/.test(id) || !roleById.has(id)) return;
+        if (!/^\d{17,20}$/.test(id) || !roleById.has(id)) return;
         const role = roleById.get(id);
         const hierarchyBlocked = blockedById.has(id);
         if (roleManagement.canManageRoles && !hierarchyBlocked) return;
