@@ -14,6 +14,7 @@ function getGame(presence) {
 
 module.exports = {
     name: "presenceUpdate",
+    presenceSessions,
     async execute(oldPresence, newPresence) {
         const user = newPresence?.user || oldPresence?.user;
         const guild = newPresence?.guild || oldPresence?.guild;
