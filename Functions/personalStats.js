@@ -30,4 +30,18 @@ async function increment(userId, guildId, field, amount = 1, mapKey = null, date
     );
 }
 
-module.exports = { increment, dayKey, safeMapKey };
+async function addDuration(userId, guildId, field, seconds, startedAt, endedAt = new Date(), mapKey = null) {
+    let cursor = new Date(startedAt).getTime();
+    const end = new Date(endedAt).getTime();
+    if (!Number.isFinite(cursor) || !Number.isFinite(end) || end <= cursor) return;
+    while (cursor < end) {
+        const current = new Date(cursor);
+        const nextDay = Date.UTC(current.getUTCFullYear(), current.getUTCMonth(), current.getUTCDate() + 1);
+        const segmentEnd = Math.min(end, nextDay);
+        const segmentSeconds = Math.floor((segmentEnd - cursor) / 1000);
+        if (segmentSeconds > 0) await increment(userId, guildId, field, segmentSeconds, mapKey, current);
+        cursor = segmentEnd;
+    }
+}
+
+module.exports = { increment, addDuration, dayKey, safeMapKey };
