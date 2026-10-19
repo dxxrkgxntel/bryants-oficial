@@ -267,6 +267,10 @@ function cleanFields(fields, input, requireAll = false) {
         }
         let value = input[field.name];
         if (field.optional && (value === "" || value === null || value === undefined)) value = null;
+        if (field.optional && value === null) {
+            setNested(cleaned, field.name, null);
+            continue;
+        }
 
         if (field.type === "boolean") {
             if (typeof value !== "boolean") throw new Error(`${field.label} debe ser sí o no.`);
