@@ -26,6 +26,8 @@ requirePattern(/secure:\s*isProduction/, "Las cookies deben usar Secure en produ
 requirePattern(/sameSite:\s*"lax"/, "La cookie de sesión debe limitar solicitudes cross-site");
 requirePattern(/secret:\s*process\.env\.DASHBOARD_SESSION_SECRET/, "La sesión debe usar un secreto de entorno");
 requirePattern(/DASHBOARD_SESSION_SECRET\.length < 32/, "El servidor debe rechazar secretos de sesión débiles");
+requirePattern(/async function validateAssignableRoleIds[\\s\\S]*?canManageRoles/, "Las asignaciones de roles deben validar permisos y jerarquía del bot");
+requirePattern(/signal: AbortSignal\\.timeout\\(8000\\)/, "Las llamadas externas del dashboard deben tener un límite de tiempo");
 requirePattern(/function requireCsrf\([\s\S]*?crypto\.timingSafeEqual/, "Las escrituras deben poder protegerse con CSRF");
 requirePattern(/function secureStringEqual\([\s\S]*?crypto\.timingSafeEqual/, "Las comparaciones de secretos deben ser seguras");
 requirePattern(/!secureStringEqual\(state, expectedState\)/, "OAuth debe validar state con comparación segura");
