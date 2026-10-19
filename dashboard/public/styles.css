@@ -926,3 +926,14 @@ button:disabled { opacity: .55; cursor: wait !important; }
 .overview-integrity-links button > span { font-size: 11px; font-weight: 700; }
 .overview-integrity-links button > small { color: #edc981; font-size: 10px; }
 @media (max-width: 640px) { .overview-integrity-links { display: grid; grid-template-columns: 1fr; } .overview-integrity-links button { min-width: 0; } }
+
+/* Botones en la vista previa: diferenciar enlaces y acciones de rol. */
+.discord-preview-buttons { align-items: stretch; }
+.discord-preview-button { flex-direction: column; align-items: stretch; min-width: 110px; max-width: 100%; gap: 4px; padding: 7px 10px; border: 1px solid #ffffff20; }
+.discord-preview-button-main { display: inline-flex; align-items: center; justify-content: center; gap: 5px; overflow-wrap: anywhere; }
+.discord-preview-button-emoji { flex: 0 0 auto; }
+.discord-preview-button-kind { padding: 2px 4px; border-radius: 4px; background: #ffffff22; font-size: 8px; font-weight: 800; letter-spacing: .04em; }
+.discord-preview-button > small { color: #e5e1ffb8; font-size: 9px; line-height: 1.35; overflow-wrap: anywhere; text-align: center; }
+.discord-preview-button.role-button { background: #248b6238; border-color: #39cc8360; }
+.discord-preview-button.link-button { background: #5865f2; border-color: #8b94ff66; }
+@media (max-width: 560px) { .discord-preview-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } .discord-preview-button { min-width: 0; } }
