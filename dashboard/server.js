@@ -378,6 +378,7 @@ async function fetchBotChannelPermissions(guildId, channels, roles) {
     const administrator = (basePermissions & (1n << 3n)) !== 0n;
     const allPermissions = (1n << 53n) - 1n;
     const permissionBits = {
+        manageChannels: 1n << 4n,
         viewChannel: 1n << 10n,
         sendMessages: 1n << 11n,
         embedLinks: 1n << 14n,
