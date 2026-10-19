@@ -1,5 +1,6 @@
 const crypto = require("node:crypto");
 const path = require("node:path");
+const fs = require("node:fs");
 const express = require("express");
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
@@ -1694,12 +1695,40 @@ app.post("/auth/logout", requireLogin, requireCsrf, (req, res) => {
     });
 });
 
+app.get("/api/version", (_req, res) => {
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+    try {
+        const trackedFiles = [
+            "index.html", "server.html", "account.html", "support.html",
+            "server.js", "app.js", "account.js", "support.js",
+            "appearance.js", "account-menu.js", "styles.css", "support.css",
+            "version-check.js"
+        ];
+        const hash = crypto.createHash("sha256");
+        for (const file of trackedFiles) {
+            hash.update(file);
+            try { hash.update(fs.readFileSync(path.join(publicDirectory, file))); }
+            catch (error) { if (error.code !== "ENOENT") throw error; }
+        }
+        return res.json({ version: hash.digest("hex").slice(0, 16) });
+    } catch (error) {
+        console.error("[Dashboard Version] No pude calcular la versión:", error.message);
+        return res.status(500).json({ error: "No se pudo consultar la versión." });
+    }
+});
+
 app.use(express.static(publicDirectory, {
     extensions: ["html"],
     index: "index.html",
     maxAge: 0,
     setHeaders(res, filePath) {
-        if (/\.(?:html|js|css)$/i.test(filePath)) res.setHeader("Cache-Control", "no-cache");
+        if (/\.html?$/i.test(filePath)) {
+            res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+            res.setHeader("Pragma", "no-cache");
+            res.setHeader("Expires", "0");
+        } else if (/\.(?:js|css)$/i.test(filePath)) {
+            res.setHeader("Cache-Control", "no-cache, must-revalidate");
+        }
     }
 }));
 
