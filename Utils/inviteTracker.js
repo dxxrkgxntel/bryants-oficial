@@ -96,7 +96,7 @@ async function handleMemberJoin(member) {
         const config = await logsSchema.findOne({ Guild: guild.id });
         if (!config || config.Enabled === false || !config.Channel) return;
 
-        const channel = guild.channels.cache.get(config.Channel);
+        const channel = guild.channels.cache.get(config.InviteTrackerChannel);
         if (!channel?.isTextBased()) return;
 
         const permissions = channel.permissionsFor(guild.members.me);
