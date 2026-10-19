@@ -1144,6 +1144,18 @@ app.put("/api/guilds/:guildId/config/:module", requireLogin, requireCsrf, requir
         }
         const update = cleanFields(definition.fields, req.body);
         if (!Object.keys(update).length) return res.status(400).json({ error: "No hay cambios para guardar." });
+        if (req.params.module === "inviteTracker") {
+            const current = await definition.model.findOne({ [definition.guildField]: req.params.guildId }).lean();
+            const nextEnabled = Object.prototype.hasOwnProperty.call(update, "InviteTrackerEnabled")
+                ? update.InviteTrackerEnabled
+                : Boolean(current?.InviteTrackerEnabled);
+            const nextChannel = Object.prototype.hasOwnProperty.call(update, "InviteTrackerChannel")
+                ? update.InviteTrackerChannel
+                : current?.InviteTrackerChannel;
+            if (nextEnabled && !nextChannel) {
+                throw new Error("Selecciona un canal de logs antes de activar el Invite Tracker.");
+            }
+        }
         await validateDiscordReferences(req.params.guildId, definition.fields, update);
         if (req.params.module === "antiInvites") {
             const config = await definition.model.findOne({ guildId: req.params.guildId }).lean();
