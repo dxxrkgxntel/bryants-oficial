@@ -35,10 +35,12 @@ module.exports = {
                 config = await logsSchema.create({
                     Guild: interaction.guild.id,
                     InviteTrackerChannel: channel.id,
+                    InviteTrackerEnabled: true,
                     Enabled: true
                 });
             } else {
                 config.InviteTrackerChannel = channel.id;
+                config.InviteTrackerEnabled = true;
                 await config.save();
             }
 
