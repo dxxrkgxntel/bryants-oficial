@@ -42,7 +42,11 @@ async function handleMemberJoin(member) {
         console.error(`[INVITE TRACKER] No se pudo leer la configuración de ${guild.id}:`, error);
         return;
     }
-    if (!config || config.InviteTrackerEnabled !== true || !config.InviteTrackerChannel) return;
+    if (!config || config.InviteTrackerEnabled !== true || !config.InviteTrackerChannel) {
+        // Mantiene actualizada la caché mientras el sistema está apagado para evitar atribuciones erróneas al reactivarlo.
+        await initializeGuildInviteCache(guild);
+        return;
+    }
 
     let usedInvite = null;
     let attributionAvailable = false;
