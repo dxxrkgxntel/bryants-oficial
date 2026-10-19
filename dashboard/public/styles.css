@@ -818,3 +818,44 @@ button:disabled { opacity: .55; cursor: wait !important; }
 .system-toggle.is-active { border-color: #39cc8370; background: #39cc831c; color: #82e7ae; box-shadow: inset 0 0 0 1px #39cc8315; }
 .system-toggle:focus-visible { outline: 2px solid #c47af2; outline-offset: 2px; }
 @media (max-width: 560px) { .system-toggle-field { align-items: flex-start; gap: 12px; } .system-toggle { min-width: 112px; } }
+
+
+/* Personal statistics */
+.personal-stats-refresh { margin-left: auto; flex: 0 0 auto; }
+.personal-stats-tabs { display: flex; flex-wrap: wrap; gap: 7px; margin: 20px 0 15px; padding: 5px; border: 1px solid #ffffff12; border-radius: 12px; background: #0d0a1180; }
+.personal-stats-tab { padding: 9px 13px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: #b8acbf; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+.personal-stats-tab:hover { background: #ffffff0a; color: #fff; }
+.personal-stats-tab.active { border-color: #bd75ec30; background: linear-gradient(135deg, #a34ce32c, #a34ce30c); color: #e9d1ff; }
+.personal-stats-status { margin: 0 0 15px; color: #a99eb3; font-size: 11px; line-height: 1.6; }
+.personal-stats-content { min-width: 0; }
+.personal-stats-intro { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin: 7px 0 18px; }
+.personal-stats-intro h3 { margin: 0; color: #f3eafa; font-size: 17px; }
+.personal-stats-intro p { margin: 6px 0 0; color: #a99eb3; font-size: 11px; line-height: 1.6; }
+.personal-stats-period { flex: 0 0 auto; padding: 6px 9px; border: 1px solid #ffffff13; border-radius: 7px; color: #c9b8d6; font-size: 9px; }
+.personal-stats-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 21px; }
+.personal-stats-metric { display: grid; gap: 8px; min-width: 0; padding: 16px; border: 1px solid #ffffff13; border-radius: 11px; background: #0d0b1099; }
+.personal-stats-metric span { color: #a99eb3; font-size: 10px; }
+.personal-stats-metric strong { overflow-wrap: anywhere; color: #dfb5ff; font-size: clamp(18px, 2.4vw, 25px); letter-spacing: -.025em; }
+.personal-stats-metric small { color: #897c94; font-size: 9px; }
+.personal-stats-content h4 { margin: 20px 0 13px; color: #e9deef; font-size: 12px; }
+.personal-stats-bars { display: grid; gap: 14px; }
+.personal-stats-bar-row { display: grid; gap: 7px; }
+.personal-stats-bar-label { display: flex; align-items: center; justify-content: space-between; gap: 14px; color: #bdb0c8; font-size: 10px; }
+.personal-stats-bar-label span { overflow-wrap: anywhere; }
+.personal-stats-bar-label strong { flex: 0 0 auto; color: #e8d3fa; font-size: 10px; font-variant-numeric: tabular-nums; }
+.personal-stats-bar-track { height: 7px; overflow: hidden; border-radius: 99px; background: #ffffff0e; }
+.personal-stats-bar-track span { display: block; height: 100%; min-width: 0; border-radius: inherit; background: linear-gradient(90deg, #873ac2, #d19aff); box-shadow: 0 0 14px #b15af344; transition: width .25s ease; }
+.personal-stats-empty { padding: 18px; border: 1px dashed #ffffff1d; border-radius: 10px; color: #94879f; font-size: 11px; text-align: center; }
+@media (max-width: 760px) {
+    .personal-stats-refresh { margin-left: 0; }
+    .account-section-heading:has(.personal-stats-refresh) { flex-wrap: wrap; }
+    .personal-stats-tabs { gap: 5px; }
+    .personal-stats-tab { flex: 1 1 auto; padding: 9px 10px; }
+}
+@media (max-width: 480px) {
+    .personal-stats-metrics { grid-template-columns: 1fr; }
+    .personal-stats-intro { flex-direction: column; }
+    .account-settings-layout { grid-template-columns: minmax(0, 1fr); }
+    .account-settings-nav { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .account-settings-back, .account-nav-heading { grid-column: 1 / -1; }
+}
