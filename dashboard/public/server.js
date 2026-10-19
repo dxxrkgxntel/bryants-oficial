@@ -2062,6 +2062,166 @@ function renderList(key, definition, editItem = null) {
     });
 }
 
+
+function getAssistantFindings() {
+    const findings = [];
+    const add = (title, detail, key = "") => findings.push({ title, detail, key });
+    try {
+        const missing = findMissingRequiredSettings(currentModules);
+        for (const item of missing.slice(0, 8)) add("Ajuste obligatorio pendiente", `${item.title}: falta completar “${item.field}”.`, item.key);
+        const mismatches = findChannelTypeMismatches(currentModules);
+        for (const item of mismatches.slice(0, 8)) add("Tipo de canal incompatible", `${item.title}: el canal #${item.channelName} no coincide con el tipo esperado para “${item.field}”.`, item.key);
+        const channels = findUnavailableChannelReferences(currentModules);
+        for (const item of channels.slice(0, 8)) add("Referencia de canal no disponible", `${item.title}: hay un canal guardado que ya no aparece entre los canales actuales.`, item.key);
+        const roles = findUnavailableRoleReferences(currentModules);
+        for (const item of roles.slice(0, 8)) add("Referencia de rol no disponible", `${item.title}: hay un rol guardado que no aparece entre los roles actuales.`, item.key);
+        const unassignable = findConfiguredUnassignableRoles(currentModules);
+        for (const item of (unassignable || []).slice(0, 8)) add("Rol no asignable", `${item.title}: “${item.roleName}” no se puede asignar porque ${item.reason.toLocaleLowerCase("es")}.`, item.key);
+        if (resources.channelPermissions) {
+            const permissions = findConfiguredChannelPermissionIssues(currentModules);
+            for (const item of permissions.slice(0, 8)) add("Permisos de canal por revisar", `${item.title}: en #${item.channelName} faltan permisos básicos: ${item.missing.join(", ")}.`, item.key);
+        } else {
+            add("Permisos no verificados", "No se pudieron comprobar todos los permisos efectivos del bot. Revisa los canales configurados directamente en Discord.");
+        }
+    } catch (error) {
+        console.warn("No pude calcular todos los diagnósticos del asistente:", error);
+    }
+    return findings;
+}
+
+function getAssistantModuleStatus() {
+    const entries = [...Object.entries(currentModules?.configurations || {}), ...Object.entries(currentModules?.lists || {})];
+    const configured = entries.filter(([key]) => currentModules.lists?.[key]
+        ? (configState.lists?.[key] || []).length > 0
+        : Boolean(configState.configurations?.[key]?.configured)).length;
+    return { total: entries.length, configured, pending: Math.max(0, entries.length - configured) };
+}
+
+function findAssistantModule(query) {
+    const normalized = normalizeSearch(query);
+    if (!normalized) return null;
+    const entries = [...Object.entries(currentModules?.configurations || {}), ...Object.entries(currentModules?.lists || {})];
+    const ranked = entries.map(([key, definition]) => {
+        const title = normalizeSearch(definition.title || key);
+        const keyText = normalizeSearch(key.replace(/([A-Z])/g, " $1"));
+        const score = title === normalized || keyText === normalized ? 0
+            : title.includes(normalized) || normalized.includes(title) || keyText.includes(normalized) ? 1
+            : 2;
+        return { key, definition, score };
+    }).filter(item => item.score < 2).sort((a, b) => a.score - b.score);
+    return ranked[0] || null;
+}
+
+function assistantReply(question) {
+    const q = normalizeSearch(question);
+    const status = getAssistantModuleStatus();
+    const findings = getAssistantFindings();
+    if (/^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|saludos)\b/.test(q)) {
+        return { text: `¡Hola! Estoy conectado a la configuración cargada de ${activeGuild?.name || "este servidor"}. Puedes preguntarme por el estado, los problemas detectados o un módulo específico.` };
+    }
+    if (/\b(estado|resumen|como esta|situacion|configuracion general|progreso)\b/.test(q)) {
+        const percent = status.total ? Math.round(status.configured / status.total * 100) : 0;
+        const summary = findings.length
+            ? ` También he encontrado ${findings.length} comprobaciones que conviene revisar.`
+            : " No he detectado problemas en las comprobaciones disponibles.";
+        return { text: `En ${activeGuild?.name || "este servidor"}, ${status.configured} de ${status.total} módulos aparecen configurados (${percent}%). Quedan ${status.pending} pendientes.${summary}` };
+    }
+    if (/\b(problema|problemas|error|errores|diagnostico|diagnosticos|comprobacion|comprobaciones|fallo|fallos|revisar)\b/.test(q)) {
+        if (!findings.length) return { text: "No aparecen incidencias en las comprobaciones que puedo realizar con los datos cargados. Esto no garantiza que todos los sistemas funcionen en tiempo real; también conviene probar sus acciones en Discord." };
+        const list = findings.slice(0, 5).map((item, index) => `${index + 1}. ${item.title}: ${item.detail}`).join("\n");
+        const firstAction = findings.find(item => item.key);
+        return { text: `He encontrado ${findings.length} comprobaciones para revisar:\n${list}${findings.length > 5 ? "\nHay más resultados; abre Comprobaciones para ver el resumen completo." : ""}`, actionKey: firstAction?.key, actionLabel: firstAction ? "Abrir el primer módulo afectado" : "" };
+    }
+    if (/\b(recomienda|recomendacion|recomendaciones|que configuro|por donde empiezo|primero|siguiente paso)\b/.test(q)) {
+        if (findings.length) {
+            const first = findings.find(item => item.key);
+            return { text: `Te recomiendo resolver primero “${findings[0].title}”: ${findings[0].detail} Después vuelve a Comprobaciones para verificarlo.`, actionKey: first?.key || "__checks", actionLabel: first ? "Abrir módulo recomendado" : "Abrir Comprobaciones" };
+        }
+        const pending = [...Object.entries(currentModules.configurations || {}), ...Object.entries(currentModules.lists || {})].find(([key]) => currentModules.lists?.[key]
+            ? !(configState.lists?.[key] || []).length
+            : !configState.configurations?.[key]?.configured);
+        if (pending) return { text: `No encuentro incidencias en las comprobaciones disponibles. Como siguiente paso, puedes configurar “${pending[1].title}”, que todavía aparece pendiente.`, actionKey: pending[0], actionLabel: "Abrir módulo pendiente" };
+        return { text: "Los módulos disponibles aparecen configurados y no he detectado incidencias en las comprobaciones disponibles. Te recomiendo probar en Discord los flujos principales y revisar Comprobaciones después de cambiar permisos o canales." };
+    }
+    if (/\b(ayuda|que puedes hacer|funciones|como funciona|bryvex)\b/.test(q)) {
+        return { text: "Puedo resumir el estado de la configuración, mostrar incidencias detectables (campos obligatorios, canales, roles y permisos), explicar por qué conviene revisar algo y abrir el módulo relacionado. No ejecuto cambios ni puedo confirmar eventos en vivo que no estén disponibles en la dashboard." };
+    }
+    const matched = findAssistantModule(q);
+    if (matched) {
+        const isConfigured = currentModules.lists?.[matched.key]
+            ? (configState.lists?.[matched.key] || []).length > 0
+            : Boolean(configState.configurations?.[matched.key]?.configured);
+        const related = findings.filter(item => item.key === matched.key);
+        const stateText = currentModules.lists?.[matched.key]
+            ? `${(configState.lists?.[matched.key] || []).length} elementos guardados`
+            : isConfigured ? "aparece configurado" : "todavía aparece pendiente de configuración";
+        const issueText = related.length ? ` Además, detecté ${related.length} comprobación(es) relacionada(s): ${related[0].detail}` : " No detecté incidencias específicas en las comprobaciones disponibles para este módulo.";
+        return { text: `“${matched.definition.title}” ${stateText}.${issueText}`, actionKey: matched.key, actionLabel: "Abrir este módulo" };
+    }
+    if (/\b(canal|canales|rol|roles|permiso|permisos)\b/.test(q)) {
+        const matching = findings.filter(item => /canal|rol|permiso/i.test(item.title + " " + item.detail));
+        if (matching.length) return { text: matching.slice(0, 4).map(item => `• ${item.title}: ${item.detail}`).join("\n"), actionKey: matching.find(item => item.key)?.key || "__checks", actionLabel: "Revisar configuración" };
+        return { text: "No he encontrado incidencias concretas de canales, roles o permisos en los datos disponibles. Puedes abrir Comprobaciones para consultar los resultados actuales; los permisos pueden cambiar directamente en Discord." , actionKey: "__checks", actionLabel: "Abrir Comprobaciones" };
+    }
+    return { text: "Todavía no puedo responder eso con seguridad usando los datos cargados. Prueba con “estado del servidor”, “problemas detectados”, “recomendaciones” o el nombre de un módulo, como “Bienvenidas” o “Autoroles”." };
+}
+
+function addAssistantMessage(text, role = "bot", actionKey = "", actionLabel = "") {
+    const messages = document.querySelector("#assistant-messages");
+    if (!messages) return;
+    const article = document.createElement("article");
+    article.className = `assistant-message ${role === "user" ? "assistant-message-user" : "assistant-message-bot"}`;
+    const paragraph = document.createElement("p");
+    paragraph.textContent = text;
+    article.append(paragraph);
+    if (actionKey && actionLabel) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "assistant-open-module";
+        button.textContent = actionLabel;
+        button.addEventListener("click", () => {
+            if (actionKey === "__checks") renderChecks(currentModules);
+            else navigateToModule(actionKey, currentModules);
+            document.querySelector("#assistant-panel").hidden = true;
+            document.querySelector("#assistant-launcher").setAttribute("aria-expanded", "false");
+        });
+        article.append(button);
+    }
+    messages.append(article);
+    messages.scrollTop = messages.scrollHeight;
+}
+
+function setupAssistant() {
+    const launcher = document.querySelector("#assistant-launcher");
+    const panel = document.querySelector("#assistant-panel");
+    const close = document.querySelector("#assistant-close");
+    const form = document.querySelector("#assistant-form");
+    const input = document.querySelector("#assistant-input");
+    if (!launcher || !panel || !form || !input) return;
+    const toggle = open => {
+        panel.hidden = !open;
+        launcher.setAttribute("aria-expanded", String(open));
+        if (open) input.focus();
+    };
+    launcher.addEventListener("click", () => toggle(panel.hidden));
+    close?.addEventListener("click", () => toggle(false));
+    document.querySelectorAll("[data-assistant-prompt]").forEach(button => button.addEventListener("click", () => {
+        input.value = button.dataset.assistantPrompt || "";
+        form.requestSubmit();
+    }));
+    form.addEventListener("submit", event => {
+        event.preventDefault();
+        const question = input.value.trim();
+        if (!question || !configState || !currentModules) return;
+        addAssistantMessage(question, "user");
+        input.value = "";
+        const answer = assistantReply(question);
+        addAssistantMessage(answer.text, "bot", answer.actionKey || "", answer.actionLabel || "");
+    });
+    launcher.hidden = false;
+    document.querySelector("#assistant-context-label").textContent = `Servidor: ${activeGuild?.name || "activo"}`;
+}
+
 async function initialize() {
     loadFavorites();
     try {
@@ -2105,6 +2265,7 @@ async function initialize() {
         currentModules = configResult.modules;
         makeNav(configResult.modules);
         renderHome(guild, configResult.modules);
+        setupAssistant();
     } catch (error) {
         content.innerHTML = `<div class="loading-card error">${escapeHtml(error.message)} <a href="/">Volver a elegir servidor</a></div>`;
     }
