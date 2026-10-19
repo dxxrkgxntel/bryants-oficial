@@ -34,10 +34,10 @@ requirePattern(/app\.use\(helmet\(/, "Deben activarse cabeceras de seguridad HTT
 requirePattern(/express\.json\(\{\s*limit:\s*"32kb"/, "El cuerpo JSON debe tener un límite de tamaño");
 requirePattern(/req\.session\.regenerate\(/, "La sesión debe regenerarse al autenticar para mitigar session fixation");
 
-requirePattern(/app\\.get\\(["']\\/api\\/public\\/status["']/, "Debe existir el endpoint público de estado de Bryvex Bot");
+requirePattern(/app\.get\\(["']\/api\/public\/status["']/, "Debe existir el endpoint público de estado de Bryvex Bot");
 requirePattern(/PUBLIC_STATUS_CACHE_TTL = 30_000/, "El estado público debe limitar la frecuencia de comprobaciones externas");
-requirePattern(/mongoose\\.connection\\.readyState !== 1/, "El estado debe comprobar la conexión real a MongoDB");
-requirePattern(/discord\\.com\\/api\\/v10\\/users\\/@me/, "El estado debe verificar la API de Discord");
+requirePattern(/mongoose\.connection\\.readyState !== 1/, "El estado debe comprobar la conexión real a MongoDB");
+requirePattern(/discord\.com\/api\/v10\/users\/@me/, "El estado debe verificar la API de Discord");
 
 for (const route of [
     ["put", "/api/account/settings", ["requireLogin", "requireCsrf"]],
@@ -75,8 +75,8 @@ requireClientPattern(/function getAssistantFieldGuidance\(/, "El asistente debe 
 
 assert.match(templateSource, /X-CSRF-Token/, "La importación de plantillas debe enviar el token CSRF");
 assert.match(templateSource, /bryvex-bot-config-template/, "Las plantillas deben validar su formato");
-assert.match(templateSource, /confirm\\(warning\\)/, "La importación de plantillas debe exigir confirmación explícita");
-assert.match(leaderboardSource, /leaderboards\\/economy/, "La clasificación debe usar el endpoint de economía");
+assert.match(templateSource, /confirm\(warning\)/, "La importación de plantillas debe exigir confirmación explícita");
+assert.match(leaderboardSource, /leaderboards\/economy/, "La clasificación debe usar el endpoint de economía");
 for (const file of ["hub.css", "hub.js", "status.html", "docs.html", "updates.html", "stats.html", "leaderboard.html", "leaderboard.js", "templates.html", "templates.js"]) {
     assert.ok(fs.existsSync(path.join(root, "dashboard", "public", file)), "Falta un recurso público de Bryvex Bot: " + file);
 }
