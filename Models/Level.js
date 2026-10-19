@@ -8,4 +8,7 @@ const levelSchema = new Schema({
     prestige: { type: Number, default: 0 },
 });
 
+levelSchema.index({ guildId: 1, level: -1, xp: -1, prestige: -1 });
+levelSchema.index({ guildId: 1, userId: 1 });
+
 module.exports = model("Level", levelSchema);
