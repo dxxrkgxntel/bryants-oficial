@@ -1,4 +1,4 @@
-const { increment } = require("../../Functions/personalStats");
+const { addDuration } = require("../../Functions/personalStats");
 
 const voiceSessions = new Map();
 
@@ -18,7 +18,7 @@ module.exports = {
         if (session && oldChannelId) {
             const seconds = Math.floor((Date.now() - session.startedAt) / 1000);
             if (seconds > 0) {
-                try { await increment(member.id, guild.id, "voiceSeconds", seconds, null, new Date()); }
+                try { await addDuration(member.id, guild.id, "voiceSeconds", seconds, new Date(session.startedAt), new Date()); }
                 catch (error) { console.error("[Personal Stats] No se pudo registrar voz:", error.message); }
             }
         }
