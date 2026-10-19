@@ -31,6 +31,49 @@ function normalizeSearch(value) {
     return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es").trim();
 }
 
+function searchSettingResults(query) {
+    if (!query || !currentModules) return [];
+    const results = [];
+    const entries = [...Object.entries(currentModules.configurations), ...Object.entries(currentModules.lists)];
+    for (const [key, definition] of entries) {
+        const moduleText = `${definition.title || ""} ${definition.category || ""} ${definition.description || ""}`;
+        if (normalizeSearch(moduleText).includes(query)) {
+            results.push({ type: "module", key, title: definition.title, category: definition.category || "Sistema", searchText: moduleText });
+        }
+        for (const field of definition.fields || []) {
+            if (field.type === "section") continue;
+            const fieldText = `${field.label || ""} ${field.name || ""} ${field.help || ""} ${field.type || ""} ${definition.title || ""} ${definition.category || ""}`;
+            if (normalizeSearch(fieldText).includes(query)) {
+                results.push({ type: "field", key, title: field.label || field.name, moduleTitle: definition.title, category: definition.category || "Sistema", fieldName: field.name, searchText: fieldText });
+            }
+        }
+    }
+    const seen = new Set();
+    return results.filter(result => {
+        const id = result.type === "field" ? `${result.key}:${result.fieldName}` : `module:${result.key}`;
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+    }).sort((a, b) => {
+        const aExact = normalizeSearch(a.title) === query ? 0 : 1;
+        const bExact = normalizeSearch(b.title) === query ? 0 : 1;
+        return aExact - bExact || (a.type === b.type ? 0 : a.type === "field" ? -1 : 1);
+    }).slice(0, 8);
+}
+
+function renderModuleSearchResults(query) {
+    const panel = document.querySelector("#module-search-results");
+    if (!panel) return;
+    if (!query) { panel.hidden = true; panel.replaceChildren(); return; }
+    const results = searchSettingResults(query);
+    panel.hidden = false;
+    if (!results.length) {
+        panel.innerHTML = '<div class="module-search-empty">No se encontraron módulos ni ajustes.</div>';
+        return;
+    }
+    panel.innerHTML = `<div class="module-search-results-heading">RESULTADOS (${results.length})</div>${results.map((result, index) => `<button type="button" class="module-search-result" data-search-result="${index}" data-result-key="${escapeHtml(result.key)}" ${result.type === "field" ? `data-result-field="${escapeHtml(result.fieldName)}"` : ""}><span class="module-search-result-icon" aria-hidden="true">${result.type === "field" ? "⚙" : "▦"}</span><span class="module-search-result-copy"><strong>${escapeHtml(result.title)}</strong><small>${escapeHtml(result.type === "field" ? `${result.moduleTitle} · ${result.category}` : `${result.category} · Módulo`)}</small></span><span class="module-search-result-arrow" aria-hidden="true">↗</span></button>`).join("")}`;
+}
+
 function applyModuleFilter() {
     const query = normalizeSearch(document.querySelector("#module-search")?.value);
     let visibleCount = 0;
@@ -50,8 +93,8 @@ function applyModuleFilter() {
             ? "Aún no tienes favoritos en este servidor."
             : favoritesOnly ? "No hay favoritos que coincidan con la búsqueda." : "No hay módulos que coincidan.";
     }
+    renderModuleSearchResults(query);
 }
-
 function formSnapshot(form, fields) {
     try { return JSON.stringify(readForm(form, fields)); } catch { return null; }
 }
@@ -1033,6 +1076,38 @@ function makeNav(modules) {
     const searchInput = document.querySelector("#module-search");
     const favoritesToggle = document.querySelector("#favorites-toggle");
     searchInput.oninput = applyModuleFilter;
+    const searchResults = document.querySelector("#module-search-results");
+    searchResults?.addEventListener("click", event => {
+        const button = event.target.closest("[data-result-key]");
+        if (!button) return;
+        const key = button.dataset.resultKey;
+        const fieldName = button.dataset.resultField;
+        favoritesOnly = false;
+        favoritesToggle.classList.remove("active");
+        favoritesToggle.setAttribute("aria-pressed", "false");
+        favoritesToggle.textContent = "☆ Favoritos";
+        searchInput.value = "";
+        applyModuleFilter();
+        navigateToModule(key, modules);
+        if (fieldName) {
+            window.requestAnimationFrame(() => {
+                const field = [...content.querySelectorAll("[data-setting-field]")].find(element => element.dataset.settingField === fieldName);
+                if (!field) return;
+                field.scrollIntoView({ behavior: "smooth", block: "center" });
+                field.classList.add("search-result-highlight");
+                window.setTimeout(() => field.classList.remove("search-result-highlight"), 2200);
+                const control = field.querySelector("input, textarea, select, button");
+                if (control) control.focus({ preventScroll: true });
+            });
+        }
+    });
+    document.addEventListener("click", event => {
+        if (!event.target.closest(".nav-tools")) {
+            const panel = document.querySelector("#module-search-results");
+            if (panel) panel.hidden = true;
+        }
+    });
+    searchInput.addEventListener("focus", () => renderModuleSearchResults(normalizeSearch(searchInput.value)));
     favoritesToggle.onclick = () => {
         favoritesOnly = !favoritesOnly;
         favoritesToggle.classList.toggle("active", favoritesOnly);
