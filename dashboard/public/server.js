@@ -987,13 +987,13 @@ function makeNav(modules) {
         entry.append(button, favorite);
         nav.append(entry);
     };
-    const appendPrincipalEntry = (label, key, onClick) => {
+    const appendPrincipalEntry = (label, key, onClick, searchTerms = "") => {
         const entry = document.createElement("div");
         entry.className = "nav-entry";
         entry.dataset.module = key;
         entry.dataset.group = "Principal";
         entry.dataset.special = "true";
-        entry.dataset.search = label;
+        entry.dataset.search = `${label} ${searchTerms}`.trim();
         const button = document.createElement("button");
         button.type = "button";
         button.className = "nav-item";
@@ -1006,7 +1006,7 @@ function makeNav(modules) {
     appendHeading("Principal");
     appendPrincipalEntry("Inicio", "__home", navigateToHome);
     appendPrincipalEntry("Auditoría", "__audit", () => renderAudit());
-    appendPrincipalEntry("Comprobaciones", "__checks", () => renderChecks(modules));
+    appendPrincipalEntry("Comprobaciones", "__checks", () => renderChecks(modules), "diagnóstico permisos roles canales referencias integridad configuración");
     const pinnedEntries = all.filter(([key]) => favoriteModules.has(key));
     if (pinnedEntries.length) {
         appendHeading("Favoritos");
