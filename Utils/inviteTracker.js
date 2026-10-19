@@ -1,4 +1,4 @@
-const { EmbedBuilder, PermissionFlagsBits } = require("discord.js");
+const { PermissionFlagsBits } = require("discord.js");
 const logsSchema = require("../Models/logsSchema");
 const InviteTracker = require("../Models/InviteTracker");
 
@@ -102,28 +102,14 @@ async function handleMemberJoin(member) {
         const permissions = channel.permissionsFor(guild.members.me);
         if (!permissions?.has([
             PermissionFlagsBits.ViewChannel,
-            PermissionFlagsBits.SendMessages,
-            PermissionFlagsBits.EmbedLinks
+            PermissionFlagsBits.SendMessages
         ])) return;
 
-        const embed = new EmbedBuilder()
-            .setColor("#8A2BE2")
-            .setTitle("📨 Invitación utilizada")
-            .setDescription(`${member} se ha unido al servidor.`)
-            .addFields(
-                { name: "👤 Usuario", value: `${member.user.tag || member.user.username} (\`${member.id}\`)`, inline: false },
-                { name: "🔗 Invitado por", value: inviter ? `${inviter}` : "No se pudo determinar (invitación personalizada, caché o permisos)", inline: true },
-                { name: "📊 Invitaciones acumuladas", value: inviter ? String(totalInvites ?? "No disponible") : "No disponible", inline: true }
-            )
-            .setThumbnail(member.user.displayAvatarURL({ size: 256 }))
-            .setImage("https://i.imgur.com/joAe57D.png")
-            .setTimestamp();
-
-        if (usedInvite?.code) {
-            embed.addFields({ name: "Código utilizado", value: `\`${usedInvite.code}\``, inline: true });
-        }
-
-        await channel.send({ embeds: [embed] });
+        const invitedUser = `<@${member.id}>`;
+        const inviterText = inviter ? `<@${inviter.id}>` : "¿?";
+        const inviteCountText = inviter ? String(totalInvites ?? "no disponible") : "no disponible";
+        const message = `**${invitedUser}** 𝘍𝘶𝘦 𝘪𝘯𝘷𝘪𝘵𝘢𝘥𝘰 𝘱𝘰𝘳 ${inviterText} 𝘈𝘩𝘰𝘳𝘢 𝘵𝘪𝘦𝘯𝘦 ${inviteCountText} invites.`;
+        await channel.send({ content: message });
     } catch (error) {
         console.error(`[INVITE TRACKER] No se pudo enviar el log de entrada en ${guild.id}:`, error);
     }
