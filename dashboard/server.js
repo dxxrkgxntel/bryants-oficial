@@ -362,6 +362,69 @@ async function fetchGuildResources(guildId) {
     return { channels, roles };
 }
 
+async function fetchBotChannelPermissions(guildId, channels, roles) {
+    const bot = await discordBotRequest("https://discord.com/api/v10/users/@me");
+    const member = await discordBotRequest(`https://discord.com/api/v10/guilds/${guildId}/members/${bot.id}`);
+    const roleMap = new Map(roles.map(role => [role.id, role]));
+    const memberRoles = new Set([guildId, ...(member.roles || [])]);
+    let basePermissions = 0n;
+
+    for (const roleId of memberRoles) {
+        const role = roleMap.get(roleId);
+        if (!role) continue;
+        try { basePermissions |= BigInt(role.permissions || "0"); } catch { /* Ignore malformed permission values. */ }
+    }
+
+    const administrator = (basePermissions & (1n << 3n)) !== 0n;
+    const allPermissions = (1n << 53n) - 1n;
+    const permissionBits = {
+        viewChannel: 1n << 10n,
+        sendMessages: 1n << 11n,
+        embedLinks: 1n << 14n,
+        attachFiles: 1n << 15n,
+        connect: 1n << 20n,
+        speak: 1n << 21n
+    };
+
+    return channels.map(channel => {
+        let permissions = administrator ? allPermissions : basePermissions;
+        if (!administrator) {
+            const overwrites = channel.permission_overwrites || [];
+            const everyoneOverwrite = overwrites.find(overwrite => overwrite.type === 0 && overwrite.id === guildId);
+            if (everyoneOverwrite) {
+                try {
+                    permissions &= ~BigInt(everyoneOverwrite.deny || "0");
+                    permissions |= BigInt(everyoneOverwrite.allow || "0");
+                } catch { /* Ignore malformed overwrite values. */ }
+            }
+
+            let roleAllow = 0n;
+            let roleDeny = 0n;
+            for (const overwrite of overwrites) {
+                if (overwrite.type !== 0 || overwrite.id === guildId || !memberRoles.has(overwrite.id)) continue;
+                try {
+                    roleAllow |= BigInt(overwrite.allow || "0");
+                    roleDeny |= BigInt(overwrite.deny || "0");
+                } catch { /* Ignore malformed overwrite values. */ }
+            }
+            permissions &= ~roleDeny;
+            permissions |= roleAllow;
+
+            const memberOverwrite = overwrites.find(overwrite => overwrite.type === 1 && overwrite.id === bot.id);
+            if (memberOverwrite) {
+                try {
+                    permissions &= ~BigInt(memberOverwrite.deny || "0");
+                    permissions |= BigInt(memberOverwrite.allow || "0");
+                } catch { /* Ignore malformed overwrite values. */ }
+            }
+        }
+
+        const effective = {};
+        for (const [name, bit] of Object.entries(permissionBits)) effective[name] = (permissions & bit) === bit;
+        return { id: channel.id, type: channel.type, ...effective };
+    });
+}
+
 function validatePollInput(input) {
     const question = typeof input?.question === "string" ? input.question.trim() : "";
     if (!question || question.length > 256) throw new Error("La pregunta debe tener entre 1 y 256 caracteres.");
@@ -989,6 +1052,12 @@ app.get("/api/guilds/:guildId/resources", requireGuildAdmin, async (req, res) =>
                 headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` }
             })
         ]);
+        let channelPermissions = null;
+        try {
+            channelPermissions = await fetchBotChannelPermissions(guildId, resources.channels, resources.roles);
+        } catch (error) {
+            console.warn("[Dashboard Permissions] No pude comprobar los permisos efectivos del bot:", error.message);
+        }
         let guild = null;
         if (guildResponse.ok) {
             const details = await guildResponse.json();
@@ -1003,7 +1072,8 @@ app.get("/api/guilds/:guildId/resources", requireGuildAdmin, async (req, res) =>
             guild,
             channels: resources.channels.map(({ id, name, type, parent_id }) => ({ id, name, type, parentId: parent_id })),
             roles: resources.roles.filter(role => !role.managed && role.name !== "@everyone").map(({ id, name, color }) => ({ id, name, color })),
-            roleIds: resources.roles.map(({ id }) => id)
+            roleIds: resources.roles.map(({ id }) => id),
+            channelPermissions
         });
     } catch (error) {
         console.error("[Dashboard Resources] Error al cargar canales y roles:", error.message);
