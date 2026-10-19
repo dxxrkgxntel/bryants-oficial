@@ -66,7 +66,7 @@ async function trackAchievementProgress(guild, user, metric, amount = 1) {
 
         unlocked.push(achievement);
         const channel = achievement.announcementChannelId
-            ? guild.channels.cache.get(achievement.announcementChannelId)
+            ? (guild.channels.cache.get(achievement.announcementChannelId) || await guild.channels.fetch(achievement.announcementChannelId).catch(() => null))
             : null;
         if (channel?.isTextBased?.()) {
             const rewardText = achievement.rewardCoins > 0 ? `\n💰 Recompensa: **+${achievement.rewardCoins.toLocaleString()} monedas**.` : "";
