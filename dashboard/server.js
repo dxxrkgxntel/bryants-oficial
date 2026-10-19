@@ -13,6 +13,8 @@ const DashboardAccount = require("../Models/DashboardAccount");
 const DashboardReferral = require("../Models/DashboardReferral");
 const DashboardAuditLog = require("../Models/DashboardAuditLog");
 const EconomyUser = require("../Models/EconomyUser");
+const Achievement = require("../Models/Achievement");
+const UserAchievement = require("../Models/UserAchievement");
 const Level = require("../Models/Level");
 const SocialAlertState = require("../Models/SocialAlertState");
 const PersonalStatsDaily = require("../Models/PersonalStatsDaily");
@@ -1454,11 +1456,22 @@ app.get("/api/guilds/:guildId/members/search", requireGuildAdmin, async (req, re
 app.get("/api/guilds/:guildId/members/:userId/economy", requireGuildAdmin, async (req, res) => {
     if (!/^\d{17,20}$/.test(req.params.userId)) return res.status(400).json({ error: "ID de miembro inválido." });
     try {
-        const [member, economy] = await Promise.all([
+        const [member, economy, definitions, progress] = await Promise.all([
             discordBotRequest(`https://discord.com/api/v10/guilds/${req.params.guildId}/members/${req.params.userId}`),
-            EconomyUser.findOne({ guildId: req.params.guildId, userId: req.params.userId }).lean()
+            EconomyUser.findOne({ guildId: req.params.guildId, userId: req.params.userId }).lean(),
+            Achievement.find({ guildId: req.params.guildId, enabled: true }).sort({ category: 1, goal: 1, name: 1 }).lean(),
+            UserAchievement.find({ guildId: req.params.guildId, userId: req.params.userId }).lean()
         ]);
-        return res.json({ member: { id: member.user.id, username: member.user.username, globalName: member.user.global_name, nick: member.nick, avatar: member.user.avatar }, economy: economy || { wallet: 0, bank: 0 } });
+        const progressById = new Map(progress.map(entry => [entry.achievementId, entry]));
+        const achievements = definitions.map(item => {
+            const entry = progressById.get(item.achievementId);
+            return { achievementId: item.achievementId, name: item.name, description: item.description, emoji: item.emoji, category: item.category, goal: item.goal, progress: entry?.progress || 0, unlockedAt: entry?.unlockedAt || null, rewardCoins: item.rewardCoins || 0 };
+        });
+        return res.json({
+            member: { id: member.user.id, username: member.user.username, globalName: member.user.global_name, nick: member.nick, avatar: member.user.avatar },
+            economy: economy || { wallet: 0, bank: 0, inventory: [] },
+            achievements
+        });
     } catch (error) { return res.status(error.status === 404 ? 404 : 502).json({ error: error.status === 404 ? "El miembro ya no está en el servidor." : error.message || "No pude cargar la economía." }); }
 });
 
