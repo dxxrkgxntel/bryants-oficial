@@ -1,5 +1,5 @@
 const guildId = decodeURIComponent(window.location.pathname.split("/").filter(Boolean).at(-1) || "");
-const categoriesOrder = ["Comunidad", "Alertas sociales", "Moderación", "Servidor", "Economía y XP"];
+const categoriesOrder = ["Comunidad", "Alertas sociales", "Moderación", "Servidor", "Economía y XP", "Trofeos"];
 const nav = document.querySelector("#module-nav");
 const content = document.querySelector("#module-content");
 const notice = document.querySelector("#notice");
@@ -1306,6 +1306,35 @@ function makeNav(modules) {
     applyModuleFilter();
 }
 
+async function renderTrophyMembers(definition) {
+    content.innerHTML = `<section class="trophy-members-page">
+        <div class="module-intro"><span class="eyebrow">TROFEOS</span><h2>Quién va en cabeza</h2><p>Clasificación histórica por puntos. Abre “Miembros” para consultar la mochila, los trofeos y el progreso detallado de una persona.</p></div>
+        <div class="trophy-members-toolbar"><label for="trophy-leaderboard-search">Buscar miembro</label><input id="trophy-leaderboard-search" type="search" placeholder="ID de Discord…" autocomplete="off"></div>
+        <div id="trophy-leaderboard" class="trophy-leaderboard"><p class="loading-card">Cargando clasificación…</p></div>
+    </section>`;
+    const panel = document.querySelector("#trophy-leaderboard");
+    const search = document.querySelector("#trophy-leaderboard-search");
+    let rows = [];
+    try {
+        const result = await api(`/api/guilds/${encodeURIComponent(guildId)}/trophies/leaderboard`);
+        rows = result.leaderboard || [];
+        const renderRows = () => {
+            const query = search.value.trim().toLowerCase();
+            const filtered = rows.filter(row => String(row.userId).toLowerCase().includes(query));
+            panel.innerHTML = filtered.length ? filtered.map(row => `<article class="trophy-rank-row"><span class="trophy-rank-number">${row.rank}</span><div class="trophy-rank-member"><strong>Miembro</strong><small>${escapeHtml(row.userId)}</small></div><div class="trophy-rank-stats"><strong>${Number(row.points || 0).toLocaleString("es-ES")} pts</strong><small>${Number(row.unlockedLevels || 0).toLocaleString("es-ES")} niveles · ${Number(row.unlockedAchievements || 0).toLocaleString("es-ES")} trofeos completos</small></div><button type="button" class="quiet-button" data-trophy-member="${escapeHtml(row.userId)}">Ver miembro</button></article>`).join("") : '<p class="empty-state">Todavía no hay puntos registrados para esta clasificación.</p>';
+            panel.querySelectorAll("[data-trophy-member]").forEach(button => button.addEventListener("click", () => {
+                const userId = button.dataset.trophyMember;
+                navigateToModule("memberEconomy", currentModules);
+                showNotice("Busca el ID " + userId + " en Miembros para ver sus trofeos y mochila.");
+            }));
+        };
+        renderRows();
+        search.addEventListener("input", renderRows);
+    } catch (error) {
+        panel.innerHTML = `<p class="empty-state">${escapeHtml(error.message || "No pude cargar la clasificación.")}</p>`;
+    }
+}
+
 function renderMemberEconomy(definition) {
     const updateButton = document.querySelector("#member-balance-update");
     updateButton.hidden = true;
@@ -1446,6 +1475,7 @@ function renderModule(key, modules) {
     const data = configState.configurations[key] || { configured: false };
     if (key === "specialChannels") return renderSpecialChannels(definition, data);
     if (isMemberEconomy) return renderMemberEconomy(definition);
+    if (key === "trophyMembers") return renderTrophyMembers(definition);
     const formFields = definition.fields.map(field => {
         if (field.type === "section") return renderField(field);
         let value = getNested(data, field.name);
