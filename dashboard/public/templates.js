@@ -41,7 +41,8 @@
     try {
       const data = await api("/api/guilds/"+encodeURIComponent(source.value)+"/config");
       const guild = guilds.find(item=>item.id===source.value);
-      const template = {format:"bryvex-bot-config-template",version:1,exportedAt:new Date().toISOString(),sourceGuildName:guild?.name||"Servidor",configurations:data.configurations};
+      const configuredModules = Object.fromEntries(Object.entries(data.configurations || {}).filter(([key, value]) => key !== "memberEconomy" && value && value.configured === true));
+      const template = {format:"bryvex-bot-config-template",version:1,exportedAt:new Date().toISOString(),sourceGuildName:guild?.name||"Servidor",configurations:configuredModules};
       const blob = new Blob([JSON.stringify(template,null,2)],{type:"application/json"});
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -62,9 +63,9 @@
       const template = await readFile();
       const data = await api("/api/guilds/"+encodeURIComponent(destination.value)+"/config");
       const definitions = data.modules?.configurations || {};
-      const keys = Object.keys(template.configurations).filter(key=>Object.prototype.hasOwnProperty.call(definitions,key));
+      const keys = Object.keys(template.configurations).filter(key=>key!=="memberEconomy" && template.configurations[key]?.configured === true && Object.prototype.hasOwnProperty.call(definitions,key));
       if (!keys.length) throw new Error("La plantilla no contiene módulos de configuración compatibles.");
-      const skipped = Object.keys(template.configurations).filter(key=>!Object.prototype.hasOwnProperty.call(definitions,key));
+      const skipped = Object.keys(template.configurations).filter(key=>!keys.includes(key));
       const preview = keys.slice(0,12).map(key=>definitions[key].title||key).join(", ");
       const warning = "Se aplicarán "+keys.length+" módulo(s) al servidor de destino.\n\nMódulos: "+preview+(keys.length>12?"…":"")+(skipped.length?"\n\nSe omitirán "+skipped.length+" módulo(s) desconocido(s).":"")+"\n\nLos ajustes actuales de esos módulos serán reemplazados. Las listas no se copian. Haz una copia de seguridad antes de continuar.\n\n¿Aplicar ahora?";
       if (!confirm(warning)) return;
