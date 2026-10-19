@@ -582,7 +582,7 @@ app.get("/auth/callback", async (req, res) => {
     delete req.session.oauthState;
     delete req.session.oauthPopup;
 
-    if (error || !code || !expectedState || state !== expectedState) {
+    if (error || !code || !expectedState || !secureStringEqual(state, expectedState)) {
         return res.redirect(isPopup
             ? "/auth/popup-result?status=failed"
             : "/?login=failed");
