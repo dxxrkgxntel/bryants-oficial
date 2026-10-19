@@ -5,6 +5,8 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const source = fs.readFileSync(path.join(root, "dashboard", "server.js"), "utf8");
 const clientSource = fs.readFileSync(path.join(root, "dashboard", "public", "server.js"), "utf8");
+const templateSource = fs.readFileSync(path.join(root, "dashboard", "public", "templates.js"), "utf8");
+const leaderboardSource = fs.readFileSync(path.join(root, "dashboard", "public", "leaderboard.js"), "utf8");
 
 function requirePattern(pattern, message) {
     assert.match(source, pattern, message);
@@ -39,6 +41,7 @@ for (const route of [
     ["delete", "/api/account/background", ["requireLogin", "requireCsrf"]],
     ["put", "/api/guilds/:guildId/members/:userId/economy", ["requireLogin", "requireCsrf", "requireGuildAdmin"]],
     ["put", "/api/guilds/:guildId/config/:module", ["requireLogin", "requireCsrf", "requireGuildAdmin"]],
+    ["get", "/api/guilds/:guildId/leaderboards/economy", ["requireGuildAdmin"]],
     ["post", "/api/guilds/:guildId/polls", ["requireLogin", "requireCsrf", "requireGuildAdmin"]],
     ["put", "/api/guilds/:guildId/polls/:pollId", ["requireLogin", "requireCsrf", "requireGuildAdmin"]],
     ["delete", "/api/guilds/:guildId/polls/:pollId", ["requireLogin", "requireCsrf", "requireGuildAdmin"]],
