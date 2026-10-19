@@ -292,48 +292,22 @@ function findConfiguredUnassignableRoles(modules) {
     return [...findings.values()];
 }
 
-function renderHome(guild, modules) {
-    currentModule = "__home";
+function renderChecks(modules = currentModules) {
+    if (!confirmDiscardChanges()) return;
+    const memberBalanceButton = document.querySelector("#member-balance-update");
+    if (memberBalanceButton) memberBalanceButton.hidden = true;
+    activeFormGuard = null;
+    currentModule = "__checks";
     nav.querySelectorAll(".nav-item").forEach(button => {
-        const active = button.dataset.module === "__home";
+        const active = button.dataset.module === currentModule;
         button.classList.toggle("active", active);
         if (active) button.setAttribute("aria-current", "page");
         else button.removeAttribute("aria-current");
     });
+    document.querySelector("#page-title").textContent = "Comprobaciones";
     const entries = [...Object.entries(modules.configurations), ...Object.entries(modules.lists)];
-    const total = entries.length;
-    const isModuleConfigured = key => {
-        if (modules.lists[key]) return (configState.lists[key] || []).length > 0;
-        return Boolean(configState.configurations[key]?.configured);
-    };
-    const configured = entries.filter(([key]) => isModuleConfigured(key)).length;
+    const isModuleConfigured = key => modules.lists[key] ? (configState.lists[key] || []).length > 0 : Boolean(configState.configurations[key]?.configured);
     const pendingEntries = entries.filter(([key]) => !isModuleConfigured(key));
-    const completion = total ? Math.round(configured / total * 100) : 0;
-    const quickStart = ["welcome", "socialAlerts", "autoroles", "levelSettings"]
-        .map(key => [key, modules.configurations[key] || modules.lists[key]])
-        .filter(([, definition]) => definition)
-        .slice(0, 4)
-        .map(([key, definition]) => `<button class="overview-quick-link${isModuleConfigured(key) ? " is-configured" : " is-pending"}" type="button" data-overview-module="${escapeHtml(key)}"><span>${escapeHtml(definition.title)}</span><span aria-hidden="true">→</span></button>`)
-        .join("");
-    const categories = categoriesOrder.map(category => {
-        const group = entries.filter(([, definition]) => definition.category === category);
-        if (!group.length) return "";
-        const ready = group.filter(([key]) => isModuleConfigured(key)).length;
-        const percent = Math.round(ready / group.length * 100);
-        const firstModule = group[0][0];
-        const previewEntries = group.filter(([key]) => !isModuleConfigured(key)).slice(0, 3);
-        const visibleEntries = previewEntries.length ? previewEntries : group.slice(0, 3);
-        const preview = visibleEntries.map(([key, definition]) =>
-            `<button class="overview-module-link${isModuleConfigured(key) ? " is-configured" : " is-pending"}" type="button" data-overview-module="${escapeHtml(key)}">${escapeHtml(definition.title)}${isModuleConfigured(key) ? "" : " · pendiente"}</button>`
-        ).join("");
-        const extraPending = Math.max(0, group.filter(([key]) => !isModuleConfigured(key)).length - visibleEntries.length);
-        const extra = extraPending ? `<span class="overview-more">+${extraPending} pendientes</span>` : (!previewEntries.length && group.length > 3 ? `<span class="overview-more">+${group.length - 3} sistemas</span>` : "");
-        return `<article class="overview-card"><div class="overview-card-top"><span class="eyebrow">${escapeHtml(category)}</span><span class="overview-count">${ready}/${group.length}</span></div><div class="overview-progress"><span style="width:${percent}%"></span></div><div class="overview-module-links">${preview}${extra}</div><button class="overview-open" type="button" data-overview-module="${escapeHtml(firstModule)}">Explorar sección <span aria-hidden="true">→</span></button></article>`;
-    }).join("");
-    const avatar = guild?.icon
-        ? `<img src="${escapeHtml(guild.icon)}" alt="" width="64" height="64">`
-        : `<span aria-hidden="true">${escapeHtml((guild?.name || "S").trim().slice(0, 2).toUpperCase())}</span>`;
-    document.querySelector("#page-title").textContent = "Inicio";
     const pendingSummary = pendingEntries.length
         ? `<section class="overview-pending"><div><span class="overview-pending-icon" aria-hidden="true">✦</span><div><strong>${pendingEntries.length} ${pendingEntries.length === 1 ? "sistema pendiente" : "sistemas pendientes"}</strong><small>Completa su configuración para dejar todo a tu gusto.</small></div></div><div class="overview-pending-links">${pendingEntries.slice(0, 5).map(([key, definition]) => `<button class="overview-pending-link" type="button" data-overview-module="${escapeHtml(key)}">${escapeHtml(definition.title)}<span>Configurar →</span></button>`).join("")}${pendingEntries.length > 5 ? `<span class="overview-more">y ${pendingEntries.length - 5} más</span>` : ""}</div></section>`
         : `<section class="overview-all-ready"><span aria-hidden="true">✓</span><div><strong>¡Todo está configurado!</strong><small>Tus sistemas principales ya están listos.</small></div></section>`;
@@ -389,7 +363,53 @@ function renderHome(guild, modules) {
     const roleIntegrity = unavailableRoles.length
         ? `<section class="overview-integrity overview-integrity-warning"><div class="overview-integrity-heading"><span aria-hidden="true">!</span><div><strong>${unavailableRoles.length} referencias de rol necesitan revisión</strong><small>Estos roles guardados no aparecen entre los roles actuales del servidor. Puede que se hayan eliminado o que la referencia pertenezca a otro servidor.</small></div></div><div class="overview-integrity-links">${unavailableRoles.slice(0, 6).map(item => `<button type="button" data-overview-module="${escapeHtml(item.key)}"><span>${escapeHtml(item.title)}</span><small>Revisar configuración →</small></button>`).join("")}${unavailableRoles.length > 6 ? `<span class="overview-more">y ${unavailableRoles.length - 6} referencias más</span>` : ""}</div></section>`
         : `<section class="overview-integrity overview-integrity-ok"><div class="overview-integrity-heading"><span aria-hidden="true">✓</span><div><strong>Sin referencias de rol ausentes detectadas</strong><small>Las referencias de rol guardadas que se pudieron comprobar coinciden con los roles actuales del servidor.</small></div></div></section>`;
-    content.innerHTML = `<div class="overview-page"><section class="overview-hero"><div class="overview-hero-copy"><div class="overview-server-mark">${avatar}</div><div class="overview-welcome"><div class="eyebrow">PANEL DE TU COMUNIDAD</div><h2>Bienvenido a ${escapeHtml(guild?.name || "tu servidor")}</h2><p>Administra los sistemas de tu comunidad y continúa configurando tu espacio desde aquí.</p></div><nav class="overview-quick-links" aria-label="Accesos rápidos">${quickStart}</nav></div><aside class="overview-readiness" aria-label="Progreso de configuración"><div class="overview-readiness-ring" style="--completion:${completion}%"><div><strong>${completion}%</strong><small>LISTO</small></div></div><div class="overview-readiness-copy"><span class="eyebrow">ESTADO GENERAL</span><strong>${configured} de ${total}</strong><small>sistemas configurados</small></div></aside><div class="overview-hero-glow" aria-hidden="true"></div></section><section class="overview-stats" aria-label="Resumen del servidor"><article><span>Configurados</span><strong>${configured}<small> / ${total}</small></strong></article><article><span>Por configurar</span><strong>${pendingEntries.length}</strong></article><article><span>Servidor seleccionado</span><strong class="overview-server-name">${escapeHtml(guild?.name || "Discord")}</strong></article></section>${setupGuide}${pendingSummary}${channelIntegrity}${roleIntegrity}${permissionIntegrity}${roleManagementIntegrity}${configuredRoleIntegrity}<div class="overview-section-title"><div><div class="eyebrow">PANEL DE CONTROL</div><h3>Explora tus sistemas</h3></div><span>Elige una sección para empezar</span></div><section class="overview-grid">${categories}</section></div>`;
+    content.innerHTML = `<div class="checks-page"><header class="checks-page-heading"><div class="eyebrow">ESTADO DEL SERVIDOR</div><h2>Comprobaciones de Bryvex</h2><p>Revisa permisos, roles y referencias guardadas para detectar problemas antes de que afecten a los sistemas de tu comunidad.</p></header><section class="checks-summary"><article><span>Sistemas pendientes</span><strong>${pendingEntries.length}</strong></article><article><span>Referencias de canal</span><strong>${unavailableChannels.length}</strong></article><article><span>Referencias de rol</span><strong>${unavailableRoles.length}</strong></article><article><span>Permisos de canal</span><strong>${permissionIssues === null ? "—" : permissionIssues.length}</strong></article></section>${setupGuide}${pendingSummary}<div class="checks-section-heading"><div class="eyebrow">DIAGNÓSTICO</div><h3>Permisos e integridad de la configuración</h3><p>Los resultados se calculan con los datos disponibles del servidor y la configuración guardada.</p></div>${channelIntegrity}${roleIntegrity}${permissionIntegrity}${roleManagementIntegrity}${configuredRoleIntegrity}</div>`;
+    content.querySelectorAll("[data-overview-module]").forEach(button => button.addEventListener("click", () => navigateToModule(button.dataset.overviewModule, modules)));
+}
+
+function renderHome(guild, modules) {
+    currentModule = "__home";
+    nav.querySelectorAll(".nav-item").forEach(button => {
+        const active = button.dataset.module === "__home";
+        button.classList.toggle("active", active);
+        if (active) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
+    });
+    const entries = [...Object.entries(modules.configurations), ...Object.entries(modules.lists)];
+    const total = entries.length;
+    const isModuleConfigured = key => {
+        if (modules.lists[key]) return (configState.lists[key] || []).length > 0;
+        return Boolean(configState.configurations[key]?.configured);
+    };
+    const configured = entries.filter(([key]) => isModuleConfigured(key)).length;
+    const pendingEntries = entries.filter(([key]) => !isModuleConfigured(key));
+    const completion = total ? Math.round(configured / total * 100) : 0;
+    const quickStart = ["welcome", "socialAlerts", "autoroles", "levelSettings"]
+        .map(key => [key, modules.configurations[key] || modules.lists[key]])
+        .filter(([, definition]) => definition)
+        .slice(0, 4)
+        .map(([key, definition]) => `<button class="overview-quick-link${isModuleConfigured(key) ? " is-configured" : " is-pending"}" type="button" data-overview-module="${escapeHtml(key)}"><span>${escapeHtml(definition.title)}</span><span aria-hidden="true">→</span></button>`)
+        .join("");
+    const categories = categoriesOrder.map(category => {
+        const group = entries.filter(([, definition]) => definition.category === category);
+        if (!group.length) return "";
+        const ready = group.filter(([key]) => isModuleConfigured(key)).length;
+        const percent = Math.round(ready / group.length * 100);
+        const firstModule = group[0][0];
+        const previewEntries = group.filter(([key]) => !isModuleConfigured(key)).slice(0, 3);
+        const visibleEntries = previewEntries.length ? previewEntries : group.slice(0, 3);
+        const preview = visibleEntries.map(([key, definition]) =>
+            `<button class="overview-module-link${isModuleConfigured(key) ? " is-configured" : " is-pending"}" type="button" data-overview-module="${escapeHtml(key)}">${escapeHtml(definition.title)}${isModuleConfigured(key) ? "" : " · pendiente"}</button>`
+        ).join("");
+        const extraPending = Math.max(0, group.filter(([key]) => !isModuleConfigured(key)).length - visibleEntries.length);
+        const extra = extraPending ? `<span class="overview-more">+${extraPending} pendientes</span>` : (!previewEntries.length && group.length > 3 ? `<span class="overview-more">+${group.length - 3} sistemas</span>` : "");
+        return `<article class="overview-card"><div class="overview-card-top"><span class="eyebrow">${escapeHtml(category)}</span><span class="overview-count">${ready}/${group.length}</span></div><div class="overview-progress"><span style="width:${percent}%"></span></div><div class="overview-module-links">${preview}${extra}</div><button class="overview-open" type="button" data-overview-module="${escapeHtml(firstModule)}">Explorar sección <span aria-hidden="true">→</span></button></article>`;
+    }).join("");
+    const avatar = guild?.icon
+        ? `<img src="${escapeHtml(guild.icon)}" alt="" width="64" height="64">`
+        : `<span aria-hidden="true">${escapeHtml((guild?.name || "S").trim().slice(0, 2).toUpperCase())}</span>`;
+    document.querySelector("#page-title").textContent = "Inicio";
+    content.innerHTML = `<div class="overview-page"><section class="overview-hero"><div class="overview-hero-copy"><div class="overview-server-mark">${avatar}</div><div class="overview-welcome"><div class="eyebrow">PANEL DE TU COMUNIDAD</div><h2>Bienvenido a ${escapeHtml(guild?.name || "tu servidor")}</h2><p>Administra los sistemas de tu comunidad y continúa configurando tu espacio desde aquí.</p></div><nav class="overview-quick-links" aria-label="Accesos rápidos">${quickStart}</nav></div><aside class="overview-readiness" aria-label="Progreso de configuración"><div class="overview-readiness-ring" style="--completion:${completion}%"><div><strong>${completion}%</strong><small>LISTO</small></div></div><div class="overview-readiness-copy"><span class="eyebrow">ESTADO GENERAL</span><strong>${configured} de ${total}</strong><small>sistemas configurados</small></div></aside><div class="overview-hero-glow" aria-hidden="true"></div></section><section class="overview-stats" aria-label="Resumen del servidor"><article><span>Configurados</span><strong>${configured}<small> / ${total}</small></strong></article><article><span>Por configurar</span><strong>${pendingEntries.length}</strong></article><article><span>Servidor seleccionado</span><strong class="overview-server-name">${escapeHtml(guild?.name || "Discord")}</strong></article></section><div class="overview-section-title"><div><div class="eyebrow">PANEL DE CONTROL</div><h3>Explora tus sistemas</h3></div><span>Elige una sección para empezar</span></div><section class="overview-grid">${categories}</section></div>`;
     content.querySelectorAll("[data-overview-module]").forEach(button => button.addEventListener("click", () => navigateToModule(button.dataset.overviewModule, modules)));
     const homeImage = content.querySelector(".overview-server-mark img");
     homeImage?.addEventListener("error", () => {
@@ -986,6 +1006,7 @@ function makeNav(modules) {
     appendHeading("Principal");
     appendPrincipalEntry("Inicio", "__home", navigateToHome);
     appendPrincipalEntry("Auditoría", "__audit", () => renderAudit());
+    appendPrincipalEntry("Comprobaciones", "__checks", () => renderChecks(modules));
     const pinnedEntries = all.filter(([key]) => favoriteModules.has(key));
     if (pinnedEntries.length) {
         appendHeading("Favoritos");
