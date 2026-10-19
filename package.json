@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node .",
     "start:dashboard": "node dashboard/server.js",
-    "test": "node scripts/check-syntax.js"
+    "test": "node scripts/check-syntax.js && node scripts/check-dashboard-security.js"
   },
   "keywords": [],
   "author": "",
