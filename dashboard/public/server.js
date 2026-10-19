@@ -2065,7 +2065,14 @@ function renderList(key, definition, editItem = null) {
 
 function getAssistantFindings() {
     const findings = [];
-    const add = (title, detail, key = "") => findings.push({ title, detail, key });
+    const add = (title, detail, key = "") => {
+        const severity = /ajuste obligatorio pendiente|referencia de canal no disponible|referencia de rol no disponible|rol no asignable/i.test(title)
+            ? "Prioridad alta"
+            : /permisos de canal por revisar|tipo de canal incompatible/i.test(title)
+                ? "Revisión recomendada"
+                : "Advertencia";
+        findings.push({ title, detail, key, severity });
+    };
     try {
         const missing = findMissingRequiredSettings(currentModules);
         for (const item of missing.slice(0, 8)) add("Ajuste obligatorio pendiente", `${item.title}: falta completar “${item.field}”.`, item.key);
@@ -2202,7 +2209,7 @@ function assistantReply(question) {
     }
     if (/\b(problema|problemas|error|errores|diagnostico|diagnosticos|comprobacion|comprobaciones|fallo|fallos|revisar)\b/.test(q)) {
         if (!findings.length) return { text: "No aparecen incidencias en las comprobaciones que puedo realizar con los datos cargados. Esto no garantiza que todos los sistemas funcionen en tiempo real; también conviene probar sus acciones en Discord." };
-        const list = findings.slice(0, 5).map((item, index) => `${index + 1}. ${item.title}: ${item.detail}`).join("\n");
+        const list = findings.slice(0, 5).map((item, index) => `${index + 1}. [${item.severity || "Revisión"}] ${item.title}: ${item.detail}`).join("\n");
         const firstAction = findings.find(item => item.key);
         return { text: `He encontrado ${findings.length} comprobaciones para revisar:\n${list}${findings.length > 5 ? "\nHay más resultados; abre Comprobaciones para ver el resumen completo." : ""}`, actionKey: firstAction?.key, actionLabel: firstAction ? "Abrir el primer módulo afectado" : "" };
     }
@@ -2234,7 +2241,7 @@ function assistantReply(question) {
                                 ? "el canal seleccionado no corresponde al tipo que necesita la función"
                                 : "hay permisos que no se pudieron verificar automáticamente y conviene confirmar en Discord";
             const ordered = [recommendation, ...prioritized.filter(item => item !== recommendation)].slice(0, 3);
-            const plan = ordered.map((item, index) => `${index + 1}. ${item.title}: ${item.detail}`).join("\n");
+            const plan = ordered.map((item, index) => `${index + 1}. [${item.severity || "Revisión"}] ${item.title}: ${item.detail}`).join("\n");
             const moreText = findings.length > ordered.length
                 ? `\nHay ${findings.length - ordered.length} comprobación(es) adicional(es); puedes consultarlas en Comprobaciones.`
                 : "";
