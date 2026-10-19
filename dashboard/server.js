@@ -1002,7 +1002,8 @@ app.get("/api/guilds/:guildId/resources", requireGuildAdmin, async (req, res) =>
         return res.json({
             guild,
             channels: resources.channels.map(({ id, name, type, parent_id }) => ({ id, name, type, parentId: parent_id })),
-            roles: resources.roles.filter(role => !role.managed && role.name !== "@everyone").map(({ id, name, color }) => ({ id, name, color }))
+            roles: resources.roles.filter(role => !role.managed && role.name !== "@everyone").map(({ id, name, color }) => ({ id, name, color })),
+            roleIds: resources.roles.map(({ id }) => id)
         });
     } catch (error) {
         console.error("[Dashboard Resources] Error al cargar canales y roles:", error.message);
