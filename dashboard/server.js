@@ -275,6 +275,9 @@ function cleanFields(fields, input, requireAll = false) {
         if (field.type === "boolean") {
             if (typeof value !== "boolean") throw new Error(`${field.label} debe ser sí o no.`);
         } else if (field.type === "number") {
+            if (typeof value === "string" && value.trim() === "") {
+                throw new Error(`${field.label} debe contener un número.`);
+            }
             value = Number(value);
             if (!Number.isFinite(value) || (field.min !== undefined && value < field.min) || (field.max !== undefined && value > field.max)) {
                 throw new Error(`${field.label} tiene un número fuera del rango permitido.`);
