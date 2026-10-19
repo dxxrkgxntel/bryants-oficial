@@ -35,6 +35,15 @@ async function initializeInviteCache(client) {
 
 async function handleMemberJoin(member) {
     const guild = member.guild;
+    let config;
+    try {
+        config = await logsSchema.findOne({ Guild: guild.id });
+    } catch (error) {
+        console.error(`[INVITE TRACKER] No se pudo leer la configuración de ${guild.id}:`, error);
+        return;
+    }
+    if (!config || config.InviteTrackerEnabled !== true || !config.InviteTrackerChannel) return;
+
     let usedInvite = null;
     let attributionAvailable = false;
 
@@ -93,9 +102,6 @@ async function handleMemberJoin(member) {
     }
 
     try {
-        const config = await logsSchema.findOne({ Guild: guild.id });
-        if (!config || !config.InviteTrackerChannel) return;
-
         const channel = guild.channels.cache.get(config.InviteTrackerChannel);
         if (!channel?.isTextBased()) return;
 
