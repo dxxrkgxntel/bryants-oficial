@@ -76,6 +76,33 @@ const messageVariables = {
 };
 
 const configurations = {
+    trophySettings: {
+        title: "Trofeos · Recompensas y anuncios",
+        category: "Trofeos",
+        description: "Configura el formato de los desbloqueos, puntos, temporada, clasificación y roles de los tres primeros puestos.",
+        model: require("../Models/TrophySettings"),
+        guildField: "guildId",
+        fields: [
+            { name: "enabled", label: "Sistema de trofeos activo", type: "boolean", default: true },
+            { name: "announcementMode", label: "Formato del anuncio", type: "select", options: ["card", "components", "embed", "text", "dm", "silent"], default: "embed" },
+            { name: "announcementChannelId", label: "Canal de anuncios", type: "channel", channelTypes: [0], optional: true },
+            { name: "announcementTemplate", label: "Plantilla del mensaje", type: "textarea", maxLength: 1500, default: "{user} desbloqueó {achievement} (+{points} puntos)", help: "Marcadores disponibles: {user}, {achievement}, {points}, {rarity}." },
+            { name: "cardTitle", label: "Título de tarjeta", type: "text", maxLength: 100, default: "TROFEO DESBLOQUEADO" },
+            { name: "cardColor", label: "Color hexadecimal de tarjeta", type: "color", default: "#0000FF" },
+            { name: "cardBackgroundUrl", label: "URL de fondo de tarjeta", type: "url", optional: true },
+            { name: "pointsMultiplier", label: "Multiplicador de puntos", type: "number", min: 0, max: 100, default: 1 },
+            { name: "minimumAccountAgeDays", label: "Antigüedad mínima de cuenta (días)", type: "number", min: 0, max: 3650, default: 0 },
+            { name: "includeBots", label: "Contar actividad de bots", type: "boolean", default: false },
+            { name: "leaderboardEnabled", label: "Clasificación activa", type: "boolean", default: true },
+            { name: "seasonEnabled", label: "Temporada mensual activa", type: "boolean", default: true },
+            { name: "seasonKey", label: "Temporada (AAAA-MM; vacío = mes actual)", type: "text", maxLength: 7, optional: true },
+            { name: "firstPlaceRoleId", label: "Rol del 1.º puesto", type: "role", optional: true },
+            { name: "secondPlaceRoleId", label: "Rol del 2.º puesto", type: "role", optional: true },
+            { name: "thirdPlaceRoleId", label: "Rol del 3.º puesto", type: "role", optional: true },
+            { name: "publicProfiles", label: "Perfiles públicos de trofeos", type: "boolean", default: false }
+        ]
+    },
+
     autoroles: {
         title: "Autoroles",
         category: "Comunidad",
@@ -438,23 +465,46 @@ const lists = {
         identity: "itemId"
     },
     achievements: {
-        title: "Logros",
-        category: "Economía y XP",
-        description: "Define metas de actividad, progreso y economía. Los miembros pueden consultar sus avances con /achievements.",
+        title: "Catálogo de trofeos",
+        category: "Trofeos",
+        description: "Define trofeos, métricas, puntos, rareza y escalas de niveles. Para escalas, introduce las metas separadas por comas, por ejemplo 10,100,1000.",
         model: require("../Models/Achievement"),
         fields: [
             { name: "achievementId", label: "ID único (sin espacios)", type: "text", maxLength: 80 },
-            { name: "name", label: "Nombre del logro", type: "text", maxLength: 100 },
+            { name: "name", label: "Nombre del trofeo", type: "text", maxLength: 100 },
             { name: "description", label: "Descripción", type: "textarea", maxLength: 300 },
-            { name: "emoji", label: "Emoji", type: "text", maxLength: 100, optional: true },
-            { name: "category", label: "Categoría", type: "select", options: ["activity", "progression", "economy", "shop"] },
-            { name: "metric", label: "Objetivo que se mide", type: "select", options: ["messages", "levels", "dailyClaims", "workClaims", "itemsPurchased", "coinsEarned"] },
-            { name: "goal", label: "Cantidad necesaria", type: "number", min: 1 },
+            { name: "emoji", label: "Emblema / emoji", type: "text", maxLength: 100, optional: true },
+            { name: "category", label: "Categoría", type: "select", options: ["activity", "progression", "economy", "shop", "messages", "reactions", "voice", "community"] },
+            { name: "metric", label: "Métrica", type: "select", options: ["messages", "levels", "dailyClaims", "workClaims", "itemsPurchased", "coinsEarned", "attachments", "mentions", "characters", "codeBlocks", "commands", "customEmojis", "embeds", "gifs", "images", "links", "longMessages", "reactionsAdded", "reactionsReceived", "voiceMinutes", "voiceJoins", "threads", "words", "polls", "questions", "answers", "spoilers", "stickers"] },
+            { name: "goal", label: "Meta final (una sola escala)", type: "number", min: 1 },
+            { name: "levelGoals", label: "Metas por nivel (separadas por comas)", type: "text", maxLength: 500, optional: true, help: "Ejemplo: 10,100,1000. Déjalo vacío si el trofeo solo tiene un nivel." },
+            { name: "levelPoints", label: "Puntos por nivel (separados por comas)", type: "text", maxLength: 500, optional: true, help: "Ejemplo: 5,10,20. Si se omite, se usa la puntuación del trofeo en cada nivel." },
+            { name: "levelRarities", label: "Rareza por nivel (separada por comas)", type: "text", maxLength: 300, optional: true, help: "Valores: common, uncommon, rare, epic, legendary, mythic." },
+            { name: "points", label: "Puntos base", type: "number", min: 0, default: 10 },
+            { name: "rarity", label: "Rareza", type: "select", options: ["common", "uncommon", "rare", "epic", "legendary", "mythic"] },
             { name: "rewardCoins", label: "Recompensa en monedas", type: "number", min: 0, default: 0 },
-            { name: "announcementChannelId", label: "Canal para anunciar logros", type: "channel", channelTypes: [0], optional: true },
-            { name: "enabled", label: "Logro activo", type: "boolean", default: true }
+            { name: "rewardXP", label: "Recompensa en XP", type: "number", min: 0, default: 0 },
+            { name: "announcementChannelId", label: "Canal de anuncio individual (opcional)", type: "channel", channelTypes: [0], optional: true },
+            { name: "enabled", label: "Trofeo activo", type: "boolean", default: true }
         ],
         identity: "achievementId"
+    },
+    trophyMilestones: {
+        title: "Hitos de puntos",
+        category: "Trofeos",
+        description: "Asocia un total de puntos de trofeos con un rol y recompensas de monedas o XP.",
+        model: require("../Models/TrophyMilestone"),
+        fields: [
+            { name: "milestoneId", label: "ID único (sin espacios)", type: "text", maxLength: 80 },
+            { name: "title", label: "Nombre del hito", type: "text", maxLength: 100 },
+            { name: "description", label: "Descripción", type: "textarea", maxLength: 300, optional: true },
+            { name: "pointsRequired", label: "Puntos necesarios", type: "number", min: 1 },
+            { name: "roleId", label: "Rol de recompensa (opcional)", type: "role", optional: true },
+            { name: "rewardCoins", label: "Monedas de recompensa", type: "number", min: 0, default: 0 },
+            { name: "rewardXP", label: "XP de recompensa", type: "number", min: 0, default: 0 },
+            { name: "enabled", label: "Hito activo", type: "boolean", default: true }
+        ],
+        identity: "milestoneId"
     },
     bankDonorRoles: {
         title: "Roles de bonificación bancaria",
