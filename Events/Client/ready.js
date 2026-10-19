@@ -15,6 +15,7 @@ const startDailyPurgeScheduler = require('../../Handlers/dailyPurgeScheduler');
 const { restoreVoiceConnections, startVoiceConnectionSync } = require('../../Handlers/voiceConnectionManager');
 const { restoreServerStats } = require('../../Functions/serverStats');
 const { renderWeeklyDropDescription } = require('../../Functions/weeklyDropDescription');
+const { initializeInviteCache } = require('../../Utils/inviteTracker');
 
 require('colors');
 
@@ -56,6 +57,12 @@ module.exports = {
                 .red,
                 error
             );
+        }
+
+        try {
+            await initializeInviteCache(client);
+        } catch (error) {
+            console.error('[INVITE TRACKER] No se pudo inicializar la caché de invitaciones:', error.message);
         }
 
         if (mongoose.connection.readyState === 1) {
