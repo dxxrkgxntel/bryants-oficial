@@ -2187,10 +2187,14 @@ function assistantReply(question) {
         if (matching.length) return { text: matching.slice(0, 4).map(item => `• ${item.title}: ${item.detail}`).join("\n"), actionKey: matching.find(item => item.key)?.key || "__checks", actionLabel: "Revisar configuración" };
         return { text: "No he encontrado incidencias concretas de canales, roles o permisos en los datos disponibles. Puedes abrir Comprobaciones para consultar los resultados actuales; los permisos pueden cambiar directamente en Discord." , actionKey: "__checks", actionLabel: "Abrir Comprobaciones" };
     }
-    return { text: "Todavía no puedo responder eso con seguridad usando los datos cargados. Prueba con “estado del servidor”, “problemas detectados”, “recomendaciones” o el nombre de un módulo, como “Bienvenidas” o “Autoroles”." };
+    return {
+        text: "No puedo responder esa consulta directamente con la información que tengo disponible. Ve a Support y abre un ticket; el equipo podrá ayudarte.",
+        actionUrl: "/support",
+        actionLabel: "Ir a Support y abrir un ticket"
+    };
 }
 
-function addAssistantMessage(text, role = "bot", actionKey = "", actionLabel = "") {
+function addAssistantMessage(text, role = "bot", actionKey = "", actionLabel = "", actionUrl = "") {
     const messages = document.querySelector("#assistant-messages");
     if (!messages) return;
     const article = document.createElement("article");
@@ -2198,7 +2202,15 @@ function addAssistantMessage(text, role = "bot", actionKey = "", actionLabel = "
     const paragraph = document.createElement("p");
     paragraph.textContent = text;
     article.append(paragraph);
-    if (actionKey && actionLabel) {
+    if (actionUrl && actionLabel) {
+        const link = document.createElement("a");
+        link.className = "assistant-open-module";
+        link.textContent = actionLabel;
+        link.href = actionUrl;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        article.append(link);
+    } else if (actionKey && actionLabel) {
         const button = document.createElement("button");
         button.type = "button";
         button.className = "assistant-open-module";
@@ -2240,7 +2252,7 @@ function setupAssistant() {
         addAssistantMessage(question, "user");
         input.value = "";
         const answer = assistantReply(question);
-        addAssistantMessage(answer.text, "bot", answer.actionKey || "", answer.actionLabel || "");
+        addAssistantMessage(answer.text, "bot", answer.actionKey || "", answer.actionLabel || "", answer.actionUrl || "");
     });
     launcher.hidden = false;
     document.querySelector("#assistant-context-label").textContent = `Servidor: ${activeGuild?.name || "activo"}`;
