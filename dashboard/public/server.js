@@ -270,6 +270,9 @@ function renderField(field, value, prefix = "") {
     if (field.type === "setups") return renderSetupsEditor(Array.isArray(value) ? value : []);
     if (field.type === "buttons") return renderButtonEditor(field, Array.isArray(value) ? value : [], prefix);
     if (field.type === "json" && ["prestigeRoles", "prestigeRewards"].includes(field.name)) return renderPrestigeMap(field, value);
+    if (field.type === "boolean" && field.name === "InviteTrackerEnabled") {
+        return `<div class="field checkbox-field invite-tracker-toggle-field"><span><strong>${escapeHtml(field.label)}</strong>${help}</span><button id="${id}" class="invite-tracker-toggle ${safeValue ? "is-active" : ""}" type="button" name="${escapeHtml(field.name)}" data-toggle-field="${escapeHtml(field.name)}" data-enabled="${safeValue ? "true" : "false"}" aria-pressed="${safeValue ? "true" : "false"}">${safeValue ? "ACTIVO" : "DESACTIVADO"}</button></div>`;
+    }
     if (field.type === "boolean") {
         return `<label class="field checkbox-field" for="${id}"><span><strong>${escapeHtml(field.label)}</strong>${help}</span><input id="${id}" name="${escapeHtml(field.name)}" type="checkbox" ${safeValue ? "checked" : ""}></label>`;
     }
@@ -665,6 +668,11 @@ function updatePreview(key, form) {
 function readForm(form, fields) {
     const result = {};
     for (const field of fields) {
+        if (field.type === "boolean" && field.name === "InviteTrackerEnabled") {
+            const toggle = form.querySelector('[data-toggle-field="InviteTrackerEnabled"]');
+            result[field.name] = toggle?.dataset.enabled === "true";
+            continue;
+        }
         if (field.type === "buttons") {
             result[field.name] = readButtonRows(form.querySelector(`[data-button-list="${CSS.escape(field.name)}"]`));
             continue;
@@ -954,7 +962,7 @@ function renderModule(key, modules) {
     }).join("");
     const description = definition.description || "Los cambios se guardan en la configuración del servidor y los canales y roles existentes se conservan.";
     const communityLayout = ["autoroles", "welcome", "leaves", "birthday", "boosts", "confessions", "suggestions"].includes(key) ? ` community-${key}-grid` : "";
-    const alignedToggleLayout = ["logs", "reports", "antiScam", "antiInvites", "purge", "voiceConnection"].includes(key) ? " aligned-toggle-grid" : "";
+    const alignedToggleLayout = ["logs", "reports", "antiScam", "antiInvites", "purge", "voiceConnection", "inviteTracker"].includes(key) ? " aligned-toggle-grid" : "";
     const moduleLayout = key === "levelSettings" ? " levels-settings-grid" : key === "economy" ? " economy-settings-grid" : key === "weeklyDrop" ? " weekly-drop-grid" : key === "tempvoice" ? " tempvoice-settings-grid" : "";
     content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div><span class="status-pill ${data.configured ? "configured" : "unconfigured"}">${data.configured ? "Configurado" : "Sin configurar"}</span></div><p class="card-description">${escapeHtml(description)}</p>${renderPreview(key, data)}<form id="settings-form" class="fields-grid${key === "prestige" ? " prestige-settings-grid" : ""}${communityLayout}${alignedToggleLayout}${moduleLayout}">${formFields}<div class="form-actions"><button class="primary-button" type="submit">Guardar cambios</button><span class="unsaved-indicator" hidden>● Cambios sin guardar</span><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>${key === "polls" ? '<div id="poll-admin"><div class="loading-card">Cargando encuestas…</div></div>' : ""}`;
     const setupsEditor = content.querySelector("[data-setups-editor]");
@@ -978,6 +986,16 @@ function renderModule(key, modules) {
         });
     }
     const settingsForm = content.querySelector("#settings-form");
+    settingsForm.querySelectorAll("[data-toggle-field]").forEach(toggle => {
+        toggle.addEventListener("click", () => {
+            const enabled = toggle.dataset.enabled !== "true";
+            toggle.dataset.enabled = String(enabled);
+            toggle.setAttribute("aria-pressed", String(enabled));
+            toggle.classList.toggle("is-active", enabled);
+            toggle.textContent = enabled ? "ACTIVO" : "DESACTIVADO";
+            settingsForm.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+    });
     wireMultiSelectLimits(settingsForm);
     wireRolePickers(settingsForm);
     registerFormGuard(settingsForm, definition.fields);
