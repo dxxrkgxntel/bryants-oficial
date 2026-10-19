@@ -3,6 +3,7 @@ const UserAchievement = require("../Models/UserAchievement");
 const EconomyUser = require("../Models/EconomyUser");
 const TrophySettings = require("../Models/TrophySettings");
 const { EmbedBuilder } = require("discord.js");
+const { sendTrophyCard, sendTrophyComponents } = require("./trophyCard");
 
 const seededGuilds = new Map();
 const DEFAULT_ACHIEVEMENTS = [
@@ -89,13 +90,18 @@ async function trackAchievementProgress(guild, user, metric, amount = 1) {
                         .replace(/\{user\}/gi, user.toString()).replace(/\{achievement\}/gi, achievement.name)
                         .replace(/\{points\}/gi, String(points)).replace(/\{rarity\}/gi, rarityLabel);
                     try {
-                        if (mode === "text" || mode === "dm") await channel.send({ content: mode === "dm" ? "🏆 " + message : message });
-                        else {
+                        if (mode === "text" || mode === "dm") {
+                            await channel.send({ content: mode === "dm" ? "🏆 " + message : message, allowedMentions: { parse: [], users: [user.id] } });
+                        } else if (mode === "card") {
+                            await sendTrophyCard(channel, { user, achievement, points, rarity: rarityLabel, level: i + 1, settings, message });
+                        } else if (mode === "components") {
+                            await sendTrophyComponents(channel, { user, achievement, points, rarity: rarityLabel, level: i + 1, settings, message });
+                        } else if (mode === "embed") {
                             const embed = new EmbedBuilder().setColor(/^#[0-9a-fA-F]{6}$/.test(settings?.cardColor || "") ? parseInt(settings.cardColor.slice(1), 16) : 0x0000ff)
                                 .setTitle((settings?.cardTitle || "TROFEO DESBLOQUEADO") + " · " + (achievement.emoji || "🏆"))
                                 .setDescription("**" + achievement.name + "**\n" + achievement.description)
                                 .addFields({ name: "Rareza", value: rarityLabel, inline: true }, { name: "Puntos", value: "+" + points, inline: true }, { name: "Nivel", value: String(i + 1), inline: true });
-                            await channel.send({ content: message, embeds: [embed] });
+                            await channel.send({ content: message, embeds: [embed], allowedMentions: { parse: [], users: [user.id] } });
                         }
                     } catch (error) { console.warn("[Achievements] No se pudo anunciar el trofeo:", error.message); }
                 }
