@@ -2197,23 +2197,25 @@ function assistantReply(question) {
     const q = normalizeSearch(question);
     const status = getAssistantModuleStatus();
     const findings = getAssistantFindings();
+    const matched = findAssistantModule(q);
+    const moduleQuestion = Boolean(matched && matched.score <= 2);
     if (/^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|saludos)\b/.test(q)) {
         return { text: `¡Hola! Estoy conectado a la configuración cargada de ${activeGuild?.name || "este servidor"}. Puedes preguntarme por el estado, los problemas detectados o un módulo específico.` };
     }
-    if (/\b(estado|resumen|como esta|situacion|configuracion general|progreso)\b/.test(q)) {
+    if (!moduleQuestion && /\b(estado|resumen|como esta|situacion|configuracion general|progreso)\b/.test(q)) {
         const percent = status.total ? Math.round(status.configured / status.total * 100) : 0;
         const summary = findings.length
             ? ` También he encontrado ${findings.length} comprobaciones que conviene revisar.`
             : " No he detectado problemas en las comprobaciones disponibles.";
         return { text: `En ${activeGuild?.name || "este servidor"}, ${status.configured} de ${status.total} módulos aparecen configurados (${percent}%). Quedan ${status.pending} pendientes.${summary}` };
     }
-    if (/\b(problema|problemas|error|errores|diagnostico|diagnosticos|comprobacion|comprobaciones|fallo|fallos|revisar)\b/.test(q)) {
+    if (!moduleQuestion && /\b(problema|problemas|error|errores|diagnostico|diagnosticos|comprobacion|comprobaciones|fallo|fallos|revisar|que esta mal|que debo corregir|que necesita revision)\b/.test(q)) {
         if (!findings.length) return { text: "No aparecen incidencias en las comprobaciones que puedo realizar con los datos cargados. Esto no garantiza que todos los sistemas funcionen en tiempo real; también conviene probar sus acciones en Discord." };
         const list = findings.slice(0, 5).map((item, index) => `${index + 1}. [${item.severity || "Revisión"}] ${item.title}: ${item.detail}`).join("\n");
         const firstAction = findings.find(item => item.key);
         return { text: `He encontrado ${findings.length} comprobaciones para revisar:\n${list}${findings.length > 5 ? "\nHay más resultados; abre Comprobaciones para ver el resumen completo." : ""}`, actionKey: firstAction?.key, actionLabel: firstAction ? "Abrir el primer módulo afectado" : "" };
     }
-    if (/\b(recomienda|recomendacion|recomendaciones|que configuro|por donde empiezo|primero|siguiente paso)\b/.test(q)) {
+    if (!moduleQuestion && /\b(recomienda|recomendacion|recomendaciones|que configuro|por donde empiezo|primero|siguiente paso|que me aconsejas|que deberia hacer)\b/.test(q)) {
         if (findings.length) {
             const priority = [
                 /ajuste obligatorio pendiente/i,
@@ -2266,10 +2268,10 @@ function assistantReply(question) {
         }
         return { text: "Los módulos disponibles aparecen configurados y no he detectado incidencias en las comprobaciones disponibles. Te recomiendo probar en Discord los flujos principales y revisar Comprobaciones después de cambiar permisos o canales." };
     }
-    if (/\b(ayuda|que puedes hacer|funciones|como funciona|bryvex)\b/.test(q)) {
+    if (!moduleQuestion && /\b(ayuda|que puedes hacer|funciones|como funciona|bryvex)\b/.test(q)) {
         return { text: "Puedo resumir el estado de la configuración, mostrar incidencias detectables (campos obligatorios, canales, roles y permisos), explicar por qué conviene revisar algo y abrir el módulo relacionado. No ejecuto cambios ni puedo confirmar eventos en vivo que no estén disponibles en la dashboard." };
     }
-    if (/\b(seguridad|seguro|proteger|proteccion|ataque|ataques|raid|spam|scam|estafa|malicioso|malware|vulnerabilidad|antifraude)\b/.test(q)) {
+    if (!moduleQuestion && /\b(seguridad|seguro|proteger|proteccion|ataque|ataques|raid|spam|scam|estafa|malicioso|malware|vulnerabilidad|antifraude|phishing|suplantacion|invasion)\b/.test(q)) {
         const entries = [...Object.entries(currentModules?.configurations || {}), ...Object.entries(currentModules?.lists || {})];
         const securityTerms = /anti.?scam|anti.?raid|anti.?spam|seguridad|moderacion|proteccion|verificacion|logs|registro|captcha|automod|filtro|bloqueo|autoroles|permisos/i;
         const securityModules = entries.map(([key, definition]) => ({
@@ -2293,7 +2295,6 @@ function assistantReply(question) {
             actionLabel: preferred ? `Abrir ${preferred.title}` : "Abrir Comprobaciones"
         };
     }
-    const matched = findAssistantModule(q);
     if (matched) {
         const isConfigured = currentModules.lists?.[matched.key]
             ? (configState.lists?.[matched.key] || []).length > 0
