@@ -859,3 +859,21 @@ button:disabled { opacity: .55; cursor: wait !important; }
     .account-settings-nav { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .account-settings-back, .account-nav-heading { grid-column: 1 / -1; }
 }
+
+
+/* Integridad de referencias existentes: complemento del progreso de configuración. */
+.overview-integrity { display: grid; gap: 13px; padding: 16px 18px; border: 1px solid #ffffff16; border-radius: 13px; background: linear-gradient(110deg, #19131e, #120f16); }
+.overview-integrity-warning { border-color: #e2a04a45; background: linear-gradient(110deg, #bd85200d, #19131e); }
+.overview-integrity-ok { border-color: #63c89a30; }
+.overview-integrity-heading { display: flex; align-items: flex-start; gap: 11px; }
+.overview-integrity-heading > span { display: grid; width: 28px; height: 28px; flex: 0 0 28px; place-items: center; border-radius: 9px; background: #e2a04a1c; color: #edc981; font-weight: 800; }
+.overview-integrity-ok .overview-integrity-heading > span { background: #63c89a1a; color: #82d9ae; }
+.overview-integrity-heading > div { display: grid; gap: 5px; min-width: 0; }
+.overview-integrity-heading strong { color: #e8d9f3; font-size: 13px; }
+.overview-integrity-heading small { color: #a99eb3; font-size: 11px; line-height: 1.6; }
+.overview-integrity-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.overview-integrity-links button { display: grid; gap: 5px; min-width: 150px; padding: 9px 11px; border: 1px solid #e2a04a30; border-radius: 9px; background: #100b1870; color: #e8d9f3; text-align: left; font: inherit; cursor: pointer; }
+.overview-integrity-links button:hover { border-color: #c983f266; background: #a34ce31a; }
+.overview-integrity-links button > span { font-size: 11px; font-weight: 700; }
+.overview-integrity-links button > small { color: #edc981; font-size: 10px; }
+@media (max-width: 640px) { .overview-integrity-links { display: grid; grid-template-columns: 1fr; } .overview-integrity-links button { min-width: 0; } }
