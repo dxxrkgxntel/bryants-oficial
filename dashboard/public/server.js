@@ -2101,15 +2101,52 @@ function findAssistantModule(query) {
     const normalized = normalizeSearch(query);
     if (!normalized) return null;
     const entries = [...Object.entries(currentModules?.configurations || {}), ...Object.entries(currentModules?.lists || {})];
+    const stopWords = new Set(["como", "que", "para", "por", "donde", "quiero", "puedo", "hacer", "usar", "utilizar", "configurar", "configuro", "configuracion", "ayuda", "modulo", "modulos", "el", "la", "los", "las", "un", "una", "de", "del", "en", "mi", "mis", "me", "se", "y"]);
+    const words = value => normalizeSearch(value).split(/[^a-z0-9]+/).filter(word => word.length > 2 && !stopWords.has(word));
+    const queryWords = new Set(words(normalized));
+    const aliases = [
+        { terms: ["bienvenida", "bienvenidas", "welcome", "saludo", "saludos"], match: /bienven|welcome|saludo/i },
+        { terms: ["autorol", "autoroles", "rol automatico", "roles automaticos"], match: /autorol|auto.?role|rol automatic/i },
+        { terms: ["auditoria", "logs", "registro", "registros", "moderacion"], match: /auditor|log|registro|moderaci/i },
+        { terms: ["comprobaciones", "diagnostico", "diagnosticos", "revision", "revisiones"], match: /comprob|diagnostic|revision|check/i },
+        { terms: ["ticket", "tickets", "soporte", "support"], match: /ticket|soporte|support/i },
+        { terms: ["verificacion", "captcha", "validacion"], match: /verific|captcha|validaci/i },
+        { terms: ["anuncio", "anuncios", "anuncios automaticos"], match: /anuncio|announcement/i },
+        { terms: ["sugerencia", "sugerencias"], match: /sugerenc/i }
+    ];
     const ranked = entries.map(([key, definition]) => {
         const title = normalizeSearch(definition.title || key);
         const keyText = normalizeSearch(key.replace(/([A-Z])/g, " $1"));
-        const score = title === normalized || keyText === normalized ? 0
-            : title.includes(normalized) || normalized.includes(title) || keyText.includes(normalized) ? 1
-            : 2;
-        return { key, definition, score };
-    }).filter(item => item.score < 2).sort((a, b) => a.score - b.score);
-    return ranked[0] || null;
+        const searchText = normalizeSearch(`${keyText} ${title} ${definition.category || ""} ${definition.description || ""}`);
+        const moduleWords = words(`${keyText} ${title}`);
+        let score = 99;
+        if (title === normalized || keyText === normalized) score = 0;
+        else if (title.includes(normalized) || normalized.includes(title) || keyText.includes(normalized)) score = 1;
+        else {
+            const overlap = moduleWords.filter(word => queryWords.has(word)).length;
+            if (overlap) score = 5 - Math.min(overlap, 3);
+            const matchingAlias = aliases.find(alias => alias.terms.some(term => queryWords.has(term)) && alias.match.test(searchText));
+            if (matchingAlias) score = Math.min(score, 2);
+        }
+        return { key, definition, score, searchText };
+    }).filter(item => item.score < 5).sort((a, b) => a.score - b.score);
+    if (!ranked.length || (ranked.length > 1 && ranked[0].score === ranked[1].score && ranked[0].score > 1)) return null;
+    return ranked[0];
+}
+
+function getAssistantModuleGuidance(definition) {
+    const fields = (definition.fields || []).filter(field => field.type !== "section");
+    const usefulFields = fields.filter(field => field.label || field.help).slice(0, 4);
+    const fieldGuidance = usefulFields.map(field => {
+        const label = field.label || field.name;
+        return field.help ? `“${label}”: ${field.help}` : `“${label}”`;
+    });
+    const description = String(definition.description || "").trim();
+    const parts = [];
+    if (description) parts.push(description);
+    if (fieldGuidance.length) parts.push(`En este módulo, revisa estos ajustes: ${fieldGuidance.join("; ")}.`);
+    parts.push("Guarda los cambios y comprueba el resultado en Discord. Si algún campo depende de permisos, canales o roles, verifica también que el bot tenga acceso.");
+    return parts.join(" ");
 }
 
 function assistantReply(question) {
@@ -2180,7 +2217,9 @@ function assistantReply(question) {
             ? `${(configState.lists?.[matched.key] || []).length} elementos guardados`
             : isConfigured ? "aparece configurado" : "todavía aparece pendiente de configuración";
         const issueText = related.length ? ` Además, detecté ${related.length} comprobación(es) relacionada(s): ${related[0].detail}` : " No detecté incidencias específicas en las comprobaciones disponibles para este módulo.";
-        return { text: `“${matched.definition.title}” ${stateText}.${issueText}`, actionKey: matched.key, actionLabel: "Abrir este módulo" };
+        const asksHowTo = /\b(como|configurar|configuro|usar|uso|activar|activo|crear|funciona|ayuda|explica|explicame|para que sirve)\b/.test(q);
+        const guidance = asksHowTo ? ` ${getAssistantModuleGuidance(matched.definition)}` : "";
+        return { text: `“${matched.definition.title}” ${stateText}.${guidance}${issueText}`, actionKey: matched.key, actionLabel: "Abrir este módulo" };
     }
     if (/\b(canal|canales|rol|roles|permiso|permisos)\b/.test(q)) {
         const matching = findings.filter(item => /canal|rol|permiso/i.test(item.title + " " + item.detail));
