@@ -177,7 +177,7 @@ function findConfiguredChannelPermissionIssues(modules) {
                 const permission = permissionByChannel.get(id);
                 if (!channel || !permission) continue;
                 const required = field.type === "voice"
-                    ? [["viewChannel", "Ver canal"], ["connect", "Conectar"]]
+                    ? [["viewChannel", "Ver canal"], ["manageChannels", "Gestionar canal"]]
                     : [["viewChannel", "Ver canal"], ["sendMessages", "Enviar mensajes"], ["embedLinks", "Insertar enlaces/embeds"]];
                 const missing = required.filter(([name]) => !permission[name]).map(([, label]) => label);
                 if (!missing.length) continue;
