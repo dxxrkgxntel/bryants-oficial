@@ -1966,7 +1966,9 @@ app.get("/api/version", (_req, res) => {
             "index.html", "server.html", "account.html", "support.html",
             "server.js", "app.js", "account.js", "support.js",
             "appearance.js", "account-menu.js", "styles.css", "support.css",
-            "version-check.js", "personal-stats.js", "preview-server-icon.js"
+            "version-check.js", "personal-stats.js", "preview-server-icon.js",
+            "hub.css", "hub.js", "status.html", "docs.html", "updates.html",
+            "stats.html", "leaderboard.html", "leaderboard.js", "templates.html", "templates.js"
         ];
         const hash = crypto.createHash("sha256");
         for (const file of trackedFiles) {
