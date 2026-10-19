@@ -47,6 +47,8 @@ for (const route of [
     ["put", "/api/guilds/:guildId/members/:userId/economy", ["requireLogin", "requireCsrf", "requireGuildAdmin"]],
     ["put", "/api/guilds/:guildId/config/:module", ["requireLogin", "requireCsrf", "requireGuildAdmin"]],
     ["get", "/api/guilds/:guildId/leaderboards/economy", ["requireGuildAdmin"]],
+    ["get", "/api/guilds/:guildId/leaderboards/experience", ["requireGuildAdmin"]],
+    ["get", "/api/guilds/:guildId/stats/overview", ["requireGuildAdmin"]],
     ["post", "/api/guilds/:guildId/polls", ["requireLogin", "requireCsrf", "requireGuildAdmin"]],
     ["put", "/api/guilds/:guildId/polls/:pollId", ["requireLogin", "requireCsrf", "requireGuildAdmin"]],
     ["delete", "/api/guilds/:guildId/polls/:pollId", ["requireLogin", "requireCsrf", "requireGuildAdmin"]],
@@ -77,7 +79,7 @@ assert.match(templateSource, /X-CSRF-Token/, "La importación de plantillas debe
 assert.match(templateSource, /bryvex-bot-config-template/, "Las plantillas deben validar su formato");
 assert.match(templateSource, /confirm\(warning\)/, "La importación de plantillas debe exigir confirmación explícita");
 assert.match(leaderboardSource, /leaderboards\/economy/, "La clasificación debe usar el endpoint de economía");
-for (const file of ["hub.css", "hub.js", "status.html", "docs.html", "updates.html", "stats.html", "leaderboard.html", "leaderboard.js", "templates.html", "templates.js"]) {
+for (const file of ["hub.css", "hub.js", "status.html", "docs.html", "updates.html", "updates.js", "stats.html", "stats.js", "leaderboard.html", "leaderboard.js", "templates.html", "templates.js"]) {
     assert.ok(fs.existsSync(path.join(root, "dashboard", "public", file)), "Falta un recurso público de Bryvex Bot: " + file);
 }
 
