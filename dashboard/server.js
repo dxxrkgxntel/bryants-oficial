@@ -15,6 +15,7 @@ const DashboardAuditLog = require("../Models/DashboardAuditLog");
 const EconomyUser = require("../Models/EconomyUser");
 const Achievement = require("../Models/Achievement");
 const UserAchievement = require("../Models/UserAchievement");
+const { ensureDefaultAchievements } = require("../Functions/achievementTracker");
 const Level = require("../Models/Level");
 const SocialAlertState = require("../Models/SocialAlertState");
 const PersonalStatsDaily = require("../Models/PersonalStatsDaily");
@@ -1290,6 +1291,7 @@ app.get("/api/guilds/:guildId/birthday-members/names", requireGuildAdmin, async 
 app.get("/api/guilds/:guildId/config", requireGuildAdmin, async (req, res) => {
     res.set("Cache-Control", "private, no-store");
     try {
+        await ensureDefaultAchievements(req.params.guildId);
         const configResults = await Promise.all(Object.entries(configurations).map(async ([key, definition]) => {
             if (key === "memberEconomy") return [key, { configured: true }];
             const document = await definition.model.findOne({ [definition.guildField]: req.params.guildId });
