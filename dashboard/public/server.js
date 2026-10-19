@@ -317,7 +317,7 @@ function findMissingRequiredSettings(modules) {
     const inspect = (key, definition, data, configured) => {
         if (!configured || !data || !Array.isArray(definition?.fields)) return;
         for (const field of definition.fields) {
-            if (!isMissing(field, getNested(data, field.name))) continue;
+            if (field.type === "section" || !field.name || !isMissing(field, getNested(data, field.name))) continue;
             const identity = [key, field.name].join(":");
             if (!findings.has(identity)) findings.set(identity, {
                 key,
