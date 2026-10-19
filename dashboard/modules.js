@@ -76,6 +76,14 @@ const messageVariables = {
 };
 
 const configurations = {
+    trophyMembers: {
+        title: "Trofeos · Miembros",
+        category: "Trofeos",
+        description: "Consulta la clasificación de puntos y el progreso de los miembros.",
+        model: require("../Models/TrophySettings"),
+        guildField: "guildId",
+        fields: []
+    },
     trophySettings: {
         title: "Trofeos · Recompensas y anuncios",
         category: "Trofeos",
