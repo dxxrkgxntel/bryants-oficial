@@ -1477,6 +1477,33 @@ app.get("/api/guilds/:guildId/members/:userId/economy", requireGuildAdmin, async
     } catch (error) { return res.status(error.status === 404 ? 404 : 502).json({ error: error.status === 404 ? "El miembro ya no está en el servidor." : error.message || "No pude cargar la economía." }); }
 });
 
+app.get("/api/guilds/:guildId/trophies/leaderboard", requireGuildAdmin, async (req, res) => {
+    res.set("Cache-Control", "private, no-store");
+    try {
+        const rows = await UserAchievement.aggregate([
+            { $match: { guildId: req.params.guildId } },
+            { $group: {
+                _id: "$userId",
+                points: { $sum: { $ifNull: ["$pointsEarned", 0] } },
+                unlockedLevels: { $sum: { $size: { $ifNull: ["$unlockedLevels", []] } } },
+                unlockedAchievements: { $sum: { $cond: [{ $ne: ["$unlockedAt", null] }, 1, 0] } }
+            } },
+            { $sort: { points: -1, unlockedLevels: -1, _id: 1 } },
+            { $limit: 50 }
+        ]);
+        return res.json({ leaderboard: rows.map((row, index) => ({
+            rank: index + 1,
+            userId: row._id,
+            points: row.points || 0,
+            unlockedLevels: row.unlockedLevels || 0,
+            unlockedAchievements: row.unlockedAchievements || 0
+        })) });
+    } catch (error) {
+        console.error("[Dashboard Trophies] Error al cargar clasificación:", error.message);
+        return res.status(500).json({ error: "No pude cargar la clasificación de trofeos." });
+    }
+});
+
 app.put("/api/guilds/:guildId/members/:userId/economy", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
     if (!/^\d{17,20}$/.test(req.params.userId)) return res.status(400).json({ error: "ID de miembro inválido." });
     const { wallet, bank } = req.body || {};
