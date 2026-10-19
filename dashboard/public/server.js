@@ -2146,7 +2146,7 @@ function assistantReply(question) {
     if (/\b(ayuda|que puedes hacer|funciones|como funciona|bryvex)\b/.test(q)) {
         return { text: "Puedo resumir el estado de la configuración, mostrar incidencias detectables (campos obligatorios, canales, roles y permisos), explicar por qué conviene revisar algo y abrir el módulo relacionado. No ejecuto cambios ni puedo confirmar eventos en vivo que no estén disponibles en la dashboard." };
     }
-    if (/\\b(seguridad|seguro|proteger|proteccion|ataque|ataques|raid|spam|scam|estafa|malicioso|malware|vulnerabilidad|antifraude)\\b/.test(q)) {
+    if (/\b(seguridad|seguro|proteger|proteccion|ataque|ataques|raid|spam|scam|estafa|malicioso|malware|vulnerabilidad|antifraude)\b/.test(q)) {
         const entries = [...Object.entries(currentModules?.configurations || {}), ...Object.entries(currentModules?.lists || {})];
         const securityTerms = /anti.?scam|anti.?raid|anti.?spam|seguridad|moderacion|proteccion|verificacion|logs|registro|captcha|automod|filtro|bloqueo|autoroles|permisos/i;
         const securityModules = entries.map(([key, definition]) => ({
