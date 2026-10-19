@@ -465,7 +465,7 @@ const lists = {
         identity: "itemId"
     },
     achievements: {
-        title: "Catálogo de trofeos",
+        title: "Logros",
         category: "Trofeos",
         description: "Define trofeos, métricas, puntos, rareza y escalas de niveles. Para escalas, introduce las metas separadas por comas, por ejemplo 10,100,1000.",
         model: require("../Models/Achievement"),
