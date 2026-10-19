@@ -7,6 +7,10 @@ const source = fs.readFileSync(path.join(root, "dashboard", "server.js"), "utf8"
 const clientSource = fs.readFileSync(path.join(root, "dashboard", "public", "server.js"), "utf8");
 const templateSource = fs.readFileSync(path.join(root, "dashboard", "public", "templates.js"), "utf8");
 const leaderboardSource = fs.readFileSync(path.join(root, "dashboard", "public", "leaderboard.js"), "utf8");
+const achievementSource = fs.readFileSync(path.join(root, "Functions", "achievementTracker.js"), "utf8");
+const shopSource = fs.readFileSync(path.join(root, "Utils", "shopHandlers.js"), "utf8");
+const economyUserSource = fs.readFileSync(path.join(root, "Models", "EconomyUser.js"), "utf8");
+const moduleSource = fs.readFileSync(path.join(root, "dashboard", "modules.js"), "utf8");
 
 function requirePattern(pattern, message) {
     assert.match(source, pattern, message);
@@ -84,6 +88,14 @@ assert.match(templateSource, /X-CSRF-Token/, "La importación de plantillas debe
 assert.match(templateSource, /bryvex-bot-config-template/, "Las plantillas deben validar su formato");
 assert.match(templateSource, /confirm\(warning\)/, "La importación de plantillas debe exigir confirmación explícita");
 assert.match(leaderboardSource, /selectedType/, "La clasificación debe usar el tipo seleccionado");
+assert.match(economyUserSource, /inventory:/, "La economía debe guardar el inventario del miembro");
+assert.match(shopSource, /StoreItem/, "La tienda debe permitir comprar artículos además de roles");
+assert.match(shopSource, /recordInventoryPurchase/, "Las compras deben guardarse en la mochila");
+assert.match(achievementSource, /findOneAndUpdate[\s\S]*?unlockedAt/, "Los logros deben guardar el progreso y evitar desbloqueos duplicados");
+assert.match(moduleSource, /title: "Artículos de tienda"/, "La dashboard debe permitir configurar artículos de venta");
+assert.match(moduleSource, /title: "Logros"/, "La dashboard debe permitir configurar logros");
+assert.match(clientSource, /member-backpack-item/, "La ficha de miembro debe mostrar los artículos comprados");
+assert.match(clientSource, /member-achievement-item/, "La ficha de miembro debe mostrar el progreso de logros");
 for (const file of ["hub.css", "hub.js", "status.html", "docs.html", "updates.html", "updates.js", "stats.html", "stats.js", "leaderboard.html", "leaderboard.js", "templates.html", "templates.js"]) {
     assert.ok(fs.existsSync(path.join(root, "dashboard", "public", file)), "Falta un recurso público de Bryvex Bot: " + file);
 }
