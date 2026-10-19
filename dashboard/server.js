@@ -506,14 +506,14 @@ async function discordBotRequest(url, { method = "GET", body } = {}) {
 }
 
 async function validateAssignableRoleIds(guildId, rawRoleIds) {
-    const roleIds = [...new Set((rawRoleIds || []).filter(id => typeof id === "string" && /^\\d{17,20}$/.test(id)))];
+    const roleIds = [...new Set((rawRoleIds || []).filter(id => typeof id === "string" && /^\d{17,20}$/.test(id)))];
     if (!roleIds.length) return;
 
-    const [{ roles }, bot, member] = await Promise.all([
+    const [{ roles }, bot] = await Promise.all([
         fetchGuildResources(guildId),
-        discordBotRequest("https://discord.com/api/v10/users/@me"),
-        discordBotRequest(`https://discord.com/api/v10/guilds/${guildId}/members/${(await discordBotRequest("https://discord.com/api/v10/users/@me")).id}`)
+        discordBotRequest("https://discord.com/api/v10/users/@me")
     ]);
+    const member = await discordBotRequest(`https://discord.com/api/v10/guilds/${guildId}/members/${bot.id}`);
     const roleMap = new Map(roles.map(role => [role.id, role]));
     const botRoleIds = new Set([guildId, ...(member.roles || [])]);
     const botHighestPosition = Math.max(0, ...[...botRoleIds].map(id => roleMap.get(id)?.position || 0));
@@ -1712,6 +1712,7 @@ app.put("/api/guilds/:guildId/lists/:list/:recordId", requireLogin, requireCsrf,
     try {
         const data = cleanFields(definition.fields, req.body);
         await validateDiscordReferences(req.params.guildId, definition.fields, data);
+        if (["levelRewards", "shopItems"].includes(req.params.list) && data.roleId) await validateAssignableRoleIds(req.params.guildId, [data.roleId]);
         if (definition.identity && data[definition.identity] !== undefined && await definition.model.exists({
             guildId: req.params.guildId,
             [definition.identity]: data[definition.identity],
