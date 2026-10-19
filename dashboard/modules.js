@@ -183,6 +183,17 @@ const configurations = {
             { name: "ignoredRoles", label: "Roles ignorados", type: "role-list", maxItems: 10, help: "Las acciones de miembros con estos roles no se registrarán." }
         ]
     },
+    inviteTracker: {
+        title: "Invite Tracker",
+        category: "Moderación",
+        description: "Configura el canal donde se publican las entradas y controla si el seguimiento de invitaciones está activo. Es independiente del sistema de logs generales.",
+        model: require("../Models/logsSchema"),
+        guildField: "Guild",
+        fields: [
+            { name: "InviteTrackerEnabled", label: "SISTEMA ACTIVO", type: "boolean", default: false, help: "Actívalo para contar las invitaciones y publicar los registros. Desactívalo para pausar el sistema." },
+            { name: "InviteTrackerChannel", label: "Canal de logs de invitaciones", type: "channel", channelTypes: [0], optional: true, help: "Elige un canal de texto de este servidor." }
+        ]
+    },
     reports: {
         title: "Reportes",
         category: "Moderación",
