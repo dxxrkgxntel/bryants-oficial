@@ -2,7 +2,7 @@ const Achievement = require("../Models/Achievement");
 const UserAchievement = require("../Models/UserAchievement");
 const EconomyUser = require("../Models/EconomyUser");
 
-const seededGuilds = new Set();
+const seededGuilds = new Map();
 const DEFAULT_ACHIEVEMENTS = [
     { achievementId: "first_steps", name: "Primeros pasos", description: "Envía 1 mensaje en el servidor.", emoji: "👋", category: "activity", metric: "messages", goal: 1, rewardCoins: 100 },
     { achievementId: "chatty_100", name: "Conversador", description: "Envía 100 mensajes en el servidor.", emoji: "💬", category: "activity", metric: "messages", goal: 100, rewardCoins: 250 },
@@ -14,18 +14,18 @@ const DEFAULT_ACHIEVEMENTS = [
 ];
 
 async function ensureDefaultAchievements(guildId) {
-    if (!guildId || seededGuilds.has(guildId)) return;
-    seededGuilds.add(guildId);
-    try {
-        await Promise.all(DEFAULT_ACHIEVEMENTS.map(item => Achievement.updateOne(
-            { guildId, achievementId: item.achievementId },
-            { $setOnInsert: { ...item, guildId, enabled: true } },
-            { upsert: true }
-        )));
-    } catch (error) {
+    if (!guildId) return;
+    if (seededGuilds.has(guildId)) return seededGuilds.get(guildId);
+    const pending = Promise.all(DEFAULT_ACHIEVEMENTS.map(item => Achievement.updateOne(
+        { guildId, achievementId: item.achievementId },
+        { $setOnInsert: { ...item, guildId, enabled: true } },
+        { upsert: true }
+    ))).catch(error => {
         seededGuilds.delete(guildId);
         throw error;
-    }
+    });
+    seededGuilds.set(guildId, pending);
+    return pending;
 }
 
 async function trackAchievementProgress(guild, user, metric, amount = 1) {
