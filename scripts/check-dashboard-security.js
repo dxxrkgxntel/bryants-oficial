@@ -4,6 +4,7 @@ const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
 const source = fs.readFileSync(path.join(root, "dashboard", "server.js"), "utf8");
+const clientSource = fs.readFileSync(path.join(root, "dashboard", "public", "server.js"), "utf8");
 
 function requirePattern(pattern, message) {
     assert.match(source, pattern, message);
@@ -52,4 +53,16 @@ for (const route of [
     requireRoute(route[0], route[1], route[2], "Protección de ruta incompleta");
 }
 
-console.log("Dashboard security checks passed: session, OAuth, CSRF, headers, payload limits and protected write routes.");
+function requireClientPattern(pattern, message) {
+    assert.match(clientSource, pattern, message);
+}
+
+requireClientPattern(/function assistantReply\(question\)/, "Debe existir el asistente de dashboard");
+requireClientPattern(/const matched = findAssistantModule\(q\);[\s\S]*?const moduleQuestion = Boolean\(matched && matched\.score <= 2\);/, "Las consultas de módulos deben detectarse antes de responder con intenciones generales");
+requireClientPattern(/actionUrl: "\/support"/, "Las consultas no reconocidas deben ofrecer acceso a Support");
+requireClientPattern(/actionKey === "__checks"/, "El asistente debe permitir abrir Comprobaciones");
+requireClientPattern(/Prioridad alta|Revisión recomendada|Advertencia/, "Los diagnósticos deben comunicar niveles de prioridad");
+requireClientPattern(/function getAssistantFindings\(/, "Deben existir comprobaciones automáticas de configuración");
+requireClientPattern(/function getAssistantFieldGuidance\(/, "El asistente debe explicar campos de configuración");
+
+console.log("Dashboard security and assistant regression checks passed.");
