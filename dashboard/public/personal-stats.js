@@ -80,8 +80,9 @@
             const games = entries(totals.gamingSeconds).map(([name, value]) => ({ label: name.replace(/-/g, " ").replace(/\b\w/g, letter => letter.toUpperCase()), value })).sort((a, b) => b.value - a.value).slice(0, 10);
             html += `<div class="personal-stats-metrics">${makeMetric("Tiempo jugando", duration(games.reduce((sum, item) => sum + Number(item.value || 0), 0)))}${makeMetric("Juegos detectados", number(games.length))}</div><h4>Juegos con más tiempo</h4>${makeBars(games, duration)}`;
         } else if (activeTab === "channels") {
-            const channels = entries(totals.channelMessages).map(([name, value]) => ({ label: name.startsWith("canal-") ? name : `#${name.replace(/-/g, "-")}`, value })).sort((a, b) => b.value - a.value).slice(0, 12);
-            html += `<div class="personal-stats-metrics">${makeMetric("Canales utilizados", number(channels.length))}${makeMetric("Mensajes registrados", number(totals.messages))}</div><h4>Canales más activos</h4>${makeBars(channels)}`;
+            const allChannels = entries(totals.channelMessages).map(([name, value]) => ({ label: `#${name}`, value })).sort((a, b) => b.value - a.value);
+            const channels = allChannels.slice(0, 12);
+            html += `<div class="personal-stats-metrics">${makeMetric("Canales utilizados", number(allChannels.length))}${makeMetric("Mensajes registrados", number(totals.messages))}</div><h4>Canales más activos</h4>${makeBars(channels)}`;
         }
 
         host.innerHTML = html;
