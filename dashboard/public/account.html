@@ -10,6 +10,7 @@
     <script src="/appearance.js" defer></script>
     <script src="/account-menu.js" defer></script>
     <script src="/account.js" defer></script>
+    <script src="/personal-stats.js" defer></script>
     <script src="/version-check.js" defer></script>
 </head>
 <body class="account-page">
@@ -32,6 +33,7 @@
                 <a class="account-settings-nav-item active" href="#general" aria-current="page"><span aria-hidden="true">⚙</span> General</a>
                 <a class="account-settings-nav-item" href="#appearance"><span aria-hidden="true">◈</span> Apariencia</a>
                 <a class="account-settings-nav-item" href="#profile"><span aria-hidden="true">♙</span> Perfil</a>
+                <a class="account-settings-nav-item" href="#personal-stats"><span aria-hidden="true">▥</span> Estadísticas personales</a>
                 <a class="account-settings-nav-item" href="#rewards"><span aria-hidden="true">♢</span> Recompensas</a>
             </aside>
 
@@ -80,6 +82,25 @@
                         <div id="account-links" class="account-links-list"></div>
                         <div class="form-actions"><button class="primary-button" type="submit">Guardar perfil</button><span id="profile-feedback" class="save-feedback" role="status" aria-live="polite"></span></div>
                     </form>
+                </section>
+
+                <section id="personal-stats" class="settings-card account-section">
+                    <div class="account-section-heading">
+                        <div class="account-section-icon" aria-hidden="true">▥</div>
+                        <div><h2>Estadísticas personales</h2><p>Consulta tu actividad registrada en los servidores donde está Bryvex Bot.</p></div>
+                        <button id="personal-stats-refresh" class="quiet-button personal-stats-refresh" type="button">↻ Actualizar</button>
+                    </div>
+                    <div class="personal-stats-tabs" role="tablist" aria-label="Categorías de estadísticas personales">
+                        <button type="button" class="personal-stats-tab active" role="tab" aria-selected="true" data-stats-tab="messages">Mensajes</button>
+                        <button type="button" class="personal-stats-tab" role="tab" aria-selected="false" data-stats-tab="voice">Voz</button>
+                        <button type="button" class="personal-stats-tab" role="tab" aria-selected="false" data-stats-tab="reactions">Reacciones</button>
+                        <button type="button" class="personal-stats-tab" role="tab" aria-selected="false" data-stats-tab="activity">Actividad</button>
+                        <button type="button" class="personal-stats-tab" role="tab" aria-selected="false" data-stats-tab="gaming">Juegos</button>
+                        <button type="button" class="personal-stats-tab" role="tab" aria-selected="false" data-stats-tab="channels">Canales</button>
+                    </div>
+                    <p id="personal-stats-status" class="personal-stats-status" role="status" aria-live="polite">Cargando tus estadísticas…</p>
+                    <div id="personal-stats-content" class="personal-stats-content" aria-live="polite"></div>
+                    <p class="account-description">Las estadísticas empiezan a recopilarse cuando la nueva versión del bot esté desplegada. No es posible reconstruir actividad anterior que no se guardó.</p>
                 </section>
 
                 <section id="rewards" class="settings-card account-section">
