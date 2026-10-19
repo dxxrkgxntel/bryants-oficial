@@ -420,6 +420,42 @@ const lists = {
         ],
         identity: "roleId"
     },
+    storeItems: {
+        title: "Artículos de tienda",
+        category: "Economía y XP",
+        description: "Crea artículos que los miembros pueden comprar con las monedas del servidor. Las compras quedan registradas en su mochila.",
+        model: require("../Models/StoreItem"),
+        fields: [
+            { name: "itemId", label: "ID único (sin espacios)", type: "text", maxLength: 80 },
+            { name: "name", label: "Nombre del artículo", type: "text", maxLength: 100 },
+            { name: "description", label: "Descripción", type: "textarea", maxLength: 300, optional: true },
+            { name: "emoji", label: "Emoji", type: "text", maxLength: 100, optional: true },
+            { name: "price", label: "Precio en monedas", type: "number", min: 1 },
+            { name: "stock", label: "Existencias (-1 = ilimitadas)", type: "number", min: -1, default: -1 },
+            { name: "maxPerUser", label: "Máximo por miembro (0 = ilimitado)", type: "number", min: 0, default: 0 },
+            { name: "enabled", label: "Disponible en tienda", type: "boolean", default: true }
+        ],
+        identity: "itemId"
+    },
+    achievements: {
+        title: "Logros",
+        category: "Economía y XP",
+        description: "Define metas de actividad, progreso y economía. Los miembros pueden consultar sus avances con /achievements.",
+        model: require("../Models/Achievement"),
+        fields: [
+            { name: "achievementId", label: "ID único (sin espacios)", type: "text", maxLength: 80 },
+            { name: "name", label: "Nombre del logro", type: "text", maxLength: 100 },
+            { name: "description", label: "Descripción", type: "textarea", maxLength: 300 },
+            { name: "emoji", label: "Emoji", type: "text", maxLength: 100, optional: true },
+            { name: "category", label: "Categoría", type: "select", options: ["activity", "progression", "economy", "shop"] },
+            { name: "metric", label: "Objetivo que se mide", type: "select", options: ["messages", "levels", "dailyClaims", "workClaims", "itemsPurchased", "coinsEarned"] },
+            { name: "goal", label: "Cantidad necesaria", type: "number", min: 1 },
+            { name: "rewardCoins", label: "Recompensa en monedas", type: "number", min: 0, default: 0 },
+            { name: "announcementChannelId", label: "Canal para anunciar logros", type: "channel", channelTypes: [0], optional: true },
+            { name: "enabled", label: "Logro activo", type: "boolean", default: true }
+        ],
+        identity: "achievementId"
+    },
     bankDonorRoles: {
         title: "Roles de bonificación bancaria",
         category: "Economía y XP",
@@ -445,7 +481,7 @@ const lists = {
     memberEconomy: {
         title: "Miembros",
         category: "Economía y XP",
-        description: "Busca miembros del servidor y consulta su economía: wallet, banco y estadísticas. La mochila estará disponible cuando implementemos el inventario.",
+        description: "Busca miembros del servidor y consulta su economía, mochila de compras y progreso de logros.",
         model: require("../Models/EconomyUser"),
         guildField: "guildId",
         fields: []
