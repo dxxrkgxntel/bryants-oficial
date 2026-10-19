@@ -767,7 +767,7 @@ app.get("/api/account/rewards", requireLogin, async (req, res) => {
     return res.json({
         referralCount: account.referralCount || 0,
         voteCount: account.voteCount || 0,
-        referralUrl: new URL(`/invite/${account.referralCode}`, baseUrl).toString(),
+        referralUrl: `http://bryvex.xyz/invitar?ref=${encodeURIComponent(account.referralCode)}`,
         referralReward: REFERRAL_REWARD,
         voteReward: TOPGG_VOTE_REWARD,
         voteConfigured: Boolean(process.env.TOPGG_WEBHOOK_SECRET && process.env.TOPGG_REWARD_GUILD_ID),
@@ -775,6 +775,12 @@ app.get("/api/account/rewards", requireLogin, async (req, res) => {
         voteRewardGuildId: process.env.TOPGG_REWARD_GUILD_ID || null,
         topggUrl: `https://top.gg/bot/${encodeURIComponent(process.env.DISCORD_CLIENT_ID)}/vote`
     });
+});
+
+app.get("/invitar", (req, res) => {
+    const referralCode = String(req.query.ref || "");
+    if (!/^[A-Za-z0-9_-]{1,64}$/.test(referralCode)) return renderReferralResult(res, "invalid");
+    return res.redirect(302, `/invite/${encodeURIComponent(referralCode)}`);
 });
 
 app.get("/invite/:referralCode", async (req, res) => {
