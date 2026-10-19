@@ -30,7 +30,7 @@ function reply(interaction, title, content, color = 0x8A2BE2, ephemeral = false)
 async function getCatalog(guildId) {
     const [roles, items] = await Promise.all([
         ShopItem.find({ guildId }).lean(),
-        StoreItem.find({ guildId, enabled: { $ne: false } }).sort({ name: 1 }).lean()
+        StoreItem.find({ guildId, enabled: { $ne: false }, $or: [{ stock: -1 }, { stock: { $gt: 0 } }] }).sort({ name: 1 }).lean()
     ]);
     return { roles, items };
 }
