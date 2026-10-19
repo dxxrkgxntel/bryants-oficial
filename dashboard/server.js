@@ -1219,6 +1219,35 @@ app.get("/api/guilds/:guildId/config", requireGuildAdmin, async (req, res) => {
     }
 });
 
+app.get("/api/guilds/:guildId/leaderboards/economy", requireGuildAdmin, async (req, res) => {
+    res.set("Cache-Control", "private, no-store");
+    try {
+        const rows = await EconomyUser.aggregate([
+            { $match: { guildId: req.params.guildId } },
+            { $addFields: {
+                walletValue: { $ifNull: ["$wallet", 0] },
+                bankValue: { $ifNull: ["$bank", 0] }
+            } },
+            { $addFields: { total: { $add: ["$walletValue", "$bankValue"] } } },
+            { $sort: { total: -1, userId: 1 } },
+            { $limit: 10 },
+            { $project: { _id: 0, userId: 1, wallet: "$walletValue", bank: "$bankValue", total: 1 } }
+        ]);
+        const leaderboard = await Promise.all(rows.map(async (row, index) => ({
+            rank: index + 1,
+            userId: row.userId,
+            name: await getBirthdayMemberName(req.params.guildId, row.userId) || "Miembro de Discord",
+            wallet: row.wallet,
+            bank: row.bank,
+            total: row.total
+        })));
+        return res.json({ leaderboard, metric: "wallet_plus_bank", updatedAt: new Date().toISOString() });
+    } catch (error) {
+        console.error("[Dashboard Leaderboard] Error al consultar la economía:", error.message);
+        return res.status(500).json({ error: "No pude cargar la clasificación de economía de este servidor." });
+    }
+});
+
 app.get("/api/guilds/:guildId/members/search", requireGuildAdmin, async (req, res) => {
     const query = String(req.query.q || "").trim();
     if (query.length < 2) return res.json({ members: [] });
