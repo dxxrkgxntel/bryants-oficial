@@ -403,6 +403,9 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
 .overview-next-step > button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 12px; border: 1px solid #c983f255; border-radius: 9px; background: #a34ce326; color: #ecd8fa; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
 .overview-next-step > button:hover { border-color: #d6a0f5; background: #a34ce340; }
 .overview-next-step > button span { font-size: 15px; }
+.overview-next-step-info { border-color: #e2a04a45; background: linear-gradient(110deg, #bd85200d, #19131e); }
+.overview-next-step-info .overview-next-step-marker { border-color: #e2a04a35; background: #bd852018; color: #edc981; }
+.overview-next-step-info .overview-next-step-copy .eyebrow { color: #edc981; }
 .overview-next-step-ready { border-color: #39cc8333; background: linear-gradient(110deg, #39cc830d, #19131e); }
 .overview-next-step-ready .overview-next-step-marker { border-color: #63c89a30; background: #39cc8315; color: #82d9ae; }
 .overview-next-step-ready .overview-next-step-copy .eyebrow { color: #82d9ae; }
