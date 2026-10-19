@@ -137,9 +137,15 @@ function navigateToHome() {
 }
 
 function navigateToModule(key, modules = currentModules) {
-    if (!confirmDiscardChanges()) return;
+    const definitionExists = Boolean(modules && (modules.configurations?.[key] || modules.lists?.[key] || key === "memberEconomy"));
+    if (!definitionExists) {
+        showNotice("No se pudo abrir ese sistema porque ya no está disponible. Recarga el panel e inténtalo de nuevo.", true);
+        return false;
+    }
+    if (!confirmDiscardChanges()) return false;
     activeFormGuard = null;
     renderModule(key, modules);
+    return true;
 }
 
 function escapeHtml(value) {
