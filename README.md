@@ -28,7 +28,7 @@ Mantén el servidor ordenado con herramientas para moderar y automatizar tareas:
 - Banear, expulsar, advertir y silenciar miembros; también retirar sanciones.
 - Limpiar mensajes, con filtros por usuario y por tipo de contenido.
 - Configurar protecciones contra enlaces, invitaciones, spam, menciones excesivas y palabras marcadas.
-- Aplicar medidas contra estafas y controlar los canales permitidos para contenido multimedia.
+- Aplicar medidas contra estafas, detectar posibles raids por entradas masivas y controlar los canales permitidos para contenido multimedia.
 - Centralizar registros y reportes del servidor.
 - Programar la limpieza automática de un canal.
 
