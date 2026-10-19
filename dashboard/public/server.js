@@ -162,7 +162,7 @@ function findUnavailableChannelReferences(modules) {
 function findUnavailableRoleReferences(modules) {
     const availableRoleIds = new Set((resources.roleIds || resources.roles || []).map(role => String(typeof role === "object" ? role.id : role)));
     const findings = new Map();
-    const roleIdPattern = /^\\d{17,20}$/;
+    const roleIdPattern = /^\d{17,20}$/;
     const inspect = (value, moduleKey, definition, parentKey = "", roleContext = false) => {
         if (Array.isArray(value)) {
             for (const item of value) inspect(item, moduleKey, definition, parentKey, roleContext);
