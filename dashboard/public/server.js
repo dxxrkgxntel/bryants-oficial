@@ -2234,11 +2234,11 @@ function assistantReply(question) {
                                 ? "el canal seleccionado no corresponde al tipo que necesita la función"
                                 : "hay permisos que no se pudieron verificar automáticamente y conviene confirmar en Discord";
             const ordered = [recommendation, ...prioritized.filter(item => item !== recommendation)].slice(0, 3);
-            const plan = ordered.map((item, index) => \`\${index + 1}. \${item.title}: \${item.detail}\`).join("\n");
+            const plan = ordered.map((item, index) => `${index + 1}. ${item.title}: ${item.detail}`).join("\n");
             const moreText = findings.length > ordered.length
-                ? \`\nHay \${findings.length - ordered.length} comprobación(es) adicional(es); puedes consultarlas en Comprobaciones.\`
+                ? `\nHay ${findings.length - ordered.length} comprobación(es) adicional(es); puedes consultarlas en Comprobaciones.`
                 : "";
-            return { text: \`Te propongo este orden de trabajo:\n\${plan}\n\nEmpieza por el punto 1 porque \${reason}. Después resuelve los siguientes puntos y vuelve a Comprobaciones para verificar los resultados.\${moreText}\`, actionKey: recommendation.key || "__checks", actionLabel: recommendation.key ? "Abrir primera prioridad" : "Abrir Comprobaciones" };
+            return { text: `Te propongo este orden de trabajo:\n${plan}\n\nEmpieza por el punto 1 porque ${reason}. Después resuelve los siguientes puntos y vuelve a Comprobaciones para verificar los resultados.${moreText}`, actionKey: recommendation.key || "__checks", actionLabel: recommendation.key ? "Abrir primera prioridad" : "Abrir Comprobaciones" };
         }
         const entries = [...Object.entries(currentModules.configurations || {}), ...Object.entries(currentModules.lists || {})];
         const pending = entries
@@ -2253,9 +2253,9 @@ function assistantReply(question) {
             .sort((a, b) => b.requiredCount - a.requiredCount)[0];
         if (pending) {
             const requiredText = pending.requiredCount
-                ? \` Tiene \${pending.requiredCount} ajuste(s) marcado(s) como obligatorio(s), por lo que es un buen punto de partida.\`
+                ? ` Tiene ${pending.requiredCount} ajuste(s) marcado(s) como obligatorio(s), por lo que es un buen punto de partida.`
                 : " Es un buen punto de partida para completar la cobertura de funciones del servidor.";
-            return { text: \`No encuentro incidencias en las comprobaciones disponibles. Te recomiendo configurar primero “\${pending.definition.title}”, que todavía aparece pendiente.\${requiredText} Cuando termines, vuelve a Comprobaciones para validar el resultado.\`, actionKey: pending.key, actionLabel: "Abrir módulo pendiente" };
+            return { text: `No encuentro incidencias en las comprobaciones disponibles. Te recomiendo configurar primero “${pending.definition.title}”, que todavía aparece pendiente.${requiredText} Cuando termines, vuelve a Comprobaciones para validar el resultado.`, actionKey: pending.key, actionLabel: "Abrir módulo pendiente" };
         }
         return { text: "Los módulos disponibles aparecen configurados y no he detectado incidencias en las comprobaciones disponibles. Te recomiendo probar en Discord los flujos principales y revisar Comprobaciones después de cambiar permisos o canales." };
     }
