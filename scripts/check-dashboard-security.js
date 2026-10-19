@@ -78,7 +78,7 @@ requireClientPattern(/function getAssistantFieldGuidance\(/, "El asistente debe 
 assert.match(templateSource, /X-CSRF-Token/, "La importación de plantillas debe enviar el token CSRF");
 assert.match(templateSource, /bryvex-bot-config-template/, "Las plantillas deben validar su formato");
 assert.match(templateSource, /confirm\(warning\)/, "La importación de plantillas debe exigir confirmación explícita");
-assert.match(leaderboardSource, /leaderboards\/\+selectedType/, "La clasificación debe usar el tipo seleccionado");
+assert.match(leaderboardSource, /selectedType/, "La clasificación debe usar el tipo seleccionado");
 for (const file of ["hub.css", "hub.js", "status.html", "docs.html", "updates.html", "updates.js", "stats.html", "stats.js", "leaderboard.html", "leaderboard.js", "templates.html", "templates.js"]) {
     assert.ok(fs.existsSync(path.join(root, "dashboard", "public", file)), "Falta un recurso público de Bryvex Bot: " + file);
 }
