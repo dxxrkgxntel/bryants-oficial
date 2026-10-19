@@ -23,6 +23,7 @@ const economyUser = new Schema({
   diceWins: {type: Number, default: 0},
   diceLosses: {type: Number, default: 0},
   activeBoosts: {type: Array, default: []},
+  inventory: { type: [{ itemId: { type: String, required: true }, name: { type: String, default: "Artículo" }, description: { type: String, default: "" }, emoji: { type: String, default: "📦" }, type: { type: String, enum: ["item", "role"], default: "item" }, quantity: { type: Number, default: 1, min: 0 }, unitPrice: { type: Number, default: 0 }, purchasedAt: { type: Date, default: Date.now }, roleId: { type: String, default: null } }], default: [] },
 });
 
 economyUser.index({ guildId: 1, userId: 1 }, { unique: true });
