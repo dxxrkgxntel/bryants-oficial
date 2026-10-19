@@ -14,7 +14,7 @@ module.exports = {
             // IGNORAR BOTS
             //////////////////////////////////////////////////
 
-            if (!message.guild || message.author?.bot) return;
+            if (!message?.guild || !message.author || message.author.bot) return;
 
             //////////////////////////////////////////////////
             // BUSCAR DATA
