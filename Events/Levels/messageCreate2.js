@@ -4,6 +4,7 @@ const LevelConfig = require("../../Models/LevelConfig");
 const EconomyUser = require("../../Models/EconomyUser");
 const { getLevelSettings } = require("../../Functions/levelSettings");
 const { sendLevelNotification } = require("../../Functions/levelNotification");
+const { trackAchievementProgress } = require("../../Functions/achievementTracker");
 
 function xpNeeded(level) {
     return 5 * (level ** 2) + 50 * level + 100;
@@ -32,6 +33,9 @@ module.exports = {
             message.author.bot ||
             !message.guild
         ) return;
+
+        await trackAchievementProgress(message.guild, message.author, "messages", 1)
+            .catch(error => console.warn("[Achievements] No se pudo registrar el mensaje:", error.message));
 
         ////////////////////////////////////////
         // COOLDOWN POR SERVER + USER
@@ -120,6 +124,8 @@ module.exports = {
             ////////////////////////////////////////
 
             data.level += 1;
+            await trackAchievementProgress(message.guild, message.author, "levels", 1)
+                .catch(error => console.warn("[Achievements] No se pudo registrar el nivel:", error.message));
 
             ////////////////////////////////////////
             // XP SOBRANTE
@@ -142,6 +148,8 @@ module.exports = {
             const reward = data.level * (Number.isFinite(levelConfig?.levelCoinReward) ? levelConfig.levelCoinReward : 0);
             economy.wallet += reward;
             await economy.save();
+            if (reward > 0) await trackAchievementProgress(message.guild, message.author, "coinsEarned", reward)
+                .catch(error => console.warn("[Achievements] No se pudo registrar la recompensa de nivel:", error.message));
 
             const levelChannel = message.guild.channels.cache.get(levelConfig?.levelChannel);
             await sendLevelNotification(levelChannel, levelConfig, "message", {
