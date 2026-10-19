@@ -270,8 +270,8 @@ function renderField(field, value, prefix = "") {
     if (field.type === "setups") return renderSetupsEditor(Array.isArray(value) ? value : []);
     if (field.type === "buttons") return renderButtonEditor(field, Array.isArray(value) ? value : [], prefix);
     if (field.type === "json" && ["prestigeRoles", "prestigeRewards"].includes(field.name)) return renderPrestigeMap(field, value);
-    if (field.type === "boolean" && field.name === "InviteTrackerEnabled") {
-        return `<div class="field checkbox-field invite-tracker-toggle-field"><span><strong>${escapeHtml(field.label)}</strong>${help}</span><button id="${id}" class="invite-tracker-toggle ${safeValue ? "is-active" : ""}" type="button" name="${escapeHtml(field.name)}" data-toggle-field="${escapeHtml(field.name)}" data-enabled="${safeValue ? "true" : "false"}" aria-pressed="${safeValue ? "true" : "false"}">${safeValue ? "ACTIVO" : "DESACTIVADO"}</button></div>`;
+    if (field.type === "boolean" && /^sistema activo$/i.test(String(field.label || "").trim())) {
+        return `<div class="field checkbox-field system-toggle-field"><span><strong>${escapeHtml(field.label)}</strong>${help}</span><button id="${id}" class="system-toggle ${safeValue ? "is-active" : ""}" type="button" name="${escapeHtml(field.name)}" data-toggle-field="${escapeHtml(field.name)}" data-enabled="${safeValue ? "true" : "false"}" aria-pressed="${safeValue ? "true" : "false"}">${safeValue ? "ACTIVO" : "DESACTIVADO"}</button></div>`;
     }
     if (field.type === "boolean") {
         return `<label class="field checkbox-field" for="${id}"><span><strong>${escapeHtml(field.label)}</strong>${help}</span><input id="${id}" name="${escapeHtml(field.name)}" type="checkbox" ${safeValue ? "checked" : ""}></label>`;
@@ -668,10 +668,12 @@ function updatePreview(key, form) {
 function readForm(form, fields) {
     const result = {};
     for (const field of fields) {
-        if (field.type === "boolean" && field.name === "InviteTrackerEnabled") {
-            const toggle = form.querySelector('[data-toggle-field="InviteTrackerEnabled"]');
-            result[field.name] = toggle?.dataset.enabled === "true";
-            continue;
+        if (field.type === "boolean") {
+            const toggle = form.querySelector(`[data-toggle-field="${CSS.escape(field.name)}"]`);
+            if (toggle) {
+                result[field.name] = toggle.dataset.enabled === "true";
+                continue;
+            }
         }
         if (field.type === "buttons") {
             result[field.name] = readButtonRows(form.querySelector(`[data-button-list="${CSS.escape(field.name)}"]`));
