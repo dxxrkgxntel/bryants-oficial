@@ -558,6 +558,39 @@ function serialize(document) {
     return result;
 }
 
+app.get("/api/public/status", async (_req, res) => {
+    res.set("Cache-Control", "no-store");
+    if (publicStatusCache && Date.now() - publicStatusCache.cachedAt < PUBLIC_STATUS_CACHE_TTL) {
+        return res.json(publicStatusCache.payload);
+    }
+
+    let databaseStatus = "operational";
+    if (mongoose.connection.readyState !== 1) databaseStatus = "degraded";
+
+    let discordStatus = "operational";
+    try {
+        const response = await fetch("https://discord.com/api/v10/users/@me", {
+            headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
+            signal: AbortSignal.timeout(5000)
+        });
+        if (!response.ok) discordStatus = response.status === 401 || response.status === 403 ? "down" : "degraded";
+    } catch {
+        discordStatus = "degraded";
+    }
+
+    const payload = {
+        checkedAt: new Date().toISOString(),
+        uptimeSeconds: Math.floor(process.uptime()),
+        components: [
+            { id: "web", name: "Dashboard web", status: "operational", description: "El servidor web está respondiendo a esta solicitud." },
+            { id: "database", name: "Base de datos", status: databaseStatus, description: databaseStatus === "operational" ? "La conexión de MongoDB está activa." : "La conexión de MongoDB no figura como activa." },
+            { id: "discord", name: "API de Discord", status: discordStatus, description: discordStatus === "operational" ? "Discord acepta la autenticación del bot." : discordStatus === "down" ? "Discord rechazó la autenticación del bot. Revisa las credenciales privadas del servicio." : "No se pudo confirmar una respuesta correcta de Discord." }
+        ]
+    };
+    publicStatusCache = { cachedAt: Date.now(), payload };
+    return res.json(payload);
+});
+
 app.get("/healthz", (_req, res) => res.json({ status: "ok" }));
 
 app.get("/invitar", (_req, res) => {
@@ -1564,6 +1597,8 @@ const supportStaffGuildsCache = new Map();
 const supportStaffGuildsPending = new Map();
 const SUPPORT_GUILDS_CACHE_TTL = 60_000;
 const SUPPORT_STAFF_CACHE_TTL = 30_000;
+let publicStatusCache = null;
+const PUBLIC_STATUS_CACHE_TTL = 30_000;
 
 async function supportDiscordBotRequest(url, options = {}) {
     return fetch(`https://discord.com/api/v10${url}`, {
