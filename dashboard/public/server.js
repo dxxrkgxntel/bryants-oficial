@@ -2149,6 +2149,43 @@ function getAssistantModuleGuidance(definition) {
     return parts.join(" ");
 }
 
+function getAssistantFieldGuidance(question, definition) {
+    const query = normalizeSearch(question);
+    const fields = (definition.fields || []).filter(field => field.type !== "section" && field.name);
+    const stopWords = new Set(["como", "que", "para", "por", "donde", "quiero", "puedo", "hacer", "usar", "utilizar", "configurar", "configuro", "configuracion", "ayuda", "modulo", "modulos", "campo", "opcion", "opciones", "significa", "sirve", "hace", "explica", "explicame", "el", "la", "los", "las", "un", "una", "de", "del", "en", "mi", "mis", "me", "se", "y", "es"]);
+    const words = value => normalizeSearch(value).split(/[^a-z0-9]+/).filter(word => word.length > 2 && !stopWords.has(word));
+    const queryWords = new Set(words(query));
+    const ranked = fields.map(field => {
+        const label = field.label || field.name;
+        const searchable = normalizeSearch(`${label} ${field.name} ${field.help || ""}`);
+        const fieldWords = words(`${label} ${field.name}`);
+        const overlap = fieldWords.filter(word => queryWords.has(word)).length;
+        const score = query.includes(normalizeSearch(label)) || query.includes(normalizeSearch(field.name)) ? 0
+            : overlap ? 3 - Math.min(overlap, 2)
+            : 99;
+        return { field, label, score, searchable };
+    }).filter(item => item.score < 99).sort((a, b) => a.score - b.score);
+    if (!ranked.length || (ranked.length > 1 && ranked[0].score === ranked[1].score && ranked[0].score > 0)) return "";
+    const { field, label } = ranked[0];
+    const typeLabels = {
+        text: "texto", textarea: "texto largo", boolean: "interruptor de activación",
+        channel: "canal de Discord", "channel-list": "lista de canales", voice: "canal de voz",
+        category: "categoría de Discord", role: "rol de Discord", "role-list": "lista de roles",
+        number: "número", select: "selector de opciones", "multi-select": "selector de varias opciones"
+    };
+    const details = [];
+    if (field.help) details.push(String(field.help).trim());
+    else details.push(`Este ajuste se introduce como ${typeLabels[field.type] || "un valor de configuración"}.`);
+    if (field.optional) details.push("Es opcional.");
+    else if (field.default === undefined && !["boolean", "section"].includes(field.type)) details.push("No aparece marcado como opcional, así que revisa si tu configuración necesita completarlo.");
+    if (field.default !== undefined) details.push(`Valor predeterminado: ${String(field.default)}.`);
+    if (Array.isArray(field.options) && field.options.length) {
+        const options = field.options.map(option => typeof option === "object" ? option.label || option.name || option.value : option).filter(Boolean);
+        if (options.length) details.push(`Opciones disponibles: ${options.join(", ")}.`);
+    }
+    return `Sobre “${label}”: ${details.join(" ")}`;
+}
+
 function assistantReply(question) {
     const q = normalizeSearch(question);
     const status = getAssistantModuleStatus();
@@ -2227,7 +2264,8 @@ function assistantReply(question) {
                 : " No se ha detectado una incidencia específica en este módulo. Comprueba que esté activado si corresponde, revisa sus canales, roles y permisos, guarda los cambios y prueba la función directamente en Discord.";
             if (!isConfigured) guidance += " Este módulo aparece pendiente de configuración; empieza por completar sus ajustes.";
         } else if (asksHowTo) {
-            guidance = ` ${getAssistantModuleGuidance(matched.definition)}`;
+            const fieldGuidance = getAssistantFieldGuidance(q, matched.definition);
+            guidance = fieldGuidance ? ` ${fieldGuidance}` : ` ${getAssistantModuleGuidance(matched.definition)}`;
         }
         return { text: `“${matched.definition.title}” ${stateText}.${guidance}${asksForHelp ? "" : issueText}`, actionKey: matched.key, actionLabel: "Abrir este módulo" };
     }
