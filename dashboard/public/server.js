@@ -857,6 +857,15 @@ function renderPreviewMarkup(key, values) {
         return `<section class="live-preview social-alert-live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Mensaje Componentes V2 que aparecerá en Discord</small></div>${header}<article class="discord-preview" style="--preview-accent:${alertColor}">${media}<div class="discord-preview-body"><div class="discord-preview-copy">${copy}</div></div></article></section>`;
     }
 
+    if (key === "polls") {
+        const question = String(values.question || "").trim();
+        const options = Array.isArray(values.options) ? values.options.map(option => String(option || "").trim()).filter(Boolean).slice(0, 4) : [];
+        const duration = Math.max(1, Math.min(10080, Number(values.duration) || 60));
+        const optionMarkup = options.length
+            ? options.map((option, index) => `<li><span>${index + 1}️⃣ ${escapeHtml(option)}</span><small>0 votos</small></li>`).join("")
+            : '<li class="poll-preview-empty">Las opciones que escribas aparecerán aquí.</li>';
+        return `<section class="live-preview poll-live-preview" data-preview="polls"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Así se verá la encuesta en Discord</small></div><article class="discord-preview" style="--preview-accent:#5865f2"><div class="discord-preview-body"><div class="discord-preview-copy poll-preview-copy"><small>ENCUESTA · BRYVEX BOT</small><h3>${escapeHtml(question || "Tu pregunta aparecerá aquí")}</h3><hr class="discord-preview-separator"><ol class="poll-preview-options">${optionMarkup}</ol><p class="poll-preview-duration">Duración: ${duration} ${duration === 1 ? "minuto" : "minutos"}</p></div></div></article></section>`;
+    }
     if (key === "weeklyDrop") {
         const description = renderPreviewTemplate(values.description).trim();
         const banner = safePreviewImage(values.banner);
@@ -1369,7 +1378,7 @@ async function renderPollAdmin(editingPoll = null) {
         const activePolls = configuredPolls.filter(poll => !poll.ended).length;
         const registeredPolls = configuredPolls.length;
         const totalVotes = polls.reduce((total, poll) => total + poll.options.reduce((sum, option) => sum + option.voteCount, 0), 0);
-        const form = `<article class="settings-card poll-create-card"><div class="card-heading"><div><div class="eyebrow">PUBLICACIÓN EN DISCORD</div><h2>${editingPoll ? "Editar encuesta" : "Crear encuesta"}</h2></div>${editingPoll ? '<button class="quiet-button" type="button" data-poll-cancel>Cancelar</button>' : ""}</div><p class="card-description">${editingPoll ? `Se actualizará el mensaje en #<span>${escapeHtml(channelName(editingPoll.channelId))}</span>.` : `Se publicará en el canal guardado arriba: #<span>${escapeHtml(channelName(result.configuredChannelId || ""))}</span>.`} La duración se cuenta desde que guardes.</p><form id="poll-form" class="fields-grid"><label class="field poll-full-field"><span>Pregunta</span><input name="question" type="text" maxlength="256" required value="${escapeHtml(editingPoll?.question || "")}" placeholder="¿Qué te gustaría preguntarle al servidor?"></label><label class="field poll-full-field"><span>Opciones <small>(una por línea, entre 2 y 4)</small></span><textarea name="options" rows="4" required placeholder="Opción 1&#10;Opción 2">${escapeHtml(editingPoll?.options.map(option => option.text).join("\n") || "")}</textarea></label><label class="field"><span>Duración (minutos, máximo 7 días)</span><input name="duration" type="number" min="1" max="10080" required value="${editingPoll ? Math.max(1, Math.ceil((new Date(editingPoll.endAt).getTime() - Date.now()) / 60000)) : 60}"></label><div class="poll-form-note">${editingPoll ? "Si cambias las opciones, los votos existentes se reiniciarán para que los resultados no queden asociados a opciones distintas." : "Los miembros podrán cambiar su voto hasta que termine la encuesta."}</div><div class="form-actions poll-full-field"><button class="primary-button" type="submit">${editingPoll ? "Guardar encuesta" : "Publicar encuesta"}</button><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>`;
+        const form = `<article class="settings-card poll-create-card"><div class="card-heading"><div><div class="eyebrow">PUBLICACIÓN EN DISCORD</div><h2>${editingPoll ? "Editar encuesta" : "Crear encuesta"}</h2></div>${editingPoll ? '<button class="quiet-button" type="button" data-poll-cancel>Cancelar</button>' : ""}</div><p class="card-description">${editingPoll ? `Se actualizará el mensaje en #<span>${escapeHtml(channelName(editingPoll.channelId))}</span>.` : `Se publicará en el canal guardado arriba: #<span>${escapeHtml(channelName(result.configuredChannelId || ""))}</span>.`} La duración se cuenta desde que guardes.</p><form id="poll-form" class="fields-grid"><label class="field poll-full-field"><span>Pregunta</span><input name="question" type="text" maxlength="256" required value="${escapeHtml(editingPoll?.question || "")}" placeholder="¿Qué te gustaría preguntarle al servidor?"></label><label class="field poll-full-field"><span>Opciones <small>(una por línea, entre 2 y 4)</small></span><textarea name="options" rows="4" required placeholder="Opción 1&#10;Opción 2">${escapeHtml(editingPoll?.options.map(option => option.text).join("\n") || "")}</textarea></label><label class="field"><span>Duración (minutos, máximo 7 días)</span><input name="duration" type="number" min="1" max="10080" required value="${editingPoll ? Math.max(1, Math.ceil((new Date(editingPoll.endAt).getTime() - Date.now()) / 60000)) : 60}"></label><div class="poll-form-note">${editingPoll ? "Si cambias las opciones, los votos existentes se reiniciarán para que los resultados no queden asociados a opciones distintas." : "Los miembros podrán cambiar su voto hasta que termine la encuesta."}</div><div class="form-actions poll-full-field"><button class="primary-button" type="submit">${editingPoll ? "Guardar encuesta" : "Publicar encuesta"}</button><span class="save-feedback" role="status" aria-live="polite"></span></div></form>${renderPreviewMarkup("polls", { question: editingPoll?.question || "", options: editingPoll?.options?.map(option => option.text) || [], duration: editingPoll ? Math.max(1, Math.ceil((new Date(editingPoll.endAt).getTime() - Date.now()) / 60000)) : 60 })}</article>`;
         const rows = polls.map(poll => {
             const votes = poll.options.reduce((sum, option) => sum + option.voteCount, 0);
             const status = poll.ended ? "Finalizada" : "Activa";
@@ -1378,6 +1387,19 @@ async function renderPollAdmin(editingPoll = null) {
         }).join("");
         container.innerHTML = `${form}<article class="settings-card poll-list-card"><div class="card-heading"><div><div class="eyebrow">GESTIÓN</div><h2>Encuestas creadas</h2></div><button class="quiet-button" type="button" data-poll-refresh>Actualizar</button></div><div class="poll-stats"><div><span>Activas en el canal configurado</span><strong>${activePolls}</strong></div><div><span>Registradas en ese canal</span><strong>${registeredPolls}</strong></div><div><span>Votos acumulados</span><strong>${totalVotes}</strong></div></div><p class="card-description">Los contadores de arriba corresponden al canal configurado, como en <code>/poll list</code>. La lista incluye todas las encuestas del servidor y sus estados.</p><div class="poll-list">${rows || '<p class="empty-state">Todavía no hay encuestas registradas.</p>'}</div></article>`;
 
+        const pollForm = container.querySelector("#poll-form");
+        const updatePollLivePreview = () => {
+            const preview = container.querySelector(".poll-live-preview");
+            if (!preview) return;
+            const options = pollForm.elements.options.value.split(/\r?\n/).map(option => option.trim()).filter(Boolean);
+            preview.outerHTML = renderPreviewMarkup("polls", {
+                question: pollForm.elements.question.value,
+                options,
+                duration: pollForm.elements.duration.value
+            });
+        };
+        pollForm.addEventListener("input", updatePollLivePreview);
+        pollForm.addEventListener("change", updatePollLivePreview);
         container.querySelector("[data-poll-refresh]").addEventListener("click", () => renderPollAdmin());
         container.querySelector("[data-poll-cancel]")?.addEventListener("click", () => renderPollAdmin());
         container.querySelectorAll("[data-poll-edit]").forEach(button => button.addEventListener("click", () => {
