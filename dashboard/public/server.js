@@ -275,6 +275,12 @@ function findConfiguredUnassignableRoles(modules) {
     const welcome = config.welcome;
     if (welcome) addButtons(welcome.Buttons, "welcome", configurations.welcome, "Botón para reclamar rol");
 
+    const prestige = config.prestige;
+    if (prestige?.enabled !== false && prestige?.prestigeRoles && typeof prestige.prestigeRoles === "object") {
+        for (const [level, roleId] of Object.entries(prestige.prestigeRoles)) {
+            if (roleId) add(roleId, "prestige", configurations.prestige, `Rol de prestigio ${level}`);
+        }
+    }
     const levelRewards = (configState.lists?.levelRewards || []);
     for (const item of levelRewards) {
         if (item.roleId) add(item.roleId, "levelRewards", modules.lists?.levelRewards, `Recompensa de nivel ${item.level ?? ""}`.trim());
@@ -356,7 +362,7 @@ function renderHome(guild, modules) {
         ? `<section class="overview-integrity"><div class="overview-integrity-heading"><span aria-hidden="true">i</span><div><strong>No se pudo comprobar la asignación de roles configurados</strong><small>Vuelve a cargar el panel para verificar permisos y jerarquía del bot.</small></div></div></section>`
         : configuredUnassignableRoles.length
             ? `<section class="overview-integrity overview-integrity-warning"><div class="overview-integrity-heading"><span aria-hidden="true">!</span><div><strong>${configuredUnassignableRoles.length} asignaciones de roles podrían fallar</strong><small>Estos roles están usados por funciones de asignación y el bot no tiene permiso o jerarquía suficiente para entregarlos. No se modificó ninguna configuración.</small></div></div><div class="overview-integrity-links">${configuredUnassignableRoles.slice(0, 8).map(item => `<button type="button" data-overview-module="${escapeHtml(item.key)}"><span>@${escapeHtml(item.roleName)}</span><small>${escapeHtml(item.title)} · ${escapeHtml(item.source)} · ${escapeHtml(item.reason)} · Revisar →</small></button>`).join("")}${configuredUnassignableRoles.length > 8 ? `<span class="overview-more">y ${configuredUnassignableRoles.length - 8} asignaciones más</span>` : ""}</div></section>`
-            : `<section class="overview-integrity overview-integrity-ok"><div class="overview-integrity-heading"><span aria-hidden="true">✓</span><div><strong>Los roles configurados para asignación son gestionables</strong><small>Se revisaron autoroles, roles de cumpleaños y boosts, botones de reclamación, recompensas de nivel y tienda de roles.</small></div></div></section>`;
+            : `<section class="overview-integrity overview-integrity-ok"><div class="overview-integrity-heading"><span aria-hidden="true">✓</span><div><strong>Los roles configurados para asignación son gestionables</strong><small>Se revisaron autoroles, roles de cumpleaños y boosts, botones de reclamación, recompensas de nivel, prestigios y tienda de roles.</small></div></div></section>`;
     const unavailableRoles = findUnavailableRoleReferences(modules);
     const roleIntegrity = unavailableRoles.length
         ? `<section class="overview-integrity overview-integrity-warning"><div class="overview-integrity-heading"><span aria-hidden="true">!</span><div><strong>${unavailableRoles.length} referencias de rol necesitan revisión</strong><small>Estos roles guardados no aparecen entre los roles actuales del servidor. Puede que se hayan eliminado o que la referencia pertenezca a otro servidor.</small></div></div><div class="overview-integrity-links">${unavailableRoles.slice(0, 6).map(item => `<button type="button" data-overview-module="${escapeHtml(item.key)}"><span>${escapeHtml(item.title)}</span><small>Revisar configuración →</small></button>`).join("")}${unavailableRoles.length > 6 ? `<span class="overview-more">y ${unavailableRoles.length - 6} referencias más</span>` : ""}</div></section>`
