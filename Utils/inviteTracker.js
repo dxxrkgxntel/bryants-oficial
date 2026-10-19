@@ -118,7 +118,7 @@ async function handleMemberJoin(member) {
         const invitedUser = `<@${member.id}>`;
         const inviterText = inviter ? `<@${inviter.id}>` : "¿?";
         const inviteCountText = inviter ? String(totalInvites ?? "no disponible") : "no disponible";
-        const message = `**${invitedUser}** 𝘍𝘶𝘦 𝘪𝘯𝘷𝘪𝘵𝘢𝘥𝘰 𝘱𝘰𝘳 ${inviterText} 𝘈𝘩𝘰𝘳𝘢 𝘵𝘪𝘦𝘯𝘦 ${inviteCountText} invites.`;
+        const message = `**${invitedUser}** Fue invitado por ${inviterText}. Ahora tiene ${inviteCountText} invites.`;
         await channel.send({ content: message });
     } catch (error) {
         console.error(`[INVITE TRACKER] No se pudo enviar el log de entrada en ${guild.id}:`, error);
