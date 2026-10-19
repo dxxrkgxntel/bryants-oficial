@@ -1,4 +1,4 @@
-const { increment, safeMapKey } = require("../../Functions/personalStats");
+const { addDuration, safeMapKey } = require("../../Functions/personalStats");
 
 const presenceSessions = new Map();
 
@@ -26,8 +26,8 @@ module.exports = {
             const seconds = Math.floor((now - previous.startedAt) / 1000);
             if (seconds > 0 && seconds < 24 * 60 * 60) {
                 try {
-                    await increment(user.id, guild.id, "activitySeconds", seconds, previous.status, new Date());
-                    if (previous.game) await increment(user.id, guild.id, "gamingSeconds", seconds, safeMapKey(previous.game), new Date());
+                    await addDuration(user.id, guild.id, "activitySeconds", seconds, new Date(previous.startedAt), new Date(), previous.status);
+                    if (previous.game) await addDuration(user.id, guild.id, "gamingSeconds", seconds, new Date(previous.startedAt), new Date(), safeMapKey(previous.game));
                 } catch (error) {
                     console.error("[Personal Stats] No se pudo registrar actividad:", error.message);
                 }
