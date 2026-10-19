@@ -124,7 +124,8 @@ function makeOAuthUrl(state) {
 
 async function discordRequest(url, accessToken) {
     const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${accessToken}` }
+        headers: { Authorization: `Bearer ${accessToken}` },
+        signal: AbortSignal.timeout(8000)
     });
     if (!response.ok) {
         const error = new Error(`Discord respondió ${response.status}`);
@@ -177,7 +178,8 @@ async function refreshOAuthToken(req) {
     const response = await fetch("https://discord.com/api/oauth2/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body
+        body,
+        signal: AbortSignal.timeout(8000)
     });
     if (!response.ok) return false;
 
@@ -362,10 +364,12 @@ function cleanFields(fields, input, requireAll = false) {
 async function fetchGuildResources(guildId) {
     const [channelsResponse, rolesResponse] = await Promise.all([
         fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {
-            headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` }
+            headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
+            signal: AbortSignal.timeout(8000)
         }),
         fetch(`https://discord.com/api/v10/guilds/${guildId}/roles`, {
-            headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` }
+            headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
+            signal: AbortSignal.timeout(8000)
         })
     ]);
     if (!channelsResponse.ok || !rolesResponse.ok) throw new Error("No pude consultar los canales y roles de Discord.");
@@ -499,6 +503,55 @@ async function discordBotRequest(url, { method = "GET", body } = {}) {
         throw error;
     }
     return payload;
+}
+
+async function validateAssignableRoleIds(guildId, rawRoleIds) {
+    const roleIds = [...new Set((rawRoleIds || []).filter(id => typeof id === "string" && /^\\d{17,20}$/.test(id)))];
+    if (!roleIds.length) return;
+
+    const [{ roles }, bot, member] = await Promise.all([
+        fetchGuildResources(guildId),
+        discordBotRequest("https://discord.com/api/v10/users/@me"),
+        discordBotRequest(`https://discord.com/api/v10/guilds/${guildId}/members/${(await discordBotRequest("https://discord.com/api/v10/users/@me")).id}`)
+    ]);
+    const roleMap = new Map(roles.map(role => [role.id, role]));
+    const botRoleIds = new Set([guildId, ...(member.roles || [])]);
+    const botHighestPosition = Math.max(0, ...[...botRoleIds].map(id => roleMap.get(id)?.position || 0));
+    let permissions = 0n;
+    for (const id of botRoleIds) {
+        try { permissions |= BigInt(roleMap.get(id)?.permissions || "0"); } catch { /* Ignore malformed permission bits. */ }
+    }
+    const canManageRoles = (permissions & (1n << 3n)) !== 0n || (permissions & (1n << 28n)) !== 0n;
+    if (!canManageRoles) throw new Error("Bryvex Bot necesita el permiso Gestionar roles para asignar los roles seleccionados.");
+
+    for (const roleId of roleIds) {
+        const role = roleMap.get(roleId);
+        if (!role || role.id === guildId) throw new Error("Selecciona un rol asignable que pertenezca a este servidor.");
+        if (role.managed) throw new Error(`El rol ${role.name} está administrado por una integración y Discord no permite asignarlo manualmente.`);
+        if (role.position >= botHighestPosition) throw new Error(`El rol ${role.name} está al mismo nivel o por encima del rol más alto de Bryvex Bot. Sube el rol del bot en la jerarquía de Discord antes de guardarlo.`);
+    }
+}
+
+function getAssignableRoleIdsForConfiguration(moduleKey, values) {
+    const fieldsByModule = {
+        autoroles: ["userRole", "botRole"],
+        birthday: ["roleId"],
+        boosts: ["boosterRole", "boosterVipRole", "boosterLegendRole"]
+    };
+    const ids = [];
+    for (const field of fieldsByModule[moduleKey] || []) {
+        if (typeof values[field] === "string") ids.push(values[field]);
+    }
+    const buttonFields = moduleKey === "welcome" ? ["Buttons"] : moduleKey === "boosts" ? ["boostButtons"] : [];
+    for (const field of buttonFields) {
+        for (const button of Array.isArray(values[field]) ? values[field] : []) {
+            if (button?.action === "role" && typeof button.roleId === "string") ids.push(button.roleId);
+        }
+    }
+    if (moduleKey === "prestige" && values.prestigeRoles && typeof values.prestigeRoles === "object") {
+        ids.push(...Object.values(values.prestigeRoles).filter(value => typeof value === "string"));
+    }
+    return ids;
 }
 
 async function validateDiscordReferences(guildId, fields, values) {
@@ -1130,12 +1183,14 @@ app.get("/api/guilds", requireLogin, async (req, res) => {
 });
 
 app.get("/api/guilds/:guildId/resources", requireGuildAdmin, async (req, res) => {
+    res.set("Cache-Control", "private, no-store");
     try {
         const guildId = req.params.guildId;
         const [resources, guildResponse] = await Promise.all([
             fetchGuildResources(guildId),
             fetch(`https://discord.com/api/v10/guilds/${guildId}`, {
-                headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` }
+                headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
+                signal: AbortSignal.timeout(8000)
             })
         ]);
         let channelPermissions = null;
@@ -1230,6 +1285,7 @@ app.get("/api/guilds/:guildId/birthday-members/names", requireGuildAdmin, async 
 });
 
 app.get("/api/guilds/:guildId/config", requireGuildAdmin, async (req, res) => {
+    res.set("Cache-Control", "private, no-store");
     try {
         const configResults = await Promise.all(Object.entries(configurations).map(async ([key, definition]) => {
             if (key === "memberEconomy") return [key, { configured: true }];
@@ -1482,6 +1538,7 @@ app.put("/api/guilds/:guildId/config/:module", requireLogin, requireCsrf, requir
             }
         }
         await validateDiscordReferences(req.params.guildId, definition.fields, update);
+        await validateAssignableRoleIds(req.params.guildId, getAssignableRoleIdsForConfiguration(req.params.module, update));
         if (req.params.module === "antiInvites") {
             const config = await definition.model.findOne({ guildId: req.params.guildId }).lean();
             const nextEnabled = Object.prototype.hasOwnProperty.call(update, "enabled")
@@ -1636,6 +1693,7 @@ app.post("/api/guilds/:guildId/lists/:list", requireLogin, requireCsrf, requireG
         const data = cleanFields(definition.fields, req.body, true);
         if (definition.identity && !data[definition.identity]) return res.status(400).json({ error: "Completa el campo identificador." });
         await validateDiscordReferences(req.params.guildId, definition.fields, data);
+        if (["levelRewards", "shopItems"].includes(req.params.list) && data.roleId) await validateAssignableRoleIds(req.params.guildId, [data.roleId]);
         if (definition.identity && await definition.model.exists({ guildId: req.params.guildId, [definition.identity]: data[definition.identity] })) {
             return res.status(409).json({ error: "Ya existe un elemento con ese identificador." });
         }
@@ -1689,6 +1747,7 @@ app.delete("/api/guilds/:guildId/lists/:list/:recordId", requireLogin, requireCs
 });
 
 app.get("/api/guilds/:guildId/audit", requireGuildAdmin, async (req, res) => {
+    res.set("Cache-Control", "private, no-store");
     const page = Math.max(1, Math.min(10_000, Number.parseInt(req.query.page, 10) || 1));
     const allowedPageSizes = [10, 25, 50];
     const requestedPageSize = Number.parseInt(req.query.perPage, 10) || 25;
