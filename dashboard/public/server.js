@@ -513,13 +513,40 @@ function renderHome(guild, modules) {
         { keys: ["inviteTracker", "stats"], title: "Mejora el seguimiento del servidor", detail: "Activa el seguimiento de invitaciones y las estadísticas del servidor.", category: "Seguimiento", priority: 3 },
         { keys: ["levelSettings", "levels", "economy", "socialAlerts"], title: "Activa la participación", detail: "Añade incentivos y avisos para mantener a tu comunidad activa.", category: "Participación", priority: 4 }
     ];
+    const diagnosticRecommendations = [];
+    const homeMissingRequiredSettings = findMissingRequiredSettings(modules);
+    const homeChannelTypeMismatches = findChannelTypeMismatches(modules);
+    if (homeMissingRequiredSettings.length) {
+        const issue = homeMissingRequiredSettings[0];
+        diagnosticRecommendations.push({
+            category: "Diagnóstico",
+            title: "Completa un ajuste obligatorio",
+            detail: issue.title + " tiene un campo requerido vacío: " + issue.field + ".",
+            moduleKey: issue.key,
+            moduleTitle: issue.title,
+            pendingCount: homeMissingRequiredSettings.length
+        });
+    }
+    if (homeChannelTypeMismatches.length) {
+        const issue = homeChannelTypeMismatches[0];
+        diagnosticRecommendations.push({
+            category: "Diagnóstico",
+            title: "Corrige un canal incompatible",
+            detail: issue.title + " tiene un canal seleccionado que no coincide con el tipo esperado: #" + issue.channelName + ".",
+            moduleKey: issue.key,
+            moduleTitle: issue.title,
+            pendingCount: homeChannelTypeMismatches.length
+        });
+    }
     const recommendations = recommendationOrder.map(item => {
         const available = item.keys.filter(key => modules.configurations[key] || modules.lists[key]);
         if (!available.length) return null;
         const pending = available.filter(key => !isModuleConfigured(key));
         if (!pending.length) return null;
         return { ...item, moduleKey: pending[0], moduleTitle: (modules.configurations[pending[0]] || modules.lists[pending[0]]).title, pendingCount: pending.length };
-    }).filter(Boolean).slice(0, 3);
+    }).filter(Boolean);
+    recommendations.unshift(...diagnosticRecommendations);
+    recommendations.splice(3);
     const intelligenceStatus = recommendations.length
         ? "Hay mejoras que puedes aplicar"
         : pendingEntries.length
