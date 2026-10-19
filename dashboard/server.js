@@ -13,6 +13,7 @@ const DashboardAccount = require("../Models/DashboardAccount");
 const DashboardReferral = require("../Models/DashboardReferral");
 const DashboardAuditLog = require("../Models/DashboardAuditLog");
 const EconomyUser = require("../Models/EconomyUser");
+const Level = require("../Models/Level");
 const SocialAlertState = require("../Models/SocialAlertState");
 const PersonalStatsDaily = require("../Models/PersonalStatsDaily");
 
@@ -589,6 +590,41 @@ app.get("/api/public/status", async (_req, res) => {
     };
     publicStatusCache = { cachedAt: Date.now(), payload };
     return res.json(payload);
+});
+
+let publicReleasesCache = null;
+const PUBLIC_RELEASES_CACHE_TTL = 5 * 60_000;
+
+app.get("/api/public/updates", async (_req, res) => {
+    res.set("Cache-Control", "public, max-age=60");
+    if (publicReleasesCache && Date.now() - publicReleasesCache.cachedAt < PUBLIC_RELEASES_CACHE_TTL) {
+        return res.json(publicReleasesCache.payload);
+    }
+    try {
+        const response = await fetch("https://api.github.com/repos/dxxrkgxntel/bryants-oficial/releases?per_page=10", {
+            headers: { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" },
+            signal: AbortSignal.timeout(5000)
+        });
+        if (!response.ok) throw new Error("GitHub respondió " + response.status);
+        const releases = await response.json();
+        const payload = {
+            updatedAt: new Date().toISOString(),
+            releases: Array.isArray(releases) ? releases.filter(item => !item.draft).map(item => ({
+                name: String(item.name || item.tag_name || "Versión").slice(0, 120),
+                tag: String(item.tag_name || "").slice(0, 80),
+                url: String(item.html_url || ""),
+                publishedAt: item.published_at || null,
+                prerelease: Boolean(item.prerelease),
+                notes: String(item.body || "").slice(0, 6000)
+            })) : []
+        };
+        publicReleasesCache = { cachedAt: Date.now(), payload };
+        return res.json(payload);
+    } catch (error) {
+        if (publicReleasesCache) return res.json({ ...publicReleasesCache.payload, stale: true });
+        console.warn("[Dashboard Updates] No se pudieron consultar las releases de GitHub:", error.message);
+        return res.status(502).json({ error: "Las versiones publicadas no están disponibles en este momento." });
+    }
 });
 
 app.get("/healthz", (_req, res) => res.json({ status: "ok" }));
@@ -1245,6 +1281,72 @@ app.get("/api/guilds/:guildId/leaderboards/economy", requireGuildAdmin, async (r
     } catch (error) {
         console.error("[Dashboard Leaderboard] Error al consultar la economía:", error.message);
         return res.status(500).json({ error: "No pude cargar la clasificación de economía de este servidor." });
+    }
+});
+
+app.get("/api/guilds/:guildId/leaderboards/experience", requireGuildAdmin, async (req, res) => {
+    res.set("Cache-Control", "private, no-store");
+    try {
+        const rows = await Level.find({ guildId: req.params.guildId, $or: [{ xp: { $gt: 0 } }, { level: { $gt: 0 } }, { prestige: { $gt: 0 } }] })
+            .sort({ level: -1, xp: -1, prestige: -1, userId: 1 }).limit(10).select({ _id: 0, userId: 1, xp: 1, level: 1, prestige: 1 }).lean();
+        const leaderboard = await Promise.all(rows.map(async (row, index) => ({
+            rank: index + 1, userId: row.userId,
+            name: await getBirthdayMemberName(req.params.guildId, row.userId) || "Miembro de Discord",
+            xp: Number(row.xp) || 0, level: Number(row.level) || 0, prestige: Number(row.prestige) || 0
+        })));
+        return res.json({ leaderboard, metric: "level_xp_prestige", updatedAt: new Date().toISOString() });
+    } catch (error) {
+        console.error("[Dashboard Leaderboard] Error al consultar la experiencia:", error.message);
+        return res.status(500).json({ error: "No pude cargar la clasificación de experiencia de este servidor." });
+    }
+});
+
+app.get("/api/guilds/:guildId/stats/overview", requireGuildAdmin, async (req, res) => {
+    res.set("Cache-Control", "private, no-store");
+    try {
+        const now = new Date();
+        const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 29));
+        const startDay = start.toISOString().slice(0, 10);
+        const guildId = req.params.guildId;
+        const [daily, levelSummary, economySummary, auditCount] = await Promise.all([
+            PersonalStatsDaily.aggregate([
+                { $match: { guildId, day: { $gte: startDay } } },
+                { $group: { _id: "$day", messages: { $sum: "$messages" }, voiceSeconds: { $sum: "$voiceSeconds" }, reactionsGiven: { $sum: "$reactionsGiven" }, reactionsReceived: { $sum: "$reactionsReceived" } } },
+                { $sort: { _id: 1 } }
+            ]),
+            Level.aggregate([
+                { $match: { guildId } },
+                { $group: { _id: null, members: { $sum: 1 }, totalXp: { $sum: "$xp" }, highestLevel: { $max: "$level" }, activeMembers: { $sum: { $cond: [{ $gt: ["$xp", 0] }, 1, 0] } } } }
+            ]),
+            EconomyUser.countDocuments({ guildId }),
+            DashboardAuditLog.countDocuments({ guildId, createdAt: { $gte: start } })
+        ]);
+        const byDay = new Map(daily.map(row => [row._id, row]));
+        const series = [];
+        for (let offset = 0; offset < 30; offset++) {
+            const date = new Date(start.getTime() + offset * 86400000);
+            const day = date.toISOString().slice(0, 10);
+            const row = byDay.get(day) || {};
+            series.push({ day, messages: row.messages || 0, voiceSeconds: row.voiceSeconds || 0, reactionsGiven: row.reactionsGiven || 0, reactionsReceived: row.reactionsReceived || 0 });
+        }
+        const levels = levelSummary[0] || { members: 0, totalXp: 0, highestLevel: 0, activeMembers: 0 };
+        return res.json({
+            period: { start: startDay, end: now.toISOString().slice(0, 10), days: 30 },
+            activity: {
+                messages: series.reduce((sum, item) => sum + item.messages, 0),
+                voiceSeconds: series.reduce((sum, item) => sum + item.voiceSeconds, 0),
+                reactionsGiven: series.reduce((sum, item) => sum + item.reactionsGiven, 0),
+                reactionsReceived: series.reduce((sum, item) => sum + item.reactionsReceived, 0)
+            },
+            levels: { trackedMembers: levels.members, activeMembers: levels.activeMembers, totalXp: levels.totalXp, highestLevel: levels.highestLevel },
+            economy: { trackedUsers: economySummary },
+            dashboard: { auditActions: auditCount },
+            daily: series,
+            updatedAt: now.toISOString()
+        });
+    } catch (error) {
+        console.error("[Dashboard Stats] Error al consultar estadísticas:", error.message);
+        return res.status(500).json({ error: "No pude cargar las estadísticas de este servidor." });
     }
 });
 
@@ -1967,8 +2069,8 @@ app.get("/api/version", (_req, res) => {
             "server.js", "app.js", "account.js", "support.js",
             "appearance.js", "account-menu.js", "styles.css", "support.css",
             "version-check.js", "personal-stats.js", "preview-server-icon.js",
-            "hub.css", "hub.js", "status.html", "docs.html", "updates.html",
-            "stats.html", "leaderboard.html", "leaderboard.js", "templates.html", "templates.js"
+            "hub.css", "hub.js", "status.html", "docs.html", "updates.html", "updates.js",
+            "stats.html", "stats.js", "leaderboard.html", "leaderboard.js", "templates.html", "templates.js"
         ];
         const hash = crypto.createHash("sha256");
         for (const file of trackedFiles) {
