@@ -272,6 +272,39 @@ function findUnavailableRoleReferences(modules) {
     return [...findings.values()];
 }
 
+function findChannelTypeMismatches(modules) {
+    const channelById = new Map((resources.channels || []).map(channel => [String(channel.id), channel]));
+    const findings = new Map();
+    const inspectDefinition = (key, definition, data) => {
+        if (!data || !Array.isArray(definition?.fields)) return;
+        for (const field of definition.fields) {
+            if (!["channel", "channel-list", "voice", "category"].includes(field.type) || !Array.isArray(field.channelTypes)) continue;
+            const value = getNested(data, field.name);
+            const ids = Array.isArray(value) ? value : [value];
+            for (const rawId of ids) {
+                const id = String(rawId || "");
+                if (!/^\d{17,20}$/.test(id)) continue;
+                const channel = channelById.get(id);
+                if (!channel || field.channelTypes.includes(Number(channel.type))) continue;
+                const identity = [key, field.name, id].join(":");
+                if (!findings.has(identity)) findings.set(identity, {
+                    key,
+                    title: definition.title || key,
+                    field: field.label || field.name,
+                    channelName: channel.name
+                });
+            }
+        }
+    };
+    for (const [key, definition] of Object.entries(modules.configurations || {})) {
+        inspectDefinition(key, definition, configState.configurations?.[key]);
+    }
+    for (const [key, definition] of Object.entries(modules.lists || {})) {
+        for (const record of configState.lists?.[key] || []) inspectDefinition(key, definition, record);
+    }
+    return [...findings.values()];
+}
+
 function findConfiguredUnassignableRoles(modules) {
     const findings = new Map();
     const roleManagement = resources.roleManagement;
@@ -360,6 +393,7 @@ function renderChecks(modules = currentModules) {
     const channelIntegrity = unavailableChannels.length
         ? `<section class="overview-integrity overview-integrity-warning"><div class="overview-integrity-heading"><span aria-hidden="true">!</span><div><strong>${unavailableChannels.length} referencias de canal necesitan revisión</strong><small>Estos canales guardados no aparecen en la lista actual del servidor. Puede que se hayan eliminado o que la referencia pertenezca a otro servidor.</small></div></div><div class="overview-integrity-links">${unavailableChannels.slice(0, 6).map(item => `<button type="button" data-overview-module="${escapeHtml(item.key)}"><span>${escapeHtml(item.title)}</span><small>Revisar configuración →</small></button>`).join("")}${unavailableChannels.length > 6 ? `<span class="overview-more">y ${unavailableChannels.length - 6} referencias más</span>` : ""}</div></section>`
         : `<section class="overview-integrity overview-integrity-ok"><div class="overview-integrity-heading"><span aria-hidden="true">✓</span><div><strong>Sin referencias de canal ausentes detectadas</strong><small>Las referencias de canal guardadas que se pudieron comprobar coinciden con los canales actuales del servidor.</small></div></div></section>`;
+    const channelTypeMismatches = findChannelTypeMismatches(modules);
     const permissionIssues = resources.channelPermissions
         ? findConfiguredChannelPermissionIssues(modules)
         : null;
@@ -408,7 +442,10 @@ function renderChecks(modules = currentModules) {
     const roleIntegrity = unavailableRoles.length
         ? `<section class="overview-integrity overview-integrity-warning"><div class="overview-integrity-heading"><span aria-hidden="true">!</span><div><strong>${unavailableRoles.length} referencias de rol necesitan revisión</strong><small>Estos roles guardados no aparecen entre los roles actuales del servidor. Puede que se hayan eliminado o que la referencia pertenezca a otro servidor.</small></div></div><div class="overview-integrity-links">${unavailableRoles.slice(0, 6).map(item => `<button type="button" data-overview-module="${escapeHtml(item.key)}"><span>${escapeHtml(item.title)}</span><small>Revisar configuración →</small></button>`).join("")}${unavailableRoles.length > 6 ? `<span class="overview-more">y ${unavailableRoles.length - 6} referencias más</span>` : ""}</div></section>`
         : `<section class="overview-integrity overview-integrity-ok"><div class="overview-integrity-heading"><span aria-hidden="true">✓</span><div><strong>Sin referencias de rol ausentes detectadas</strong><small>Las referencias de rol guardadas que se pudieron comprobar coinciden con los roles actuales del servidor.</small></div></div></section>`;
-    content.innerHTML = `<div class="checks-page"><header class="checks-page-heading"><div class="eyebrow">ESTADO DEL SERVIDOR</div><h2>Comprobaciones de Bryvex</h2><p>Revisa permisos, roles y referencias guardadas para detectar problemas antes de que afecten a los sistemas de tu comunidad.</p></header><section class="checks-summary"><article><span>Sistemas pendientes</span><strong>${pendingEntries.length}</strong></article><article><span>Referencias de canal</span><strong>${unavailableChannels.length}</strong></article><article><span>Referencias de rol</span><strong>${unavailableRoles.length}</strong></article><article><span>Permisos de canal</span><strong>${permissionIssues === null ? "—" : permissionIssues.length}</strong></article></section>${setupGuide}${pendingSummary}<div class="checks-section-heading"><div class="eyebrow">DIAGNÓSTICO</div><h3>Permisos e integridad de la configuración</h3><p>Los resultados se calculan con los datos disponibles del servidor y la configuración guardada.</p></div>${channelIntegrity}${roleIntegrity}${permissionIntegrity}${roleManagementIntegrity}${configuredRoleIntegrity}</div>`;
+    const channelTypeIntegrity = channelTypeMismatches.length
+        ? '<section class="overview-integrity overview-integrity-warning"><div class="overview-integrity-heading"><span aria-hidden="true">!</span><div><strong>' + channelTypeMismatches.length + ' canales no coinciden con el tipo esperado</strong><small>Algunos sistemas tienen seleccionado un canal que no coincide con el tipo admitido por ese ajuste.</small></div></div><div class="overview-integrity-links">' + channelTypeMismatches.slice(0, 6).map(item => '<button type="button" data-overview-module="' + escapeHtml(item.key) + '"><span>' + escapeHtml(item.title) + ' · #' + escapeHtml(item.channelName) + '</span><small>' + escapeHtml(item.field) + ' · Tipo de canal incompatible · Revisar →</small></button>').join("") + (channelTypeMismatches.length > 6 ? '<span class="overview-more">y ' + (channelTypeMismatches.length - 6) + ' casos más</span>' : '') + '</div></section>'
+        : '<section class="overview-integrity overview-integrity-ok"><div class="overview-integrity-heading"><span aria-hidden="true">✓</span><div><strong>Tipos de canal compatibles</strong><small>Los canales seleccionados coinciden con los tipos definidos para los ajustes que se pudieron comprobar.</small></div></div></section>';
+    content.innerHTML = `<div class="checks-page"><header class="checks-page-heading"><div class="eyebrow">ESTADO DEL SERVIDOR</div><h2>Comprobaciones de Bryvex</h2><p>Revisa permisos, roles y referencias guardadas para detectar problemas antes de que afecten a los sistemas de tu comunidad.</p></header><section class="checks-summary"><article><span>Sistemas pendientes</span><strong>${pendingEntries.length}</strong></article><article><span>Referencias de canal</span><strong>${unavailableChannels.length}</strong></article><article><span>Referencias de rol</span><strong>${unavailableRoles.length}</strong></article><article><span>Permisos de canal</span><strong>${permissionIssues === null ? "—" : permissionIssues.length}</strong></article></section>${setupGuide}${pendingSummary}<div class="checks-section-heading"><div class="eyebrow">DIAGNÓSTICO</div><h3>Permisos e integridad de la configuración</h3><p>Los resultados se calculan con los datos disponibles del servidor y la configuración guardada.</p></div>${channelIntegrity}${channelTypeIntegrity}${roleIntegrity}${permissionIntegrity}${roleManagementIntegrity}${configuredRoleIntegrity}</div>`;
     content.querySelectorAll("[data-overview-module]").forEach(button => button.addEventListener("click", () => navigateToModule(button.dataset.overviewModule, modules)));
 }
 
