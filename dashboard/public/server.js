@@ -2236,7 +2236,7 @@ function assistantReply(question) {
                             : /tipo de canal/i.test(recommendation.title)
                                 ? "el canal seleccionado no corresponde al tipo que necesita la función"
                                 : "hay permisos que no se pudieron verificar automáticamente y conviene confirmar en Discord";
-            return { text: \`Prioridad recomendada: “\${recommendation.title}”. \${recommendation.detail} Lo pongo primero porque \${reason}. Corrige ese punto y vuelve a Comprobaciones; después continúa con las siguientes incidencias.\`, actionKey: first?.key || "__checks", actionLabel: first ? "Abrir módulo recomendado" : "Abrir Comprobaciones" };
+            return { text: `Prioridad recomendada: “${recommendation.title}”. ${recommendation.detail} Lo pongo primero porque ${reason}. Corrige ese punto y vuelve a Comprobaciones; después continúa con las siguientes incidencias.`, actionKey: first?.key || "__checks", actionLabel: first ? "Abrir módulo recomendado" : "Abrir Comprobaciones" };
         }
         const entries = [...Object.entries(currentModules.configurations || {}), ...Object.entries(currentModules.lists || {})];
         const pending = entries
@@ -2251,9 +2251,9 @@ function assistantReply(question) {
             .sort((a, b) => b.requiredCount - a.requiredCount)[0];
         if (pending) {
             const requiredText = pending.requiredCount
-                ? \` Tiene \${pending.requiredCount} ajuste(s) marcado(s) como obligatorio(s), por lo que es un buen punto de partida.\`
+                ? ` Tiene ${pending.requiredCount} ajuste(s) marcado(s) como obligatorio(s), por lo que es un buen punto de partida.`
                 : " Es un buen punto de partida para completar la cobertura de funciones del servidor.";
-            return { text: \`No encuentro incidencias en las comprobaciones disponibles. Te recomiendo configurar primero “\${pending.definition.title}”, que todavía aparece pendiente.\${requiredText} Cuando termines, vuelve a Comprobaciones para validar el resultado.\`, actionKey: pending.key, actionLabel: "Abrir módulo pendiente" };
+            return { text: `No encuentro incidencias en las comprobaciones disponibles. Te recomiendo configurar primero “${pending.definition.title}”, que todavía aparece pendiente.${requiredText} Cuando termines, vuelve a Comprobaciones para validar el resultado.`, actionKey: pending.key, actionLabel: "Abrir módulo pendiente" };
         }
         return { text: "Los módulos disponibles aparecen configurados y no he detectado incidencias en las comprobaciones disponibles. Te recomiendo probar en Discord los flujos principales y revisar Comprobaciones después de cambiar permisos o canales." };
     }
