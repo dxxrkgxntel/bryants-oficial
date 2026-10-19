@@ -26,6 +26,14 @@ module.exports = {
             //////////////////////////////////////////////////
 
             if (oldMessage.content === newMessage.content) return;
+            const removedMentions = [];
+            for (const user of oldMessage.mentions?.users?.values?.() || []) {
+                if (!newMessage.mentions?.users?.has(user.id)) removedMentions.push(`<@${user.id}>`);
+            }
+            for (const role of oldMessage.mentions?.roles?.values?.() || []) {
+                if (!newMessage.mentions?.roles?.has(role.id)) removedMentions.push(`<@&${role.id}>`);
+            }
+            if (oldMessage.mentions?.everyone && !newMessage.mentions?.everyone) removedMentions.push("@everyone/@here");
 
             //////////////////////////////////////////////////
             // DATA
@@ -85,6 +93,7 @@ module.exports = {
                         }
                     )
 
+                    .addFields(...(removedMentions.length ? [{ name: "⚠️ Posible ghost ping (menciones retiradas)", value: removedMentions.join(", ").slice(0, 1024) }] : []))
                     .setThumbnail('https://i.imgur.com/2xTDN4W.png')
                     .setImage('https://i.imgur.com/joAe57D.png')
 
@@ -99,7 +108,7 @@ module.exports = {
             // SEND
             //////////////////////////////////////////////////
 
-            await channel.send({embeds: [embed]});
+            await channel.send({embeds: [embed], allowedMentions: { parse: [] }});
 
         } catch (error) {
 
