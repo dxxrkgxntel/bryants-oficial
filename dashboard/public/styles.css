@@ -1036,3 +1036,42 @@ button:disabled { opacity: .55; cursor: wait !important; }
 .trophy-member-empty { margin: 0; padding: 12px; font-size: 13px; }
 .trophy-member-selection { margin: 0; color: var(--muted, #a8a0b5); font-size: 13px; }
 @media (max-width: 720px) { .trophy-member-autocomplete { grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; } .trophy-member-autocomplete > label { grid-column: 1 / -1; } .trophy-member-search-wrap { grid-column: 1 / -1; } }
+
+
+.trophy-live-preview { display: grid; gap: 12px; margin: 18px 0 22px; }
+.trophy-preview-context { color: var(--muted, #a8a0b5); font-size: 12px; }
+.trophy-preview-context strong { color: var(--text, #f6f2fc); font-weight: 650; }
+.trophy-preview-message { display: flex; align-items: flex-start; gap: 12px; padding: 15px; border-radius: 12px; background: #313338; color: #dbdee1; }
+.trophy-preview-avatar { display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; border-radius: 50%; background: var(--preview-accent, #0000ff); color: #fff; font-size: 20px; }
+.trophy-preview-message-body { min-width: 0; flex: 1; }
+.trophy-preview-author { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px; color: #f2f3f5; font-size: 13px; font-weight: 700; }
+.trophy-preview-author small { color: #aeb2b8; font-size: 10px; font-weight: 500; }
+.trophy-preview-message p { margin: 8px 0 0; overflow-wrap: anywhere; font-size: 13px; line-height: 1.5; }
+.trophy-preview-muted { color: #aeb2b8 !important; font-size: 12px !important; }
+.trophy-preview-plain { border-left: 4px solid var(--preview-accent, #0000ff); }
+.trophy-preview-embed { display: flex; overflow: hidden; border-radius: 8px; background: #313338; color: #dbdee1; }
+.trophy-preview-embed::before { content: ""; flex: 0 0 4px; background: var(--preview-accent, #0000ff); }
+.trophy-preview-embed-body { padding: 16px; min-width: 0; flex: 1; }
+.trophy-preview-embed h3 { margin: 14px 0 10px; color: #f2f3f5; font-size: 16px; }
+.trophy-preview-embed p { margin: 7px 0; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.trophy-preview-fields { display: flex; gap: 30px; margin-top: 15px; }
+.trophy-preview-fields div { display: grid; gap: 4px; }
+.trophy-preview-fields small { color: #b5bac1; font-size: 11px; }
+.trophy-preview-fields strong { color: #f2f3f5; font-size: 13px; }
+.trophy-preview-card { display: flex; flex-direction: column; justify-content: space-between; gap: 14px; min-height: 220px; padding: clamp(18px, 4vw, 30px); border: 1px solid rgba(255,255,255,.13); border-radius: 16px; color: #fff; background-color: #111827; background-size: cover; background-position: center; box-shadow: 0 12px 32px rgba(0,0,0,.2); }
+.trophy-preview-kicker { font-size: 11px; font-weight: 800; letter-spacing: .13em; }
+.trophy-preview-card-title { display: flex; align-items: center; gap: 14px; font-size: clamp(22px, 4vw, 32px); }
+.trophy-preview-card-title span { display: grid; place-items: center; width: 58px; height: 58px; flex: 0 0 58px; border: 1px solid rgba(255,255,255,.35); border-radius: 18px; background: rgba(255,255,255,.12); font-size: 30px; }
+.trophy-preview-card p { margin: 0; color: rgba(255,255,255,.82); }
+.trophy-preview-card-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding-top: 13px; border-top: 1px solid rgba(255,255,255,.25); color: #fef08a; font-size: 12px; letter-spacing: .06em; }
+.trophy-preview-card > small { color: rgba(255,255,255,.8); overflow-wrap: anywhere; font-size: 11px; }
+.trophy-preview-components { display: flex; overflow: hidden; border: 1px solid var(--border, #30283d); border-radius: 12px; background: var(--surface, #17121f); color: var(--text, #f6f2fc); }
+.trophy-preview-components-accent { flex: 0 0 5px; background: var(--preview-accent, #0000ff); }
+.trophy-preview-components-content { min-width: 0; padding: 18px; }
+.trophy-preview-components h3 { margin: 0 0 14px; font-size: 12px; letter-spacing: .1em; }
+.trophy-preview-components h4 { margin: 0 0 8px; font-size: 20px; }
+.trophy-preview-components p { margin: 8px 0; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.trophy-preview-components-points { display: inline-flex; margin: 8px 0; padding: 6px 9px; border: 1px solid var(--border, #30283d); border-radius: 8px; font-size: 11px; font-weight: 800; }
+.trophy-preview-silent { display: flex; align-items: flex-start; gap: 12px; padding: 16px; border: 1px solid var(--border, #30283d); border-radius: 12px; background: var(--surface, #17121f); }
+.trophy-preview-icon { font-size: 24px; }
+.trophy-preview-silent p { margin: 5px 0 0; color: var(--muted, #a8a0b5); font-size: 13px; line-height: 1.5; }
