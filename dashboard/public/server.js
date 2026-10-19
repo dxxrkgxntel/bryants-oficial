@@ -997,6 +997,23 @@ function renderPreviewTemplate(template, overrides = {}) {
 }
 
 function renderPreviewMarkup(key, values) {
+    if (key === "trophySettings") {
+        const mode = ["card", "components", "embed", "text", "dm", "silent"].includes(values.mode) ? values.mode : "embed";
+        const color = /^#[0-9a-f]{6}$/i.test(String(values.color || "")) ? values.color : "#0000FF";
+        const title = String(values.title || "TROFEO DESBLOQUEADO");
+        const template = renderPreviewTemplate(values.template || "{user} desbloqueó {achievement} (+{points} puntos)", { user: "@Miembro", achievement: "King of Spam", points: "20", rarity: "RARO" });
+        const channel = String(values.channel || "").trim();
+        const channelLabel = channel ? "# canal seleccionado" : "# canal de anuncios";
+        const heading = `<div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA · TROFEOS</span><small>Ejemplo de desbloqueo con los ajustes actuales</small></div>`;
+        if (mode === "silent") return `<section class="live-preview trophy-live-preview" data-preview="trophySettings">${heading}<article class="trophy-preview-silent"><span class="trophy-preview-icon">🔕</span><div><strong>Modo silencioso</strong><p>Los trofeos y puntos se registran, pero no se publica ningún anuncio.</p></div></article></section>`;
+        if (mode === "dm") return `<section class="live-preview trophy-live-preview" data-preview="trophySettings">${heading}<div class="trophy-preview-context">Vista simulada de mensaje directo a <strong>@Miembro</strong></div><article class="trophy-preview-message" style="--preview-accent:${color}"><div class="trophy-preview-avatar">🏆</div><div class="trophy-preview-message-body"><div class="trophy-preview-author">Bryvex Bot <small>APP · ahora</small></div><p>${escapeHtml(template)}</p><p class="trophy-preview-muted">King of Spam · Envía 10.000 mensajes</p></div></article></section>`;
+        if (mode === "text") return `<section class="live-preview trophy-live-preview" data-preview="trophySettings">${heading}<div class="trophy-preview-context">Publicación de texto en <strong>${escapeHtml(channelLabel)}</strong></div><article class="trophy-preview-message trophy-preview-plain" style="--preview-accent:${color}"><div class="trophy-preview-avatar">🏆</div><div class="trophy-preview-message-body"><div class="trophy-preview-author">Bryvex Bot <small>APP · ahora</small></div><p>${escapeHtml(template)}</p></div></article></section>`;
+        const imageUrl = safePreviewImage(values.background);
+        const imageStyle = imageUrl ? `background-image:linear-gradient(90deg,rgba(8,10,22,.86),rgba(8,10,22,.4)),url('${escapeHtml(imageUrl)}');` : "";
+        if (mode === "card") return `<section class="live-preview trophy-live-preview" data-preview="trophySettings">${heading}<div class="trophy-preview-context">Tarjeta de imagen en <strong>${escapeHtml(channelLabel)}</strong></div><article class="trophy-preview-card" style="--preview-accent:${color};${imageStyle}"><span class="trophy-preview-kicker">${escapeHtml(title)}</span><div class="trophy-preview-card-title"><span>🏆</span><strong>King of Spam</strong></div><p>Envía 10.000 mensajes</p><div class="trophy-preview-card-footer"><span>RARO</span><strong>+20 PTS</strong></div><small>${escapeHtml(template)}</small></article></section>`;
+        if (mode === "components") return `<section class="live-preview trophy-live-preview" data-preview="trophySettings">${heading}<div class="trophy-preview-context">Components V2 en <strong>${escapeHtml(channelLabel)}</strong></div><article class="trophy-preview-components" style="--preview-accent:${color}"><div class="trophy-preview-components-accent"></div><div class="trophy-preview-components-content"><h3>🏆 ${escapeHtml(title)}</h3><h4>👑 King of Spam</h4><p>Envía 10.000 mensajes</p><div class="trophy-preview-components-points">RARO · +20 PTS</div><p class="trophy-preview-muted">${escapeHtml(template)}</p></div></article></section>`;
+        return `<section class="live-preview trophy-live-preview" data-preview="trophySettings">${heading}<div class="trophy-preview-context">Embed clásico en <strong>${escapeHtml(channelLabel)}</strong></div><article class="trophy-preview-embed" style="--preview-accent:${color}"><div class="trophy-preview-embed-body"><div class="trophy-preview-author">Bryvex Bot <small>APP · ahora</small></div><h3>🏆 ${escapeHtml(title)}</h3><p><strong>King of Spam</strong></p><p>Envía 10.000 mensajes</p><p>${escapeHtml(template)}</p><div class="trophy-preview-fields"><div><small>Rareza</small><strong>RARO</strong></div><div><small>Puntos</small><strong>+20</strong></div></div></div></article></section>`;
+    }
     const color = validPreviewColor(values.color);
     const banner = safePreviewImage(values.banner || values.image);
     const thumbnail = safePreviewImage(values.thumbnail);
@@ -1070,6 +1087,7 @@ function renderPreviewMarkup(key, values) {
 
 function previewValues(key, form) {
     const read = name => form.elements.namedItem(name)?.value || "";
+    if (key === "trophySettings") return { mode: read("announcementMode") || "embed", template: read("announcementTemplate"), channel: read("announcementChannelId"), title: read("cardTitle"), color: read("cardColor"), background: read("cardBackgroundUrl") };
     if (key === "socialAlerts") return { title: read("title"), description: read("messageTemplate"), color: read("color"), banner: read("image"), avatarUrl: read("avatarUrl"), displayName: read("displayName"), platform: read("platform") };
     if (key === "welcome") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail"), buttons: form.querySelector('[data-button-list="Buttons"]') ? readButtonRows(form.querySelector('[data-button-list="Buttons"]')) : [], sendDM: form.elements.namedItem("SendDM")?.checked, dmTitle: read("DMTitle"), dmDescription: read("DMMessage"), dmColor: read("DMColor"), dmBanner: read("DMBanner"), dmThumbnail: read("DMThumbnail") };
     if (key === "leaves") return { title: read("Title"), description: read("MessageDes"), color: read("Color"), banner: read("Banner"), thumbnail: read("Thumbnail") };
@@ -1080,6 +1098,7 @@ function previewValues(key, form) {
 }
 
 function renderPreview(key, data) {
+    if (key === "trophySettings") return renderPreviewMarkup(key, { mode: data.announcementMode || "embed", template: data.announcementTemplate, channel: data.announcementChannelId, title: data.cardTitle, color: data.cardColor, background: data.cardBackgroundUrl });
     if (!["welcome", "leaves", "boosts", "birthday", "levelSettings", "weeklyDrop", "socialAlerts"].includes(key)) return "";
     const values = key === "socialAlerts"
         ? { title: data.title, description: data.messageTemplate, color: data.color, banner: data.image, avatarUrl: data.avatarUrl, displayName: data.displayName, platform: data.platform }
