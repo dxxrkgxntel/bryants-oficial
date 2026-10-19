@@ -506,8 +506,9 @@ async function discordBotRequest(url, { method = "GET", body } = {}) {
 }
 
 async function validateAssignableRoleIds(guildId, rawRoleIds) {
-    const roleIds = [...new Set((rawRoleIds || []).filter(id => typeof id === "string" && /^\d{17,20}$/.test(id)))];
+    const roleIds = [...new Set((rawRoleIds || []).filter(id => id !== null && id !== undefined && id !== ""))];
     if (!roleIds.length) return;
+    if (roleIds.some(id => typeof id !== "string" || !/^\d{17,20}$/.test(id))) throw new Error("Hay un ID de rol inválido. Selecciona los roles directamente desde Discord.");
 
     const [{ roles }, bot] = await Promise.all([
         fetchGuildResources(guildId),
