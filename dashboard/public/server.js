@@ -897,7 +897,10 @@ function readForm(form, fields) {
         else if (field.type === "string-list") value = element.value.split(/\r?\n/).map(item => item.trim()).filter(Boolean);
         else if (field.type === "json") {
             try { value = JSON.parse(element.value); } catch { throw new Error(`${field.label}: revisa el JSON.`); }
-        } else if (field.type === "number") value = Number(element.value);
+        } else if (field.type === "number") {
+            const rawValue = element.value.trim();
+            value = rawValue === "" && field.optional ? null : rawValue === "" ? "" : Number(rawValue);
+        }
         else value = element.value;
         result[field.name] = value;
     }
