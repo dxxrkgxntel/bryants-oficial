@@ -1,6 +1,7 @@
 (() => {
   const select = document.querySelector("#leaderboard-guild");
   const refresh = document.querySelector("#leaderboard-refresh");
+  const type = document.querySelector("#leaderboard-type");
   const message = document.querySelector("#leaderboard-message");
   const results = document.querySelector("#leaderboard-results");
   const meta = document.querySelector("#leaderboard-meta");
@@ -20,9 +21,10 @@
     refresh.disabled = true;
     showMessage("Cargando clasificación…");
     try {
-      const data = await api("/api/guilds/"+encodeURIComponent(guildId)+"/leaderboards/economy");
+      const selectedType = type.value || "economy";
+      const data = await api("/api/guilds/"+encodeURIComponent(guildId)+"/leaderboards/"+selectedType);
       if (!data.leaderboard?.length) { showMessage("Todavía no hay balances registrados para este servidor."); meta.textContent = ""; return; }
-      results.innerHTML = data.leaderboard.map(item => `<div class="hub-status-row"><div><strong><span style="color:#d8aaff;display:inline-block;min-width:38px">#${item.rank}</span> ${esc(item.name)}</strong><small>Cartera: ${money(item.wallet)} · Banco: ${money(item.bank)}</small></div><span class="hub-pill ok">${money(item.total)} monedas</span></div>`).join("");
+      results.innerHTML = data.leaderboard.map(item => selectedType === "economy" ? `<div class="hub-status-row"><div><strong><span style="color:#d8aaff;display:inline-block;min-width:38px">#${item.rank}</span> ${esc(item.name)}</strong><small>Cartera: ${money(item.wallet)} · Banco: ${money(item.bank)}</small></div><span class="hub-pill ok">${money(item.total)} monedas</span></div>` : `<div class="hub-status-row"><div><strong><span style="color:#d8aaff;display:inline-block;min-width:38px">#${item.rank}</span> ${esc(item.name)}</strong><small>Nivel ${money(item.level)} · Prestigio ${money(item.prestige)}</small></div><span class="hub-pill ok">${money(item.xp)} XP</span></div>`).join("");
       message.hidden = true;
       results.hidden = false;
       meta.textContent = "Actualizado: "+new Date(data.updatedAt).toLocaleString("es-DO")+". Se muestran hasta 10 miembros.";
@@ -43,6 +45,7 @@
     } catch (error) { showMessage(error.message); }
   };
   select.addEventListener("change",loadLeaderboard);
+  type.addEventListener("change",loadLeaderboard);
   refresh.addEventListener("click",loadLeaderboard);
   init();
 })();
