@@ -42,6 +42,10 @@ module.exports = {
             //////////////////////////////////////////////////
 
             const content = message.content?.slice(0, 1000) || "Sin contenido";
+            const deletedMentions = [];
+            if (message.mentions?.users?.size) deletedMentions.push(...message.mentions.users.map(user => `<@${user.id}>`));
+            if (message.mentions?.roles?.size) deletedMentions.push(...message.mentions.roles.map(role => `<@&${role.id}>`));
+            if (message.mentions?.everyone) deletedMentions.push("@everyone/@here");
 
             //////////////////////////////////////////////////
             // EMBED
@@ -53,6 +57,7 @@ module.exports = {
                     .setColor("#8A2BE2")
                     .setTitle("🗑️ - Mensaje Eliminado")
                     .setDescription(`> Un mensaje fue eliminado.\n\n` +`👤 Autor: ${message.author}\n` +`📍 Canal: ${message.channel}\n\n` +`💬 Contenido:\n` +`\`\`\`\n${content}\n\`\`\``)
+                    .addFields(...(deletedMentions.length ? [{ name: "⚠️ Posible ghost ping", value: deletedMentions.join(", ").slice(0, 1024) }] : []))
                     .setThumbnail('https://i.imgur.com/2xTDN4W.png')
                     .setImage('https://i.imgur.com/joAe57D.png')
 
@@ -60,7 +65,7 @@ module.exports = {
             // ENVIAR
             //////////////////////////////////////////////////
 
-            await channel.send({embeds: [embed]});
+            await channel.send({embeds: [embed], allowedMentions: { parse: [] }});
 
         } catch (error) {
 
