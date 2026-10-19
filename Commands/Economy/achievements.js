@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, MessageFlags } = require("discord.js");
 const Achievement = require("../../Models/Achievement");
 const UserAchievement = require("../../Models/UserAchievement");
+const { ensureDefaultAchievements } = require("../../Functions/achievementTracker");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -10,6 +11,7 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
         const target = interaction.options.getUser("usuario") || interaction.user;
+        await ensureDefaultAchievements(interaction.guild.id);
         const [definitions, progress] = await Promise.all([
             Achievement.find({ guildId: interaction.guild.id, enabled: true }).sort({ category: 1, goal: 1, name: 1 }).lean(),
             UserAchievement.find({ guildId: interaction.guild.id, userId: target.id }).lean()
