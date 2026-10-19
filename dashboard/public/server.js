@@ -1366,13 +1366,22 @@ function renderMemberEconomy(definition) {
             const { member, economy } = response;
             const name = member.nick || member.globalName || member.username;
             const wallet = Number(economy.wallet || 0), bank = Number(economy.bank || 0);
+            const inventory = Array.isArray(economy.inventory) ? economy.inventory : [];
+            const achievements = Array.isArray(response.achievements) ? response.achievements : [];
             const stats = [["Racha diaria", economy.dailyStreak], ["Apuestas ganadas", economy.gamblesWon], ["Apuestas perdidas", economy.gamblesLost], ["Racha de apuestas", economy.gambleStreak], ["Jackpots", economy.jackpots], ["Récord de ganancia", economy.biggestWin], ["Deuda", economy.debt], ["Préstamo activo", economy.loanTaken ? "Sí" : "No"], ["Donado al banco", economy.bankDonated], ["Victorias de dados", economy.diceWins], ["Derrotas de dados", economy.diceLosses], ["Potenciadores activos", Array.isArray(economy.activeBoosts) ? economy.activeBoosts.length : 0]]
                 .filter(([, value]) => value != null).map(([label, value]) => `<div class="member-economy-stat"><span>${label}</span><strong>${typeof value === "number" ? value.toLocaleString("es-ES") : value}</strong></div>`).join("");
             label.textContent = name;
             savedBalance = { wallet, bank };
             updateButton.hidden = false;
             const renderBalance = (balance) => {
-                detail.innerHTML = `<div class="member-economy-heading"><div><span class="eyebrow">Economía del miembro</span><h3>${escapeHtml(name)}</h3></div></div><div class="member-balance-grid"><label class="member-balance-field"><span>Cartera</span><input class="member-balance-input" name="wallet" type="number" min="0" max="99999999999" step="1" inputmode="numeric" value="${balance.wallet}"><small>Monedas disponibles en mano</small></label><label class="member-balance-field"><span>Banco</span><input class="member-balance-input" name="bank" type="number" min="0" max="99999999999" step="1" inputmode="numeric" value="${balance.bank}"><small>Monedas guardadas</small></label></div><div class="member-economy-stats">${stats}</div><article class="member-backpack"><h3>Mochila</h3><p>La gestión del inventario estará disponible cuando se implemente el sistema de objetos.</p></article>`;
+                const backpack = inventory.length
+                    ? inventory.map(item => `<div class="member-backpack-item"><span class="member-backpack-emoji">${escapeHtml(item.emoji || (item.type === "role" ? "🎭" : "📦"))}</span><div class="member-backpack-copy"><strong>${escapeHtml(item.name || item.itemId || "Artículo")}</strong><small>${item.type === "role" ? "Rol comprado" : "Artículo comprado"} · ${Math.max(0, Number(item.quantity || 0)).toLocaleString("es-ES")} unidad(es)</small><small>Precio unitario: ${Math.max(0, Number(item.unitPrice || 0)).toLocaleString("es-ES")} monedas</small></div><span class="member-backpack-quantity">×${Math.max(0, Number(item.quantity || 0)).toLocaleString("es-ES")}</span></div>`).join("")
+                    : '<p class="member-backpack-empty">Este miembro todavía no ha comprado artículos en la tienda.</p>';
+                const unlockedAchievements = achievements.filter(item => item.unlockedAt).length;
+                const achievementMarkup = achievements.length
+                    ? `<div class="member-achievement-list">${achievements.slice(0, 8).map(item => `<div class="member-achievement-item"><span>${escapeHtml(item.emoji || "🏆")}</span><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.description || "")}</small></div><b>${item.unlockedAt ? "Desbloqueado" : `${Math.min(Number(item.progress || 0), Number(item.goal || 1)).toLocaleString("es-ES")}/${Number(item.goal || 1).toLocaleString("es-ES")}`}</b></div>`).join("")}${achievements.length > 8 ? `<small>Y ${achievements.length - 8} logros más.</small>` : ""}</div>`
+                    : '<p class="member-backpack-empty">Todavía no hay logros configurados para este servidor.</p>';
+                detail.innerHTML = `<div class="member-economy-heading"><div><span class="eyebrow">Economía del miembro</span><h3>${escapeHtml(name)}</h3></div></div><div class="member-balance-grid"><label class="member-balance-field"><span>Cartera</span><input class="member-balance-input" name="wallet" type="number" min="0" max="99999999999" step="1" inputmode="numeric" value="${balance.wallet}"><small>Monedas disponibles en mano</small></label><label class="member-balance-field"><span>Banco</span><input class="member-balance-input" name="bank" type="number" min="0" max="99999999999" step="1" inputmode="numeric" value="${balance.bank}"><small>Monedas guardadas</small></label></div><div class="member-economy-stats">${stats}</div><article class="member-backpack"><div class="member-backpack-heading"><h3>Mochila</h3><span>${inventory.length} tipo(s) de compra</span></div>${backpack}</article><article class="member-backpack member-achievements"><div class="member-backpack-heading"><h3>Logros</h3><span>${unlockedAchievements}/${achievements.length} desbloqueados</span></div>${achievementMarkup}</article>`;
                 detail.querySelectorAll(".member-balance-input").forEach(input => input.addEventListener("input", refreshSaveState));
                 refreshSaveState();
             };
@@ -1646,6 +1655,8 @@ function getRecordLabel(key, record, definition) {
     const roleName = role?.name || (record.roleId ? "Rol no disponible" : "");
     if (key === "levelRewards") return `Nivel ${record.level} · ${roleName}`;
     if (key === "shopItems") return `${roleName} · ${Number(record.price || 0).toLocaleString("es")} monedas`;
+    if (key === "storeItems") return `${record.emoji || "📦"} ${record.name || record.itemId} · ${Number(record.price || 0).toLocaleString("es")} monedas`;
+    if (key === "achievements") return `${record.emoji || "🏆"} ${record.name || record.achievementId} · ${record.goal || 0} ${record.metric || ""}`;
     if (key === "bankDonorRoles") return `${roleName} · bonificación desde ${Number(record.requiredAmount || 0).toLocaleString("es")}`;
     if (key === "birthdayMembers") return record.discordName || (record.userId ? `Cargando nombre… · ${record.day}/${record.month}` : "Miembro sin ID de Discord");
     if (key === "socialAlerts") return `${record.platform || "Kick"} · ${record.slug || "Canal sin nombre"}${record.enabled === false ? " · desactivada" : ""}`;
