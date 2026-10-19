@@ -4,6 +4,7 @@ const voiceSessions = new Map();
 
 module.exports = {
     name: "voiceStateUpdate",
+    voiceSessions,
     async execute(oldState, newState) {
         const member = newState.member || oldState.member;
         const guild = newState.guild || oldState.guild;
