@@ -1310,15 +1310,21 @@ app.put("/api/guilds/:guildId/config/:module", requireLogin, requireCsrf, requir
         await validateDiscordReferences(req.params.guildId, definition.fields, update);
         if (req.params.module === "antiInvites") {
             const config = await definition.model.findOne({ guildId: req.params.guildId }).lean();
+            const nextEnabled = Object.prototype.hasOwnProperty.call(update, "enabled")
+                ? update.enabled
+                : Boolean(config?.enabled);
+            const nextLogChannelId = Object.prototype.hasOwnProperty.call(update, "logChannelId")
+                ? update.logChannelId
+                : config?.logChannelId || null;
             const rulesUrl = `https://discord.com/api/v10/guilds/${req.params.guildId}/auto-moderation/rules`;
             const rules = await discordBotRequest(rulesUrl);
             const rule = rules.find(item => item.id === config?.ruleId || item.name === "Bryants Anti-Invites");
             let ruleId = rule?.id || null;
-            if (update.enabled) {
+            if (nextEnabled) {
                 const body = {
                     name: "Bryants Anti-Invites", event_type: 1, trigger_type: 1,
                     trigger_metadata: { regex_patterns: ["(?:https?:\\/\\/)?(?:www\\.)?(?:discord\\.gg|discord(?:app)?\\.com\\/invite)\\/[A-Za-z0-9-]+"] },
-                    actions: [{ type: 1, metadata: { custom_message: "No puedes compartir invitaciones a otros servidores." } }, ...(update.logChannelId ? [{ type: 2, metadata: { channel_id: update.logChannelId } }] : [])],
+                    actions: [{ type: 1, metadata: { custom_message: "No puedes compartir invitaciones a otros servidores." } }, ...(nextLogChannelId ? [{ type: 2, metadata: { channel_id: nextLogChannelId } }] : [])],
                     enabled: true, exempt_roles: [], exempt_channels: []
                 };
                 const saved = rule
