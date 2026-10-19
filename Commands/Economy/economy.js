@@ -12,6 +12,7 @@ const EconomyUser = require("../../Models/EconomyUser");
 const RobCooldown = require("../../Models/RobCooldown");
 const { runGlobalBank, runDonate, runLoan, runPayDebt, runDistribute } = require("../../Utils/economyBankHandlers");
 const questHandler = require("../../Functions/questHandler");
+const { trackAchievementProgress } = require("../../Functions/achievementTracker");
 
 const BALANCE_BANNER = "https://i.imgur.com/joAe57D.png";
 const WORK_BANNER = "https://i.imgur.com/joAe57D.png";
@@ -96,6 +97,10 @@ async function runDaily(interaction) {
  user.lastDaily = now;
  user.lastDailyDate = today;
  await user.save();
+ await trackAchievementProgress(interaction.guild, interaction.user, "dailyClaims", 1)
+  .catch(error => console.warn("[Achievements] No se pudo registrar daily:", error.message));
+ await trackAchievementProgress(interaction.guild, interaction.user, "coinsEarned", totalReward)
+  .catch(error => console.warn("[Achievements] No se pudo registrar monedas ganadas:", error.message));
 
  const text =
   `✨ Has reclamado tu recompensa diaria correctamente.\n\n` +
@@ -124,6 +129,10 @@ async function runWork(interaction) {
  user.wallet += amount;
  user.lastWork = now;
  await user.save();
+ await trackAchievementProgress(interaction.guild, interaction.user, "workClaims", 1)
+  .catch(error => console.warn("[Achievements] No se pudo registrar work:", error.message));
+ await trackAchievementProgress(interaction.guild, interaction.user, "coinsEarned", amount)
+  .catch(error => console.warn("[Achievements] No se pudo registrar monedas ganadas:", error.message));
 
  const text =
   `✨ ${interaction.user} trabajó como:\n> ${randomJob}\n\n` +
