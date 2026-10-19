@@ -808,3 +808,13 @@ button:disabled { opacity: .55; cursor: wait !important; }
 
 .level-preview-list { display: grid; gap: 14px; }
 .level-preview-panel { display: grid; gap: 8px; }
+
+
+/* Invite Tracker active-state control */
+.invite-tracker-toggle-field { align-items: center; }
+.invite-tracker-toggle-field > span { min-width: 0; }
+.invite-tracker-toggle { min-width: 128px; min-height: 38px; padding: 9px 13px; border: 1px solid #ffffff24; border-radius: 9px; background: #ffffff0b; color: #c8bdcf; font: inherit; font-size: 11px; font-weight: 800; letter-spacing: .06em; cursor: pointer; transition: background .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease; }
+.invite-tracker-toggle:hover { border-color: #bd75ec77; }
+.invite-tracker-toggle.is-active { border-color: #39cc8370; background: #39cc831c; color: #82e7ae; box-shadow: inset 0 0 0 1px #39cc8315; }
+.invite-tracker-toggle:focus-visible { outline: 2px solid #c47af2; outline-offset: 2px; }
+@media (max-width: 560px) { .invite-tracker-toggle-field { align-items: flex-start; gap: 12px; } .invite-tracker-toggle { min-width: 112px; } }
