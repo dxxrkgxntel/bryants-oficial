@@ -131,6 +131,33 @@ function showSavedState(form) {
     setSaveFeedback(form, "Cambios guardados", "success");
 }
 
+function findUnavailableChannelReferences(modules) {
+    const availableChannelIds = new Set((resources.channels || []).map(channel => String(channel.id)));
+    const findings = new Map();
+    const channelIdPattern = /^\d{17,20}$/;
+
+    const inspect = (value, moduleKey, definition, parentKey = "") => {
+        if (Array.isArray(value)) {
+            for (const item of value) inspect(item, moduleKey, definition, parentKey);
+            return;
+        }
+        if (!value || typeof value !== "object") {
+            if (/channel/i.test(parentKey) && typeof value === "string" && channelIdPattern.test(value) && !availableChannelIds.has(value)) {
+                const identity = `${moduleKey}:${value}`;
+                if (!findings.has(identity)) findings.set(identity, { key: moduleKey, title: definition?.title || moduleKey, channelId: value });
+            }
+            return;
+        }
+        for (const [key, nested] of Object.entries(value)) {
+            if (["_id", "__v", "guildId", "userId"].includes(key)) continue;
+            inspect(nested, moduleKey, definition, key);
+        }
+    };
+
+    for (const [key, definition] of Object.entries(modules.configurations || {})) inspect(configState.configurations?.[key], key, definition);
+    for (const [key, definition] of Object.entries(modules.lists || {})) inspect(configState.lists?.[key], key, definition);
+    return [...findings.values()];
+}
 function renderHome(guild, modules) {
     currentModule = "__home";
     nav.querySelectorAll(".nav-item").forEach(button => {
@@ -176,7 +203,11 @@ function renderHome(guild, modules) {
     const pendingSummary = pendingEntries.length
         ? `<section class="overview-pending"><div><span class="overview-pending-icon" aria-hidden="true">✦</span><div><strong>${pendingEntries.length} ${pendingEntries.length === 1 ? "sistema pendiente" : "sistemas pendientes"}</strong><small>Completa su configuración para dejar todo a tu gusto.</small></div></div><div class="overview-pending-links">${pendingEntries.slice(0, 5).map(([key, definition]) => `<button class="overview-pending-link" type="button" data-overview-module="${escapeHtml(key)}">${escapeHtml(definition.title)}<span>Configurar →</span></button>`).join("")}${pendingEntries.length > 5 ? `<span class="overview-more">y ${pendingEntries.length - 5} más</span>` : ""}</div></section>`
         : `<section class="overview-all-ready"><span aria-hidden="true">✓</span><div><strong>¡Todo está configurado!</strong><small>Tus sistemas principales ya están listos.</small></div></section>`;
-    content.innerHTML = `<div class="overview-page"><section class="overview-hero"><div class="overview-hero-copy"><div class="overview-server-mark">${avatar}</div><div class="overview-welcome"><div class="eyebrow">PANEL DE TU COMUNIDAD</div><h2>Bienvenido a ${escapeHtml(guild?.name || "tu servidor")}</h2><p>Administra los sistemas de tu comunidad y continúa configurando tu espacio desde aquí.</p></div><nav class="overview-quick-links" aria-label="Accesos rápidos">${quickStart}</nav></div><aside class="overview-readiness" aria-label="Progreso de configuración"><div class="overview-readiness-ring" style="--completion:${completion}%"><div><strong>${completion}%</strong><small>LISTO</small></div></div><div class="overview-readiness-copy"><span class="eyebrow">ESTADO GENERAL</span><strong>${configured} de ${total}</strong><small>sistemas configurados</small></div></aside><div class="overview-hero-glow" aria-hidden="true"></div></section><section class="overview-stats" aria-label="Resumen del servidor"><article><span>Configurados</span><strong>${configured}<small> / ${total}</small></strong></article><article><span>Por configurar</span><strong>${pendingEntries.length}</strong></article><article><span>Servidor seleccionado</span><strong class="overview-server-name">${escapeHtml(guild?.name || "Discord")}</strong></article></section>${pendingSummary}<div class="overview-section-title"><div><div class="eyebrow">PANEL DE CONTROL</div><h3>Explora tus sistemas</h3></div><span>Elige una sección para empezar</span></div><section class="overview-grid">${categories}</section></div>`;
+    const unavailableChannels = findUnavailableChannelReferences(modules);
+    const channelIntegrity = unavailableChannels.length
+        ? `<section class="overview-integrity overview-integrity-warning"><div class="overview-integrity-heading"><span aria-hidden="true">!</span><div><strong>${unavailableChannels.length} referencias de canal necesitan revisión</strong><small>Estos canales guardados no aparecen entre los canales accesibles al bot. Puede que se hayan eliminado o que el bot ya no pueda verlos.</small></div></div><div class="overview-integrity-links">${unavailableChannels.slice(0, 6).map(item => `<button type="button" data-overview-module="${escapeHtml(item.key)}"><span>${escapeHtml(item.title)}</span><small>Revisar configuración →</small></button>`).join("")}${unavailableChannels.length > 6 ? `<span class="overview-more">y ${unavailableChannels.length - 6} referencias más</span>` : ""}</div></section>`
+        : `<section class="overview-integrity overview-integrity-ok"><div class="overview-integrity-heading"><span aria-hidden="true">✓</span><div><strong>Sin referencias de canal ausentes detectadas</strong><small>Las referencias de canal guardadas que se pudieron comprobar coinciden con los canales que el bot puede consultar.</small></div></div></section>`;
+    content.innerHTML = `<div class="overview-page"><section class="overview-hero"><div class="overview-hero-copy"><div class="overview-server-mark">${avatar}</div><div class="overview-welcome"><div class="eyebrow">PANEL DE TU COMUNIDAD</div><h2>Bienvenido a ${escapeHtml(guild?.name || "tu servidor")}</h2><p>Administra los sistemas de tu comunidad y continúa configurando tu espacio desde aquí.</p></div><nav class="overview-quick-links" aria-label="Accesos rápidos">${quickStart}</nav></div><aside class="overview-readiness" aria-label="Progreso de configuración"><div class="overview-readiness-ring" style="--completion:${completion}%"><div><strong>${completion}%</strong><small>LISTO</small></div></div><div class="overview-readiness-copy"><span class="eyebrow">ESTADO GENERAL</span><strong>${configured} de ${total}</strong><small>sistemas configurados</small></div></aside><div class="overview-hero-glow" aria-hidden="true"></div></section><section class="overview-stats" aria-label="Resumen del servidor"><article><span>Configurados</span><strong>${configured}<small> / ${total}</small></strong></article><article><span>Por configurar</span><strong>${pendingEntries.length}</strong></article><article><span>Servidor seleccionado</span><strong class="overview-server-name">${escapeHtml(guild?.name || "Discord")}</strong></article></section>${pendingSummary}${channelIntegrity}<div class="overview-section-title"><div><div class="eyebrow">PANEL DE CONTROL</div><h3>Explora tus sistemas</h3></div><span>Elige una sección para empezar</span></div><section class="overview-grid">${categories}</section></div>`;
     content.querySelectorAll("[data-overview-module]").forEach(button => button.addEventListener("click", () => navigateToModule(button.dataset.overviewModule, modules)));
     const homeImage = content.querySelector(".overview-server-mark img");
     homeImage?.addEventListener("error", () => {
