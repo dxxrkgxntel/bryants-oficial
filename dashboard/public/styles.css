@@ -316,6 +316,20 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
 #module-nav .nav-home { margin-bottom: 13px; }
 #module-nav .nav-heading:first-of-type { margin-top: 8px; }
 .nav-tools { display: grid; gap: 7px; margin: 0 4px 8px; }
+.module-search-wrap { position: relative; min-width: 0; }
+.module-search-wrap .module-search { display: block; }
+.module-search-results { position: absolute; z-index: 50; top: calc(100% + 7px); left: 0; right: 0; max-height: min(440px, 65vh); overflow: auto; padding: 7px; border: 1px solid #ffffff20; border-radius: 12px; background: #17111f; box-shadow: 0 18px 48px #0009; }
+.module-search-results[hidden] { display: none !important; }
+.module-search-results-heading { padding: 6px 8px 8px; color: #a996b6; font-size: 9px; font-weight: 800; letter-spacing: .12em; }
+.module-search-result { display: flex; align-items: center; gap: 9px; width: 100%; min-width: 0; padding: 9px 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: #eee4f6; text-align: left; cursor: pointer; }
+.module-search-result:hover, .module-search-result:focus-visible { border-color: #b96df244; background: #a34ce31c; outline: none; }
+.module-search-result-icon { display: grid; flex: 0 0 27px; width: 27px; height: 27px; place-items: center; border-radius: 7px; background: #a34ce321; color: #d4a0f3; font-size: 13px; }
+.module-search-result-copy { display: grid; flex: 1; min-width: 0; gap: 3px; }
+.module-search-result-copy strong { overflow: hidden; color: #f3eafa; font-size: 11px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.module-search-result-copy small { overflow: hidden; color: #a99bb4; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.module-search-result-arrow { color: #b9a1ca; font-size: 13px; }
+.module-search-empty { padding: 14px 9px; color: #b5a7c0; font-size: 11px; line-height: 1.6; }
+.search-result-highlight { border-radius: 9px !important; outline: 2px solid #bd75ec !important; outline-offset: 3px; background-color: #a34ce318 !important; transition: background-color .25s ease; }
 .module-search input, .record-search input { width: 100%; min-height: 36px; padding: 9px 11px; border: 1px solid #ffffff1c; border-radius: 9px; outline: none; background: #0c0911; color: #f2eaf8; font: inherit; font-size: 11px; }
 .module-search input::placeholder, .record-search input::placeholder { color: #83778c; }
 .module-search input:focus, .record-search input:focus { border-color: #b96df2; box-shadow: 0 0 0 3px #a84cec20; }
