@@ -36,11 +36,15 @@ async function trackAchievementProgress(guild, user, metric, amount = 1) {
 
     const unlocked = [];
     for (const achievement of definitions) {
-        await UserAchievement.updateOne(
-            { guildId: guild.id, userId: user.id, achievementId: achievement.achievementId },
-            { $setOnInsert: { guildId: guild.id, userId: user.id, achievementId: achievement.achievementId, progress: 0, unlockedAt: null } },
-            { upsert: true }
-        );
+        try {
+            await UserAchievement.updateOne(
+                { guildId: guild.id, userId: user.id, achievementId: achievement.achievementId },
+                { $setOnInsert: { guildId: guild.id, userId: user.id, achievementId: achievement.achievementId, progress: 0, unlockedAt: null } },
+                { upsert: true }
+            );
+        } catch (error) {
+            if (error.code !== 11000) throw error;
+        }
 
         const current = await UserAchievement.findOneAndUpdate(
             { guildId: guild.id, userId: user.id, achievementId: achievement.achievementId, unlockedAt: null },
