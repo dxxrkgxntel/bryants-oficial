@@ -5,6 +5,8 @@ const userAchievementSchema = new Schema({
     userId: { type: String, required: true },
     achievementId: { type: String, required: true },
     progress: { type: Number, default: 0, min: 0 },
+    unlockedLevels: { type: [Number], default: [] },
+    pointsEarned: { type: Number, default: 0, min: 0 },
     unlockedAt: { type: Date, default: null }
 }, { timestamps: true });
 
