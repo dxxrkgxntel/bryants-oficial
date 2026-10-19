@@ -227,6 +227,65 @@ function findUnavailableRoleReferences(modules) {
     return [...findings.values()];
 }
 
+function findConfiguredUnassignableRoles(modules) {
+    const findings = new Map();
+    const roleManagement = resources.roleManagement;
+    if (!roleManagement) return null;
+
+    const roleById = new Map((resources.roles || []).map(role => [String(role.id), role]));
+    const blockedById = new Map((roleManagement.unmanageableRoles || []).map(role => [String(role.id), role]));
+    const add = (rawId, moduleKey, definition, source) => {
+        const id = String(rawId || "");
+        if (!/^\\d{17,20}$/.test(id) || !roleById.has(id)) return;
+        const role = roleById.get(id);
+        const hierarchyBlocked = blockedById.has(id);
+        if (roleManagement.canManageRoles && !hierarchyBlocked) return;
+        const identity = `${moduleKey}:${id}:${source}`;
+        if (!findings.has(identity)) findings.set(identity, {
+            key: moduleKey,
+            title: definition?.title || moduleKey,
+            roleId: id,
+            roleName: role.name,
+            source,
+            reason: !roleManagement.canManageRoles ? "Falta Gestionar roles" : "Rol al nivel del bot o por encima"
+        });
+    };
+    const addButtons = (buttons, moduleKey, definition, source) => {
+        for (const button of Array.isArray(buttons) ? buttons : []) {
+            if (button?.action === "role") add(button.roleId, moduleKey, definition, source);
+        }
+    };
+
+    const configurations = modules.configurations || {};
+    const config = configState.configurations || {};
+    const autoroles = config.autoroles;
+    if (autoroles && autoroles.enabled !== false) {
+        add(autoroles.userRole, "autoroles", configurations.autoroles, "Autorol para miembros");
+        add(autoroles.botRole, "autoroles", configurations.autoroles, "Autorol para bots");
+    }
+    const birthday = config.birthday;
+    if (birthday?.roleId) add(birthday.roleId, "birthday", configurations.birthday, "Rol de cumpleaños");
+    const boosts = config.boosts;
+    if (boosts) {
+        for (const field of ["boosterRole", "boosterVipRole", "boosterLegendRole"]) {
+            if (boosts[field]) add(boosts[field], "boosts", configurations.boosts, "Rol de boost");
+        }
+        addButtons(boosts.boostButtons, "boosts", configurations.boosts, "Botón para reclamar rol");
+    }
+    const welcome = config.welcome;
+    if (welcome) addButtons(welcome.Buttons, "welcome", configurations.welcome, "Botón para reclamar rol");
+
+    const levelRewards = (configState.lists?.levelRewards || []);
+    for (const item of levelRewards) {
+        if (item.roleId) add(item.roleId, "levelRewards", modules.lists?.levelRewards, `Recompensa de nivel ${item.level ?? ""}`.trim());
+    }
+    for (const item of configState.lists?.shopItems || []) {
+        if (item.roleId) add(item.roleId, "shopItems", modules.lists?.shopItems, "Tienda de roles");
+    }
+
+    return [...findings.values()];
+}
+
 function renderHome(guild, modules) {
     currentModule = "__home";
     nav.querySelectorAll(".nav-item").forEach(button => {
@@ -292,11 +351,17 @@ function renderHome(guild, modules) {
             : roleManagement.unmanageableRoles?.length
                 ? `<section class="overview-integrity overview-integrity-warning"><div class="overview-integrity-heading"><span aria-hidden="true">!</span><div><strong>${roleManagement.unmanageableRoles.length} roles están al nivel del bot o por encima</strong><small>Discord no permite que el bot gestione roles iguales o superiores a su rol más alto. Baja esos roles por debajo del rol de Bryvex Bot si deben asignarse automáticamente.</small></div></div><div class="overview-integrity-links">${roleManagement.unmanageableRoles.slice(0, 6).map(role => `<span><span>@${escapeHtml(role.name)}</span><small>Posición ${role.position} · no gestionable</small></span>`).join("")}${roleManagement.unmanageableRoles.length > 6 ? `<span class="overview-more">y ${roleManagement.unmanageableRoles.length - 6} roles más</span>` : ""}</div></section>`
                 : `<section class="overview-integrity overview-integrity-ok"><div class="overview-integrity-heading"><span aria-hidden="true">✓</span><div><strong>Permisos y jerarquía de roles comprobados</strong><small>Bryvex Bot tiene Gestionar roles y los roles no administrables se han identificado para evitar asignaciones que Discord rechazaría.</small></div></div></section>`;
+    const configuredUnassignableRoles = findConfiguredUnassignableRoles(modules);
+    const configuredRoleIntegrity = configuredUnassignableRoles === null
+        ? `<section class="overview-integrity"><div class="overview-integrity-heading"><span aria-hidden="true">i</span><div><strong>No se pudo comprobar la asignación de roles configurados</strong><small>Vuelve a cargar el panel para verificar permisos y jerarquía del bot.</small></div></div></section>`
+        : configuredUnassignableRoles.length
+            ? `<section class="overview-integrity overview-integrity-warning"><div class="overview-integrity-heading"><span aria-hidden="true">!</span><div><strong>${configuredUnassignableRoles.length} asignaciones de roles podrían fallar</strong><small>Estos roles están usados por funciones de asignación y el bot no tiene permiso o jerarquía suficiente para entregarlos. No se modificó ninguna configuración.</small></div></div><div class="overview-integrity-links">${configuredUnassignableRoles.slice(0, 8).map(item => `<button type="button" data-overview-module="${escapeHtml(item.key)}"><span>@${escapeHtml(item.roleName)}</span><small>${escapeHtml(item.title)} · ${escapeHtml(item.source)} · ${escapeHtml(item.reason)} · Revisar →</small></button>`).join("")}${configuredUnassignableRoles.length > 8 ? `<span class="overview-more">y ${configuredUnassignableRoles.length - 8} asignaciones más</span>` : ""}</div></section>`
+            : `<section class="overview-integrity overview-integrity-ok"><div class="overview-integrity-heading"><span aria-hidden="true">✓</span><div><strong>Los roles configurados para asignación son gestionables</strong><small>Se revisaron autoroles, roles de cumpleaños y boosts, botones de reclamación, recompensas de nivel y tienda de roles.</small></div></div></section>`;
     const unavailableRoles = findUnavailableRoleReferences(modules);
     const roleIntegrity = unavailableRoles.length
         ? `<section class="overview-integrity overview-integrity-warning"><div class="overview-integrity-heading"><span aria-hidden="true">!</span><div><strong>${unavailableRoles.length} referencias de rol necesitan revisión</strong><small>Estos roles guardados no aparecen entre los roles actuales del servidor. Puede que se hayan eliminado o que la referencia pertenezca a otro servidor.</small></div></div><div class="overview-integrity-links">${unavailableRoles.slice(0, 6).map(item => `<button type="button" data-overview-module="${escapeHtml(item.key)}"><span>${escapeHtml(item.title)}</span><small>Revisar configuración →</small></button>`).join("")}${unavailableRoles.length > 6 ? `<span class="overview-more">y ${unavailableRoles.length - 6} referencias más</span>` : ""}</div></section>`
         : `<section class="overview-integrity overview-integrity-ok"><div class="overview-integrity-heading"><span aria-hidden="true">✓</span><div><strong>Sin referencias de rol ausentes detectadas</strong><small>Las referencias de rol guardadas que se pudieron comprobar coinciden con los roles actuales del servidor.</small></div></div></section>`;
-    content.innerHTML = `<div class="overview-page"><section class="overview-hero"><div class="overview-hero-copy"><div class="overview-server-mark">${avatar}</div><div class="overview-welcome"><div class="eyebrow">PANEL DE TU COMUNIDAD</div><h2>Bienvenido a ${escapeHtml(guild?.name || "tu servidor")}</h2><p>Administra los sistemas de tu comunidad y continúa configurando tu espacio desde aquí.</p></div><nav class="overview-quick-links" aria-label="Accesos rápidos">${quickStart}</nav></div><aside class="overview-readiness" aria-label="Progreso de configuración"><div class="overview-readiness-ring" style="--completion:${completion}%"><div><strong>${completion}%</strong><small>LISTO</small></div></div><div class="overview-readiness-copy"><span class="eyebrow">ESTADO GENERAL</span><strong>${configured} de ${total}</strong><small>sistemas configurados</small></div></aside><div class="overview-hero-glow" aria-hidden="true"></div></section><section class="overview-stats" aria-label="Resumen del servidor"><article><span>Configurados</span><strong>${configured}<small> / ${total}</small></strong></article><article><span>Por configurar</span><strong>${pendingEntries.length}</strong></article><article><span>Servidor seleccionado</span><strong class="overview-server-name">${escapeHtml(guild?.name || "Discord")}</strong></article></section>${pendingSummary}${channelIntegrity}${roleIntegrity}${permissionIntegrity}${roleManagementIntegrity}<div class="overview-section-title"><div><div class="eyebrow">PANEL DE CONTROL</div><h3>Explora tus sistemas</h3></div><span>Elige una sección para empezar</span></div><section class="overview-grid">${categories}</section></div>`;
+    content.innerHTML = `<div class="overview-page"><section class="overview-hero"><div class="overview-hero-copy"><div class="overview-server-mark">${avatar}</div><div class="overview-welcome"><div class="eyebrow">PANEL DE TU COMUNIDAD</div><h2>Bienvenido a ${escapeHtml(guild?.name || "tu servidor")}</h2><p>Administra los sistemas de tu comunidad y continúa configurando tu espacio desde aquí.</p></div><nav class="overview-quick-links" aria-label="Accesos rápidos">${quickStart}</nav></div><aside class="overview-readiness" aria-label="Progreso de configuración"><div class="overview-readiness-ring" style="--completion:${completion}%"><div><strong>${completion}%</strong><small>LISTO</small></div></div><div class="overview-readiness-copy"><span class="eyebrow">ESTADO GENERAL</span><strong>${configured} de ${total}</strong><small>sistemas configurados</small></div></aside><div class="overview-hero-glow" aria-hidden="true"></div></section><section class="overview-stats" aria-label="Resumen del servidor"><article><span>Configurados</span><strong>${configured}<small> / ${total}</small></strong></article><article><span>Por configurar</span><strong>${pendingEntries.length}</strong></article><article><span>Servidor seleccionado</span><strong class="overview-server-name">${escapeHtml(guild?.name || "Discord")}</strong></article></section>${pendingSummary}${channelIntegrity}${roleIntegrity}${permissionIntegrity}${roleManagementIntegrity}${configuredRoleIntegrity}<div class="overview-section-title"><div><div class="eyebrow">PANEL DE CONTROL</div><h3>Explora tus sistemas</h3></div><span>Elige una sección para empezar</span></div><section class="overview-grid">${categories}</section></div>`;
     content.querySelectorAll("[data-overview-module]").forEach(button => button.addEventListener("click", () => navigateToModule(button.dataset.overviewModule, modules)));
     const homeImage = content.querySelector(".overview-server-mark img");
     homeImage?.addEventListener("error", () => {
