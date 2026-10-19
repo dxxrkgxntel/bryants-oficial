@@ -77,8 +77,9 @@
             const activities = entries(totals.activitySeconds).map(([name, value]) => ({ label: ({ online: "En línea", idle: "Ausente", dnd: "No molestar", offline: "Desconectado" })[name] || name, value })).sort((a, b) => b.value - a.value);
             html += `<div class="personal-stats-metrics">${makeMetric("Tiempo registrado", duration(activities.reduce((sum, item) => sum + Number(item.value || 0), 0)))}${makeMetric("Estados detectados", number(activities.length))}</div><h4>Tiempo por estado</h4>${makeBars(activities, duration)}`;
         } else if (activeTab === "gaming") {
-            const games = entries(totals.gamingSeconds).map(([name, value]) => ({ label: name.replace(/-/g, " ").replace(/\b\w/g, letter => letter.toUpperCase()), value })).sort((a, b) => b.value - a.value).slice(0, 10);
-            html += `<div class="personal-stats-metrics">${makeMetric("Tiempo jugando", duration(games.reduce((sum, item) => sum + Number(item.value || 0), 0)))}${makeMetric("Juegos detectados", number(games.length))}</div><h4>Juegos con más tiempo</h4>${makeBars(games, duration)}`;
+            const allGames = entries(totals.gamingSeconds).map(([name, value]) => ({ label: name.replace(/-/g, " ").replace(/\b\w/g, letter => letter.toUpperCase()), value })).sort((a, b) => b.value - a.value);
+            const games = allGames.slice(0, 10);
+            html += `<div class="personal-stats-metrics">${makeMetric("Tiempo jugando", duration(allGames.reduce((sum, item) => sum + Number(item.value || 0), 0)))}${makeMetric("Juegos detectados", number(allGames.length))}</div><h4>Juegos con más tiempo</h4>${makeBars(games, duration)}`;
         } else if (activeTab === "channels") {
             const allChannels = entries(totals.channelMessages).map(([name, value]) => ({ label: `#${name}`, value })).sort((a, b) => b.value - a.value);
             const channels = allChannels.slice(0, 12);
