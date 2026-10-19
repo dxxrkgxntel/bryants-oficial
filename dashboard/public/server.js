@@ -2208,13 +2208,53 @@ function assistantReply(question) {
     }
     if (/\b(recomienda|recomendacion|recomendaciones|que configuro|por donde empiezo|primero|siguiente paso)\b/.test(q)) {
         if (findings.length) {
-            const first = findings.find(item => item.key);
-            return { text: `Te recomiendo resolver primero “${findings[0].title}”: ${findings[0].detail} Después vuelve a Comprobaciones para verificarlo.`, actionKey: first?.key || "__checks", actionLabel: first ? "Abrir módulo recomendado" : "Abrir Comprobaciones" };
+            const priority = [
+                /ajuste obligatorio pendiente/i,
+                /referencia de (canal|rol) no disponible/i,
+                /rol no asignable/i,
+                /permisos de canal por revisar/i,
+                /tipo de canal incompatible/i,
+                /permisos no verificados/i
+            ];
+            const prioritized = [...findings].sort((a, b) => {
+                const rank = item => {
+                    const index = priority.findIndex(pattern => pattern.test(item.title));
+                    return index < 0 ? priority.length : index;
+                };
+                return rank(a) - rank(b);
+            });
+            const first = prioritized.find(item => item.key);
+            const recommendation = prioritized[0];
+            const reason = /ajuste obligatorio/i.test(recommendation.title)
+                ? "es un ajuste obligatorio y puede impedir que la función opere correctamente"
+                : /referencia de (canal|rol) no disponible/i.test(recommendation.title)
+                    ? "la configuración apunta a un canal o rol que ya no está disponible"
+                    : /rol no asignable/i.test(recommendation.title)
+                        ? "el bot no podrá asignar ese rol hasta corregir la causa"
+                        : /permisos de canal/i.test(recommendation.title)
+                            ? "los permisos faltantes pueden impedir que el bot funcione en ese canal"
+                            : /tipo de canal/i.test(recommendation.title)
+                                ? "el canal seleccionado no corresponde al tipo que necesita la función"
+                                : "hay permisos que no se pudieron verificar automáticamente y conviene confirmar en Discord";
+            return { text: \`Prioridad recomendada: “\${recommendation.title}”. \${recommendation.detail} Lo pongo primero porque \${reason}. Corrige ese punto y vuelve a Comprobaciones; después continúa con las siguientes incidencias.\`, actionKey: first?.key || "__checks", actionLabel: first ? "Abrir módulo recomendado" : "Abrir Comprobaciones" };
         }
-        const pending = [...Object.entries(currentModules.configurations || {}), ...Object.entries(currentModules.lists || {})].find(([key]) => currentModules.lists?.[key]
-            ? !(configState.lists?.[key] || []).length
-            : !configState.configurations?.[key]?.configured);
-        if (pending) return { text: `No encuentro incidencias en las comprobaciones disponibles. Como siguiente paso, puedes configurar “${pending[1].title}”, que todavía aparece pendiente.`, actionKey: pending[0], actionLabel: "Abrir módulo pendiente" };
+        const entries = [...Object.entries(currentModules.configurations || {}), ...Object.entries(currentModules.lists || {})];
+        const pending = entries
+            .filter(([key]) => currentModules.lists?.[key]
+                ? !(configState.lists?.[key] || []).length
+                : !configState.configurations?.[key]?.configured)
+            .map(([key, definition]) => ({
+                key,
+                definition,
+                requiredCount: (definition.fields || []).filter(field => field.type !== "section" && (field.required === true || field.validation?.required === true)).length
+            }))
+            .sort((a, b) => b.requiredCount - a.requiredCount)[0];
+        if (pending) {
+            const requiredText = pending.requiredCount
+                ? \` Tiene \${pending.requiredCount} ajuste(s) marcado(s) como obligatorio(s), por lo que es un buen punto de partida.\`
+                : " Es un buen punto de partida para completar la cobertura de funciones del servidor.";
+            return { text: \`No encuentro incidencias en las comprobaciones disponibles. Te recomiendo configurar primero “\${pending.definition.title}”, que todavía aparece pendiente.\${requiredText} Cuando termines, vuelve a Comprobaciones para validar el resultado.\`, actionKey: pending.key, actionLabel: "Abrir módulo pendiente" };
+        }
         return { text: "Los módulos disponibles aparecen configurados y no he detectado incidencias en las comprobaciones disponibles. Te recomiendo probar en Discord los flujos principales y revisar Comprobaciones después de cambiar permisos o canales." };
     }
     if (/\b(ayuda|que puedes hacer|funciones|como funciona|bryvex)\b/.test(q)) {
