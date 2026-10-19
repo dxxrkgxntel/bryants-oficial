@@ -1764,7 +1764,7 @@ app.get("/api/version", (_req, res) => {
             "index.html", "server.html", "account.html", "support.html",
             "server.js", "app.js", "account.js", "support.js",
             "appearance.js", "account-menu.js", "styles.css", "support.css",
-            "version-check.js"
+            "version-check.js", "personal-stats.js"
         ];
         const hash = crypto.createHash("sha256");
         for (const file of trackedFiles) {
