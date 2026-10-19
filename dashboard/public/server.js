@@ -480,7 +480,47 @@ function renderChecks(modules = currentModules) {
     const channelTypeIntegrity = channelTypeMismatches.length
         ? '<section class="overview-integrity overview-integrity-warning"><div class="overview-integrity-heading"><span aria-hidden="true">!</span><div><strong>' + channelTypeMismatches.length + ' canales no coinciden con el tipo esperado</strong><small>Algunos sistemas tienen seleccionado un canal que no coincide con el tipo admitido por ese ajuste.</small></div></div><div class="overview-integrity-links">' + channelTypeMismatches.slice(0, 6).map(item => '<button type="button" data-overview-module="' + escapeHtml(item.key) + '"><span>' + escapeHtml(item.title) + ' · #' + escapeHtml(item.channelName) + '</span><small>' + escapeHtml(item.field) + ' · Tipo de canal incompatible · Revisar →</small></button>').join("") + (channelTypeMismatches.length > 6 ? '<span class="overview-more">y ' + (channelTypeMismatches.length - 6) + ' casos más</span>' : '') + '</div></section>'
         : '<section class="overview-integrity overview-integrity-ok"><div class="overview-integrity-heading"><span aria-hidden="true">✓</span><div><strong>Tipos de canal compatibles</strong><small>Los canales seleccionados coinciden con los tipos definidos para los ajustes que se pudieron comprobar.</small></div></div></section>';
-    content.innerHTML = `<div class="checks-page"><header class="checks-page-heading"><div class="eyebrow">ESTADO DEL SERVIDOR</div><h2>Comprobaciones de Bryvex</h2><p>Revisa permisos, roles y referencias guardadas para detectar problemas antes de que afecten a los sistemas de tu comunidad.</p></header><section class="checks-summary"><article><span>Sistemas pendientes</span><strong>${pendingEntries.length}</strong></article><article><span>Referencias de canal</span><strong>${unavailableChannels.length}</strong></article><article><span>Referencias de rol</span><strong>${unavailableRoles.length}</strong></article><article><span>Permisos de canal</span><strong>${permissionIssues === null ? "—" : permissionIssues.length}</strong></article></section>${setupGuide}${pendingSummary}<div class="checks-section-heading"><div class="eyebrow">DIAGNÓSTICO</div><h3>Permisos e integridad de la configuración</h3><p>Los resultados se calculan con los datos disponibles del servidor y la configuración guardada.</p></div>${channelIntegrity}${channelTypeIntegrity}${requiredSettingsIntegrity}${roleIntegrity}${permissionIntegrity}${roleManagementIntegrity}${configuredRoleIntegrity}</div>`;
+    const intelligenceFindings = [];
+    if (configuredUnassignableRoles?.length) {
+        const issue = configuredUnassignableRoles[0];
+        intelligenceFindings.push({ priority: 1, key: issue.key, category: "Permisos y roles", title: "Corrige una asignación de rol", detail: `${issue.title} usa @${issue.roleName}, pero el bot no puede asignarlo: ${issue.reason}.`, action: "Revisar roles", count: configuredUnassignableRoles.length });
+    }
+    if (Array.isArray(permissionIssues) && permissionIssues.length) {
+        const issue = permissionIssues[0];
+        intelligenceFindings.push({ priority: 2, key: issue.key, category: "Permisos de canal", title: "Un sistema podría no funcionar en su canal", detail: `En #${issue.channelName} faltan permisos: ${issue.missing.join(", ")}.`, action: "Revisar canal", count: permissionIssues.length });
+    }
+    if (unavailableChannels.length) {
+        const issue = unavailableChannels[0];
+        intelligenceFindings.push({ priority: 3, key: issue.key, category: "Integridad", title: "Actualiza una referencia de canal", detail: `${issue.title} apunta a un canal que no aparece entre los canales actuales del servidor.`, action: "Actualizar canal", count: unavailableChannels.length });
+    }
+    if (unavailableRoles.length) {
+        const issue = unavailableRoles[0];
+        intelligenceFindings.push({ priority: 4, key: issue.key, category: "Integridad", title: "Actualiza una referencia de rol", detail: `${issue.title} apunta a un rol que no aparece entre los roles actuales del servidor.`, action: "Actualizar rol", count: unavailableRoles.length });
+    }
+    if (missingRequiredSettings.length) {
+        const issue = missingRequiredSettings[0];
+        intelligenceFindings.push({ priority: 5, key: issue.key, category: "Configuración", title: "Completa un campo obligatorio", detail: `${issue.title}: el campo “${issue.field}” está vacío y podría impedir que este sistema funcione como se espera.`, action: "Completar campo", count: missingRequiredSettings.length });
+    }
+    if (channelTypeMismatches.length) {
+        const issue = channelTypeMismatches[0];
+        intelligenceFindings.push({ priority: 6, key: issue.key, category: "Compatibilidad", title: "Selecciona un canal compatible", detail: `${issue.title} tiene “${issue.field}” asignado a #${issue.channelName}, cuyo tipo no coincide con el requerido por ese ajuste.`, action: "Corregir canal", count: channelTypeMismatches.length });
+    }
+    if (!resources.roleManagement) {
+        intelligenceFindings.push({ priority: 7, key: null, category: "Verificación incompleta", title: "No se pudo verificar la jerarquía de roles", detail: "Comprueba en Discord que Bryvex Bot tenga Gestionar roles y que su rol esté por encima de los roles que debe asignar.", action: null, count: 1 });
+    } else if (!resources.roleManagement.canManageRoles) {
+        intelligenceFindings.push({ priority: 7, key: null, category: "Permisos del bot", title: "Falta el permiso Gestionar roles", detail: "Las funciones que asignan o retiran roles pueden fallar hasta que concedas este permiso al bot.", action: null, count: 1 });
+    }
+    if (!intelligenceFindings.length && pendingEntries.length) {
+        const [key, definition] = pendingEntries[0];
+        intelligenceFindings.push({ priority: 8, key, category: "Siguiente paso", title: `Continúa con ${definition.title}`, detail: definition.description || "Configura este sistema para completar la preparación de tu servidor.", action: "Configurar sistema", count: pendingEntries.length });
+    }
+    intelligenceFindings.sort((a, b) => a.priority - b.priority);
+    const visibleIntelligenceFindings = intelligenceFindings.slice(0, 3);
+    const intelligenceStatus = intelligenceFindings.length
+        ? `${intelligenceFindings.length} prioridades detectadas`
+        : "Sin incidencias detectadas";
+    const checksIntelligence = `<section class="intelligence-panel checks-intelligence-panel" aria-labelledby="checks-intelligence-title"><div class="intelligence-heading"><div><div class="eyebrow">BRYVEX INTELLIGENCE</div><h3 id="checks-intelligence-title">Diagnóstico y próximos pasos</h3><p>Hallazgos priorizados según los datos disponibles. Cada acción abre el sistema relacionado para que puedas revisar la configuración.</p></div><span class="intelligence-status">${escapeHtml(intelligenceStatus)}</span></div><div class="intelligence-list">${visibleIntelligenceFindings.length ? visibleIntelligenceFindings.map((item, index) => `<article class="intelligence-item"><span class="intelligence-number">0${index + 1}</span><div class="intelligence-copy"><span class="intelligence-category">${escapeHtml(item.category)}</span><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.detail)}</p><small>${item.count > 1 ? `${item.count} casos detectados en esta categoría.` : "Prioridad calculada por las comprobaciones disponibles."}</small></div>${item.key ? `<button class="intelligence-action" type="button" data-overview-module="${escapeHtml(item.key)}">${escapeHtml(item.action)} <span aria-hidden="true">→</span></button>` : ""}</article>`).join("") : '<article class="intelligence-empty"><strong>No se detectaron problemas prioritarios.</strong><p>Las comprobaciones disponibles no han encontrado incidencias en las referencias y permisos que se pudieron verificar. Esto no sustituye una prueba funcional en Discord.</p></article>'}</div></section>`;
+    content.innerHTML = `<div class="checks-page"><header class="checks-page-heading"><div class="eyebrow">ESTADO DEL SERVIDOR</div><h2>Comprobaciones de Bryvex</h2><p>Revisa permisos, roles y referencias guardadas para detectar problemas antes de que afecten a los sistemas de tu comunidad.</p></header>${checksIntelligence}<section class="checks-summary"><article><span>Sistemas pendientes</span><strong>${pendingEntries.length}</strong></article><article><span>Referencias de canal</span><strong>${unavailableChannels.length}</strong></article><article><span>Referencias de rol</span><strong>${unavailableRoles.length}</strong></article><article><span>Permisos de canal</span><strong>${permissionIssues === null ? "—" : permissionIssues.length}</strong></article></section>${setupGuide}${pendingSummary}<div class="checks-section-heading"><div class="eyebrow">DIAGNÓSTICO</div><h3>Permisos e integridad de la configuración</h3><p>Los resultados se calculan con los datos disponibles del servidor y la configuración guardada.</p></div>${channelIntegrity}${channelTypeIntegrity}${requiredSettingsIntegrity}${roleIntegrity}${permissionIntegrity}${roleManagementIntegrity}${configuredRoleIntegrity}</div>`;
     content.querySelectorAll("[data-overview-module]").forEach(button => button.addEventListener("click", () => navigateToModule(button.dataset.overviewModule, modules)));
 }
 
