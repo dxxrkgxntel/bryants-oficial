@@ -159,6 +159,48 @@ function findUnavailableChannelReferences(modules) {
     return [...findings.values()];
 }
 
+function findConfiguredChannelPermissionIssues(modules) {
+    const permissionByChannel = new Map((resources.channelPermissions || []).map(item => [String(item.id), item]));
+    const channelById = new Map((resources.channels || []).map(item => [String(item.id), item]));
+    const findings = new Map();
+    const channelTypes = new Set(["channel", "voice"]);
+    const inspectDefinition = (key, definition, data) => {
+        if (!data || !Array.isArray(definition?.fields)) return;
+        for (const field of definition.fields) {
+            if (!channelTypes.has(field.type)) continue;
+            const value = getNested(data, field.name);
+            const ids = Array.isArray(value) ? value : [value];
+            for (const rawId of ids) {
+                const id = String(rawId || "");
+                if (!/^\\d{17,20}$/.test(id)) continue;
+                const channel = channelById.get(id);
+                const permission = permissionByChannel.get(id);
+                if (!channel || !permission) continue;
+                const required = field.type === "voice"
+                    ? [["viewChannel", "Ver canal"], ["connect", "Conectar"]]
+                    : [["viewChannel", "Ver canal"], ["sendMessages", "Enviar mensajes"], ["embedLinks", "Insertar enlaces/embeds"]];
+                const missing = required.filter(([name]) => !permission[name]).map(([, label]) => label);
+                if (!missing.length) continue;
+                const identity = `${key}:${id}`;
+                if (!findings.has(identity)) findings.set(identity, {
+                    key,
+                    title: definition.title || key,
+                    channelId: id,
+                    channelName: channel.name,
+                    missing
+                });
+            }
+        }
+    };
+    for (const [key, definition] of Object.entries(modules.configurations || {})) {
+        inspectDefinition(key, definition, configState.configurations?.[key]);
+    }
+    for (const [key, definition] of Object.entries(modules.lists || {})) {
+        for (const record of configState.lists?.[key] || []) inspectDefinition(key, definition, record);
+    }
+    return [...findings.values()];
+}
+
 function findUnavailableRoleReferences(modules) {
     const availableRoleIds = new Set((resources.roleIds || resources.roles || []).map(role => String(typeof role === "object" ? role.id : role)));
     const findings = new Map();
@@ -234,11 +276,19 @@ function renderHome(guild, modules) {
     const channelIntegrity = unavailableChannels.length
         ? `<section class="overview-integrity overview-integrity-warning"><div class="overview-integrity-heading"><span aria-hidden="true">!</span><div><strong>${unavailableChannels.length} referencias de canal necesitan revisión</strong><small>Estos canales guardados no aparecen en la lista actual del servidor. Puede que se hayan eliminado o que la referencia pertenezca a otro servidor.</small></div></div><div class="overview-integrity-links">${unavailableChannels.slice(0, 6).map(item => `<button type="button" data-overview-module="${escapeHtml(item.key)}"><span>${escapeHtml(item.title)}</span><small>Revisar configuración →</small></button>`).join("")}${unavailableChannels.length > 6 ? `<span class="overview-more">y ${unavailableChannels.length - 6} referencias más</span>` : ""}</div></section>`
         : `<section class="overview-integrity overview-integrity-ok"><div class="overview-integrity-heading"><span aria-hidden="true">✓</span><div><strong>Sin referencias de canal ausentes detectadas</strong><small>Las referencias de canal guardadas que se pudieron comprobar coinciden con los canales actuales del servidor.</small></div></div></section>`;
+    const permissionIssues = resources.channelPermissions
+        ? findConfiguredChannelPermissionIssues(modules)
+        : null;
+    const permissionIntegrity = permissionIssues === null
+        ? `<section class="overview-integrity"><div class="overview-integrity-heading"><span aria-hidden="true">i</span><div><strong>No se pudieron verificar los permisos efectivos</strong><small>Discord no devolvió todos los datos necesarios. Revisa los permisos del bot directamente en los canales configurados.</small></div></div></section>`
+        : permissionIssues.length
+            ? `<section class="overview-integrity overview-integrity-warning"><div class="overview-integrity-heading"><span aria-hidden="true">!</span><div><strong>${permissionIssues.length} configuraciones con permisos de canal pendientes</strong><small>El bot podría no ver, enviar mensajes o insertar embeds en algunos canales que usan tus sistemas configurados.</small></div></div><div class="overview-integrity-links">${permissionIssues.slice(0, 6).map(item => `<button type="button" data-overview-module="${escapeHtml(item.key)}"><span>${escapeHtml(item.title)} · #${escapeHtml(item.channelName)}</span><small>Falta: ${escapeHtml(item.missing.join(", "))} · Revisar →</small></button>`).join("")}${permissionIssues.length > 6 ? `<span class="overview-more">y ${permissionIssues.length - 6} configuraciones más</span>` : ""}</div></section>`
+            : `<section class="overview-integrity overview-integrity-ok"><div class="overview-integrity-heading"><span aria-hidden="true">✓</span><div><strong>Permisos básicos comprobados en los canales configurados</strong><small>El bot puede acceder a los canales detectados y dispone de los permisos básicos de publicación necesarios.</small></div></div></section>`;
     const unavailableRoles = findUnavailableRoleReferences(modules);
     const roleIntegrity = unavailableRoles.length
         ? `<section class="overview-integrity overview-integrity-warning"><div class="overview-integrity-heading"><span aria-hidden="true">!</span><div><strong>${unavailableRoles.length} referencias de rol necesitan revisión</strong><small>Estos roles guardados no aparecen entre los roles actuales del servidor. Puede que se hayan eliminado o que la referencia pertenezca a otro servidor.</small></div></div><div class="overview-integrity-links">${unavailableRoles.slice(0, 6).map(item => `<button type="button" data-overview-module="${escapeHtml(item.key)}"><span>${escapeHtml(item.title)}</span><small>Revisar configuración →</small></button>`).join("")}${unavailableRoles.length > 6 ? `<span class="overview-more">y ${unavailableRoles.length - 6} referencias más</span>` : ""}</div></section>`
         : `<section class="overview-integrity overview-integrity-ok"><div class="overview-integrity-heading"><span aria-hidden="true">✓</span><div><strong>Sin referencias de rol ausentes detectadas</strong><small>Las referencias de rol guardadas que se pudieron comprobar coinciden con los roles actuales del servidor.</small></div></div></section>`;
-    content.innerHTML = `<div class="overview-page"><section class="overview-hero"><div class="overview-hero-copy"><div class="overview-server-mark">${avatar}</div><div class="overview-welcome"><div class="eyebrow">PANEL DE TU COMUNIDAD</div><h2>Bienvenido a ${escapeHtml(guild?.name || "tu servidor")}</h2><p>Administra los sistemas de tu comunidad y continúa configurando tu espacio desde aquí.</p></div><nav class="overview-quick-links" aria-label="Accesos rápidos">${quickStart}</nav></div><aside class="overview-readiness" aria-label="Progreso de configuración"><div class="overview-readiness-ring" style="--completion:${completion}%"><div><strong>${completion}%</strong><small>LISTO</small></div></div><div class="overview-readiness-copy"><span class="eyebrow">ESTADO GENERAL</span><strong>${configured} de ${total}</strong><small>sistemas configurados</small></div></aside><div class="overview-hero-glow" aria-hidden="true"></div></section><section class="overview-stats" aria-label="Resumen del servidor"><article><span>Configurados</span><strong>${configured}<small> / ${total}</small></strong></article><article><span>Por configurar</span><strong>${pendingEntries.length}</strong></article><article><span>Servidor seleccionado</span><strong class="overview-server-name">${escapeHtml(guild?.name || "Discord")}</strong></article></section>${pendingSummary}${channelIntegrity}${roleIntegrity}<div class="overview-section-title"><div><div class="eyebrow">PANEL DE CONTROL</div><h3>Explora tus sistemas</h3></div><span>Elige una sección para empezar</span></div><section class="overview-grid">${categories}</section></div>`;
+    content.innerHTML = `<div class="overview-page"><section class="overview-hero"><div class="overview-hero-copy"><div class="overview-server-mark">${avatar}</div><div class="overview-welcome"><div class="eyebrow">PANEL DE TU COMUNIDAD</div><h2>Bienvenido a ${escapeHtml(guild?.name || "tu servidor")}</h2><p>Administra los sistemas de tu comunidad y continúa configurando tu espacio desde aquí.</p></div><nav class="overview-quick-links" aria-label="Accesos rápidos">${quickStart}</nav></div><aside class="overview-readiness" aria-label="Progreso de configuración"><div class="overview-readiness-ring" style="--completion:${completion}%"><div><strong>${completion}%</strong><small>LISTO</small></div></div><div class="overview-readiness-copy"><span class="eyebrow">ESTADO GENERAL</span><strong>${configured} de ${total}</strong><small>sistemas configurados</small></div></aside><div class="overview-hero-glow" aria-hidden="true"></div></section><section class="overview-stats" aria-label="Resumen del servidor"><article><span>Configurados</span><strong>${configured}<small> / ${total}</small></strong></article><article><span>Por configurar</span><strong>${pendingEntries.length}</strong></article><article><span>Servidor seleccionado</span><strong class="overview-server-name">${escapeHtml(guild?.name || "Discord")}</strong></article></section>${pendingSummary}${channelIntegrity}${roleIntegrity}${permissionIntegrity}<div class="overview-section-title"><div><div class="eyebrow">PANEL DE CONTROL</div><h3>Explora tus sistemas</h3></div><span>Elige una sección para empezar</span></div><section class="overview-grid">${categories}</section></div>`;
     content.querySelectorAll("[data-overview-module]").forEach(button => button.addEventListener("click", () => navigateToModule(button.dataset.overviewModule, modules)));
     const homeImage = content.querySelector(".overview-server-mark img");
     homeImage?.addEventListener("error", () => {
