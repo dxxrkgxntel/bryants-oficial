@@ -903,8 +903,10 @@ function previewValues(key, form) {
 }
 
 function renderPreview(key, data) {
-    if (!["welcome", "leaves", "boosts", "birthday", "levelSettings", "weeklyDrop"].includes(key)) return "";
-    const values = key === "welcome"
+    if (!["welcome", "leaves", "boosts", "birthday", "levelSettings", "weeklyDrop", "socialAlerts"].includes(key)) return "";
+    const values = key === "socialAlerts"
+        ? { title: data.title, description: data.messageTemplate, color: data.color, banner: data.image, avatarUrl: data.avatarUrl, displayName: data.displayName, platform: data.platform }
+        : key === "welcome"
         ? { title: data.Title, description: data.MessageDes, color: data.Color, banner: data.Banner, thumbnail: data.Thumbnail, buttons: data.Buttons, sendDM: data.SendDM, dmTitle: data.DMTitle, dmDescription: data.DMMessage, dmColor: data.DMColor, dmBanner: data.DMBanner, dmThumbnail: data.DMThumbnail }
         : key === "leaves"
             ? { title: data.Title, description: data.MessageDes, color: data.Color, banner: data.Banner, thumbnail: data.Thumbnail }
