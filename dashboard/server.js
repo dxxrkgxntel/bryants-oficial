@@ -376,6 +376,11 @@ async function fetchBotChannelPermissions(guildId, channels, roles) {
     }
 
     const administrator = (basePermissions & (1n << 3n)) !== 0n;
+    const manageRoles = administrator || (basePermissions & (1n << 28n)) !== 0n;
+    const botHighestRolePosition = Math.max(0, ...[...memberRoles].map(roleId => roleMap.get(roleId)?.position || 0));
+    const unmanageableRoles = roles
+        .filter(role => role.id !== guildId && !role.managed && role.position >= botHighestRolePosition)
+        .map(({ id, name, position }) => ({ id, name, position }));
     const allPermissions = (1n << 53n) - 1n;
     const permissionBits = {
         manageChannels: 1n << 4n,
@@ -387,7 +392,7 @@ async function fetchBotChannelPermissions(guildId, channels, roles) {
         speak: 1n << 21n
     };
 
-    return channels.map(channel => {
+    const channelPermissions = channels.map(channel => {
         let permissions = administrator ? allPermissions : basePermissions;
         if (!administrator) {
             const overwrites = channel.permission_overwrites || [];
@@ -424,6 +429,7 @@ async function fetchBotChannelPermissions(guildId, channels, roles) {
         for (const [name, bit] of Object.entries(permissionBits)) effective[name] = (permissions & bit) === bit;
         return { id: channel.id, type: channel.type, ...effective };
     });
+    return { channels: channelPermissions, roleManagement: { canManageRoles: manageRoles, botHighestRolePosition, unmanageableRoles } };
 }
 
 function validatePollInput(input) {
@@ -1054,8 +1060,11 @@ app.get("/api/guilds/:guildId/resources", requireGuildAdmin, async (req, res) =>
             })
         ]);
         let channelPermissions = null;
+        let roleManagement = null;
         try {
-            channelPermissions = await fetchBotChannelPermissions(guildId, resources.channels, resources.roles);
+            const permissionAudit = await fetchBotChannelPermissions(guildId, resources.channels, resources.roles);
+            channelPermissions = permissionAudit.channels;
+            roleManagement = permissionAudit.roleManagement;
         } catch (error) {
             console.warn("[Dashboard Permissions] No pude comprobar los permisos efectivos del bot:", error.message);
         }
@@ -1074,7 +1083,8 @@ app.get("/api/guilds/:guildId/resources", requireGuildAdmin, async (req, res) =>
             channels: resources.channels.map(({ id, name, type, parent_id }) => ({ id, name, type, parentId: parent_id })),
             roles: resources.roles.filter(role => !role.managed && role.name !== "@everyone").map(({ id, name, color }) => ({ id, name, color })),
             roleIds: resources.roles.map(({ id }) => id),
-            channelPermissions
+            channelPermissions,
+            roleManagement
         });
     } catch (error) {
         console.error("[Dashboard Resources] Error al cargar canales y roles:", error.message);
