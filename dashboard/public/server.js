@@ -721,11 +721,9 @@ function renderField(field, value, prefix = "") {
     if (field.type === "setups") return renderSetupsEditor(Array.isArray(value) ? value : []);
     if (field.type === "buttons") return renderButtonEditor(field, Array.isArray(value) ? value : [], prefix);
     if (field.type === "json" && ["prestigeRoles", "prestigeRewards"].includes(field.name)) return renderPrestigeMap(field, value);
-    if (field.type === "boolean" && /^sistema activo$/i.test(String(field.label || "").trim())) {
-        return `<div class="field checkbox-field system-toggle-field"><span><strong>${escapeHtml(field.label)}</strong>${help}</span><button id="${id}" class="system-toggle ${safeValue ? "is-active" : ""}" type="button" name="${escapeHtml(field.name)}" data-toggle-field="${escapeHtml(field.name)}" data-enabled="${safeValue ? "true" : "false"}" aria-pressed="${safeValue ? "true" : "false"}">${safeValue ? "ACTIVO" : "DESACTIVADO"}</button></div>`;
-    }
     if (field.type === "boolean") {
-        return `<label class="field checkbox-field" for="${id}"><span><strong>${escapeHtml(field.label)}</strong>${help}</span><input id="${id}" name="${escapeHtml(field.name)}" type="checkbox" ${safeValue ? "checked" : ""}></label>`;
+        const enabled = Boolean(safeValue);
+        return `<div class="field checkbox-field system-toggle-field"><span><strong id="${id}-label">${escapeHtml(field.label)}</strong>${help}</span><button id="${id}" class="system-toggle ${enabled ? "is-active" : ""}" type="button" name="${escapeHtml(field.name)}" data-toggle-field="${escapeHtml(field.name)}" data-enabled="${enabled}" aria-labelledby="${id}-label" aria-pressed="${enabled}">${enabled ? "ACTIVO" : "DESACTIVADO"}</button></div>`;
     }
     if (field.type === "select") {
         const options = field.options.map(option => `<option value="${escapeHtml(option)}" ${safeValue === option ? "selected" : ""}>${escapeHtml(option)}</option>`).join("");
@@ -1197,6 +1195,20 @@ function readForm(form, fields) {
     return result;
 }
 
+function setupBooleanToggles(form) {
+    if (!form) return;
+    form.querySelectorAll("[data-toggle-field]").forEach(toggle => {
+        toggle.addEventListener("click", () => {
+            const enabled = toggle.dataset.enabled !== "true";
+            toggle.dataset.enabled = String(enabled);
+            toggle.setAttribute("aria-pressed", String(enabled));
+            toggle.classList.toggle("is-active", enabled);
+            toggle.textContent = enabled ? "ACTIVO" : "DESACTIVADO";
+            form.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+    });
+}
+
 function makeNav(modules) {
     nav.replaceChildren();
     const all = [...Object.entries(modules.configurations), ...Object.entries(modules.lists)];
@@ -1627,16 +1639,7 @@ function renderModule(key, modules) {
         });
     }
     const settingsForm = content.querySelector("#settings-form");
-    settingsForm.querySelectorAll("[data-toggle-field]").forEach(toggle => {
-        toggle.addEventListener("click", () => {
-            const enabled = toggle.dataset.enabled !== "true";
-            toggle.dataset.enabled = String(enabled);
-            toggle.setAttribute("aria-pressed", String(enabled));
-            toggle.classList.toggle("is-active", enabled);
-            toggle.textContent = enabled ? "ACTIVO" : "DESACTIVADO";
-            settingsForm.dispatchEvent(new Event("change", { bubbles: true }));
-        });
-    });
+    setupBooleanToggles(settingsForm);
     wireMultiSelectLimits(settingsForm);
     wireRolePickers(settingsForm);
     registerFormGuard(settingsForm, definition.fields);
@@ -2167,6 +2170,7 @@ function renderList(key, definition, editItem = null) {
         } catch (error) { showNotice(error.message, true); }
     }));
     const listForm = content.querySelector("#list-form");
+    setupBooleanToggles(listForm);
     wireMultiSelectLimits(listForm);
     wireRolePickers(listForm);
     wireKickChannelPickers(listForm);
