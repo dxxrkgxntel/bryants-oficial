@@ -544,10 +544,14 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
 .discord-preview-button { display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: 6px; background: #5865f2; color: white; font-size: 11px; }
 .field > span { font-weight: 650; }
 .field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]), .field textarea, .field select { width: 100%; min-height: 44px; padding: 11px 12px; border: 1px solid #ffffff20; border-radius: 11px; outline: none; background: linear-gradient(145deg, #121016, #0e0c12); color: #f7f3fc; font: inherit; font-size: 12px; transition: border-color .18s ease, background .18s ease, box-shadow .18s ease; }
+.field select:not([multiple]) { padding-right: 36px; appearance: none; color-scheme: dark; background-image: linear-gradient(45deg, transparent 50%, #cdb6df 50%), linear-gradient(135deg, #cdb6df 50%, transparent 50%), linear-gradient(145deg, #121016, #0e0c12); background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%, 0 0; background-size: 5px 5px, 5px 5px, 100% 100%; background-repeat: no-repeat; cursor: pointer; }
+.field select:not([multiple]) option { background: #19141f; color: #f7f3fc; }
 .field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):hover:not(:focus), .field textarea:hover:not(:focus), .field select:hover:not(:focus) { border-color: #ffffff38; }
 .field textarea { min-height: 100px; resize: vertical; line-height: 1.55; }
 .field select[multiple] { min-height: 126px; }
 .field input:focus, .field textarea:focus, .field select:focus { border-color: #b96df2; box-shadow: 0 0 0 3px #a84cec20; }
+.field select:not([multiple]):focus-visible { outline: 2px solid #d2a0ff; outline-offset: 2px; }
+.field select:not([multiple]):disabled { cursor: not-allowed; opacity: .6; }
 .field small { color: #8e8397; font-size: 10px; line-height: 1.5; }
 .field em { color: #8e8397; font-size: 10px; font-style: normal; font-weight: 400; }
 .kick-channel-field { position: relative; z-index: 2; }
