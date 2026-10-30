@@ -93,7 +93,7 @@ const configurations = {
         fields: [
             { name: "enabled", label: "Sistema de trofeos activo", type: "boolean", default: true },
             { name: "announcementMode", label: "Formato del anuncio", type: "select", options: ["card", "components", "embed", "text", "dm", "silent"], default: "embed" },
-            { name: "announcementChannelId", label: "Canal de anuncios", type: "channel", channelTypes: [0], optional: true },
+            { name: "announcementChannelId", label: "Canal de anuncios", type: "channel", channelTypes: [0, 5], optional: true },
             { name: "announcementTemplate", label: "Plantilla del mensaje", type: "textarea", maxLength: 1500, default: "{user} desbloqueó {achievement} (+{points} puntos)", help: "Marcadores disponibles: {user}, {achievement}, {points}, {rarity}." },
             { name: "cardTitle", label: "Título de tarjeta", type: "text", maxLength: 100, default: "TROFEO DESBLOQUEADO" },
             { name: "cardColor", label: "Color hexadecimal de tarjeta", type: "color", default: "#0000FF" },
@@ -128,7 +128,7 @@ const configurations = {
         model: require("../Models/welcomeSchema"),
         guildField: "Guild",
         fields: [
-            { name: "Channel", label: "Canal", type: "channel", channelTypes: [0] },
+            { name: "Channel", label: "Canal", type: "channel", channelTypes: [0, 5] },
             { name: "IgnoreBots", label: "Ignorar cuentas de bots", type: "boolean", help: "No envía mensajes de bienvenida en el servidor ni por DM cuando entra una cuenta bot." },
             { type: "section", label: "Mensaje de bienvenida en el servidor" },
             { name: "Title", label: "Título", type: "text", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.welcome },
@@ -152,7 +152,7 @@ const configurations = {
         model: require("../Models/leaveSchema"),
         guildField: "Guild",
         fields: [
-            { name: "Channel", label: "Canal", type: "channel", channelTypes: [0] },
+            { name: "Channel", label: "Canal", type: "channel", channelTypes: [0, 5] },
             { name: "Title", label: "Título", type: "text", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.leave },
             { name: "MessageDes", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.leave, help: "Admite variables con llaves dobles, por ejemplo {{user}}, {{server}} y {{members}}. También puedes insertarlas con los botones." },
             { name: "Color", label: "Color hexadecimal", type: "color", optional: true },
@@ -167,7 +167,7 @@ const configurations = {
         guildField: "guildId",
         fields: [
             { type: "section", label: "Anuncio de cumpleaños" },
-            { name: "channelId", label: "Canal de anuncios", type: "channel", channelTypes: [0], optional: true },
+            { name: "channelId", label: "Canal de anuncios", type: "channel", channelTypes: [0, 5], optional: true },
             { name: "roleId", label: "Rol de cumpleaños", type: "role", optional: true },
             { name: "birthdayTitle", label: "Título del aviso", type: "text", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.birthday },
             { name: "birthdayDescription", label: "Descripción del aviso", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.birthday, help: "Puedes insertar variables como {{user}}, {{server}} y {{reward}} con los botones." },
@@ -219,7 +219,7 @@ const configurations = {
         guildField: "Guild",
         fields: [
             { name: "Enabled", label: "Sistema activo", type: "boolean", default: true },
-            { name: "Channel", label: "Canal de logs", type: "channel", channelTypes: [0] },
+            { name: "Channel", label: "Canal de logs", type: "channel", channelTypes: [0, 5] },
             { name: "ignoredChannels", label: "Canales ignorados", type: "channel-list", maxItems: 10, help: "Los eventos de estos canales no se registrarán." },
             { name: "ignoredRoles", label: "Roles ignorados", type: "role-list", maxItems: 10, help: "Las acciones de miembros con estos roles no se registrarán." }
         ]
@@ -232,7 +232,7 @@ const configurations = {
         guildField: "Guild",
         fields: [
             { name: "InviteTrackerEnabled", label: "SISTEMA ACTIVO", type: "boolean", default: false, help: "Actívalo para contar las invitaciones y publicar los registros. Desactívalo para pausar el sistema." },
-            { name: "InviteTrackerChannel", label: "Canal de logs de invitaciones", type: "channel", channelTypes: [0], optional: true, help: "Elige un canal de texto de este servidor." }
+            { name: "InviteTrackerChannel", label: "Canal de logs de invitaciones", type: "channel", channelTypes: [0, 5], optional: true, help: "Elige un canal de texto o anuncios de este servidor." }
         ]
     },
     reports: {
@@ -242,7 +242,7 @@ const configurations = {
         guildField: "reportGuildId",
         fields: [
             { name: "Enabled", label: "Sistema activo", type: "boolean", default: true },
-            { name: "reportChannelId", label: "Canal de reportes", type: "channel", channelTypes: [0] }
+            { name: "reportChannelId", label: "Canal de reportes", type: "channel", channelTypes: [0, 5] }
         ]
     },
     antiScam: {
@@ -254,7 +254,7 @@ const configurations = {
             { name: "enabled", label: "Sistema activo", type: "boolean" },
             { name: "punishment", label: "Castigo", type: "select", options: ["delete", "timeout", "kick", "ban"] },
             { name: "timeoutDuration", label: "Duración de timeout (minutos)", type: "number", min: 1, max: 40320 },
-            { name: "logChannelId", label: "Canal de logs", type: "channel", channelTypes: [0], optional: true },
+            { name: "logChannelId", label: "Canal de logs", type: "channel", channelTypes: [0, 5], optional: true },
             { name: "whitelistDomains", label: "Dominios permitidos", type: "string-list" },
             { name: "ignoredChannels", label: "Canales ignorados", type: "channel-list", maxItems: 10 },
             { name: "ignoredRoles", label: "Roles ignorados", type: "role-list", maxItems: 10 }
@@ -268,7 +268,7 @@ const configurations = {
         guildField: "guildId",
         fields: [
             { name: "enabled", label: "Bloquear invitaciones", type: "boolean", default: false },
-            { name: "logChannelId", label: "Canal para alertas de AutoMod", type: "channel", channelTypes: [0], optional: true, help: "Discord enviará aquí las alertas cuando AutoMod bloquee una invitación." }
+            { name: "logChannelId", label: "Canal para alertas de AutoMod", type: "channel", channelTypes: [0, 5], optional: true, help: "Discord enviará aquí las alertas cuando AutoMod bloquee una invitación." }
         ]
     },
     specialChannels: {
@@ -285,7 +285,7 @@ const configurations = {
         model: require("../Models/confesionesSetUp"),
         guildField: "guildId",
         fields: [
-            { name: "channelId", label: "Canal", type: "channel", channelTypes: [0] },
+            { name: "channelId", label: "Canal", type: "channel", channelTypes: [0, 5] },
             { name: "replyButtonsEnabled", label: "Botones de respuesta", type: "boolean", help: "Añade un botón para responder anónimamente a cada confesión." },
             { name: "repliesInThreads", label: "Respuestas en hilos", type: "boolean", help: "Actívalo para agrupar las respuestas en un hilo; desactívalo para publicarlas como mensajes separados." },
             { name: "rolesToMention", label: "Roles a mencionar", type: "role-list", maxItems: 5, help: "Selecciona hasta cinco roles; se mencionan al publicar una confesión nueva, no en las respuestas." },
@@ -298,7 +298,7 @@ const configurations = {
         model: require("../Models/suggestSchema"),
         guildField: "guildSuggest",
         fields: [
-            { name: "guildChannel", label: "Canal", type: "channel", channelTypes: [0] },
+            { name: "guildChannel", label: "Canal", type: "channel", channelTypes: [0, 5] },
             { name: "createThreads", label: "Crear hilos", type: "boolean", help: "Inicia automáticamente un hilo de discusión para cada sugerencia." },
             { name: "Enabled", label: "Sistema activo", type: "boolean", default: true }
         ]
@@ -350,7 +350,7 @@ const configurations = {
         fields: [
             { type: "section", label: "Aviso al subir de nivel por mensaje" },
             { name: "enabled", label: "Sistema activo", type: "boolean", default: true },
-            { name: "levelChannel", label: "Canal de avisos", type: "channel", channelTypes: [0], optional: true },
+            { name: "levelChannel", label: "Canal de avisos", type: "channel", channelTypes: [0, 5], optional: true },
             { name: "messageLevelTitle", label: "Título del aviso por mensaje", type: "textarea", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.level },
             { name: "messageLevelDescription", label: "Descripción del aviso por mensaje", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.level, help: "Se muestra cuando el miembro sube de nivel por XP obtenida al escribir." },
             { type: "section", label: "Aviso al subir de nivel por voz" },
@@ -415,7 +415,7 @@ const configurations = {
             { name: "image", label: "URL del banner", type: "url", optional: true, help: "Añade el enlace HTTPS de la imagen que aparecerá encima del aviso." },
             { name: "minAmount", label: "Cantidad mínima", type: "number", min: 1 },
             { name: "maxAmount", label: "Cantidad máxima", type: "number", min: 1 },
-            { name: "logChannelId", label: "Canal de avisos", type: "channel", channelTypes: [0], optional: true },
+            { name: "logChannelId", label: "Canal de avisos", type: "channel", channelTypes: [0, 5], optional: true },
             { name: "enabled", label: "Sistema activo", type: "boolean" }
         ]
     }
@@ -498,7 +498,7 @@ const lists = {
             { name: "rarity", label: "Rareza", type: "select", options: ["common", "uncommon", "rare", "epic", "legendary", "mythic"] },
             { name: "rewardCoins", label: "Recompensa en monedas", type: "number", min: 0, default: 0 },
             { name: "rewardXP", label: "Recompensa en XP", type: "number", min: 0, default: 0 },
-            { name: "announcementChannelId", label: "Canal de anuncio individual (opcional)", type: "channel", channelTypes: [0], optional: true },
+            { name: "announcementChannelId", label: "Canal de anuncio individual (opcional)", type: "channel", channelTypes: [0, 5], optional: true },
             { name: "enabled", label: "Trofeo activo", type: "boolean", default: true }
         ],
         identity: "achievementId"
@@ -538,7 +538,7 @@ const lists = {
             { name: "userId", label: "ID del miembro", type: "text", maxLength: 25 },
             { name: "day", label: "Día", type: "number", min: 1, max: 31 },
             { name: "month", label: "Mes", type: "number", min: 1, max: 12 },
-            { name: "channelId", label: "Canal de anuncio personalizado", type: "channel", channelTypes: [0], optional: true }
+            { name: "channelId", label: "Canal de anuncio personalizado", type: "channel", channelTypes: [0, 5], optional: true }
         ],
         identity: "userId"
     },
@@ -558,7 +558,7 @@ const lists = {
         fields: [
             { name: "platform", label: "Plataforma", type: "select", options: ["Kick", "TikTok", "Twitch", "YouTube"] },
             { name: "slug", label: "Canal / usuario", type: "social-channel", maxLength: 100, help: "Selecciona un canal de Kick o escribe el usuario de TikTok/Twitch o el identificador, @handle o URL del canal de YouTube." },
-            { name: "channelId", label: "Canal de Discord", type: "channel", channelTypes: [0] },
+            { name: "channelId", label: "Canal de Discord", type: "channel", channelTypes: [0, 5] },
             { name: "includeViewerCount", label: "Cantidad de espectadores", type: "boolean", help: "Incluye los espectadores actuales y actualiza el mensaje cada cinco minutos." },
             { name: "title", label: "Título de la alerta", type: "text", default: "🔴 {{channel}} está en vivo en {{platform}}", maxLength: 256, templateComposer: true, templateVariables: messageVariables.socialAlert },
             { name: "messageTemplate", label: "Mensaje de alerta", type: "textarea", default: "¡El directo ya empezó! {{url}}", maxLength: 2000, templateComposer: true, templateVariables: messageVariables.socialAlert, help: "Variables: {{channel}}, {{title}}, {{viewers}}, {{category}}, {{platform}} y {{url}}." },
