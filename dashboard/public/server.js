@@ -2504,10 +2504,17 @@ function assistantReply(question) {
     const findings = getAssistantFindings();
     const matched = findAssistantModule(q);
     const moduleQuestion = Boolean(matched && matched.score <= 2);
+    if (assistantQuestionIsBackgroundHelp(question)) {
+        return {
+            text: "Para poner un fondo personalizado: abre el menú de tu cuenta, entra en Configuración y elige Apariencia. En Fondo del panel, selecciona una imagen PNG, JPG o WebP de hasta 3 MB; ajusta Difuminación entre 0 y 20 px si quieres y pulsa Guardar apariencia. El fondo se guarda para tu cuenta. Para quitarlo, pulsa Usar fondo predeterminado.",
+            actionUrl: "/settings#appearance",
+            actionLabel: "Abrir Apariencia"
+        };
+    }
     if (/^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|saludos)\b/.test(q)) {
         return { text: `¡Hola! Estoy conectado a la configuración cargada de ${activeGuild?.name || "este servidor"}. Puedes preguntarme por el estado, los problemas detectados o un módulo específico.` };
     }
-    if (!moduleQuestion && /\b(estado|resumen|como esta|situacion|configuracion general|progreso)\b/.test(q)) {
+    if (!moduleQuestion && /\b(estado|resumen|como esta|como va|esta funcionando|situacion|configuracion general|progreso|funcionamiento)\b/.test(q)) {
         const percent = status.total ? Math.round(status.configured / status.total * 100) : 0;
         const summary = findings.length
             ? ` También he encontrado ${findings.length} comprobaciones que conviene revisar.`
@@ -2630,14 +2637,92 @@ function assistantReply(question) {
         return { text: "No he encontrado incidencias concretas de canales, roles o permisos en los datos disponibles. Puedes abrir Comprobaciones para consultar los resultados actuales; los permisos pueden cambiar directamente en Discord." , actionKey: "__checks", actionLabel: "Abrir Comprobaciones" };
     }
     return {
-        text: "Puedo ayudarte con el uso y la configuración de Bryvex Bot. Cuéntame qué módulo, función o problema del bot quieres revisar."
+        text: "No pude preparar una respuesta ahora. Cuando la conexión de IA esté disponible, puedo ayudarte con Bryvex Bot, toda la dashboard y preguntas generales."
     };
 }
 
 function assistantQuestionUsesLiveData(question) {
     const q = normalizeSearch(question);
-    return /^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|saludos)\b/.test(q)
-        || /\b(estado|resumen|situacion|progreso|pendiente|problema|problemas|error|errores|diagnostico|diagnosticos|comprobacion|comprobaciones|fallo|fallos|recomendacion|recomendaciones|recomienda|recomiendas|que esta mal|que debo corregir|que falta|por donde empiezo|como esta|configuracion actual|actualmente|ahora mismo|esta activo|esta activa|esta configurado|esta configurada|guardado|guardada)\b/.test(q);
+    const exactServerPrompts = /\b(que problemas has detectado|problemas detectados|que me recomiendas configurar primero|recomiendas configurar primero|como esta la configuracion de mi servidor)\b/.test(q);
+    const serverContext = /\b(mi servidor|este servidor|servidor seleccionado|estado del servidor|configuracion actual|configuracion del servidor|configuracion de mi servidor|mi configuracion|mis modulos|este panel|mi dashboard|mi panel)\b/.test(q);
+    const diagnosticIntent = /\b(estado|resumen|como esta|como va|esta funcionando|situacion|progreso|pendiente|problema|problemas|error|errores|diagnostico|diagnosticos|comprobacion|comprobaciones|fallo|fallos|que esta mal|que debo corregir|que falta|actualmente|ahora mismo|esta activo|esta activa|esta configurado|esta configurada|guardado|guardada)\b/.test(q);
+    const moduleConfigurationIntent = /\b(que|cuales) modulos tengo (activos?|activados?|configurados?|pendientes)\b/.test(q);
+    const recommendationIntent = /\b(recomendacion|recomendaciones|recomienda|recomiendas|que configuro|por donde empiezo|siguiente paso)\b/.test(q)
+        && /\b(configurar|configuracion|modulo|modulos|activar|habilitar)\b/.test(q);
+    const matched = findAssistantModule(q);
+    const moduleStatusIntent = Boolean(matched && /\b(estado|actualmente|ahora mismo|esta activo|esta activa|esta configurado|esta configurada|se guardo|guardado|guardada|tiene configurado)\b/.test(q));
+    return exactServerPrompts || (serverContext && (diagnosticIntent || recommendationIntent)) || moduleConfigurationIntent || moduleStatusIntent;
+}
+
+function assistantQuestionIsBackgroundHelp(question) {
+    const q = normalizeSearch(question);
+    const backgroundTopic = /\b(fondos?|imagen personalizada|imagen de fondo|wallpaper)\b/.test(q);
+    const websiteContext = /\b(web|pagina|dashboard|panel|cuenta)\b/.test(q);
+    return /\b(fondos? personalizados?|fondo del panel|personalizar el fondo|cambiar el fondo|restablecer el fondo|quitar el fondo|eliminar el fondo)\b/.test(q)
+        || (backgroundTopic && websiteContext);
+}
+
+function assistantQuestionUsesSocialDiagnostics(question) {
+    const q = normalizeSearch(question);
+    const mentionsSocialAlerts = /\b(alertas sociales|alerta social|social alerts)\b/.test(q);
+    const platform = /\b(tiktok|tik tok|twitch|kick|youtube)\b/.test(q);
+    const hasBryvexContext = /\b(bryvex|bot|dashboard|servidor|obs|stream key|alerta|mi alerta|mis alertas|mi live|mi directo|mi stream|me marca|me muestra|me lee|me detecta)\b/.test(q);
+    const currentIssue = /\b(diagnostico|estado|como esta|sigue activo|error|errores|problema|problemas|no lee|no detecta|no recibe|no muestra|marca en|espectadores|categoria|titulo|en vivo|en directo|transmision|stream|mi live|mi directo)\b/.test(q);
+    return currentIssue && (mentionsSocialAlerts || (platform && hasBryvexContext));
+}
+
+function assistantSocialDiagnosticsReply(diagnostics, question) {
+    const q = normalizeSearch(question);
+    const platformMatch = /\b(tiktok|tik tok|twitch|kick|youtube)\b/.exec(q)?.[1] || "";
+    const platform = platformMatch === "tik tok" ? "tiktok" : platformMatch;
+    const filtered = platform
+        ? diagnostics.filter(item => normalizeSearch(item.platform).replace(/\s/g, "") === platform)
+        : diagnostics;
+    const actionKey = currentModules?.lists?.socialAlerts || currentModules?.configurations?.socialAlerts ? "socialAlerts" : "";
+    const actionLabel = actionKey ? "Abrir Alertas sociales" : "";
+    if (!filtered.length) {
+        return {
+            text: platform
+                ? `No encontré una alerta de ${platformMatch === "tik tok" ? "TikTok" : platformMatch} en el servidor seleccionado. Revisa el módulo Alertas sociales y vuelve a actualizar el diagnóstico.`
+                : "No hay alertas sociales configuradas en el servidor seleccionado, así que todavía no hay diagnósticos que consultar.",
+            actionKey,
+            actionLabel
+        };
+    }
+    const statusLabels = {
+        pending: "esperando la primera consulta del bot",
+        checking: "consultando la plataforma",
+        online: "en directo",
+        offline: "fuera de línea",
+        error: "con un error reciente",
+        stale: "sin una actualización reciente",
+        disabled: "desactivada"
+    };
+    const stageLabels = { platform: "consulta a la plataforma", discord: "publicación en Discord", database: "guardado del estado" };
+    const summaries = filtered.slice(0, 6).map(item => {
+        const status = statusLabels[item.status] || "sin estado conocido";
+        const details = [`${item.platform} · ${item.slug}: ${status}`];
+        if (item.status !== "disabled" && item.status !== "offline") {
+            details.push(`Título: ${item.title || "sin dato"}; categoría: ${item.category || "sin dato"}; espectadores: ${item.viewerCount ?? "sin dato"}.`);
+        }
+        if (item.stage || item.error) details.push(`Último error${item.stage ? ` en ${stageLabels[item.stage] || item.stage}` : ""}: ${item.error || "sin detalle"}.`);
+        if (item.suggestion) details.push(`Siguiente paso: ${item.suggestion}`);
+        return details.join(" ");
+    });
+    if (filtered.length > summaries.length) summaries.push(`Hay ${filtered.length - summaries.length} alertas más; abre Alertas sociales para revisarlas todas.`);
+    return { text: summaries.join("\n\n"), actionKey, actionLabel };
+}
+
+function assistantLocalFallback(question) {
+    if (assistantQuestionIsBackgroundHelp(question)) return assistantReply(question);
+    const q = normalizeSearch(question);
+    if (/^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|saludos)\b/.test(q)) {
+        return { text: "¡Hola! Puedo ayudarte con Bryvex Bot, su dashboard web y preguntas generales. Para responder temas generales necesito que la IA esté conectada." };
+    }
+    const likelyBryvexQuestion = /\b(bryvex|bot|servidor|dashboard|modulo|modulos|alertas sociales|autoroles|bienvenidas|trofeos|niveles|tiktok|twitch|kick|youtube)\b/.test(q)
+        || Boolean(findAssistantModule(q));
+    if (likelyBryvexQuestion) return assistantReply(question);
+    return { text: "No pude conectar con la IA. Revisa que OPENAI_API_KEY esté configurada en bryvex-dashboard y que el servicio se haya reiniciado; cuando esté disponible, responderé tanto preguntas generales como consultas sobre Bryvex." };
 }
 
 function addAssistantMessage(text, role = "bot", actionKey = "", actionLabel = "", actionUrl = "") {
@@ -2732,6 +2817,31 @@ function setupAssistant() {
         if (!question || !configState || !currentModules || submitButton?.disabled) return;
         addAssistantMessage(question, "user");
         input.value = "";
+        if (assistantQuestionUsesSocialDiagnostics(question)) {
+            assistantHistory.length = 0;
+            submitButton.disabled = true;
+            input.disabled = true;
+            form.setAttribute("aria-busy", "true");
+            const pending = addAssistantMessage("Consultando localmente el diagnóstico de Alertas sociales…");
+            pending?.classList.add("assistant-message-pending");
+            try {
+                const result = await api(`/api/guilds/${encodeURIComponent(activeGuild.id)}/social-alerts/diagnostics`);
+                pending?.remove();
+                const answer = assistantSocialDiagnosticsReply(result.diagnostics || [], question);
+                addAssistantMessage(answer.text, "bot", answer.actionKey || "", answer.actionLabel || "");
+            } catch (error) {
+                pending?.remove();
+                const actionKey = currentModules.lists?.socialAlerts || currentModules.configurations?.socialAlerts ? "socialAlerts" : "";
+                addAssistantMessage(`No pude leer el diagnóstico local: ${error.message || "error de conexión"}. Abre Alertas sociales y pulsa Actualizar para volver a intentarlo.`, "bot", actionKey, actionKey ? "Abrir Alertas sociales" : "");
+            } finally {
+                assistantHistory.length = 0;
+                submitButton.disabled = false;
+                input.disabled = false;
+                form.removeAttribute("aria-busy");
+                input.focus();
+            }
+            return;
+        }
         if (assistantQuestionUsesLiveData(question)) {
             const answer = assistantReply(question);
             addAssistantMessage(answer.text, "bot", answer.actionKey || "", answer.actionLabel || "", answer.actionUrl || "");
@@ -2740,9 +2850,9 @@ function setupAssistant() {
         }
 
         if (assistantAiConfigured === false) {
-            const answer = assistantReply(question);
+            const answer = assistantLocalFallback(question);
             if (!assistantNoticeShown) {
-                addAssistantMessage("La IA aún no está conectada. Añade OPENAI_API_KEY en las variables de entorno del servicio bryvex-dashboard para activarla; mientras tanto sigo con la ayuda local.");
+                addAssistantMessage("La IA aún no está conectada. Añade OPENAI_API_KEY en las variables de entorno de bryvex-dashboard y reinicia el servicio. La consulta del estado y los diagnósticos del servidor sigue disponible localmente.");
                 assistantNoticeShown = true;
             }
             addAssistantMessage(answer.text, "bot", answer.actionKey || "", answer.actionLabel || "", answer.actionUrl || "");
@@ -2753,7 +2863,7 @@ function setupAssistant() {
         submitButton.disabled = true;
         input.disabled = true;
         form.setAttribute("aria-busy", "true");
-        const pending = addAssistantMessage("Estoy revisando la ayuda de Bryvex…");
+        const pending = addAssistantMessage("Estoy preparando una respuesta…");
         pending?.classList.add("assistant-message-pending");
         try {
             const result = await api(`/api/guilds/${encodeURIComponent(activeGuild.id)}/assistant`, {
@@ -2763,18 +2873,13 @@ function setupAssistant() {
             });
             pending?.remove();
             assistantAiConfigured = Boolean(result.configured);
-            if (result.inScope === false) {
-                addAssistantMessage("Puedo ayudarte solo con Bryvex Bot y su dashboard. Dime qué módulo o función del bot quieres revisar.");
-                assistantHistory.length = 0;
-                return;
-            }
             if (!result.configured || result.unavailable || !result.answer) {
-                const answer = assistantReply(question);
+                const answer = assistantLocalFallback(question);
                 if (!assistantNoticeShown && !result.configured) {
-                    addAssistantMessage("La IA aún no está conectada. Añade OPENAI_API_KEY en las variables de entorno del servicio bryvex-dashboard para activarla; mientras tanto sigo con la ayuda local.");
+                    addAssistantMessage("La IA aún no está conectada. Añade OPENAI_API_KEY en las variables de entorno de bryvex-dashboard y reinicia el servicio. La consulta del estado y los diagnósticos del servidor sigue disponible localmente.");
                     assistantNoticeShown = true;
                 } else if (!assistantConnectionNoticeShown && result.unavailable) {
-                    addAssistantMessage("No pude conectar con la IA en este momento; sigo con una respuesta local.");
+                    addAssistantMessage("No pude conectar con la IA en este momento. El estado y los diagnósticos del servidor siguen disponibles localmente.");
                     assistantConnectionNoticeShown = true;
                 }
                 addAssistantMessage(answer.text, "bot", answer.actionKey || "", answer.actionLabel || "", answer.actionUrl || "");
@@ -2794,10 +2899,10 @@ function setupAssistant() {
         } catch {
             pending?.remove();
             if (!assistantConnectionNoticeShown) {
-                addAssistantMessage("No pude conectar con la IA en este momento; sigo con una respuesta local.");
+                addAssistantMessage("No pude conectar con la IA en este momento. El estado y los diagnósticos del servidor siguen disponibles localmente.");
                 assistantConnectionNoticeShown = true;
             }
-            const answer = assistantReply(question);
+            const answer = assistantLocalFallback(question);
             addAssistantMessage(answer.text, "bot", answer.actionKey || "", answer.actionLabel || "", answer.actionUrl || "");
             assistantHistory.length = 0;
         } finally {
