@@ -2146,6 +2146,7 @@ app.get("/api/guilds/:guildId/audit", requireGuildAdmin, async (req, res) => {
 
 const SupportTicket = require("../Models/SupportTicket");
 const SupportTicketConfig = require("../Models/SupportTicketConfig");
+const { buildSupportReplyNotification } = require("../Utils/supportTicketNotification");
 
 // Caché breve para evitar consultar la API de Discord en cada actualización de la página.
 const supportUserGuildsCache = new Map();
@@ -2163,17 +2164,17 @@ async function supportDiscordBotRequest(url, options = {}) {
         signal: AbortSignal.timeout(8000)
     });
 }
-async function notifySupportTicketReply(userId, ticketNumber) {
+async function notifySupportTicketReply(ticket) {
     try {
         const dmResponse = await supportDiscordBotRequest("/users/@me/channels", {
             method: "POST",
-            body: JSON.stringify({ recipient_id: userId })
+            body: JSON.stringify({ recipient_id: ticket.userId })
         });
         if (!dmResponse.ok) throw new Error(`Discord no pudo abrir el DM (${dmResponse.status}).`);
         const dmChannel = await dmResponse.json();
         const messageResponse = await supportDiscordBotRequest(`/channels/${dmChannel.id}/messages`, {
             method: "POST",
-            body: JSON.stringify({ content: `Te han respondido en tu ticket #${ticketNumber}, ve chequealo.` })
+            body: JSON.stringify({ content: buildSupportReplyNotification(ticket) })
         });
         if (!messageResponse.ok) throw new Error(`Discord no pudo enviar el aviso por DM (${messageResponse.status}).`);
     } catch (error) {
@@ -2252,13 +2253,13 @@ async function canAccessSupportTicket(req, ticket) {
     const staffGuildIds = await getSupportStaffGuildIds(req);
     return staffGuildIds.has(guildId);
 }
-function publicTicket(ticket) {
+function publicTicket(ticket, messages = ticket.messages) {
     return {
         id: String(ticket._id), ticketNumber: ticket.ticketNumber, subject: ticket.subject,
-        category: ticket.category, status: ticket.status, source: ticket.source,
+        category: ticket.category, status: ticket.status, source: ticket.source, userId: ticket.userId,
         guildId: ticket.guildId || ticket.discordGuildId || null, guildName: ticket.guildName || null,
         createdAt: ticket.createdAt, updatedAt: ticket.updatedAt, lastMessageAt: ticket.lastMessageAt,
-        messages: ticket.messages.map(message => ({
+        messages: messages.map(message => ({
             id: String(message._id), authorId: message.authorId, authorName: message.authorName,
             authorAvatar: message.authorAvatar, source: message.source, content: message.content, createdAt: message.createdAt
         }))
@@ -2363,11 +2364,15 @@ app.post("/api/support/tickets", requireLogin, requireCsrf, async (req, res) => 
 });
 
 app.get("/api/support/tickets/:ticketId", requireLogin, async (req, res) => {
+    res.set("Cache-Control", "private, no-store");
     if (!/^[a-f\d]{24}$/i.test(req.params.ticketId)) return res.status(404).json({ error: "Ticket no encontrado." });
     try {
         const ticket = await SupportTicket.findById(req.params.ticketId);
         if (!ticket || !await canAccessSupportTicket(req, ticket)) return res.status(404).json({ error: "Ticket no encontrado." });
-        return res.json({ ticket: publicTicket(ticket) });
+        const afterId = String(req.query.after || "").slice(0, 24);
+        const afterIndex = afterId ? ticket.messages.findIndex(message => String(message._id) === afterId) : -1;
+        const messages = afterIndex >= 0 ? ticket.messages.slice(afterIndex + 1) : ticket.messages;
+        return res.json({ ticket: publicTicket(ticket, messages) });
     } catch (error) {
         console.error("[Support] No pude abrir el ticket:", error.message);
         return res.status(500).json({ error: "No pude abrir el ticket." });
@@ -2400,7 +2405,7 @@ app.post("/api/support/tickets/:ticketId/messages", requireLogin, requireCsrf, a
         ticket.lastMessageAt = new Date();
         await ticket.save();
         if (isStaff && user.id !== ticket.userId) {
-            await notifySupportTicketReply(ticket.userId, ticket.ticketNumber);
+            await notifySupportTicketReply(ticket);
         }
         return res.json({ ticket: publicTicket(ticket) });
     } catch (error) {

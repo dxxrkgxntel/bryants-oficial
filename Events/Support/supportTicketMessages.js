@@ -1,5 +1,6 @@
 const SupportTicket = require("../../Models/SupportTicket");
 const SupportTicketConfig = require("../../Models/SupportTicketConfig");
+const { buildSupportReplyNotification } = require("../../Utils/supportTicketNotification");
 
 module.exports = {
     name: "messageCreate",
@@ -31,7 +32,7 @@ module.exports = {
                 try {
                     await message.client.users.send(
                         ticket.userId,
-                        `Te han respondido en tu ticket #${ticket.ticketNumber}, ve chequealo.`
+                        buildSupportReplyNotification(ticket)
                     );
                 } catch (dmError) {
                     console.warn("[Support Tickets] No se pudo enviar el aviso por DM:", dmError.message);
