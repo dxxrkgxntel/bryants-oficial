@@ -56,16 +56,41 @@ function escapePlatformText(value) {
     return String(value || "").replace(/@(?=everyone|here)/gi, "@\u200b").slice(0, 500);
 }
 
+function normalizeViewerCount(value) {
+    if (value === null || value === undefined || (typeof value === "string" && !value.trim()) || typeof value === "boolean") return null;
+    const count = Number(value);
+    return Number.isFinite(count) && count >= 0 ? Math.floor(count) : null;
+}
+
+function getTikTokViewerCount(room) {
+    const counts = [];
+    const visited = new WeakSet();
+    const collect = (value, depth = 0) => {
+        if (!value || typeof value !== "object" || depth > 4 || visited.has(value)) return;
+        visited.add(value);
+        for (const [key, item] of Object.entries(value)) {
+            if (/^(user|viewer|watcher|online)[_-]?count(?:[_-]?str)?$/i.test(key)) {
+                const count = normalizeViewerCount(item);
+                if (count !== null) counts.push(count);
+            }
+            if (item && typeof item === "object") collect(item, depth + 1);
+        }
+    };
+    collect(room);
+    return counts.find(count => count > 0) ?? counts[0] ?? null;
+}
+
 function renderAlert(template, stream, slug, includeViewerCount, platform = "Kick") {
     const normalizedPlatform = ["TikTok", "Twitch", "YouTube"].includes(platform) ? platform : "Kick";
     const isTikTok = normalizedPlatform === "TikTok";
     const isTwitch = normalizedPlatform === "Twitch";
     const isYouTube = normalizedPlatform === "YouTube";
     const username = String(slug || "").replace(/^@+/, "");
+    const viewerCount = normalizeViewerCount(stream.viewer_count);
     const values = {
         channel: escapePlatformText(stream.broadcaster?.username || stream.channel?.slug || username),
         title: escapePlatformText(stream.stream_title || stream.title || "En directo"),
-        viewers: includeViewerCount ? Number(stream.viewer_count || 0).toLocaleString("es") : "",
+        viewers: includeViewerCount ? viewerCount === null ? "No disponible" : viewerCount.toLocaleString("es") : "",
         category: escapePlatformText(stream.category?.name || ""),
         platform,
         url: stream.url || (isTikTok ? `https://www.tiktok.com/@${encodeURIComponent(username)}/live` : isTwitch ? `https://www.twitch.tv/${encodeURIComponent(username)}` : isYouTube ? `https://www.youtube.com/@${encodeURIComponent(username)}/live` : `https://kick.com/${encodeURIComponent(username)}`)
@@ -132,7 +157,7 @@ async function getTikTokLiveInfo(username) {
         stream: {
             id: roomId || `${normalized}:${room.create_time || "live"}`,
             stream_title: room.title || room.liveRoomUserInfo?.title || "En directo en TikTok",
-            viewer_count: Number(room.userCount || room.viewerCount || 0),
+            viewer_count: getTikTokViewerCount(room),
             category: { name: room.category || room.game_name || "" },
             broadcaster: { username: user.nickname || user.uniqueId || normalized },
             url: `https://www.tiktok.com/@${encodeURIComponent(normalized)}/live`
@@ -301,14 +326,16 @@ async function sendLiveAlert(client, alert, state, stream) {
     state.channelId = channel.id;
     state.messageId = message.id;
     state.lastStreamId = String(stream.id || stream.start_time || `${alert.slug}:${stream.stream_title || "live"}`);
-    state.lastViewers = Number(stream.viewer_count || 0);
+    state.lastViewers = normalizeViewerCount(stream.viewer_count);
     state.lastViewerUpdateAt = new Date();
     await state.save();
 }
 
 async function updateViewerCount(client, alert, state, stream) {
-    const viewers = Number(stream.viewer_count || 0);
-    if (!alert.includeViewerCount || !state.messageId || state.lastViewers === viewers || Date.now() - new Date(state.lastViewerUpdateAt || 0).getTime() < VIEWER_REFRESH_MS) return;
+    const viewers = normalizeViewerCount(stream.viewer_count);
+    const lastViewers = normalizeViewerCount(state.lastViewers);
+    const waitingForFirstCount = lastViewers === null;
+    if (!alert.includeViewerCount || viewers === null || !state.messageId || lastViewers === viewers || (!waitingForFirstCount && Date.now() - new Date(state.lastViewerUpdateAt || 0).getTime() < VIEWER_REFRESH_MS)) return;
     const channel = await client.channels.fetch(alert.channelId).catch(() => null);
     if (!channel?.isTextBased()) return;
     const platform = alert.platform || "Kick";
