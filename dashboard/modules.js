@@ -130,11 +130,13 @@ const configurations = {
         fields: [
             { name: "Channel", label: "Canal", type: "channel", channelTypes: [0] },
             { name: "IgnoreBots", label: "Ignorar cuentas de bots", type: "boolean", help: "No envía mensajes de bienvenida en el servidor ni por DM cuando entra una cuenta bot." },
+            { type: "section", label: "Mensaje de bienvenida en el servidor" },
             { name: "Title", label: "Título", type: "text", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.welcome },
             { name: "MessageDes", label: "Descripción", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.welcome, help: "Admite variables con llaves dobles, por ejemplo {{user}}, {{server}} y {{members}}. También puedes insertarlas con los botones." },
             { name: "Color", label: "Color hexadecimal", type: "color", optional: true },
             { name: "Banner", label: "URL del banner", type: "url", optional: true },
             { name: "Thumbnail", label: "URL de miniatura", type: "url", optional: true },
+            { type: "section", label: "Mensaje privado" },
             { name: "SendDM", label: "Activar mensajes de bienvenida al DM", type: "boolean", help: "Cuando esté activo, el bot enviará también un mensaje privado al nuevo miembro." },
             { name: "DMTitle", label: "Título del mensaje privado", type: "text", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.welcome },
             { name: "DMMessage", label: "Mensaje de bienvenida al DM", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.welcome, help: "Usa {{user}}, {{username}}, {{server}} y las demás variables de bienvenida." },
@@ -164,12 +166,14 @@ const configurations = {
         model: require("../Models/BirthdayConfig"),
         guildField: "guildId",
         fields: [
+            { type: "section", label: "Anuncio de cumpleaños" },
             { name: "channelId", label: "Canal de anuncios", type: "channel", channelTypes: [0], optional: true },
             { name: "roleId", label: "Rol de cumpleaños", type: "role", optional: true },
             { name: "birthdayTitle", label: "Título del aviso", type: "text", maxLength: 256, optional: true, templateComposer: true, templateVariables: messageVariables.birthday },
             { name: "birthdayDescription", label: "Descripción del aviso", type: "textarea", maxLength: 4000, optional: true, templateComposer: true, templateVariables: messageVariables.birthday, help: "Puedes insertar variables como {{user}}, {{server}} y {{reward}} con los botones." },
             { name: "birthdayBanner", label: "URL del banner", type: "url", optional: true },
             { name: "birthdayColor", label: "Color hexadecimal", type: "color", optional: true },
+            { type: "section", label: "Recordatorio y recompensa" },
             { name: "birthdayReminder", label: "Recordatorio del día anterior", type: "textarea", maxLength: 2000, optional: true, templateComposer: true, templateVariables: messageVariables.birthdayReminder, help: "Puedes insertar variables como {{user}}, {{server}} y {{date}} con los botones." },
             { name: "birthdayReward", label: "Monedas de cumpleaños", type: "number", min: 0, max: 1000000, optional: true }
         ]
@@ -180,6 +184,7 @@ const configurations = {
         model: require("../Models/boostSchema"),
         guildField: "guildId",
         fields: [
+            { type: "section", label: "Roles y anuncio de boost" },
             { name: "boosterRole", label: "Rol Booster", type: "role" },
             { name: "boosterVipRole", label: "Rol Booster VIP", type: "role" },
             { name: "boosterLegendRole", label: "Rol Booster Legend", type: "role" },
@@ -189,6 +194,7 @@ const configurations = {
             { name: "boostColor", label: "Color hexadecimal", type: "color", optional: true },
             { name: "boostThumbnail", label: "URL de miniatura", type: "url", optional: true },
               { name: "boostImage", label: "URL del banner", type: "url", optional: true },
+              { type: "section", label: "Botones del aviso" },
               { name: "boostButtons", label: "Botones del aviso de boost", type: "buttons", optional: true, help: "Configura hasta cinco botones para reclamar roles o abrir enlaces." }
         ]
     },

@@ -648,6 +648,7 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
 .community-suggestions-grid [data-setting-field="Enabled"] { grid-row: 2; }
 .community-suggestions-grid .form-actions { grid-row: 3; }
 .community-boosts-grid [data-setting-field="boostButtons"] { grid-column: 1 / -1; }
+.community-boosts-grid [data-setting-field="boostImage"], .community-welcome-grid [data-setting-field="Thumbnail"] { grid-column: 1 / -1; }
 .community-welcome-grid .field, .community-leaves-grid .field, .community-birthday-grid .field, .community-boosts-grid .field { align-self: start; }
 .community-welcome-grid .checkbox-field, .community-confessions-grid .checkbox-field, .community-suggestions-grid .checkbox-field { align-self: stretch; }
 .community-welcome-grid .checkbox-field > span, .community-confessions-grid .checkbox-field > span, .community-suggestions-grid .checkbox-field > span { min-width: 0; }
@@ -920,15 +921,22 @@ button:disabled { opacity: .55; cursor: wait !important; }
 }
 .form-section-heading {
     grid-column: 1 / -1;
+    display: flex;
+    min-height: 36px;
+    align-items: center;
+    gap: 10px;
     margin-top: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #ffffff18;
-    color: #c983ff;
-    font-size: 12px;
+    padding: 8px 11px;
+    border: 1px solid #bd75ec24;
+    border-radius: 10px;
+    background: linear-gradient(100deg, #a34ce318, #a34ce304 58%, transparent);
+    color: #d4a2f3;
+    font-size: 10px;
     font-weight: 800;
-    letter-spacing: .1em;
+    letter-spacing: .14em;
     text-transform: uppercase;
 }
+.form-section-heading::before { width: 3px; height: 14px; flex: 0 0 3px; border-radius: 999px; background: linear-gradient(180deg, #ddaaff, #9945d4); box-shadow: 0 0 10px #a44ce344; content: ""; }
 
 .level-preview-list { display: grid; gap: 14px; }
 .level-preview-panel { display: grid; gap: 8px; }
