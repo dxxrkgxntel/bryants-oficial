@@ -11,7 +11,7 @@ Registra una aplicación en el portal de desarrolladores de Kick y añade estas 
 
 El bot utiliza el flujo OAuth de credenciales de cliente para consultar datos públicos de directos. No pongas el secreto en el repositorio ni en el entorno del dashboard web.
 
-En la categoría **Alertas sociales**, abre **Kick** y añade el nombre del canal de Kick, el canal de Discord y el mensaje. Variables disponibles: `{{channel}}`, `{{title}}`, `{{viewers}}`, `{{category}}` y `{{url}}`. La cantidad de espectadores se actualiza cada cinco minutos si se activa la opción.
+En la categoría **Alertas sociales**, selecciona la plataforma y añade el canal, el canal de Discord y el mensaje. Variables disponibles: `{{channel}}`, `{{title}}`, `{{viewers}}`, `{{category}}` y `{{url}}`. La cantidad de espectadores se actualiza cada cinco minutos si se activa la opción. Si la plataforma no devuelve la cifra o la categoría, la alerta muestra `No disponible`; un contador `0` representa cero espectadores reales.
 
 ## Configuración de YouTube
 

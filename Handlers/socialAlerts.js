@@ -147,7 +147,7 @@ function renderAlert(template, stream, slug, includeViewerCount, platform = "Kic
         channel: escapePlatformText(stream.broadcaster?.username || stream.channel?.slug || username),
         title: escapePlatformText(stream.stream_title || stream.title || "En directo"),
         viewers: includeViewerCount ? viewerCount === null ? "No disponible" : viewerCount.toLocaleString("es") : "",
-        category: escapePlatformText(stream.category?.name || ""),
+        category: escapePlatformText(stream.category?.name || "No disponible"),
         platform,
         url: stream.url || (isTikTok ? `https://www.tiktok.com/@${encodeURIComponent(username)}/live` : isTwitch ? `https://www.twitch.tv/${encodeURIComponent(username)}` : isYouTube ? `https://www.youtube.com/@${encodeURIComponent(username)}/live` : `https://kick.com/${encodeURIComponent(username)}`)
     };
@@ -259,7 +259,7 @@ async function getTwitchLiveInfo(login) {
         stream: {
             id: String(data.id),
             stream_title: data.title || "En directo",
-            viewer_count: Number(data.viewer_count || 0),
+            viewer_count: normalizeViewerCount(data.viewer_count),
             category: { name: data.game_name || "" },
             broadcaster: { username: data.user_name || normalized },
             start_time: data.started_at,
@@ -328,7 +328,7 @@ async function getYouTubeLiveInfo(input) {
             is_live: true,
             stream_title: title,
             title,
-            viewer_count: Number(video.liveStreamingDetails?.concurrentViewers || 0),
+            viewer_count: normalizeViewerCount(video.liveStreamingDetails?.concurrentViewers),
             category: { name: "" },
             broadcaster: { username: handle },
             start_time: video.liveStreamingDetails?.actualStartTime,
@@ -391,7 +391,7 @@ async function updateViewerCount(client, alert, state, stream) {
     const viewers = normalizeViewerCount(stream.viewer_count);
     const lastViewers = normalizeViewerCount(state.lastViewers);
     const waitingForFirstCount = lastViewers === null;
-    if (!alert.includeViewerCount || viewers === null || !state.messageId || lastViewers === viewers || (!waitingForFirstCount && Date.now() - new Date(state.lastViewerUpdateAt || 0).getTime() < VIEWER_REFRESH_MS)) return;
+    if (!alert.includeViewerCount || !state.messageId || lastViewers === viewers || (!waitingForFirstCount && Date.now() - new Date(state.lastViewerUpdateAt || 0).getTime() < VIEWER_REFRESH_MS)) return;
     const channel = await client.channels.fetch(alert.channelId).catch(() => null);
     if (!channel?.isTextBased()) return;
     const platform = alert.platform || "Kick";
