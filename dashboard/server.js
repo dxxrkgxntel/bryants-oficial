@@ -1367,6 +1367,29 @@ function findAssistantKnowledgeModule(question, catalog) {
     return ranked[0].module;
 }
 
+function getAssistantWebsiteActionKey(question, websiteHelpRequested) {
+    if (!websiteHelpRequested) return "";
+    const normalized = normalizeAssistantKnowledge(question);
+    const websitePageMentioned = /\b(web|pagina|dashboard|panel)\b/.test(normalized);
+    const actions = [
+        ["appearance", /\b(fondos? personalizados?|fondo del panel|imagen personalizada|imagen de fondo|difuminacion|apariencia)\b/],
+        ["personalStats", /\b(estadisticas personales|mis estadisticas|mi actividad personal)\b/],
+        ["profile", /\b(perfil de discord|mi perfil|perfil de la cuenta|bio|acerca de mi|enlaces de perfil)\b/],
+        ["rewards", /\b(recompensas de cuenta|recompensas personales|referidos|votos registrados|votar por bryvex)\b/],
+        ["support", /\b(centro de soporte|soporte de bryvex|soporte de la web|ticket de soporte|abrir un ticket|crear un ticket|solicitud de ayuda)\b/],
+        ["status", /\b(estado del servicio|estado de la web|estado de la dashboard|pagina de estado|componentes operativos)\b/],
+        ["stats", /\b(estadisticas publicas|estadisticas del servidor|estadisticas|mensajes por dia|metricas del servidor|clasificacion publica)\b/],
+        ["docs", /\b(documentacion|docs|primeros pasos|como empezar|guia de inicio)\b/],
+        ["updates", /\b(novedades|versiones publicadas|actualizaciones publicadas|releases de github)\b/],
+        ["invite", /\b(invitacion al bot|invitar al bot|como invito al bot|anadir el bot|instalar el bot|autorizar el bot)\b/],
+        ["home", /\b(pagina principal|funciones de la web|funciones de bryvex|inicio de bryvex)\b/],
+        ["account", /\b(configuracion de cuenta|ajustes de cuenta|mi cuenta de bryvex)\b/]
+    ];
+    const directMatch = actions.find(([, pattern]) => pattern.test(normalized));
+    if (directMatch) return directMatch[0];
+    return websitePageMentioned && /\b(fondo|fondos|imagen|background|wallpaper)\b/.test(normalized) ? "appearance" : "";
+}
+
 function takeAssistantRateLimit(userId) {
     const now = Date.now();
     const recent = (assistantRequestWindows.get(userId) || []).filter(timestamp => now - timestamp < 60_000);
@@ -1407,9 +1430,10 @@ app.post("/api/guilds/:guildId/assistant", requireLogin, requireCsrf, requireGui
     const accountPageTopic = /\b(cuenta|fondo|fondos|imagen personalizada|apariencia|perfil|bio|estadisticas personales|recompensas|configuracion)\b/.test(normalizedRecentContext);
     const explicitAccountTopic = /\b(mi cuenta de bryvex|fondo del panel|fondo personalizado|restablecer el fondo|quitar el fondo|eliminar el fondo|apariencia|perfil de discord|mi perfil|mi bio|estadisticas personales|configuracion de cuenta|ajustes de cuenta|enlaces de perfil)\b/.test(normalizedRecentContext);
     const websiteNavigationIntent = /\b(funcion|funciones|seccion|secciones|paginas|donde|como|usar|ayuda|ofrece|tiene|que hay|iniciar sesion)\b/.test(normalizedRecentContext);
-    const publicPageTopic = /\b(pagina principal|documentacion|docs|estado del servicio|estado de la web|estado de la dashboard|pagina de estado|estadisticas publicas|novedades|versiones publicadas|centro de soporte|ticket de soporte|invitacion al bot|invitar al bot|como invito al bot|anadir el bot|instalar el bot|autorizar el bot)\b/.test(normalizedRecentContext);
+    const publicPageTopic = /\b(pagina principal|documentacion|docs|estado del servicio|estado de la web|estado de la dashboard|pagina de estado|estadisticas publicas|novedades|versiones publicadas|centro de soporte|soporte de bryvex|soporte de la web|ticket de soporte|abrir un ticket|crear un ticket|invitacion al bot|invitar al bot|como invito al bot|anadir el bot|instalar el bot|autorizar el bot)\b/.test(normalizedRecentContext);
     const websiteHelpRequested = (websiteLocationMentioned && (accountPageTopic || websiteNavigationIntent)) || explicitAccountTopic || publicPageTopic;
     const relatedModule = explicitModule || (!websiteHelpRequested && followUp ? historyModule : null);
+    const websiteActionKey = getAssistantWebsiteActionKey(normalizedRecentContext, websiteHelpRequested);
     const hasBryvexContext = Boolean(explicitModule)
         || /\b(bryvex|discord|bot|servidor|modulo|modulos|comando|comandos|alertas? sociales?|bienvenidas?|despedidas?|autoroles?|trofeos?|niveles?|economia|monedas?|coins|misiones|prestigios?|encuestas?|confesiones?|sugerencias?|cumpleanos|boosts?|tempvoice|tiktok|twitch|youtube|kick)\b/.test(normalizedRecentContext)
         || Boolean(relatedModule && followUp);
@@ -1468,7 +1492,7 @@ app.post("/api/guilds/:guildId/assistant", requireLogin, requireCsrf, requireGui
         });
         const answer = String(response.output_text || "").trim().slice(0, 1800);
         if (!answer) return res.json({ configured: true, unavailable: true });
-        return res.json({ configured: true, answer, moduleKey: relatedModule?.key || "" });
+        return res.json({ configured: true, answer, moduleKey: relatedModule?.key || "", pageKey: websiteActionKey });
     } catch (error) {
         console.warn("[Dashboard Assistant] OpenAI request failed:", error.status || error.request_id || "sin detalle");
         return res.json({ configured: true, unavailable: true });

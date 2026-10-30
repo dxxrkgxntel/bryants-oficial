@@ -2662,6 +2662,21 @@ function assistantQuestionIsBackgroundHelp(question) {
         || (backgroundTopic && websiteContext);
 }
 
+const assistantWebsitePageActions = Object.freeze({
+    account: { href: "/settings#general", label: "Abrir Configuración de cuenta" },
+    appearance: { href: "/settings#appearance", label: "Abrir Apariencia" },
+    profile: { href: "/settings#profile", label: "Abrir Perfil" },
+    personalStats: { href: "/settings#personal-stats", label: "Abrir estadísticas personales" },
+    rewards: { href: "/settings#rewards", label: "Abrir Recompensas" },
+    support: { href: "/support", label: "Abrir Centro de soporte" },
+    status: { href: "/status", label: "Ver estado del servicio" },
+    stats: { href: "/stats", label: "Abrir Estadísticas" },
+    docs: { href: "/docs", label: "Abrir Documentación" },
+    updates: { href: "/updates", label: "Ver Novedades" },
+    invite: { href: "/invitar", label: "Invitar a Bryvex Bot" },
+    home: { href: "/", label: "Abrir página principal" }
+});
+
 function assistantQuestionUsesSocialDiagnostics(question) {
     const q = normalizeSearch(question);
     const mentionsSocialAlerts = /\b(alertas sociales|alerta social|social alerts)\b/.test(q);
@@ -2738,7 +2753,7 @@ function addAssistantMessage(text, role = "bot", actionKey = "", actionLabel = "
         link.className = "assistant-open-module";
         link.textContent = actionLabel;
         link.href = actionUrl;
-        link.target = "_blank";
+        link.target = actionUrl.startsWith("/") && !actionUrl.startsWith("//") ? "_self" : "_blank";
         link.rel = "noopener noreferrer";
         article.append(link);
     } else if (actionKey && actionLabel) {
@@ -2893,7 +2908,14 @@ function setupAssistant() {
             const moduleTitle = moduleKey
                 ? (currentModules.configurations?.[moduleKey] || currentModules.lists?.[moduleKey]).title || "este módulo"
                 : "";
-            addAssistantMessage(result.answer, "bot", moduleKey, moduleKey ? `Abrir ${moduleTitle}` : "");
+            const pageAction = assistantWebsitePageActions[result.pageKey] || null;
+            addAssistantMessage(
+                result.answer,
+                "bot",
+                pageAction ? "" : moduleKey,
+                pageAction?.label || (moduleKey ? `Abrir ${moduleTitle}` : ""),
+                pageAction?.href || ""
+            );
             assistantHistory.push({ role: "user", content: question }, { role: "assistant", content: result.answer });
             if (assistantHistory.length > 6) assistantHistory.splice(0, assistantHistory.length - 6);
         } catch {
