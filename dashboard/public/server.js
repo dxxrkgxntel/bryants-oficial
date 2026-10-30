@@ -1385,15 +1385,22 @@ function makeNav(modules) {
 
 async function renderTrophyMembers(definition) {
     content.innerHTML = `<section class="trophy-members-page">
-        <div class="module-intro"><span class="eyebrow">TROFEOS</span><h2>Quién va en cabeza</h2><p>Clasificación histórica por puntos. Busca por nombre visible o nombre de usuario de Discord y selecciona una persona para localizar sus resultados.</p></div>
-        <div class="trophy-members-toolbar trophy-member-autocomplete">
-            <label for="trophy-leaderboard-search">Buscar miembro</label>
-            <div class="trophy-member-search-wrap">
-                <input id="trophy-leaderboard-search" type="search" placeholder="Escribe un nombre de Discord…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="trophy-member-options">
-                <div id="trophy-member-options" class="trophy-member-options" role="listbox" hidden></div>
+        <header class="trophy-members-hero">
+            <div class="trophy-members-emblem" aria-hidden="true">🏆</div>
+            <div class="trophy-members-hero-copy"><span class="eyebrow">TROFEOS · CLASIFICACIÓN</span><h2>Quién va en cabeza</h2><p>Consulta los puntos y logros de la comunidad. Busca a un miembro para identificar su posición.</p></div>
+            <span class="trophy-members-top-badge">TOP 50</span>
+        </header>
+        <section class="trophy-members-toolbar" aria-label="Buscar en la clasificación">
+            <div class="trophy-members-search-copy"><label for="trophy-leaderboard-search">Buscar miembro</label><small>Por nombre visible o usuario de Discord</small></div>
+            <div class="trophy-member-autocomplete">
+                <div class="trophy-member-search-wrap">
+                    <span class="trophy-member-search-icon" aria-hidden="true">⌕</span>
+                    <input id="trophy-leaderboard-search" type="search" placeholder="Escribe un nombre de Discord…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="trophy-member-options">
+                    <div id="trophy-member-options" class="trophy-member-options" role="listbox" hidden></div>
+                </div>
+                <button id="trophy-member-clear" type="button" class="quiet-button" hidden>Limpiar</button>
             </div>
-            <button id="trophy-member-clear" type="button" class="quiet-button" hidden>Limpiar</button>
-        </div>
+        </section>
         <p id="trophy-member-selection" class="trophy-member-selection" aria-live="polite"></p>
         <div id="trophy-leaderboard" class="trophy-leaderboard"><p class="loading-card">Cargando clasificación…</p></div>
     </section>`;
@@ -1414,11 +1421,23 @@ async function renderTrophyMembers(definition) {
     };
     const renderRows = () => {
         const filtered = selectedMember ? rows.filter(row => String(row.userId) === selectedMember.id) : rows;
-        panel.innerHTML = filtered.length ? filtered.map(row => {
-            const memberName = selectedMember && selectedMember.id === String(row.userId) ? displayName(selectedMember) : "Miembro";
-            const handle = selectedMember && selectedMember.id === String(row.userId) ? "@" + selectedMember.username : "Selecciona un miembro para ver su nombre";
-            return `<article class="trophy-rank-row"><span class="trophy-rank-number">${row.rank}</span><div class="trophy-rank-member"><strong>${escapeHtml(memberName)}</strong><small>${escapeHtml(handle)}</small></div><div class="trophy-rank-stats"><strong>${Number(row.points || 0).toLocaleString("es-ES")} pts</strong><small>${Number(row.unlockedLevels || 0).toLocaleString("es-ES")} niveles · ${Number(row.unlockedAchievements || 0).toLocaleString("es-ES")} trofeos completos</small></div><button type="button" class="quiet-button" data-trophy-member="${escapeHtml(row.userId)}">Ver miembro</button></article>`;
-        }).join("") : '<p class="empty-state">Este miembro todavía no aparece en la clasificación de trofeos.</p>';
+        if (!filtered.length) {
+            panel.innerHTML = `<div class="trophy-empty-state"><span aria-hidden="true">🏆</span><strong>${selectedMember ? "Sin resultados para este miembro" : "Todavía no hay trofeos en la clasificación"}</strong><small>${selectedMember ? "Este miembro aún no tiene puntos o logros registrados." : "Cuando se desbloqueen trofeos, sus resultados aparecerán aquí."}</small></div>`;
+            return;
+        }
+        const highestPoints = Math.max(1, ...rows.map(row => Math.max(0, Number(row.points) || 0)));
+        const rankingRows = filtered.map((row, index) => {
+            const rank = Math.max(1, Number(row.rank) || index + 1);
+            const points = Math.max(0, Number(row.points) || 0);
+            const progress = Math.round(points / highestPoints * 100);
+            const memberId = String(row.userId || "");
+            const isSelected = selectedMember && selectedMember.id === memberId;
+            const memberName = isSelected ? displayName(selectedMember) : "Miembro";
+            const memberDetail = isSelected ? "@" + selectedMember.username : `ID · …${memberId.slice(-4)}`;
+            const rankClass = rank <= 3 ? ` top-${rank}` : "";
+            return `<article class="trophy-rank-row${rankClass}"><span class="trophy-rank-number" aria-label="Puesto ${rank}">#${rank}</span><div class="trophy-rank-member"><strong>${escapeHtml(memberName)}</strong><small>${escapeHtml(memberDetail)}</small></div><div class="trophy-rank-stats"><div class="trophy-rank-points"><span>PUNTOS</span><strong>${points.toLocaleString("es-ES")} <small>pts</small></strong></div><div class="trophy-rank-progress" role="progressbar" aria-label="Puntos relativos al primer lugar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}"><span style="width:${progress}%"></span></div><div class="trophy-rank-achievements"><span><strong>${Number(row.unlockedLevels || 0).toLocaleString("es-ES")}</strong> niveles</span><span><strong>${Number(row.unlockedAchievements || 0).toLocaleString("es-ES")}</strong> trofeos</span></div></div><button type="button" class="quiet-button" data-trophy-member="${escapeHtml(memberId)}">Ver miembro <span aria-hidden="true">→</span></button></article>`;
+        }).join("");
+        panel.innerHTML = `<div class="trophy-ranking-heading"><div><span class="eyebrow">PUNTUACIÓN TOTAL</span><h3>${selectedMember ? "Posición del miembro" : "Clasificación histórica"}</h3></div><span class="trophy-ranking-count">${filtered.length} ${filtered.length === 1 ? "miembro" : "miembros"}</span></div><div class="trophy-rank-list">${rankingRows}</div>`;
         panel.querySelectorAll("[data-trophy-member]").forEach(button => button.addEventListener("click", () => {
             const userId = button.dataset.trophyMember;
             navigateToModule("memberEconomy", currentModules);
