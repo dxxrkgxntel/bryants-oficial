@@ -694,14 +694,24 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
 .checkbox-field { display: flex; align-items: center; justify-content: space-between; min-height: 46px; padding: 0 12px; border: 1px solid #ffffff20; border-radius: 12px; background: #111015; transition: border-color .18s ease, background .18s ease; }
 .checkbox-field:hover { border-color: #ffffff38; background: #141118; }
 .checkbox-field { align-self: start; }
-.checkbox-field input { width: 18px; min-height: 18px; accent-color: #aa5ce3; }
-.checkbox-field input:focus-visible { outline: 2px solid #d2a0ff; outline-offset: 3px; }
+.checkbox-field input[type="checkbox"] { position: relative; width: 42px; height: 24px; min-height: 24px; flex: 0 0 42px; margin: 0 0 0 12px; padding: 0; appearance: none; border: 1px solid #ffffff30; border-radius: 999px; background: #ffffff12; box-shadow: inset 0 1px 2px #0005; cursor: pointer; transition: background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .16s ease; }
+.checkbox-field input[type="checkbox"]::before { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: linear-gradient(145deg, #fff, #cfc5d8); box-shadow: 0 1px 4px #0008; content: ""; transition: transform .2s cubic-bezier(.2,.8,.2,1), background .2s ease; }
+.checkbox-field input[type="checkbox"]:checked { border-color: #c47af277; background: linear-gradient(110deg, #7531a8, #a44cdb); box-shadow: inset 0 0 0 1px #e3baff22, 0 0 14px #9e49d52a; }
+.checkbox-field input[type="checkbox"]:checked::before { transform: translateX(18px); background: linear-gradient(145deg, #fff, #ead8ff); }
+.checkbox-field input[type="checkbox"]:hover { border-color: #d1a0ef; }
+.checkbox-field input[type="checkbox"]:active { transform: scale(.94); }
+.checkbox-field input[type="checkbox"]:focus-visible { outline: 2px solid #d2a0ff; outline-offset: 3px; }
+.checkbox-field input[type="checkbox"]:disabled { cursor: not-allowed; opacity: .5; }
 .form-actions { display: flex; align-items: center; gap: 9px; grid-column: 1 / -1; padding-top: 4px; }
 .form-actions .primary-button { margin: 0; padding: 11px 14px; gap: 8px; font-size: 12px; cursor: pointer; }
-.save-feedback { min-height: 1em; color: #a99fb2; font-size: 11px; }
+.save-feedback { display: inline-flex; align-items: center; min-height: 1em; color: #a99fb2; font-size: 11px; transition: color .18s ease; }
+.save-feedback::before { display: inline-block; width: 1em; margin-right: 5px; opacity: 0; text-align: center; transform: scale(.7); transition: opacity .18s ease, transform .18s ease; content: ""; }
 .save-feedback.pending { color: #d4b1ee; }
-.save-feedback.success { color: #79e5ab; }
-.save-feedback.error { color: #ff9eae; }
+.save-feedback.pending::before { opacity: 1; content: "◌"; animation: save-feedback-spin 1s linear infinite; }
+.save-feedback.success { color: #79e5ab; animation: save-feedback-pop .24s ease-out; }
+.save-feedback.success::before { opacity: 1; transform: scale(1); content: "✓"; }
+.save-feedback.error { color: #ff9eae; animation: save-feedback-shake .22s ease-out; }
+.save-feedback.error::before { opacity: 1; transform: scale(1); content: "!"; }
 button:disabled { opacity: .55; cursor: wait !important; }
 .notice { position: sticky; top: 12px; z-index: 5; margin-top: 12px; padding: 11px 14px; border: 1px solid #5bd08c55; border-radius: 9px; background: #17402b; color: #b7f3cf; font-size: 12px; }
 .notice-error { border-color: #ef6c8255; background: #481e29; color: #ffc0cb; }
@@ -1082,6 +1092,9 @@ button:disabled { opacity: .55; cursor: wait !important; }
 @keyframes overview-orbit-drift { from { opacity: .45; transform: translate(-5px, 3px) scale(.96); } to { opacity: 1; transform: translate(7px, -5px) scale(1.04); } }
 @keyframes ambient-star-pulse { 0%, 100% { opacity: .7; transform: scale(.92); } 50% { opacity: 1; transform: scale(1.12); } }
 @keyframes overview-card-enter { from { opacity: 0; filter: blur(5px); } to { opacity: 1; filter: blur(0); } }
+@keyframes save-feedback-spin { to { transform: rotate(360deg); } }
+@keyframes save-feedback-pop { from { opacity: .65; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes save-feedback-shake { 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
 @media (max-width: 600px) {
     .assistant-widget { right: 12px; bottom: 12px; }
     .assistant-panel { height: min(560px, calc(100dvh - 84px)); }
