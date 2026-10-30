@@ -69,7 +69,7 @@
                 <div><strong>Asistente Bryvex</strong><small id="assistant-context-label">Conectado al servidor activo</small></div>
             </header>
             <div id="assistant-messages" class="assistant-messages" role="log" aria-live="polite" aria-relevant="additions">
-                <article class="assistant-message assistant-message-bot"><p>¡Hola! Puedo revisar la configuración cargada de este servidor, explicar comprobaciones y recomendarte qué módulo abrir. ¿Qué necesitas?</p></article>
+                <article class="assistant-message assistant-message-bot"><p>¡Hola! Soy el asistente de Bryvex Bot. Puedo explicar cómo funcionan sus módulos y ayudarte a revisar el estado y las comprobaciones de este servidor. ¿Qué necesitas?</p></article>
             </div>
             <div class="assistant-suggestions" id="assistant-suggestions">
                 <button type="button" data-assistant-prompt="¿Cómo está la configuración de mi servidor?">Estado del servidor</button>
@@ -81,7 +81,7 @@
                 <input id="assistant-input" name="question" type="text" maxlength="500" placeholder="Pregunta sobre tu servidor…" autocomplete="off" required>
                 <button type="submit" aria-label="Enviar pregunta">↑</button>
             </form>
-            <p class="assistant-disclaimer">Respuestas basadas en la configuración y las comprobaciones disponibles. No aplica cambios por ti.</p>
+            <p class="assistant-disclaimer">El estado del servidor se revisa localmente. Si la IA está conectada, OpenAI recibe tu pregunta, hasta 6 mensajes recientes y la ficha pública del módulo; nunca aplica cambios por ti.</p>
         </section>
     </section>
 </body>

@@ -2630,10 +2630,14 @@ function assistantReply(question) {
         return { text: "No he encontrado incidencias concretas de canales, roles o permisos en los datos disponibles. Puedes abrir Comprobaciones para consultar los resultados actuales; los permisos pueden cambiar directamente en Discord." , actionKey: "__checks", actionLabel: "Abrir Comprobaciones" };
     }
     return {
-        text: "No puedo responder esa consulta directamente con la información que tengo disponible. Ve a Support y abre un ticket; el equipo podrá ayudarte.",
-        actionUrl: "/support",
-        actionLabel: "Ir a Support y abrir un ticket"
+        text: "Puedo ayudarte con el uso y la configuración de Bryvex Bot. Cuéntame qué módulo, función o problema del bot quieres revisar."
     };
+}
+
+function assistantQuestionUsesLiveData(question) {
+    const q = normalizeSearch(question);
+    return /^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|saludos)\b/.test(q)
+        || /\b(estado|resumen|situacion|progreso|pendiente|problema|problemas|error|errores|diagnostico|diagnosticos|comprobacion|comprobaciones|fallo|fallos|recomendacion|recomendaciones|que esta mal|que debo corregir|que falta|por donde empiezo|configuracion actual|actualmente|ahora mismo|esta activo|esta activa|esta configurado|esta configurada|guardado|guardada)\b/.test(q);
 }
 
 function addAssistantMessage(text, role = "bot", actionKey = "", actionLabel = "", actionUrl = "") {
@@ -2667,6 +2671,7 @@ function addAssistantMessage(text, role = "bot", actionKey = "", actionLabel = "
     }
     messages.append(article);
     messages.scrollTop = messages.scrollHeight;
+    return article;
 }
 
 function setupAssistant() {
@@ -2678,6 +2683,11 @@ function setupAssistant() {
     const form = document.querySelector("#assistant-form");
     const input = document.querySelector("#assistant-input");
     if (!launcher || !panel || !form || !input) return;
+    const submitButton = form.querySelector("button[type=submit]");
+    const assistantHistory = [];
+    let assistantAiConfigured = null;
+    let assistantNoticeShown = false;
+    let assistantConnectionNoticeShown = false;
     const setExpanded = expanded => {
         panel.classList.toggle("is-expanded", expanded);
         expand?.setAttribute("aria-pressed", String(expanded));
@@ -2716,14 +2726,86 @@ function setupAssistant() {
         input.value = button.dataset.assistantPrompt || "";
         form.requestSubmit();
     }));
-    form.addEventListener("submit", event => {
+    form.addEventListener("submit", async event => {
         event.preventDefault();
         const question = input.value.trim();
-        if (!question || !configState || !currentModules) return;
+        if (!question || !configState || !currentModules || submitButton?.disabled) return;
         addAssistantMessage(question, "user");
         input.value = "";
-        const answer = assistantReply(question);
-        addAssistantMessage(answer.text, "bot", answer.actionKey || "", answer.actionLabel || "", answer.actionUrl || "");
+        if (assistantQuestionUsesLiveData(question)) {
+            const answer = assistantReply(question);
+            addAssistantMessage(answer.text, "bot", answer.actionKey || "", answer.actionLabel || "", answer.actionUrl || "");
+            assistantHistory.length = 0;
+            return;
+        }
+
+        if (assistantAiConfigured === false) {
+            const answer = assistantReply(question);
+            if (!assistantNoticeShown) {
+                addAssistantMessage("La IA aún no está conectada. Añade OPENAI_API_KEY en las variables de entorno del servicio bryvex-dashboard para activarla; mientras tanto sigo con la ayuda local.");
+                assistantNoticeShown = true;
+            }
+            addAssistantMessage(answer.text, "bot", answer.actionKey || "", answer.actionLabel || "", answer.actionUrl || "");
+            assistantHistory.length = 0;
+            return;
+        }
+
+        submitButton.disabled = true;
+        input.disabled = true;
+        form.setAttribute("aria-busy", "true");
+        const pending = addAssistantMessage("Estoy revisando la ayuda de Bryvex…");
+        pending?.classList.add("assistant-message-pending");
+        try {
+            const result = await api(`/api/guilds/${encodeURIComponent(activeGuild.id)}/assistant`, {
+                method: "POST",
+                body: JSON.stringify({ question, history: assistantHistory.slice(-6) }),
+                signal: AbortSignal.timeout(25_000)
+            });
+            pending?.remove();
+            assistantAiConfigured = Boolean(result.configured);
+            if (result.inScope === false) {
+                addAssistantMessage("Puedo ayudarte solo con Bryvex Bot y su dashboard. Dime qué módulo o función del bot quieres revisar.");
+                assistantHistory.length = 0;
+                return;
+            }
+            if (!result.configured || result.unavailable || !result.answer) {
+                const answer = assistantReply(question);
+                if (!assistantNoticeShown && !result.configured) {
+                    addAssistantMessage("La IA aún no está conectada. Añade OPENAI_API_KEY en las variables de entorno del servicio bryvex-dashboard para activarla; mientras tanto sigo con la ayuda local.");
+                    assistantNoticeShown = true;
+                } else if (!assistantConnectionNoticeShown && result.unavailable) {
+                    addAssistantMessage("No pude conectar con la IA en este momento; sigo con una respuesta local.");
+                    assistantConnectionNoticeShown = true;
+                }
+                addAssistantMessage(answer.text, "bot", answer.actionKey || "", answer.actionLabel || "", answer.actionUrl || "");
+                assistantHistory.length = 0;
+                return;
+            }
+
+            const moduleKey = result.moduleKey && (currentModules.configurations?.[result.moduleKey] || currentModules.lists?.[result.moduleKey])
+                ? result.moduleKey
+                : "";
+            const moduleTitle = moduleKey
+                ? (currentModules.configurations?.[moduleKey] || currentModules.lists?.[moduleKey]).title || "este módulo"
+                : "";
+            addAssistantMessage(result.answer, "bot", moduleKey, moduleKey ? `Abrir ${moduleTitle}` : "");
+            assistantHistory.push({ role: "user", content: question }, { role: "assistant", content: result.answer });
+            if (assistantHistory.length > 6) assistantHistory.splice(0, assistantHistory.length - 6);
+        } catch {
+            pending?.remove();
+            if (!assistantConnectionNoticeShown) {
+                addAssistantMessage("No pude conectar con la IA en este momento; sigo con una respuesta local.");
+                assistantConnectionNoticeShown = true;
+            }
+            const answer = assistantReply(question);
+            addAssistantMessage(answer.text, "bot", answer.actionKey || "", answer.actionLabel || "", answer.actionUrl || "");
+            assistantHistory.length = 0;
+        } finally {
+            submitButton.disabled = false;
+            input.disabled = false;
+            form.removeAttribute("aria-busy");
+            input.focus();
+        }
     });
     launcher.hidden = false;
     document.querySelector("#assistant-context-label").textContent = `Servidor: ${activeGuild?.name || "activo"}`;
