@@ -112,6 +112,11 @@ function registerFormGuard(form, fields) {
         const dirty = formSnapshot(form, fields) !== guard.baseline;
         if (indicator) indicator.hidden = !dirty;
         form.classList.toggle("has-unsaved-changes", dirty);
+        const feedback = form.querySelector(".save-feedback");
+        if (dirty && (feedback?.classList.contains("success") || feedback?.classList.contains("error"))) {
+            feedback.textContent = "";
+            feedback.className = "save-feedback";
+        }
     };
     activeFormGuard = guard;
     form.addEventListener("input", guard.update);
