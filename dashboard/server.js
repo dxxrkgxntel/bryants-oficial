@@ -1481,24 +1481,49 @@ app.get("/api/guilds/:guildId/members/search", requireGuildAdmin, async (req, re
     }
 });
 
+async function getGuildTrophyRanking(guildId, limit = null) {
+    const pipeline = [
+        { $match: { guildId } },
+        { $group: {
+            _id: "$userId",
+            points: { $sum: { $ifNull: ["$pointsEarned", 0] } },
+            unlockedLevels: { $sum: { $size: { $ifNull: ["$unlockedLevels", []] } } },
+            unlockedAchievements: { $sum: { $cond: [{ $ne: ["$unlockedAt", null] }, 1, 0] } }
+        } },
+        { $sort: { points: -1, unlockedLevels: -1, _id: 1 } }
+    ];
+    if (Number.isInteger(limit) && limit > 0) pipeline.push({ $limit: limit });
+    return UserAchievement.aggregate(pipeline);
+}
+
 app.get("/api/guilds/:guildId/members/:userId/economy", requireGuildAdmin, async (req, res) => {
     if (!/^\d{17,20}$/.test(req.params.userId)) return res.status(400).json({ error: "ID de miembro inválido." });
     try {
-        const [member, economy, definitions, progress] = await Promise.all([
+        const [member, economy, definitions, progress, trophyRanking] = await Promise.all([
             discordBotRequest(`https://discord.com/api/v10/guilds/${req.params.guildId}/members/${req.params.userId}`),
             EconomyUser.findOne({ guildId: req.params.guildId, userId: req.params.userId }).lean(),
             Achievement.find({ guildId: req.params.guildId, enabled: true }).sort({ category: 1, goal: 1, name: 1 }).lean(),
-            UserAchievement.find({ guildId: req.params.guildId, userId: req.params.userId }).lean()
+            UserAchievement.find({ guildId: req.params.guildId, userId: req.params.userId }).lean(),
+            getGuildTrophyRanking(req.params.guildId)
         ]);
         const progressById = new Map(progress.map(entry => [entry.achievementId, entry]));
         const achievements = definitions.map(item => {
             const entry = progressById.get(item.achievementId);
             return { achievementId: item.achievementId, name: item.name, description: item.description, emoji: item.emoji, category: item.category, goal: item.goal, progress: entry?.progress || 0, unlockedAt: entry?.unlockedAt || null, rewardCoins: item.rewardCoins || 0 };
         });
+        const trophyIndex = trophyRanking.findIndex(row => String(row._id) === req.params.userId);
+        const trophyMember = trophyIndex >= 0 ? trophyRanking[trophyIndex] : null;
         return res.json({
             member: { id: member.user.id, username: member.user.username, globalName: member.user.global_name, nick: member.nick, avatar: member.user.avatar },
             economy: economy || { wallet: 0, bank: 0, inventory: [] },
-            achievements
+            achievements,
+            trophySummary: {
+                rank: trophyIndex >= 0 ? trophyIndex + 1 : null,
+                totalMembers: trophyRanking.length,
+                points: trophyMember?.points || 0,
+                unlockedLevels: trophyMember?.unlockedLevels || 0,
+                unlockedAchievements: trophyMember?.unlockedAchievements || 0
+            }
         });
     } catch (error) { return res.status(error.status === 404 ? 404 : 502).json({ error: error.status === 404 ? "El miembro ya no está en el servidor." : error.message || "No pude cargar la economía." }); }
 });
@@ -1506,17 +1531,7 @@ app.get("/api/guilds/:guildId/members/:userId/economy", requireGuildAdmin, async
 app.get("/api/guilds/:guildId/trophies/leaderboard", requireGuildAdmin, async (req, res) => {
     res.set("Cache-Control", "private, no-store");
     try {
-        const rows = await UserAchievement.aggregate([
-            { $match: { guildId: req.params.guildId } },
-            { $group: {
-                _id: "$userId",
-                points: { $sum: { $ifNull: ["$pointsEarned", 0] } },
-                unlockedLevels: { $sum: { $size: { $ifNull: ["$unlockedLevels", []] } } },
-                unlockedAchievements: { $sum: { $cond: [{ $ne: ["$unlockedAt", null] }, 1, 0] } }
-            } },
-            { $sort: { points: -1, unlockedLevels: -1, _id: 1 } },
-            { $limit: 50 }
-        ]);
+        const rows = await getGuildTrophyRanking(req.params.guildId, 50);
         const displayNames = new Array(rows.length);
         let nextRow = 0;
         const workers = Array.from({ length: Math.min(5, rows.length) }, async () => {

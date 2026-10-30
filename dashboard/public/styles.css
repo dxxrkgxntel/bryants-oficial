@@ -679,6 +679,9 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
 .member-search-result strong { font-weight: 550; }
 .member-economy-detail { display: grid; gap: 16px; margin-top: 24px; }
 .member-economy-heading h3 { margin: 4px 0; }
+.member-trophy-summary { border-color: #ad65e54a; background: linear-gradient(145deg, #281b34, #130f19); }
+.member-trophy-summary .member-economy-stat { align-items: center; min-height: 58px; background: #a04bd50b; }
+.member-trophy-summary .member-economy-stat strong { color: #d6a8ff; font-size: 18px; }
 .member-balance-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .member-balance-grid article, .member-balance-field, .member-backpack { display: grid; gap: 8px; padding: 18px; border: 1px solid #ffffff18; border-radius: 12px; background: linear-gradient(145deg, #211827, #110e16); }
 .member-balance-grid article > span, .member-balance-field > span { color: #c7b8d0; font-size: 12px; }
