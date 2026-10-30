@@ -2566,6 +2566,59 @@ function setupAssistant() {
     document.querySelector("#assistant-context-label").textContent = `Servidor: ${activeGuild?.name || "activo"}`;
 }
 
+function setupAmbientMotion() {
+    const toggle = document.querySelector("#ambient-motion-toggle");
+    const label = toggle?.querySelector(".motion-toggle-label");
+    if (!toggle || !label) return;
+
+    const storageKey = "bryvex-dashboard-ambient-motion";
+    let requested = true;
+    try {
+        requested = window.localStorage.getItem(storageKey) !== "off";
+    } catch {
+        // The motion control still works for this page if browser storage is unavailable.
+    }
+
+    const motionPreference = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    let systemReduced = Boolean(motionPreference?.matches);
+    const update = () => {
+        const enabled = requested && !systemReduced;
+        document.body.dataset.ambientMotion = enabled ? "on" : "off";
+        toggle.setAttribute("aria-pressed", String(enabled));
+        toggle.disabled = systemReduced;
+        label.textContent = systemReduced ? "Movimiento reducido" : enabled ? "Animación activa" : "Animación pausada";
+        const accessibleLabel = systemReduced
+            ? "Animación desactivada por la preferencia de movimiento reducido del sistema"
+            : enabled ? "Pausar animación ambiental" : "Reanudar animación ambiental";
+        toggle.setAttribute("aria-label", accessibleLabel);
+        toggle.title = accessibleLabel;
+    };
+
+    toggle.addEventListener("click", () => {
+        if (systemReduced) return;
+        requested = !requested;
+        try {
+            window.localStorage.setItem(storageKey, requested ? "on" : "off");
+        } catch {
+            // Keep the selected state for the current page when browser storage is unavailable.
+        }
+        update();
+    });
+
+    if (motionPreference?.addEventListener) {
+        motionPreference.addEventListener("change", event => {
+            systemReduced = event.matches;
+            update();
+        });
+    } else {
+        motionPreference?.addListener?.(event => {
+            systemReduced = event.matches;
+            update();
+        });
+    }
+    update();
+}
+
 async function initialize() {
     loadFavorites();
     try {
@@ -2621,4 +2674,5 @@ window.addEventListener("beforeunload", event => {
     event.returnValue = "";
 });
 
+setupAmbientMotion();
 initialize();
