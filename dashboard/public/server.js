@@ -4,7 +4,7 @@ const nav = document.querySelector("#module-nav");
 const content = document.querySelector("#module-content");
 const notice = document.querySelector("#notice");
 let csrfToken = "";
-let resources = { channels: [], roles: [], roleIds: [] };
+let resources = { channels: [], roles: [], roleIds: [], botAvatar: "/bot-avatar.png" };
 let configState = null;
 let currentModule = "";
 let activeGuild = null;
@@ -954,7 +954,9 @@ function setupTemplateComposers(form) {
 
 function safePreviewImage(value) {
     try {
-        const url = new URL(String(value || ""), window.location.href);
+        const candidate = String(value || "").trim();
+        if (!candidate) return "";
+        const url = new URL(candidate, window.location.href);
         return url.protocol === "https:" ? url.href : "";
     } catch { return ""; }
 }
@@ -999,32 +1001,50 @@ function renderPreviewTemplate(template, overrides = {}) {
         .replace(/<#(\d+)>/g, (_, id) => `#${resources.channels.find(channel => channel.id === id)?.name || "canal"}`);
 }
 
+function renderDiscordEmojiText(value) {
+    return escapeHtml(value).replace(/&lt;(a?):([a-zA-Z0-9_]{2,32}):(\d{17,20})&gt;/g, (_match, animated, name, id) => {
+        const extension = animated ? "gif" : "png";
+        return `<img class="discord-preview-emoji" data-preview-emoji src="https://cdn.discordapp.com/emojis/${id}.${extension}?size=32" alt=":${name}:" title=":${name}:">`;
+    });
+}
+
+function renderPreviewText(template, overrides = {}) {
+    return renderDiscordEmojiText(renderPreviewTemplate(template, overrides));
+}
+
+function renderPreviewBotAuthor() {
+    const avatar = resources.botAvatar ? safePreviewImage(resources.botAvatar) || "/bot-avatar.png" : "/bot-avatar.png";
+    return `<div class="discord-preview-author"><img class="discord-preview-bot-avatar" data-preview-image src="${escapeHtml(avatar)}" alt=""><strong>Bryvex Bot</strong><span>APP</span><small>ahora</small></div>`;
+}
+
 function renderPreviewMarkup(key, values) {
     if (key === "trophySettings") {
         const mode = ["card", "components", "embed", "text", "dm", "silent"].includes(values.mode) ? values.mode : "embed";
         const color = /^#[0-9a-f]{6}$/i.test(String(values.color || "")) ? values.color : "#0000FF";
         const title = String(values.title || "TROFEO DESBLOQUEADO");
         const template = renderPreviewTemplate(values.template || "{user} desbloqueó {achievement} (+{points} puntos)", { user: "@Miembro", achievement: "King of Spam", points: "20", rarity: "RARO" });
+        const author = renderPreviewBotAuthor();
         const channel = String(values.channel || "").trim();
         const channelLabel = channel ? "# canal seleccionado" : "# canal de anuncios";
         const heading = `<div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA · TROFEOS</span><small>Ejemplo de desbloqueo con los ajustes actuales</small></div>`;
         if (mode === "silent") return `<section class="live-preview trophy-live-preview" data-preview="trophySettings">${heading}<article class="trophy-preview-silent"><span class="trophy-preview-icon">🔕</span><div><strong>Modo silencioso</strong><p>Los trofeos y puntos se registran, pero no se publica ningún anuncio.</p></div></article></section>`;
-        if (mode === "dm") return `<section class="live-preview trophy-live-preview" data-preview="trophySettings">${heading}<div class="trophy-preview-context">Vista simulada de mensaje directo a <strong>@Miembro</strong></div><article class="trophy-preview-message" style="--preview-accent:${color}"><div class="trophy-preview-avatar">🏆</div><div class="trophy-preview-message-body"><div class="trophy-preview-author">Bryvex Bot <small>APP · ahora</small></div><p>${escapeHtml(template)}</p><p class="trophy-preview-muted">King of Spam · Envía 10.000 mensajes</p></div></article></section>`;
-        if (mode === "text") return `<section class="live-preview trophy-live-preview" data-preview="trophySettings">${heading}<div class="trophy-preview-context">Publicación de texto en <strong>${escapeHtml(channelLabel)}</strong></div><article class="trophy-preview-message trophy-preview-plain" style="--preview-accent:${color}"><div class="trophy-preview-avatar">🏆</div><div class="trophy-preview-message-body"><div class="trophy-preview-author">Bryvex Bot <small>APP · ahora</small></div><p>${escapeHtml(template)}</p></div></article></section>`;
+        if (mode === "dm") return `<section class="live-preview trophy-live-preview" data-preview="trophySettings">${heading}<div class="trophy-preview-context">Vista simulada de mensaje directo a <strong>@Miembro</strong></div>${author}<article class="trophy-preview-message" style="--preview-accent:${color}"><div class="trophy-preview-avatar">🏆</div><div class="trophy-preview-message-body"><p>${renderDiscordEmojiText(template)}</p><p class="trophy-preview-muted">King of Spam · Envía 10.000 mensajes</p></div></article></section>`;
+        if (mode === "text") return `<section class="live-preview trophy-live-preview" data-preview="trophySettings">${heading}<div class="trophy-preview-context">Publicación de texto en <strong>${escapeHtml(channelLabel)}</strong></div>${author}<article class="trophy-preview-message trophy-preview-plain" style="--preview-accent:${color}"><div class="trophy-preview-avatar">🏆</div><div class="trophy-preview-message-body"><p>${renderDiscordEmojiText(template)}</p></div></article></section>`;
         const imageUrl = safePreviewImage(values.background);
         const imageStyle = imageUrl ? `background-image:linear-gradient(90deg,rgba(8,10,22,.86),rgba(8,10,22,.4)),url('${escapeHtml(imageUrl)}');` : "";
-        if (mode === "card") return `<section class="live-preview trophy-live-preview" data-preview="trophySettings">${heading}<div class="trophy-preview-context">Tarjeta de imagen en <strong>${escapeHtml(channelLabel)}</strong></div><article class="trophy-preview-card" style="--preview-accent:${color};${imageStyle}"><span class="trophy-preview-kicker">${escapeHtml(title)}</span><div class="trophy-preview-card-title"><span>🏆</span><strong>King of Spam</strong></div><p>Envía 10.000 mensajes</p><div class="trophy-preview-card-footer"><span>RARO</span><strong>+20 PTS</strong></div><small>${escapeHtml(template)}</small></article></section>`;
-        if (mode === "components") return `<section class="live-preview trophy-live-preview" data-preview="trophySettings">${heading}<div class="trophy-preview-context">Components V2 en <strong>${escapeHtml(channelLabel)}</strong></div><article class="trophy-preview-components" style="--preview-accent:${color}"><div class="trophy-preview-components-accent"></div><div class="trophy-preview-components-content"><h3>🏆 ${escapeHtml(title)}</h3><h4>👑 King of Spam</h4><p>Envía 10.000 mensajes</p><div class="trophy-preview-components-points">RARO · +20 PTS</div><p class="trophy-preview-muted">${escapeHtml(template)}</p></div></article></section>`;
-        return `<section class="live-preview trophy-live-preview" data-preview="trophySettings">${heading}<div class="trophy-preview-context">Embed clásico en <strong>${escapeHtml(channelLabel)}</strong></div><article class="trophy-preview-embed" style="--preview-accent:${color}"><div class="trophy-preview-embed-body"><div class="trophy-preview-author">Bryvex Bot <small>APP · ahora</small></div><h3>🏆 ${escapeHtml(title)}</h3><p><strong>King of Spam</strong></p><p>Envía 10.000 mensajes</p><p>${escapeHtml(template)}</p><div class="trophy-preview-fields"><div><small>Rareza</small><strong>RARO</strong></div><div><small>Puntos</small><strong>+20</strong></div></div></div></article></section>`;
+        if (mode === "card") return `<section class="live-preview trophy-live-preview" data-preview="trophySettings">${heading}<div class="trophy-preview-context">Tarjeta de imagen en <strong>${escapeHtml(channelLabel)}</strong></div>${author}<article class="trophy-preview-card" style="--preview-accent:${color};${imageStyle}"><span class="trophy-preview-kicker">${renderDiscordEmojiText(title)}</span><div class="trophy-preview-card-title"><span>🏆</span><strong>King of Spam</strong></div><p>Envía 10.000 mensajes</p><div class="trophy-preview-card-footer"><span>RARO</span><strong>+20 PTS</strong></div><small>${renderDiscordEmojiText(template)}</small></article></section>`;
+        if (mode === "components") return `<section class="live-preview trophy-live-preview" data-preview="trophySettings">${heading}<div class="trophy-preview-context">Components V2 en <strong>${escapeHtml(channelLabel)}</strong></div>${author}<article class="trophy-preview-components" style="--preview-accent:${color}"><div class="trophy-preview-components-accent"></div><div class="trophy-preview-components-content"><h3>🏆 ${renderDiscordEmojiText(title)}</h3><h4>👑 King of Spam</h4><p>Envía 10.000 mensajes</p><div class="trophy-preview-components-points">RARO · +20 PTS</div><p class="trophy-preview-muted">${renderDiscordEmojiText(template)}</p></div></article></section>`;
+        return `<section class="live-preview trophy-live-preview" data-preview="trophySettings">${heading}<div class="trophy-preview-context">Embed clásico en <strong>${escapeHtml(channelLabel)}</strong></div>${author}<article class="trophy-preview-embed" style="--preview-accent:${color}"><div class="trophy-preview-embed-body"><h3>🏆 ${renderDiscordEmojiText(title)}</h3><p><strong>King of Spam</strong></p><p>Envía 10.000 mensajes</p><p>${renderDiscordEmojiText(template)}</p><div class="trophy-preview-fields"><div><small>Rareza</small><strong>RARO</strong></div><div><small>Puntos</small><strong>+20</strong></div></div></div></article></section>`;
     }
     const color = validPreviewColor(values.color);
     const banner = safePreviewImage(values.banner || values.image);
     const thumbnail = safePreviewImage(values.thumbnail);
     const title = renderPreviewTemplate(values.title).trim();
     const description = renderPreviewTemplate(values.description).trim();
-    const configuredText = [title ? `<h3>${escapeHtml(title)}</h3>` : "", title && description ? '<hr class="discord-preview-separator">' : "", description ? `<p>${escapeHtml(description)}</p>` : ""].filter(Boolean).join("");
+    const configuredText = [title ? `<h3>${renderDiscordEmojiText(title)}</h3>` : "", title && description ? '<hr class="discord-preview-separator">' : "", description ? `<p>${renderDiscordEmojiText(description)}</p>` : ""].filter(Boolean).join("");
     const media = banner ? `<div class="message-preview-banner"><img data-preview-image src="${escapeHtml(banner)}" alt="Vista previa del banner"></div>` : "";
-    const thumbnailBlock = thumbnail ? `<img class="message-preview-avatar" data-preview-image src="${escapeHtml(thumbnail)}" alt="Miniatura configurada">` : "";
+    const thumbnailBlock = thumbnail ? `<img class="discord-preview-thumbnail" data-preview-image src="${escapeHtml(thumbnail)}" alt="Miniatura configurada">` : "";
+    const botAuthor = renderPreviewBotAuthor();
 
     if (key === "socialAlerts") {
         const alertColor = /^#[\da-f]{6}$/i.test(String(values.color || "")) ? values.color : "#53fc18";
@@ -1041,7 +1061,7 @@ function renderPreviewMarkup(key, values) {
             ? `<img class="message-preview-avatar" data-preview-image src="${escapeHtml(avatar)}" alt="Avatar configurado">`
             : '<span class="social-alert-preview-avatar" aria-hidden="true">🎥</span>';
         const header = `<div class="social-alert-preview-author">${avatarBlock}<strong>${author}</strong><span>APP</span><small>ahora</small></div>`;
-        const copy = [alertTitle ? `<h3>${escapeHtml(alertTitle)}</h3>` : `<h3>🔴 ${sampleChannel} está en vivo en ${platform}</h3>`, '<hr class="discord-preview-separator">', alertMessage ? `<p>${escapeHtml(alertMessage)}</p>` : `<p class="preview-empty">Escribe el mensaje para ver aquí la alerta de ${platform}.</p>`].join("");
+        const copy = [alertTitle ? `<h3>${renderDiscordEmojiText(alertTitle)}</h3>` : `<h3>🔴 ${sampleChannel} está en vivo en ${platform}</h3>`, '<hr class="discord-preview-separator">', alertMessage ? `<p>${renderDiscordEmojiText(alertMessage)}</p>` : `<p class="preview-empty">Escribe el mensaje para ver aquí la alerta de ${platform}.</p>`].join("");
         return `<section class="live-preview social-alert-live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Mensaje Componentes V2 que aparecerá en Discord</small></div>${header}<article class="discord-preview" style="--preview-accent:${alertColor}">${media}<div class="discord-preview-body"><div class="discord-preview-copy">${copy}</div></div></article></section>`;
     }
 
@@ -1050,38 +1070,38 @@ function renderPreviewMarkup(key, values) {
         const options = Array.isArray(values.options) ? values.options.map(option => String(option || "").trim()).filter(Boolean).slice(0, 4) : [];
         const duration = Math.max(1, Math.min(10080, Number(values.duration) || 60));
         const optionMarkup = options.length
-            ? options.map((option, index) => `<li><span>${index + 1}️⃣ ${escapeHtml(option)}</span><small>0 votos</small></li>`).join("")
+            ? options.map((option, index) => `<li><span>${index + 1}️⃣ ${renderDiscordEmojiText(option)}</span><small>0 votos</small></li>`).join("")
             : '<li class="poll-preview-empty">Las opciones que escribas aparecerán aquí.</li>';
-        return `<section class="live-preview poll-live-preview" data-preview="polls"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Así se verá la encuesta en Discord</small></div><article class="discord-preview" style="--preview-accent:#5865f2"><div class="discord-preview-body"><div class="discord-preview-copy poll-preview-copy"><small>ENCUESTA · BRYVEX BOT</small><h3>${escapeHtml(question || "Tu pregunta aparecerá aquí")}</h3><hr class="discord-preview-separator"><ol class="poll-preview-options">${optionMarkup}</ol><p class="poll-preview-duration">Duración: ${duration} ${duration === 1 ? "minuto" : "minutos"}</p></div></div></article></section>`;
+        return `<section class="live-preview poll-live-preview" data-preview="polls"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Así se verá la encuesta en Discord</small></div><article class="discord-preview" style="--preview-accent:#5865f2">${botAuthor}<div class="discord-preview-body"><div class="discord-preview-copy poll-preview-copy"><small>ENCUESTA</small><h3>${renderDiscordEmojiText(question || "Tu pregunta aparecerá aquí")}</h3><hr class="discord-preview-separator"><ol class="poll-preview-options">${optionMarkup}</ol><p class="poll-preview-duration">Duración: ${duration} ${duration === 1 ? "minuto" : "minutos"}</p></div></div></article></section>`;
     }
     if (key === "weeklyDrop") {
         const description = renderPreviewTemplate(values.description).trim();
         const banner = safePreviewImage(values.banner);
         const media = banner ? `<div class="message-preview-banner"><img data-preview-image src="${escapeHtml(banner)}" alt="Banner del drop semanal"></div>` : "";
-        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Mensaje Componentes V2 para el drop</small></div><article class="discord-preview" style="--preview-accent:${color}">${media}<div class="discord-preview-body"><div class="discord-preview-copy"><h3>🪙 Weekly Drop Repartido</h3><hr class="discord-preview-separator">${description ? `<p>${escapeHtml(description)}</p>` : '<p class="preview-empty">Escribe una descripción y añade variables dinámicas para ver el aviso.</p>'}</div></div></article></section>`;
+        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Mensaje Componentes V2 para el drop</small></div><article class="discord-preview" style="--preview-accent:${color}">${botAuthor}${media}<div class="discord-preview-body"><div class="discord-preview-copy"><h3>🪙 Weekly Drop Repartido</h3><hr class="discord-preview-separator">${description ? `<p>${renderDiscordEmojiText(description)}</p>` : '<p class="preview-empty">Escribe una descripción y añade variables dinámicas para ver el aviso.</p>'}</div></div></article></section>`;
     }
 
     if (["welcome", "leaves", "boosts", "birthday"].includes(key)) {
         const empty = !configuredText && !media && !thumbnailBlock;
-        const reminder = values.reminder ? `<p class="preview-reminder"><strong>Recordatorio:</strong> <span>${escapeHtml(renderPreviewTemplate(values.reminder))}</span></p>` : "";
+        const reminder = values.reminder ? `<p class="preview-reminder"><strong>Recordatorio:</strong> <span>${renderPreviewText(values.reminder)}</span></p>` : "";
         const dmColor = validPreviewColor(values.dmColor);
         const dmBanner = safePreviewImage(values.dmBanner);
         const dmThumbnail = safePreviewImage(values.dmThumbnail);
         const dmTitle = renderPreviewTemplate(values.dmTitle).trim();
         const dmDescription = renderPreviewTemplate(values.dmDescription).trim();
-        const dmContent = [dmTitle ? `<h3>${escapeHtml(dmTitle)}</h3>` : "", dmTitle && dmDescription ? '<hr class="discord-preview-separator">' : "", dmDescription ? `<p>${escapeHtml(dmDescription)}</p>` : ""].filter(Boolean).join("");
-        const dmPreview = key === "welcome" ? `<div class="dm-preview-block"><div class="live-preview-heading"><span class="eyebrow">MENSAJE PRIVADO</span><small>${values.sendDM ? "Vista previa del DM" : "Desactivado"}</small></div><article class="discord-preview" style="--preview-accent:${dmColor}">${dmBanner ? `<div class="message-preview-banner"><img data-preview-image src="${escapeHtml(dmBanner)}" alt="Banner del mensaje privado"></div>` : ""}<div class="discord-preview-body">${dmThumbnail ? `<img class="message-preview-avatar" data-preview-image src="${escapeHtml(dmThumbnail)}" alt="Miniatura del DM">` : ""}<div class="discord-preview-copy">${dmContent || '<p class="preview-empty">Configura el contenido que recibirá el miembro por mensaje privado.</p>'}</div></div></article></div>` : "";
+        const dmContent = [dmTitle ? `<h3>${renderDiscordEmojiText(dmTitle)}</h3>` : "", dmTitle && dmDescription ? '<hr class="discord-preview-separator">' : "", dmDescription ? `<p>${renderDiscordEmojiText(dmDescription)}</p>` : ""].filter(Boolean).join("");
+        const dmPreview = key === "welcome" ? `<div class="dm-preview-block"><div class="live-preview-heading"><span class="eyebrow">MENSAJE PRIVADO</span><small>${values.sendDM ? "Vista previa del DM" : "Desactivado"}</small></div><article class="discord-preview" style="--preview-accent:${dmColor}">${botAuthor}${dmBanner ? `<div class="message-preview-banner"><img data-preview-image src="${escapeHtml(dmBanner)}" alt="Banner del mensaje privado"></div>` : ""}<div class="discord-preview-body">${dmThumbnail ? `<img class="discord-preview-thumbnail" data-preview-image src="${escapeHtml(dmThumbnail)}" alt="Miniatura del DM">` : ""}<div class="discord-preview-copy">${dmContent || '<p class="preview-empty">Configura el contenido que recibirá el miembro por mensaje privado.</p>'}</div></div></article></div>` : "";
         const configuredButtons = Array.isArray(values.buttons) ? values.buttons.filter(button => button.label) : [];
-        const buttonPreview = configuredButtons.length ? `<div class="discord-preview-buttons">${configuredButtons.map(button => { const isRole = button.action === "role"; const roleName = isRole ? resources.roles.find(role => role.id === button.roleId)?.name : ""; const detail = isRole ? (roleName || "Rol sin seleccionar") : (button.url ? "Enlace configurado" : "Enlace pendiente"); return `<span class="discord-preview-button ${isRole ? "role-button" : "link-button"}"><span class="discord-preview-button-main">${button.emoji ? `<span class="discord-preview-button-emoji">${escapeHtml(button.emoji)}</span>` : ""}${escapeHtml(button.label)}<span class="discord-preview-button-kind">${isRole ? "ROL" : "ENLACE"}</span></span><small>${escapeHtml(detail)}</small></span>`; }).join("")}</div>` : "";
-        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Contenido configurado para Discord</small></div><article class="discord-preview" style="--preview-accent:${color}">${media}<div class="discord-preview-body">${thumbnailBlock}<div class="discord-preview-copy">${configuredText || (empty ? '<p class="preview-empty">Todavía no hay contenido configurado para este aviso.</p>' : "")}</div></div>${buttonPreview}</article>${reminder}${dmPreview}</section>`;
+        const buttonPreview = configuredButtons.length ? `<div class="discord-preview-buttons">${configuredButtons.map(button => { const isRole = button.action === "role"; const roleName = isRole ? resources.roles.find(role => role.id === button.roleId)?.name : ""; const detail = isRole ? (roleName || "Rol sin seleccionar") : (button.url ? "Enlace configurado" : "Enlace pendiente"); return `<span class="discord-preview-button ${isRole ? "role-button" : "link-button"}"><span class="discord-preview-button-main">${button.emoji ? `<span class="discord-preview-button-emoji">${renderDiscordEmojiText(button.emoji)}</span>` : ""}${renderDiscordEmojiText(button.label)}<span class="discord-preview-button-kind">${isRole ? "ROL" : "ENLACE"}</span></span><small>${escapeHtml(detail)}</small></span>`; }).join("")}</div>` : "";
+        return `<section class="live-preview" data-preview="${key}"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA</span><small>Contenido configurado para Discord</small></div><article class="discord-preview" style="--preview-accent:${color}">${botAuthor}${media}<div class="discord-preview-body">${thumbnailBlock}<div class="discord-preview-copy">${configuredText || (empty ? '<p class="preview-empty">Todavía no hay contenido configurado para este aviso.</p>' : "")}</div></div>${buttonPreview}</article>${reminder}${dmPreview}</section>`;
     }
     if (key === "levelSettings") {
         const renderCard = (label, titleValue, descriptionValue) => {
             const title = renderPreviewTemplate(titleValue).trim();
             const description = renderPreviewTemplate(descriptionValue).trim();
-            const contentText = [title ? `<strong>${escapeHtml(title)}</strong>` : "", title && description ? '<hr class="discord-preview-separator">' : "", description ? `<span>${escapeHtml(description)}</span>` : ""].filter(Boolean).join("");
+            const contentText = [title ? `<strong>${renderDiscordEmojiText(title)}</strong>` : "", title && description ? '<hr class="discord-preview-separator">' : "", description ? `<span>${renderDiscordEmojiText(description)}</span>` : ""].filter(Boolean).join("");
             const empty = !contentText && !banner && !thumbnail;
-            return `<div class="level-preview-panel"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA · ${label}</span><small>Mensaje Componentes V2 que verá el miembro</small></div><article class="level-preview" style="--preview-accent:${color}"><div class="level-preview-background">${banner ? `<img data-preview-image src="${escapeHtml(banner)}" alt="Imagen configurada">` : ""}</div>${thumbnailBlock}<div class="level-preview-copy">${contentText || (empty ? '<span class="preview-empty">Configura título, descripción o imagen para mostrar una vista previa.</span>' : "")}</div></article></div>`;
+            return `<div class="level-preview-panel"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA · ${label}</span><small>Mensaje Componentes V2 que verá el miembro</small></div>${botAuthor}<article class="level-preview" style="--preview-accent:${color}"><div class="level-preview-background">${banner ? `<img data-preview-image src="${escapeHtml(banner)}" alt="Imagen configurada">` : ""}</div>${thumbnailBlock}<div class="level-preview-copy">${contentText || (empty ? '<span class="preview-empty">Configura título, descripción o imagen para mostrar una vista previa.</span>' : "")}</div></article></div>`;
         };
         return `<section class="live-preview level-preview-list" data-preview="${key}">${renderCard("MENSAJES", values.messageTitle, values.messageDescription)}${renderCard("VOZ", values.voiceTitle, values.voiceDescription)}${renderCard("ROL POR NIVEL", values.roleTitle, values.roleDescription)}</section>`;
     }
@@ -1126,22 +1146,43 @@ function boostButtonsFor(data) {
         .map(([roleKey, label]) => ({ label: resources.roles.find(role => role.id === data[roleKey])?.name || label, emoji: "", action: "role", roleId: data[roleKey] }));
 }
 
-function updatePreview(key, form) {
-    const preview = content.querySelector(".live-preview");
-    if (!preview) return;
-    preview.outerHTML = renderPreviewMarkup(key, previewValues(key, form));
-    content.querySelectorAll("[data-preview-image]").forEach(image => image.addEventListener("error", () => {
-        if (image.classList.contains("message-preview-avatar")) {
+function bindPreviewAssets(root) {
+    root.querySelectorAll("[data-preview-image]").forEach(image => image.addEventListener("error", () => {
+        if (image.classList.contains("discord-preview-bot-avatar")) {
+            if (image.dataset.localFallback !== "true") {
+                image.dataset.localFallback = "true";
+                image.src = "/bot-avatar.png";
+                return;
+            }
             const fallback = document.createElement("span");
-            fallback.className = "message-preview-avatar";
+            fallback.className = "discord-preview-bot-avatar-fallback";
+            fallback.textContent = "B";
             fallback.setAttribute("aria-hidden", "true");
             image.replaceWith(fallback);
+        } else if (image.classList.contains("message-preview-avatar")) {
+            const fallback = document.createElement("span");
+            fallback.className = "social-alert-preview-avatar";
+            fallback.textContent = "🎥";
+            fallback.setAttribute("aria-hidden", "true");
+            image.replaceWith(fallback);
+        } else if (image.classList.contains("discord-preview-thumbnail")) {
+            image.remove();
         } else {
             const fallback = document.createElement("span");
             fallback.textContent = "No se pudo cargar la imagen";
             image.parentElement.replaceChildren(fallback);
         }
     }, { once: true }));
+    root.querySelectorAll("[data-preview-emoji]").forEach(image => image.addEventListener("error", () => {
+        image.replaceWith(document.createTextNode(image.alt));
+    }, { once: true }));
+}
+
+function updatePreview(key, form) {
+    const preview = content.querySelector(".live-preview");
+    if (!preview) return;
+    preview.outerHTML = renderPreviewMarkup(key, previewValues(key, form));
+    bindPreviewAssets(content);
 }
 
 function readForm(form, fields) {
@@ -1617,7 +1658,9 @@ function renderModule(key, modules) {
     const communityLayout = ["autoroles", "welcome", "leaves", "birthday", "boosts", "confessions", "suggestions"].includes(key) ? ` community-${key}-grid` : "";
     const alignedToggleLayout = ["logs", "reports", "antiScam", "antiInvites", "purge", "voiceConnection", "inviteTracker"].includes(key) ? " aligned-toggle-grid" : "";
     const moduleLayout = key === "levelSettings" ? " levels-settings-grid" : key === "economy" ? " economy-settings-grid" : key === "weeklyDrop" ? " weekly-drop-grid" : key === "tempvoice" ? " tempvoice-settings-grid" : "";
-    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div><span class="status-pill ${data.configured ? "configured" : "unconfigured"}">${data.configured ? "Configurado" : "Sin configurar"}</span></div><p class="card-description">${escapeHtml(description)}</p>${renderPreview(key, data)}<form id="settings-form" class="fields-grid${key === "prestige" ? " prestige-settings-grid" : ""}${communityLayout}${alignedToggleLayout}${moduleLayout}">${formFields}<div class="form-actions"><button class="primary-button" type="submit">Guardar cambios</button><span class="unsaved-indicator" hidden>● Cambios sin guardar</span><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>${key === "polls" ? '<div id="poll-admin"><div class="loading-card">Cargando encuestas…</div></div>' : ""}`;
+    const livePreview = renderPreview(key, data);
+    const previewLayout = livePreview ? " settings-card-with-preview" : "";
+    content.innerHTML = `<article class="settings-card${previewLayout}"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div><span class="status-pill ${data.configured ? "configured" : "unconfigured"}">${data.configured ? "Configurado" : "Sin configurar"}</span></div><p class="card-description">${escapeHtml(description)}</p>${livePreview}<form id="settings-form" class="fields-grid${key === "prestige" ? " prestige-settings-grid" : ""}${communityLayout}${alignedToggleLayout}${moduleLayout}">${formFields}<div class="form-actions"><button class="primary-button" type="submit">Guardar cambios</button><span class="unsaved-indicator" hidden>● Cambios sin guardar</span><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>${key === "polls" ? '<div id="poll-admin"><div class="loading-card">Cargando encuestas…</div></div>' : ""}`;
     const setupsEditor = content.querySelector("[data-setups-editor]");
     if (setupsEditor) {
         const updateSetupRows = setups => {
@@ -1702,6 +1745,7 @@ async function renderPollAdmin(editingPoll = null) {
             return `<article class="poll-row"><div class="poll-row-main"><div class="poll-row-top"><span class="status-pill ${poll.ended ? "unconfigured" : "configured"}">${status}</span><span class="poll-channel">#<span>${escapeHtml(channelName(poll.channelId))}</span></span><span class="poll-votes">${votes} ${votes === 1 ? "voto" : "votos"}</span></div><h3>${escapeHtml(poll.question)}</h3><ul>${options}</ul><small>${poll.endAt ? `${poll.ended ? "Terminó" : "Termina"} ${new Date(poll.endAt).toLocaleString("es", { dateStyle: "medium", timeStyle: "short" })}` : "Sin fecha de término"}</small></div><div class="record-actions">${poll.url ? `<a class="quiet-button" href="${escapeHtml(poll.url)}" target="_blank" rel="noopener noreferrer">Ver en Discord ↗</a>` : ""}${poll.ended ? "" : `<button class="quiet-button" type="button" data-poll-edit="${escapeHtml(poll._id)}">Editar</button>`}<button class="quiet-button danger-text" type="button" data-poll-delete="${escapeHtml(poll._id)}">Eliminar</button></div></article>`;
         }).join("");
         container.innerHTML = `${form}<article class="settings-card poll-list-card"><div class="card-heading"><div><div class="eyebrow">GESTIÓN</div><h2>Encuestas creadas</h2></div><button class="quiet-button" type="button" data-poll-refresh>Actualizar</button></div><div class="poll-stats"><div><span>Activas en el canal configurado</span><strong>${activePolls}</strong></div><div><span>Registradas en ese canal</span><strong>${registeredPolls}</strong></div><div><span>Votos acumulados</span><strong>${totalVotes}</strong></div></div><p class="card-description">Los contadores de arriba corresponden al canal configurado, como en <code>/poll list</code>. La lista incluye todas las encuestas del servidor y sus estados.</p><div class="poll-list">${rows || '<p class="empty-state">Todavía no hay encuestas registradas.</p>'}</div></article>`;
+        bindPreviewAssets(container);
 
         const pollForm = container.querySelector("#poll-form");
         const updatePollLivePreview = () => {
@@ -1713,6 +1757,7 @@ async function renderPollAdmin(editingPoll = null) {
                 options,
                 duration: pollForm.elements.duration.value
             });
+            bindPreviewAssets(container);
         };
         pollForm.addEventListener("input", updatePollLivePreview);
         pollForm.addEventListener("change", updatePollLivePreview);

@@ -80,6 +80,62 @@ function getTikTokViewerCount(room) {
     return counts.find(count => count > 0) ?? counts[0] ?? null;
 }
 
+function getTikTokCategory(room, data) {
+    const labelKeys = ["show_name", "showName", "category_name", "categoryName", "game_name", "gameName", "hashtag_name", "hashtagName", "tag_name", "tagName", "name", "title", "text"];
+    const findLabel = (value, depth = 0) => {
+        if (depth > 4 || value === null || value === undefined) return "";
+        if (typeof value === "string") {
+            const label = value.trim();
+            if (!label) return "";
+            if ((label.startsWith("{") && label.endsWith("}")) || (label.startsWith("[") && label.endsWith("]"))) {
+                try { return findLabel(JSON.parse(label), depth + 1); } catch { return label; }
+            }
+            return label;
+        }
+        if (Array.isArray(value)) {
+            for (const item of value) {
+                const label = findLabel(item, depth + 1);
+                if (label) return label;
+            }
+            return "";
+        }
+        if (typeof value !== "object") return "";
+        for (const key of labelKeys) {
+            if (Object.hasOwn(value, key)) {
+                const label = findLabel(value[key], depth + 1);
+                if (label) return label;
+            }
+        }
+        return "";
+    };
+    const categorySources = [
+        room?.category,
+        room?.game_name,
+        room?.gameName,
+        room?.game_category,
+        room?.gameCategory,
+        room?.game_tag,
+        room?.gameTag,
+        room?.hashtag_info,
+        room?.hashtagInfo,
+        room?.hashtag,
+        room?.content_tag,
+        room?.contentTag,
+        room?.liveRoomUserInfo?.game_tag,
+        room?.liveRoomUserInfo?.hashtag_info,
+        data?.category,
+        data?.game_tag,
+        data?.gameTag,
+        data?.hashtag_info
+    ];
+    for (const source of categorySources) {
+        const label = findLabel(source);
+        if (label) return label;
+    }
+    const gameTagId = Number(room?.gameTagId ?? room?.game_tag_id ?? data?.gameTagId ?? data?.game_tag_id ?? 0);
+    return Number.isFinite(gameTagId) && gameTagId > 0 ? "Gaming" : "";
+}
+
 function renderAlert(template, stream, slug, includeViewerCount, platform = "Kick") {
     const normalizedPlatform = ["TikTok", "Twitch", "YouTube"].includes(platform) ? platform : "Kick";
     const isTikTok = normalizedPlatform === "TikTok";
@@ -158,7 +214,7 @@ async function getTikTokLiveInfo(username) {
             id: roomId || `${normalized}:${room.create_time || "live"}`,
             stream_title: room.title || room.liveRoomUserInfo?.title || "En directo en TikTok",
             viewer_count: getTikTokViewerCount(room),
-            category: { name: room.category || room.game_name || "" },
+            category: { name: getTikTokCategory(room, data) },
             broadcaster: { username: user.nickname || user.uniqueId || normalized },
             url: `https://www.tiktok.com/@${encodeURIComponent(normalized)}/live`
         }

@@ -81,6 +81,30 @@ app.use(session({
 const publicDirectory = path.join(__dirname, "public");
 const birthdayMemberNameCache = new Map();
 const kickChannelSearchCache = new Map();
+let botAvatarCache = { url: null, expiresAt: 0 };
+
+async function fetchBotAvatar() {
+    if (botAvatarCache.expiresAt > Date.now()) return botAvatarCache.url;
+    try {
+        const response = await fetch("https://discord.com/api/v10/users/@me", {
+            headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
+            signal: AbortSignal.timeout(8000)
+        });
+        if (!response.ok) return null;
+        const bot = await response.json();
+        const extension = bot.avatar?.startsWith("a_") ? "gif" : "png";
+        const defaultAvatarIndex = bot.id ? Number((BigInt(bot.id) >> 22n) % 6n) : null;
+        const url = bot.id
+            ? bot.avatar
+                ? `https://cdn.discordapp.com/avatars/${bot.id}/${bot.avatar}.${extension}?size=128`
+                : `https://cdn.discordapp.com/embed/avatars/${defaultAvatarIndex}.png`
+            : null;
+        botAvatarCache = { url, expiresAt: Date.now() + 15 * 60_000 };
+        return url;
+    } catch {
+        return null;
+    }
+}
 
 async function getBirthdayMemberName(guildId, userId) {
     if (!/^\d{17,20}$/.test(String(userId || ""))) return null;
@@ -1190,12 +1214,13 @@ app.get("/api/guilds/:guildId/resources", requireGuildAdmin, async (req, res) =>
     res.set("Cache-Control", "private, no-store");
     try {
         const guildId = req.params.guildId;
-        const [resources, guildResponse] = await Promise.all([
+        const [resources, guildResponse, botAvatar] = await Promise.all([
             fetchGuildResources(guildId),
             fetch(`https://discord.com/api/v10/guilds/${guildId}`, {
                 headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
                 signal: AbortSignal.timeout(8000)
-            })
+            }),
+            fetchBotAvatar()
         ]);
         let channelPermissions = null;
         let roleManagement = null;
@@ -1218,6 +1243,7 @@ app.get("/api/guilds/:guildId/resources", requireGuildAdmin, async (req, res) =>
         }
         return res.json({
             guild,
+            botAvatar,
             channels: resources.channels.map(({ id, name, type, parent_id }) => ({ id, name, type, parentId: parent_id })),
             roles: resources.roles.filter(role => !role.managed && role.name !== "@everyone").map(({ id, name, color }) => ({ id, name, color })),
             roleIds: resources.roles.map(({ id }) => id),
