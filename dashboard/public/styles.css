@@ -623,6 +623,8 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
 .social-diagnostic-checked, .social-diagnostic-success { display: block; color: #91869b; font-size: 9px; line-height: 1.5; }
 .social-diagnostic-success { color: #a99fb2; }
 .social-diagnostic-error, .social-diagnostics-error { margin: 8px 0 0; color: #ff9ba2; font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+.social-diagnostic-suggestion { margin: 7px 0 0; padding: 8px 9px; border-left: 2px solid #b96df2; border-radius: 0 7px 7px 0; background: #b96df20c; color: #c6b8d0; font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+.social-diagnostic-suggestion strong { color: #d7b3f0; }
 .social-diagnostics-empty { grid-column: 1 / -1; margin: 0; padding: 14px; border: 1px dashed #ffffff18; border-radius: 10px; color: #a99fb2; font-size: 11px; text-align: center; }
 @media (max-width: 520px) {
     .social-diagnostics { padding: 12px; }

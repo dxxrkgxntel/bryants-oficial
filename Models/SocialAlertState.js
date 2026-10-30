@@ -10,6 +10,7 @@ const socialAlertStateSchema = new mongoose.Schema({
     lastViewerUpdateAt: { type: Date, default: null },
     diagnosticSlug: { type: String, default: null },
     diagnosticStatus: { type: String, enum: ["pending", "checking", "online", "offline", "error"], default: "pending" },
+    diagnosticStage: { type: String, enum: ["platform", "discord", "database"], default: null },
     diagnosticCheckedAt: { type: Date, default: null },
     diagnosticSuccessAt: { type: Date, default: null },
     diagnosticError: { type: String, default: null, maxlength: 300 },

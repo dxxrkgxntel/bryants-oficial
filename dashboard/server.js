@@ -1342,6 +1342,43 @@ app.get("/api/guilds/:guildId/config", requireGuildAdmin, async (req, res) => {
     }
 });
 
+function getSocialAlertDiagnosticSuggestion(stage, error) {
+    const message = String(error || "").toLocaleLowerCase("es");
+    if (stage === "discord") {
+        if (/10015|unknown webhook|webhook personalizado/.test(message)) {
+            return "Revisa el permiso Administrar webhooks en el canal y vuelve a guardar el nombre o avatar personalizado de la alerta.";
+        }
+        if (/ya no está disponible|unknown channel|10003/.test(message)) {
+            return "Confirma que el canal siga en este servidor y vuelve a seleccionarlo en la configuración de la alerta.";
+        }
+        if (/50013|missing permissions|faltan permisos/.test(message)) {
+            return "Dale a Bryvex Bot permiso para ver el canal y enviar mensajes. Si personalizaste nombre o avatar, también necesita Administrar webhooks.";
+        }
+        if (/50001|missing access/.test(message)) {
+            return "Comprueba que Bryvex Bot siga en el servidor y tenga acceso al canal configurado.";
+        }
+        if (/10008|unknown message|mensaje de la alerta/.test(message)) {
+            return "El mensaje anterior ya no existe. Cuando el canal vuelva a estar disponible, la próxima transmisión iniciará una alerta nueva.";
+        }
+        return "Revisa que Bryvex Bot pueda ver el canal, enviar mensajes y usar el webhook si la alerta personaliza su identidad.";
+    }
+    if (stage === "database") {
+        return "Revisa la conexión MongoDB del servicio del bot y sus registros en FadeHost.";
+    }
+    if (stage === "platform") {
+        if (message.includes("youtube_api_key")) return "Configura YOUTUBE_API_KEY en las variables del servicio del bot y revisa el estado de YouTube Data API v3.";
+        if (message.includes("kick_client_id") || message.includes("kick_client_secret")) return "Configura KICK_CLIENT_ID y KICK_CLIENT_SECRET en las variables del servicio del bot.";
+        if (message.includes("twitch_client_id") || message.includes("twitch_client_secret")) return "Configura TWITCH_CLIENT_ID y TWITCH_CLIENT_SECRET en las variables del servicio del bot.";
+        if (/quota|cuota diaria/.test(message)) return "Revisa el consumo y los límites de YouTube Data API en Google Cloud Console.";
+        if (/\b429\b|rate.?limit|demasiadas solicitudes/.test(message)) return "La plataforma limitó las consultas. Espera un momento y revisa si el error persiste.";
+        if (/\b401\b|\b403\b|unauthorized|forbidden/.test(message)) return "Comprueba las credenciales y permisos de la API configurados para esta plataforma en FadeHost.";
+        if (/formato válido|no encontró|no devolvió un canal/.test(message)) return "Verifica el usuario, identificador o URL del canal en la alerta.";
+        return "Comprueba el identificador del canal y revisa si la API de la plataforma está disponible; el bot volverá a intentarlo en su siguiente ciclo.";
+    }
+    if (error) return "Consulta el registro del bot en FadeHost. La siguiente revisión clasificará este error por etapa.";
+    return "El bot todavía no ha completado una consulta. Espera alrededor de un minuto y vuelve a cargar el diagnóstico.";
+}
+
 app.get("/api/guilds/:guildId/social-alerts/diagnostics", requireGuildAdmin, async (req, res) => {
     res.set("Cache-Control", "private, no-store");
     try {
@@ -1350,7 +1387,7 @@ app.get("/api/guilds/:guildId/social-alerts/diagnostics", requireGuildAdmin, asy
             .select("_id platform slug enabled")
             .lean();
         const states = await SocialAlertState.find({ guildId, alertId: { $in: alerts.map(alert => alert._id) } })
-            .select("alertId platform diagnosticSlug diagnosticStatus diagnosticCheckedAt diagnosticSuccessAt diagnosticError diagnosticTitle diagnosticCategory diagnosticViewerCount")
+            .select("alertId platform diagnosticSlug diagnosticStatus diagnosticStage diagnosticCheckedAt diagnosticSuccessAt diagnosticError diagnosticTitle diagnosticCategory diagnosticViewerCount")
             .lean();
         const statesByAlert = new Map(states.map(state => [String(state.alertId), state]));
         return res.json({ diagnostics: alerts.map(alert => {
@@ -1360,15 +1397,23 @@ app.get("/api/guilds/:guildId/social-alerts/diagnostics", requireGuildAdmin, asy
             const checkedAt = targetMatches ? state.diagnosticCheckedAt || null : null;
             const checkedTime = checkedAt ? new Date(checkedAt).getTime() : null;
             const stale = checkedTime !== null && (!Number.isFinite(checkedTime) || Date.now() - checkedTime > 180_000);
+            const status = !enabled ? "disabled" : !targetMatches || !checkedAt ? "pending" : stale ? "stale" : state.diagnosticStatus || "pending";
+            const error = stale ? "No hay una consulta reciente del bot." : targetMatches ? state.diagnosticError || null : null;
+            const stage = targetMatches && !stale ? state.diagnosticStage || null : null;
             return {
                 alertId: String(alert._id),
                 platform: alert.platform || "Kick",
                 slug: alert.slug,
                 enabled,
-                status: !enabled ? "disabled" : !targetMatches || !checkedAt ? "pending" : stale ? "stale" : state.diagnosticStatus || "pending",
+                status,
                 checkedAt,
                 successAt: targetMatches ? state.diagnosticSuccessAt || null : null,
-                error: stale ? "No hay una consulta reciente del bot." : targetMatches ? state.diagnosticError || null : null,
+                stage,
+                error,
+                suggestion: !enabled ? null : stale
+                    ? "Comprueba que el servicio bryvex-bot siga activo en FadeHost y revisa sus registros."
+                    : status === "error" ? getSocialAlertDiagnosticSuggestion(stage, error)
+                        : status === "pending" ? getSocialAlertDiagnosticSuggestion(null, null) : null,
                 title: targetMatches ? state.diagnosticTitle || null : null,
                 category: targetMatches ? state.diagnosticCategory || null : null,
                 viewerCount: targetMatches && state.diagnosticViewerCount != null ? state.diagnosticViewerCount : null

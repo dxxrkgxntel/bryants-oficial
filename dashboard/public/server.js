@@ -2218,8 +2218,11 @@ function renderSocialDiagnostics(diagnostics) {
             ? hasSnapshot && item.viewerCount !== null && item.viewerCount !== undefined && Number.isFinite(Number(item.viewerCount)) ? Number(item.viewerCount).toLocaleString("es-ES") : hasSnapshot ? "No disponible" : "Sin datos todavía"
             : "—";
         const lastSuccess = item.successAt ? `<small class="social-diagnostic-success">Última respuesta correcta: ${escapeHtml(formatSocialDiagnosticDate(item.successAt))}</small>` : "";
-        const error = item.error ? `<p class="social-diagnostic-error">${escapeHtml(item.error)}</p>` : "";
-        return `<article class="social-diagnostic-card status-${status}"><div class="social-diagnostic-card-heading"><strong>${escapeHtml(item.platform)} · ${escapeHtml(item.slug)}</strong><span class="social-diagnostic-status">${statusLabels[status]}</span></div><dl class="social-diagnostic-values"><div><dt>Título</dt><dd>${escapeHtml(title)}</dd></div><div><dt>Categoría</dt><dd>${escapeHtml(category)}</dd></div><div><dt>Espectadores</dt><dd>${escapeHtml(viewers)}</dd></div></dl><small class="social-diagnostic-checked">Última consulta: ${escapeHtml(formatSocialDiagnosticDate(item.checkedAt))}</small>${lastSuccess}${error}</article>`;
+        const stageLabels = { platform: `Consulta a ${item.platform}`, discord: "Publicación en Discord", database: "Guardado del estado" };
+        const stageLabel = Object.hasOwn(stageLabels, item.stage) ? stageLabels[item.stage] : "";
+        const error = item.error ? `<p class="social-diagnostic-error">${stageLabel ? `<strong>Fallo en ${escapeHtml(stageLabel)}:</strong> ` : ""}${escapeHtml(item.error)}</p>` : "";
+        const suggestion = item.suggestion ? `<p class="social-diagnostic-suggestion"><strong>Siguiente paso:</strong> ${escapeHtml(item.suggestion)}</p>` : "";
+        return `<article class="social-diagnostic-card status-${status}"><div class="social-diagnostic-card-heading"><strong>${escapeHtml(item.platform)} · ${escapeHtml(item.slug)}</strong><span class="social-diagnostic-status">${statusLabels[status]}</span></div><dl class="social-diagnostic-values"><div><dt>Título</dt><dd>${escapeHtml(title)}</dd></div><div><dt>Categoría</dt><dd>${escapeHtml(category)}</dd></div><div><dt>Espectadores</dt><dd>${escapeHtml(viewers)}</dd></div></dl><small class="social-diagnostic-checked">Última consulta: ${escapeHtml(formatSocialDiagnosticDate(item.checkedAt))}</small>${lastSuccess}${error}${suggestion}</article>`;
     }).join("");
 }
 

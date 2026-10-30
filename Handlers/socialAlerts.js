@@ -360,7 +360,11 @@ async function ensureWebhook(channel, state, alert) {
     state.webhookToken = webhook.token;
     state.webhookChannelId = channel.id;
     state.channelId = channel.id;
-    await state.save();
+    try { await state.save(); }
+    catch (error) {
+        error.socialAlertDiagnosticStage = "database";
+        throw error;
+    }
     return new WebhookClient({ id: webhook.id, token: webhook.token });
 }
 
@@ -375,18 +379,27 @@ async function sendLiveAlert(client, alert, state, stream) {
         allowedMentions: allowedMentionsFor(`${alert.title || ""} ${alert.messageTemplate || ""}`)
     };
     let message;
-    if (alert.displayName || alert.avatarUrl) {
-        const webhook = await ensureWebhook(channel, state, alert);
-        message = await webhook.send({ ...options, username: alert.displayName || `${platform} · ${alert.slug}`, avatarURL: alert.avatarUrl || undefined });
-    } else {
-        message = await channel.send(options);
+    try {
+        if (alert.displayName || alert.avatarUrl) {
+            const webhook = await ensureWebhook(channel, state, alert);
+            message = await webhook.send({ ...options, username: alert.displayName || `${platform} · ${alert.slug}`, avatarURL: alert.avatarUrl || undefined });
+        } else {
+            message = await channel.send(options);
+        }
+    } catch (error) {
+        if (!error.socialAlertDiagnosticStage) error.socialAlertDiagnosticStage = "discord";
+        throw error;
     }
     state.channelId = channel.id;
     state.messageId = message.id;
     state.lastStreamId = String(stream.id || stream.start_time || `${alert.slug}:${stream.stream_title || "live"}`);
     state.lastViewers = normalizeViewerCount(stream.viewer_count);
     state.lastViewerUpdateAt = new Date();
-    await state.save();
+    try { await state.save(); }
+    catch (error) {
+        error.socialAlertDiagnosticStage = "database";
+        throw error;
+    }
 }
 
 async function updateViewerCount(client, alert, state, stream) {
@@ -395,27 +408,32 @@ async function updateViewerCount(client, alert, state, stream) {
     const waitingForFirstCount = lastViewers === null;
     if (!alert.includeViewerCount || !state.messageId || lastViewers === viewers || (!waitingForFirstCount && Date.now() - new Date(state.lastViewerUpdateAt || 0).getTime() < VIEWER_REFRESH_MS)) return;
     const channel = await client.channels.fetch(alert.channelId).catch(() => null);
-    if (!channel?.isTextBased()) return;
+    if (!channel?.isTextBased()) throw new Error("El canal de Discord configurado ya no está disponible.");
     const platform = alert.platform || "Kick";
     const content = renderAlert(alert.messageTemplate, stream, alert.slug, true, platform);
     const options = { components: makeComponents(renderAlert(alert.title, stream, alert.slug, true, platform), content, alert.image || stream.thumbnail, alert.color), flags: MessageFlags.IsComponentsV2, allowedMentions: allowedMentionsFor(`${alert.title || ""} ${alert.messageTemplate || ""}`) };
     if (alert.displayName || alert.avatarUrl) {
-        if (!state.webhookId || !state.webhookToken) return;
+        if (!state.webhookId || !state.webhookToken) throw new Error("El webhook personalizado de la alerta no está disponible. Revisa el nombre o avatar configurado y los permisos del bot.");
         const webhook = new WebhookClient({ id: state.webhookId, token: state.webhookToken });
         await webhook.editMessage(state.messageId, options);
     } else {
         const message = await channel.messages.fetch(state.messageId).catch(() => null);
-        if (!message) return;
+        if (!message) throw new Error("El mensaje de la alerta ya no está disponible en Discord.");
         await message.edit(options);
     }
     state.lastViewers = viewers;
     state.lastViewerUpdateAt = new Date();
-    await state.save();
+    try { await state.save(); }
+    catch (error) {
+        error.socialAlertDiagnosticStage = "database";
+        throw error;
+    }
 }
 
 function clearDiagnosticSnapshot(state) {
     state.diagnosticSuccessAt = null;
     state.diagnosticError = null;
+    state.diagnosticStage = null;
     state.diagnosticTitle = null;
     state.diagnosticCategory = null;
     state.diagnosticViewerCount = null;
@@ -427,6 +445,7 @@ function setDiagnosticSnapshot(state, status, stream = null) {
     state.diagnosticCheckedAt = now;
     state.diagnosticSuccessAt = now;
     state.diagnosticError = null;
+    state.diagnosticStage = null;
     if (status !== "online" || !stream) {
         state.diagnosticTitle = null;
         state.diagnosticCategory = null;
@@ -448,6 +467,9 @@ async function recordDiagnosticFailure(alert, error) {
         .replace(/[\r\n\t]+/g, " ")
         .trim()
         .slice(0, 300) || "No se pudo consultar la plataforma.";
+    const stage = ["platform", "discord", "database"].includes(error?.socialAlertDiagnosticStage)
+        ? error.socialAlertDiagnosticStage
+        : "platform";
     await SocialAlertState.findOneAndUpdate(
         { guildId: alert.guildId, alertId: alert._id },
         { $set: {
@@ -455,6 +477,7 @@ async function recordDiagnosticFailure(alert, error) {
             platform: alert.platform || "Kick",
             diagnosticSlug: alert.slug,
             diagnosticStatus: "error",
+            diagnosticStage: stage,
             diagnosticCheckedAt: now,
             diagnosticError: message
         } },
@@ -463,51 +486,62 @@ async function recordDiagnosticFailure(alert, error) {
 }
 
 async function checkAlert(client, alert) {
-    let state = await SocialAlertState.findOne({ guildId: alert.guildId, alertId: alert._id });
-    if (!state) state = new SocialAlertState({ guildId: alert.guildId, alertId: alert._id, channelId: alert.channelId });
-    const platform = alert.platform || "Kick";
-    if (state.platform !== platform || (state.diagnosticSlug && state.diagnosticSlug !== alert.slug)) clearDiagnosticSnapshot(state);
-    if (state.platform !== platform) {
-        state.platform = platform;
-        state.lastStreamId = null;
-        state.messageId = null;
-        state.lastViewers = null;
-    }
-    if (state.channelId !== alert.channelId) {
-        state.channelId = alert.channelId;
-        state.messageId = null;
-    }
-    state.diagnosticSlug = alert.slug;
-    state.diagnosticStatus = "checking";
-    state.diagnosticCheckedAt = new Date();
-    state.diagnosticError = null;
-    await state.save();
-    const channelInfo = platform === "TikTok" ? await getTikTokLiveInfo(alert.slug) : platform === "Twitch" ? await getTwitchLiveInfo(alert.slug) : platform === "YouTube" ? await getYouTubeLiveInfo(alert.slug) : await getKickStream(alert.slug);
-    if (platform === "Kick" && !channelInfo) {
-        throw new Error("Kick no devolvió un canal para ese nombre.");
-    }
-    const stream = platform === "TikTok" ? channelInfo.stream : channelInfo?.stream;
-    // Kick represents an offline channel with a null/missing `stream` object.
-    // Some API responses omit `is_live` while returning the active stream.
-    if (!stream || stream.is_live === false) {
-        setDiagnosticSnapshot(state, "offline");
-        if (state.lastStreamId) {
+    let diagnosticStage = "database";
+    try {
+        let state = await SocialAlertState.findOne({ guildId: alert.guildId, alertId: alert._id });
+        if (!state) state = new SocialAlertState({ guildId: alert.guildId, alertId: alert._id, channelId: alert.channelId });
+        const platform = alert.platform || "Kick";
+        if (state.platform !== platform || (state.diagnosticSlug && state.diagnosticSlug !== alert.slug)) clearDiagnosticSnapshot(state);
+        if (state.platform !== platform) {
+            state.platform = platform;
             state.lastStreamId = null;
             state.messageId = null;
             state.lastViewers = null;
         }
+        if (state.channelId !== alert.channelId) {
+            state.channelId = alert.channelId;
+            state.messageId = null;
+        }
+        state.diagnosticSlug = alert.slug;
+        state.diagnosticStatus = "checking";
+        state.diagnosticStage = null;
+        state.diagnosticCheckedAt = new Date();
+        state.diagnosticError = null;
         await state.save();
-        return;
+        diagnosticStage = "platform";
+        const channelInfo = platform === "TikTok" ? await getTikTokLiveInfo(alert.slug) : platform === "Twitch" ? await getTwitchLiveInfo(alert.slug) : platform === "YouTube" ? await getYouTubeLiveInfo(alert.slug) : await getKickStream(alert.slug);
+        if (platform === "Kick" && !channelInfo) {
+            throw new Error("Kick no devolvió un canal para ese nombre.");
+        }
+        const stream = platform === "TikTok" ? channelInfo.stream : channelInfo?.stream;
+        // Kick represents an offline channel with a null/missing `stream` object.
+        // Some API responses omit `is_live` while returning the active stream.
+        if (!stream || stream.is_live === false) {
+            setDiagnosticSnapshot(state, "offline");
+            if (state.lastStreamId) {
+                state.lastStreamId = null;
+                state.messageId = null;
+                state.lastViewers = null;
+            }
+            diagnosticStage = "database";
+            await state.save();
+            return;
+        }
+        setDiagnosticSnapshot(state, "online", stream);
+        diagnosticStage = "database";
+        await state.save();
+        const streamId = String(stream.id || stream.start_time || `${alert.slug}:${stream.stream_title || "live"}`);
+        diagnosticStage = "discord";
+        if (streamId !== state.lastStreamId) {
+            await sendLiveAlert(client, alert, state, { ...channelInfo, ...stream, stream_title: stream.stream_title || stream.title });
+            console.info(`[SOCIALALERTS] ${platform} ${alert.slug} (${alert.guildId}): alerta enviada al canal ${alert.channelId}.`);
+            return;
+        }
+        await updateViewerCount(client, alert, state, { ...channelInfo, ...stream, stream_title: stream.stream_title || stream.title });
+    } catch (error) {
+        if (error && typeof error === "object" && !error.socialAlertDiagnosticStage) error.socialAlertDiagnosticStage = diagnosticStage;
+        throw error;
     }
-    setDiagnosticSnapshot(state, "online", stream);
-    await state.save();
-    const streamId = String(stream.id || stream.start_time || `${alert.slug}:${stream.stream_title || "live"}`);
-    if (streamId !== state.lastStreamId) {
-        await sendLiveAlert(client, alert, state, { ...channelInfo, ...stream, stream_title: stream.stream_title || stream.title });
-        console.info(`[SOCIALALERTS] ${platform} ${alert.slug} (${alert.guildId}): alerta enviada al canal ${alert.channelId}.`);
-        return;
-    }
-    await updateViewerCount(client, alert, state, { ...channelInfo, ...stream, stream_title: stream.stream_title || stream.title });
 }
 
 async function poll(client) {
