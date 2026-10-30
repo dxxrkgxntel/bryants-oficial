@@ -1491,6 +1491,9 @@ function getSocialAlertDiagnosticSuggestion(stage, error) {
         return "Revisa que Bryvex Bot pueda ver el canal, enviar mensajes y usar el webhook si la alerta personaliza su identidad.";
     }
     if (stage === "database") {
+        if (/socialalertstate validation failed|diagnosticstage.*enum|enum.*diagnosticstage/.test(message)) {
+            return "El diagnóstico falló por validación del esquema al guardar diagnosticStage: null; no parece una caída de MongoDB. Actualiza y reinicia el servicio bryants-oficial con la versión corregida y vuelve a cargar el diagnóstico.";
+        }
         return "Revisa la conexión MongoDB del servicio del bot y sus registros en FadeHost.";
     }
     if (stage === "platform") {
