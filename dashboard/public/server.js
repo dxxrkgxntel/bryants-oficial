@@ -141,7 +141,7 @@ function navigateToHome() {
     renderHome(activeGuild, currentModules);
 }
 
-function navigateToModule(key, modules = currentModules) {
+function navigateToModule(key, modules = currentModules, options = {}) {
     const definitionExists = Boolean(modules && (modules.configurations?.[key] || modules.lists?.[key] || key === "memberEconomy"));
     if (!definitionExists) {
         showNotice("No se pudo abrir ese sistema porque ya no está disponible. Recarga el panel e inténtalo de nuevo.", true);
@@ -149,7 +149,7 @@ function navigateToModule(key, modules = currentModules) {
     }
     if (!confirmDiscardChanges()) return false;
     activeFormGuard = null;
-    renderModule(key, modules);
+    renderModule(key, modules, options);
     return true;
 }
 
@@ -1440,8 +1440,7 @@ async function renderTrophyMembers(definition) {
         panel.innerHTML = `<div class="trophy-ranking-heading"><div><span class="eyebrow">PUNTUACIÓN TOTAL</span><h3>${selectedMember ? "Posición del miembro" : "Clasificación histórica"}</h3></div><span class="trophy-ranking-count">${filtered.length} ${filtered.length === 1 ? "miembro" : "miembros"}</span></div><div class="trophy-rank-list">${rankingRows}</div>`;
         panel.querySelectorAll("[data-trophy-member]").forEach(button => button.addEventListener("click", () => {
             const userId = button.dataset.trophyMember;
-            navigateToModule("memberEconomy", currentModules);
-            showNotice("Selecciona a " + (selectedMember ? displayName(selectedMember) : "este miembro") + " en el apartado Miembros para consultar sus trofeos y mochila.");
+            navigateToModule("memberEconomy", currentModules, { memberId: userId });
         }));
     };
     const chooseMember = member => {
@@ -1513,7 +1512,7 @@ async function renderTrophyMembers(definition) {
     }
 }
 
-function renderMemberEconomy(definition) {
+function renderMemberEconomy(definition, initialMemberId = null) {
     const updateButton = document.querySelector("#member-balance-update");
     updateButton.hidden = true;
     updateButton.disabled = true;
@@ -1559,17 +1558,15 @@ function renderMemberEconomy(definition) {
     });
     input.addEventListener("keydown", event => { if (event.key === "Escape") closePicker(); });
     content.addEventListener("click", event => { if (!event.target.closest(".member-search-panel")) closePicker(); });
-    results.addEventListener("click", async event => {
-        const button = event.target.closest("[data-member-id]");
-        if (!button) return;
-        selectedMemberId = button.dataset.memberId;
-        label.textContent = button.dataset.memberName;
+    async function selectMember(memberId, nameHint = "") {
+        selectedMemberId = String(memberId || "");
+        label.textContent = nameHint || "Cargando miembro…";
         detail.hidden = false;
         detail.innerHTML = '<article class="loading-card">Cargando economía…</article>';
         closePicker();
         try {
             const response = await api(`/api/guilds/${encodeURIComponent(guildId)}/members/${encodeURIComponent(selectedMemberId)}/economy`);
-            if (!detail.isConnected || selectedMemberId !== button.dataset.memberId) return;
+            if (!detail.isConnected || selectedMemberId !== String(memberId)) return;
             const { member, economy } = response;
             const name = member.nick || member.globalName || member.username;
             const wallet = Number(economy.wallet || 0), bank = Number(economy.bank || 0);
@@ -1593,7 +1590,11 @@ function renderMemberEconomy(definition) {
                 refreshSaveState();
             };
             renderBalance({ wallet, bank });
-        } catch (error) { if (detail.isConnected) detail.innerHTML = `<article class="empty-state">${escapeHtml(error.message)}</article>`; }
+        } catch (error) { if (detail.isConnected && selectedMemberId === String(memberId)) detail.innerHTML = `<article class="empty-state">${escapeHtml(error.message)}</article>`; }
+    }
+    results.addEventListener("click", event => {
+        const button = event.target.closest("[data-member-id]");
+        if (button) selectMember(button.dataset.memberId, button.dataset.memberName);
     });
     function refreshSaveState() {
         const walletInput = detail.querySelector('[name="wallet"]');
@@ -1627,9 +1628,10 @@ function renderMemberEconomy(definition) {
             updateButton.textContent = "Actualizar balance";
         }
     };
+    if (/^\d{17,20}$/.test(String(initialMemberId || ""))) selectMember(initialMemberId);
 }
 
-function renderModule(key, modules) {
+function renderModule(key, modules, options = {}) {
     const memberBalanceButton = document.querySelector("#member-balance-update");
     if (memberBalanceButton && key !== "memberEconomy") {
         memberBalanceButton.hidden = true;
@@ -1652,7 +1654,7 @@ function renderModule(key, modules) {
 
     const data = configState.configurations[key] || { configured: false };
     if (key === "specialChannels") return renderSpecialChannels(definition, data);
-    if (isMemberEconomy) return renderMemberEconomy(definition);
+    if (isMemberEconomy) return renderMemberEconomy(definition, options.memberId);
     if (key === "trophyMembers") return renderTrophyMembers(definition);
     const formFields = definition.fields.map(field => {
         if (field.type === "section") return renderField(field);
