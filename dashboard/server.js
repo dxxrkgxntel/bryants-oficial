@@ -123,7 +123,7 @@ async function getBirthdayMemberName(guildId, userId) {
         }
         if (!response.ok) return null;
         const member = await response.json();
-        const name = member.user?.global_name || member.nick || member.user?.username || null;
+        const name = member.nick || member.user?.global_name || member.user?.username || null;
         if (name) birthdayMemberNameCache.set(cacheKey, { name, expiresAt: Date.now() + 60 * 60_000 });
         return name;
     } catch {
@@ -1517,9 +1517,19 @@ app.get("/api/guilds/:guildId/trophies/leaderboard", requireGuildAdmin, async (r
             { $sort: { points: -1, unlockedLevels: -1, _id: 1 } },
             { $limit: 50 }
         ]);
+        const displayNames = new Array(rows.length);
+        let nextRow = 0;
+        const workers = Array.from({ length: Math.min(5, rows.length) }, async () => {
+            while (nextRow < rows.length) {
+                const index = nextRow++;
+                displayNames[index] = await getBirthdayMemberName(req.params.guildId, rows[index]._id);
+            }
+        });
+        await Promise.all(workers);
         return res.json({ leaderboard: rows.map((row, index) => ({
             rank: index + 1,
             userId: row._id,
+            displayName: displayNames[index],
             points: row.points || 0,
             unlockedLevels: row.unlockedLevels || 0,
             unlockedAchievements: row.unlockedAchievements || 0

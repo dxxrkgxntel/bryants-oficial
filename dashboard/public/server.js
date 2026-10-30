@@ -1432,8 +1432,8 @@ async function renderTrophyMembers(definition) {
             const progress = Math.round(points / highestPoints * 100);
             const memberId = String(row.userId || "");
             const isSelected = selectedMember && selectedMember.id === memberId;
-            const memberName = isSelected ? displayName(selectedMember) : "Miembro";
-            const memberDetail = isSelected ? "@" + selectedMember.username : `ID · …${memberId.slice(-4)}`;
+            const memberName = isSelected ? displayName(selectedMember) : row.displayName || "Usuario no disponible";
+            const memberDetail = `ID · ${memberId}`;
             const rankClass = rank <= 3 ? ` top-${rank}` : "";
             return `<article class="trophy-rank-row${rankClass}"><span class="trophy-rank-number" aria-label="Puesto ${rank}">#${rank}</span><div class="trophy-rank-member"><strong>${escapeHtml(memberName)}</strong><small>${escapeHtml(memberDetail)}</small></div><div class="trophy-rank-stats"><div class="trophy-rank-points"><span>PUNTOS</span><strong>${points.toLocaleString("es-ES")} <small>pts</small></strong></div><div class="trophy-rank-progress" role="progressbar" aria-label="Puntos relativos al primer lugar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}"><span style="width:${progress}%"></span></div><div class="trophy-rank-achievements"><span><strong>${Number(row.unlockedLevels || 0).toLocaleString("es-ES")}</strong> niveles</span><span><strong>${Number(row.unlockedAchievements || 0).toLocaleString("es-ES")}</strong> trofeos</span></div></div><button type="button" class="quiet-button" data-trophy-member="${escapeHtml(memberId)}">Ver miembro <span aria-hidden="true">→</span></button></article>`;
         }).join("");
