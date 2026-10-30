@@ -2637,7 +2637,7 @@ function assistantReply(question) {
 function assistantQuestionUsesLiveData(question) {
     const q = normalizeSearch(question);
     return /^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|saludos)\b/.test(q)
-        || /\b(estado|resumen|situacion|progreso|pendiente|problema|problemas|error|errores|diagnostico|diagnosticos|comprobacion|comprobaciones|fallo|fallos|recomendacion|recomendaciones|que esta mal|que debo corregir|que falta|por donde empiezo|configuracion actual|actualmente|ahora mismo|esta activo|esta activa|esta configurado|esta configurada|guardado|guardada)\b/.test(q);
+        || /\b(estado|resumen|situacion|progreso|pendiente|problema|problemas|error|errores|diagnostico|diagnosticos|comprobacion|comprobaciones|fallo|fallos|recomendacion|recomendaciones|recomienda|recomiendas|que esta mal|que debo corregir|que falta|por donde empiezo|como esta|configuracion actual|actualmente|ahora mismo|esta activo|esta activa|esta configurado|esta configurada|guardado|guardada)\b/.test(q);
 }
 
 function addAssistantMessage(text, role = "bot", actionKey = "", actionLabel = "", actionUrl = "") {
