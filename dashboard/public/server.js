@@ -2509,17 +2509,46 @@ function addAssistantMessage(text, role = "bot", actionKey = "", actionLabel = "
 function setupAssistant() {
     const launcher = document.querySelector("#assistant-launcher");
     const panel = document.querySelector("#assistant-panel");
-    const close = document.querySelector("#assistant-close");
+    const close = document.querySelector("#assistant-window-close");
+    const minimize = document.querySelector("#assistant-window-minimize");
+    const expand = document.querySelector("#assistant-window-expand");
     const form = document.querySelector("#assistant-form");
     const input = document.querySelector("#assistant-input");
     if (!launcher || !panel || !form || !input) return;
+    const setExpanded = expanded => {
+        panel.classList.toggle("is-expanded", expanded);
+        expand?.setAttribute("aria-pressed", String(expanded));
+        expand?.setAttribute("aria-label", expanded ? "Restaurar tamaño del asistente" : "Ampliar asistente");
+        expand?.setAttribute("title", expanded ? "Restaurar tamaño" : "Ampliar asistente");
+    };
+    const setMinimized = minimized => {
+        if (minimized) setExpanded(false);
+        panel.classList.toggle("is-minimized", minimized);
+        minimize?.setAttribute("aria-pressed", String(minimized));
+        minimize?.setAttribute("aria-label", minimized ? "Restaurar asistente" : "Minimizar asistente");
+        minimize?.setAttribute("title", minimized ? "Restaurar asistente" : "Minimizar asistente");
+    };
     const toggle = open => {
         panel.hidden = !open;
         launcher.setAttribute("aria-expanded", String(open));
+        setMinimized(false);
+        setExpanded(false);
         if (open) input.focus();
     };
-    launcher.addEventListener("click", () => toggle(panel.hidden));
-    close?.addEventListener("click", () => toggle(false));
+    launcher.addEventListener("click", () => {
+        if (panel.hidden) toggle(true);
+        else if (panel.classList.contains("is-minimized")) setMinimized(false);
+        else toggle(false);
+    });
+    close?.addEventListener("click", () => {
+        toggle(false);
+        launcher.focus();
+    });
+    minimize?.addEventListener("click", () => setMinimized(!panel.classList.contains("is-minimized")));
+    expand?.addEventListener("click", () => {
+        if (panel.classList.contains("is-minimized")) setMinimized(false);
+        setExpanded(!panel.classList.contains("is-expanded"));
+    });
     document.querySelectorAll("[data-assistant-prompt]").forEach(button => button.addEventListener("click", () => {
         input.value = button.dataset.assistantPrompt || "";
         form.requestSubmit();

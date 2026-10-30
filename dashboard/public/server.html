@@ -55,14 +55,17 @@
             <span class="assistant-launcher-mark" aria-hidden="true">✦</span><span>Asistente Bryvex</span>
         </button>
         <section id="assistant-panel" class="assistant-panel" aria-label="Conversación con el asistente" hidden>
-            <div class="assistant-window-bar" aria-hidden="true">
-                <span class="assistant-window-controls"><i></i><i></i><i></i></span>
+            <div class="assistant-window-bar">
+                <div class="assistant-window-controls" role="group" aria-label="Controles de ventana del asistente">
+                    <button id="assistant-window-close" class="assistant-window-button assistant-window-close" type="button" aria-label="Cerrar asistente" title="Cerrar asistente" aria-controls="assistant-panel"></button>
+                    <button id="assistant-window-minimize" class="assistant-window-button assistant-window-minimize" type="button" aria-label="Minimizar asistente" title="Minimizar asistente" aria-controls="assistant-panel" aria-pressed="false"></button>
+                    <button id="assistant-window-expand" class="assistant-window-button assistant-window-expand" type="button" aria-label="Ampliar asistente" title="Ampliar asistente" aria-controls="assistant-panel" aria-pressed="false"></button>
+                </div>
                 <span class="assistant-window-title"><span>◆</span> BRYVEX BOT</span>
             </div>
             <header class="assistant-header">
                 <div class="assistant-avatar" aria-hidden="true">✦</div>
                 <div><strong>Asistente Bryvex</strong><small id="assistant-context-label">Conectado al servidor activo</small></div>
-                <button id="assistant-close" class="assistant-close" type="button" aria-label="Cerrar asistente">×</button>
             </header>
             <div id="assistant-messages" class="assistant-messages" role="log" aria-live="polite" aria-relevant="additions">
                 <article class="assistant-message assistant-message-bot"><p>¡Hola! Puedo revisar la configuración cargada de este servidor, explicar comprobaciones y recomendarte qué módulo abrir. ¿Qué necesitas?</p></article>
