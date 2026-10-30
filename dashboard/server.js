@@ -1342,6 +1342,44 @@ app.get("/api/guilds/:guildId/config", requireGuildAdmin, async (req, res) => {
     }
 });
 
+app.get("/api/guilds/:guildId/social-alerts/diagnostics", requireGuildAdmin, async (req, res) => {
+    res.set("Cache-Control", "private, no-store");
+    try {
+        const guildId = req.params.guildId;
+        const alerts = await lists.socialAlerts.model.find({ guildId })
+            .select("_id platform slug enabled")
+            .lean();
+        const states = await SocialAlertState.find({ guildId, alertId: { $in: alerts.map(alert => alert._id) } })
+            .select("alertId platform diagnosticSlug diagnosticStatus diagnosticCheckedAt diagnosticSuccessAt diagnosticError diagnosticTitle diagnosticCategory diagnosticViewerCount")
+            .lean();
+        const statesByAlert = new Map(states.map(state => [String(state.alertId), state]));
+        return res.json({ diagnostics: alerts.map(alert => {
+            const state = statesByAlert.get(String(alert._id));
+            const targetMatches = state?.platform === (alert.platform || "Kick") && state?.diagnosticSlug === alert.slug;
+            const enabled = alert.enabled !== false;
+            const checkedAt = targetMatches ? state.diagnosticCheckedAt || null : null;
+            const checkedTime = checkedAt ? new Date(checkedAt).getTime() : null;
+            const stale = checkedTime !== null && (!Number.isFinite(checkedTime) || Date.now() - checkedTime > 180_000);
+            return {
+                alertId: String(alert._id),
+                platform: alert.platform || "Kick",
+                slug: alert.slug,
+                enabled,
+                status: !enabled ? "disabled" : !targetMatches || !checkedAt ? "pending" : stale ? "stale" : state.diagnosticStatus || "pending",
+                checkedAt,
+                successAt: targetMatches ? state.diagnosticSuccessAt || null : null,
+                error: stale ? "No hay una consulta reciente del bot." : targetMatches ? state.diagnosticError || null : null,
+                title: targetMatches ? state.diagnosticTitle || null : null,
+                category: targetMatches ? state.diagnosticCategory || null : null,
+                viewerCount: targetMatches && state.diagnosticViewerCount != null ? state.diagnosticViewerCount : null
+            };
+        }) });
+    } catch (error) {
+        console.error("[Dashboard Social Alerts] Error al cargar diagnósticos:", error.message);
+        return res.status(500).json({ error: "No pude cargar el diagnóstico de las alertas sociales." });
+    }
+});
+
 app.get("/api/guilds/:guildId/leaderboards/economy", requireGuildAdmin, async (req, res) => {
     res.set("Cache-Control", "private, no-store");
     try {

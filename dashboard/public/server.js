@@ -13,6 +13,8 @@ let favoritesOnly = false;
 let activeFormGuard = null;
 let favoriteModules = new Set();
 let templatePopoverListenerInstalled = false;
+let socialDiagnosticsRefreshTimer = null;
+let socialDiagnosticsRequestId = 0;
 
 function loadFavorites() {
     try {
@@ -135,6 +137,7 @@ function confirmDiscardChanges() {
 
 function navigateToHome() {
     if (!confirmDiscardChanges()) return;
+    stopSocialDiagnosticsRefresh();
     const memberBalanceButton = document.querySelector("#member-balance-update");
     if (memberBalanceButton) memberBalanceButton.hidden = true;
     activeFormGuard = null;
@@ -148,6 +151,7 @@ function navigateToModule(key, modules = currentModules, options = {}) {
         return false;
     }
     if (!confirmDiscardChanges()) return false;
+    stopSocialDiagnosticsRefresh();
     activeFormGuard = null;
     renderModule(key, modules, options);
     return true;
@@ -2180,7 +2184,78 @@ function wireKickChannelPickers(form) {
     });
 }
 
+function stopSocialDiagnosticsRefresh() {
+    window.clearInterval(socialDiagnosticsRefreshTimer);
+    socialDiagnosticsRefreshTimer = null;
+    socialDiagnosticsRequestId += 1;
+}
+
+function formatSocialDiagnosticDate(value) {
+    if (!value) return "Aún sin consulta";
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "Aún sin consulta";
+    return new Intl.DateTimeFormat("es", { dateStyle: "medium", timeStyle: "short" }).format(date);
+}
+
+function renderSocialDiagnostics(diagnostics) {
+    if (!diagnostics.length) return '<p class="social-diagnostics-empty">Añade una alerta para ver aquí su estado.</p>';
+    const statusLabels = {
+        pending: "Esperando al bot",
+        checking: "Consultando",
+        online: "En directo",
+        offline: "Fuera de línea",
+        error: "Error reciente",
+        stale: "Sin actualización",
+        disabled: "Desactivada"
+    };
+    return diagnostics.map(item => {
+        const status = Object.hasOwn(statusLabels, item.status) ? item.status : "pending";
+        const hasSnapshot = Boolean(item.successAt);
+        const showData = status !== "disabled" && status !== "offline";
+        const title = showData ? hasSnapshot ? item.title || "No disponible" : "Sin datos todavía" : "—";
+        const category = showData ? hasSnapshot ? item.category || "No disponible" : "Sin datos todavía" : "—";
+        const viewers = showData
+            ? hasSnapshot && item.viewerCount !== null && item.viewerCount !== undefined && Number.isFinite(Number(item.viewerCount)) ? Number(item.viewerCount).toLocaleString("es-ES") : hasSnapshot ? "No disponible" : "Sin datos todavía"
+            : "—";
+        const lastSuccess = item.successAt ? `<small class="social-diagnostic-success">Última respuesta correcta: ${escapeHtml(formatSocialDiagnosticDate(item.successAt))}</small>` : "";
+        const error = item.error ? `<p class="social-diagnostic-error">${escapeHtml(item.error)}</p>` : "";
+        return `<article class="social-diagnostic-card status-${status}"><div class="social-diagnostic-card-heading"><strong>${escapeHtml(item.platform)} · ${escapeHtml(item.slug)}</strong><span class="social-diagnostic-status">${statusLabels[status]}</span></div><dl class="social-diagnostic-values"><div><dt>Título</dt><dd>${escapeHtml(title)}</dd></div><div><dt>Categoría</dt><dd>${escapeHtml(category)}</dd></div><div><dt>Espectadores</dt><dd>${escapeHtml(viewers)}</dd></div></dl><small class="social-diagnostic-checked">Última consulta: ${escapeHtml(formatSocialDiagnosticDate(item.checkedAt))}</small>${lastSuccess}${error}</article>`;
+    }).join("");
+}
+
+function startSocialDiagnosticsRefresh() {
+    const panel = content.querySelector("[data-social-diagnostics]");
+    const list = panel?.querySelector("[data-social-diagnostics-list]");
+    const button = panel?.querySelector("[data-social-diagnostics-refresh]");
+    if (!panel || !list || !button) return;
+    const requestId = ++socialDiagnosticsRequestId;
+    let loading = false;
+    const refresh = async (showLoading = false) => {
+        if (!panel.isConnected || requestId !== socialDiagnosticsRequestId || loading) return;
+        if (document.visibilityState === "hidden" && !showLoading) return;
+        loading = true;
+        button.disabled = true;
+        if (showLoading) button.textContent = "Actualizando…";
+        try {
+            const result = await api(`/api/guilds/${encodeURIComponent(guildId)}/social-alerts/diagnostics`);
+            if (panel.isConnected && requestId === socialDiagnosticsRequestId) list.innerHTML = renderSocialDiagnostics(result.diagnostics || []);
+        } catch (error) {
+            if (panel.isConnected && requestId === socialDiagnosticsRequestId) list.innerHTML = `<p class="social-diagnostics-error">${escapeHtml(error.message || "No se pudo cargar el diagnóstico.")}</p>`;
+        } finally {
+            loading = false;
+            if (button.isConnected && requestId === socialDiagnosticsRequestId) {
+                button.disabled = false;
+                button.textContent = "Actualizar";
+            }
+        }
+    };
+    button.addEventListener("click", () => refresh(true));
+    refresh(true);
+    socialDiagnosticsRefreshTimer = window.setInterval(() => refresh(false), 60_000);
+}
+
 function renderList(key, definition, editItem = null) {
+    stopSocialDiagnosticsRefresh();
     const records = configState.lists[key] || [];
     const editing = Boolean(editItem);
     const listLayout = key === "socialAlerts" ? " social-alerts-grid" : key === "quests" ? " missions-grid" : "";
@@ -2199,7 +2274,10 @@ function renderList(key, definition, editItem = null) {
         displayName: editItem?.displayName || "",
         platform: editItem?.platform || "Kick"
     }) : "";
-    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div>${definition.description ? `<p class="card-description">${escapeHtml(definition.description)}</p>` : ""}${alertPreview}${search}<div class="records-list">${rows || '<p class="empty-state">Todavía no hay elementos configurados.</p>'}<p id="list-no-results" class="empty-state" hidden>No hay elementos que coincidan con la búsqueda.</p></div><div class="form-divider"></div><h3>${editing ? "Editar elemento" : "Añadir elemento"}</h3>${form}</article>`;
+    const socialDiagnostics = key === "socialAlerts" ? '<section class="social-diagnostics" data-social-diagnostics aria-live="polite"><div class="social-diagnostics-heading"><div><span class="eyebrow">ESTADO DEL BOT</span><h3>Diagnóstico de alertas</h3><p>El bot revisa cada alerta aproximadamente una vez por minuto. Actualizar vuelve a cargar el último diagnóstico guardado.</p></div><button class="quiet-button" type="button" data-social-diagnostics-refresh>Actualizar</button></div><div class="social-diagnostics-grid" data-social-diagnostics-list><p class="social-diagnostics-empty">Consultando el estado del bot…</p></div></section>' : "";
+    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div>${definition.description ? `<p class="card-description">${escapeHtml(definition.description)}</p>` : ""}${socialDiagnostics}${alertPreview}${search}<div class="records-list">${rows || '<p class="empty-state">Todavía no hay elementos configurados.</p>'}<p id="list-no-results" class="empty-state" hidden>No hay elementos que coincidan con la búsqueda.</p></div><div class="form-divider"></div><h3>${editing ? "Editar elemento" : "Añadir elemento"}</h3>${form}</article>`;
+
+    if (key === "socialAlerts") startSocialDiagnosticsRefresh();
 
     if (key === "birthdayMembers" && !editing && records.length) {
         api(`/api/guilds/${encodeURIComponent(guildId)}/birthday-members/names`).then(result => {

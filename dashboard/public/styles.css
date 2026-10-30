@@ -599,6 +599,36 @@ footer { padding: 20px 0 34px; border-top: 1px solid #ffffff17; color: #81768b; 
 .social-alert-preview-avatar { display: grid; place-items: center; border-radius: 50%; background: #53fc1822; font-size: 13px; }
 .social-alert-preview-author > span:not(.social-alert-preview-avatar) { padding: 2px 4px; border-radius: 4px; background: #5865f2; color: #fff; font-size: 8px; font-weight: 800; }
 .social-alert-preview-author small { color: #a99fb2; font-size: 9px; }
+.social-diagnostics { display: grid; gap: 13px; margin: 18px 0 22px; padding: 16px; border: 1px solid #ffffff18; border-radius: 14px; background: linear-gradient(145deg, #100d16d9, #17121cbd); }
+.social-diagnostics-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.social-diagnostics-heading h3 { margin: 5px 0 3px; color: #f0e8f6; font-size: 16px; }
+.social-diagnostics-heading p { margin: 0; color: #9e93a8; font-size: 11px; line-height: 1.5; }
+.social-diagnostics-heading .quiet-button { flex: 0 0 auto; }
+.social-diagnostics-heading .quiet-button:disabled { cursor: progress; opacity: .65; }
+.social-diagnostics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 10px; }
+.social-diagnostic-card { min-width: 0; padding: 13px; border: 1px solid #ffffff14; border-radius: 11px; background: #0d0a11a8; }
+.social-diagnostic-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 9px; }
+.social-diagnostic-card-heading > strong { min-width: 0; overflow-wrap: anywhere; color: #ece3f2; font-size: 12px; }
+.social-diagnostic-status { flex: 0 0 auto; padding: 4px 7px; border-radius: 999px; background: #ffffff0c; color: #b8adbf; font-size: 9px; font-weight: 750; }
+.social-diagnostic-card.status-online { border-color: #39cc8340; }
+.social-diagnostic-card.status-online .social-diagnostic-status { background: #39cc8318; color: #79e5ab; }
+.social-diagnostic-card.status-offline .social-diagnostic-status, .social-diagnostic-card.status-disabled .social-diagnostic-status { color: #a99fb2; }
+.social-diagnostic-card.status-error, .social-diagnostic-card.status-stale { border-color: #ff6d7845; }
+.social-diagnostic-card.status-error .social-diagnostic-status, .social-diagnostic-card.status-stale .social-diagnostic-status { background: #ff6d7818; color: #ff9ba2; }
+.social-diagnostic-card.status-checking .social-diagnostic-status { background: #b96df21a; color: #d5a1f6; }
+.social-diagnostic-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin: 13px 0 10px; }
+.social-diagnostic-values > div { min-width: 0; }
+.social-diagnostic-values dt { margin-bottom: 4px; color: #93889e; font-size: 9px; }
+.social-diagnostic-values dd { margin: 0; overflow-wrap: anywhere; color: #e0d7e7; font-size: 10px; line-height: 1.4; }
+.social-diagnostic-checked, .social-diagnostic-success { display: block; color: #91869b; font-size: 9px; line-height: 1.5; }
+.social-diagnostic-success { color: #a99fb2; }
+.social-diagnostic-error, .social-diagnostics-error { margin: 8px 0 0; color: #ff9ba2; font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+.social-diagnostics-empty { grid-column: 1 / -1; margin: 0; padding: 14px; border: 1px dashed #ffffff18; border-radius: 10px; color: #a99fb2; font-size: 11px; text-align: center; }
+@media (max-width: 520px) {
+    .social-diagnostics { padding: 12px; }
+    .social-diagnostics-heading { align-items: flex-start; }
+    .social-diagnostic-values { grid-template-columns: 1fr; gap: 7px; }
+}
 .template-field > label { color: #d6cddd; font-size: 12px; font-weight: 650; }
 .template-composer { position: relative; display: flex; justify-content: flex-end; }
 .template-toolbar { display: flex; gap: 6px; margin-top: -1px; }

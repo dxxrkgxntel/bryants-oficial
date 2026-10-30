@@ -213,6 +213,7 @@ async function getTikTokLiveInfo(username) {
         stream: {
             id: roomId || `${normalized}:${room.create_time || "live"}`,
             stream_title: room.title || room.liveRoomUserInfo?.title || "En directo en TikTok",
+            diagnosticTitleAvailable: Boolean(room.title || room.liveRoomUserInfo?.title),
             viewer_count: getTikTokViewerCount(room),
             category: { name: getTikTokCategory(room, data) },
             broadcaster: { username: user.nickname || user.uniqueId || normalized },
@@ -259,6 +260,7 @@ async function getTwitchLiveInfo(login) {
         stream: {
             id: String(data.id),
             stream_title: data.title || "En directo",
+            diagnosticTitleAvailable: Boolean(data.title),
             viewer_count: normalizeViewerCount(data.viewer_count),
             category: { name: data.game_name || "" },
             broadcaster: { username: data.user_name || normalized },
@@ -411,10 +413,60 @@ async function updateViewerCount(client, alert, state, stream) {
     await state.save();
 }
 
+function clearDiagnosticSnapshot(state) {
+    state.diagnosticSuccessAt = null;
+    state.diagnosticError = null;
+    state.diagnosticTitle = null;
+    state.diagnosticCategory = null;
+    state.diagnosticViewerCount = null;
+}
+
+function setDiagnosticSnapshot(state, status, stream = null) {
+    const now = new Date();
+    state.diagnosticStatus = status;
+    state.diagnosticCheckedAt = now;
+    state.diagnosticSuccessAt = now;
+    state.diagnosticError = null;
+    if (status !== "online" || !stream) {
+        state.diagnosticTitle = null;
+        state.diagnosticCategory = null;
+        state.diagnosticViewerCount = null;
+        return;
+    }
+    const title = stream.diagnosticTitleAvailable === false ? "" : stream.stream_title || stream.title || "";
+    const category = typeof stream.category === "string" ? stream.category : stream.category?.name;
+    state.diagnosticTitle = String(title || "").trim().slice(0, 256) || null;
+    state.diagnosticCategory = String(category || "").trim().slice(0, 120) || null;
+    state.diagnosticViewerCount = normalizeViewerCount(stream.viewer_count);
+}
+
+async function recordDiagnosticFailure(alert, error) {
+    const now = new Date();
+    const message = String(error?.message || "Error desconocido al consultar la alerta.")
+        .replace(/https?:\/\/discord(?:app)?\.com\/api\/webhooks\/\S+/gi, "webhook de Discord")
+        .replace(/https?:\/\/\S+/gi, "servicio remoto")
+        .replace(/[\r\n\t]+/g, " ")
+        .trim()
+        .slice(0, 300) || "No se pudo consultar la plataforma.";
+    await SocialAlertState.findOneAndUpdate(
+        { guildId: alert.guildId, alertId: alert._id },
+        { $set: {
+            channelId: alert.channelId,
+            platform: alert.platform || "Kick",
+            diagnosticSlug: alert.slug,
+            diagnosticStatus: "error",
+            diagnosticCheckedAt: now,
+            diagnosticError: message
+        } },
+        { upsert: true, setDefaultsOnInsert: true }
+    );
+}
+
 async function checkAlert(client, alert) {
     let state = await SocialAlertState.findOne({ guildId: alert.guildId, alertId: alert._id });
     if (!state) state = new SocialAlertState({ guildId: alert.guildId, alertId: alert._id, channelId: alert.channelId });
     const platform = alert.platform || "Kick";
+    if (state.platform !== platform || (state.diagnosticSlug && state.diagnosticSlug !== alert.slug)) clearDiagnosticSnapshot(state);
     if (state.platform !== platform) {
         state.platform = platform;
         state.lastStreamId = null;
@@ -425,23 +477,30 @@ async function checkAlert(client, alert) {
         state.channelId = alert.channelId;
         state.messageId = null;
     }
+    state.diagnosticSlug = alert.slug;
+    state.diagnosticStatus = "checking";
+    state.diagnosticCheckedAt = new Date();
+    state.diagnosticError = null;
+    await state.save();
     const channelInfo = platform === "TikTok" ? await getTikTokLiveInfo(alert.slug) : platform === "Twitch" ? await getTwitchLiveInfo(alert.slug) : platform === "YouTube" ? await getYouTubeLiveInfo(alert.slug) : await getKickStream(alert.slug);
     if (platform === "Kick" && !channelInfo) {
-        console.warn(`[SOCIALALERTS] Kick ${alert.slug} (${alert.guildId}): la API no devolvió ningún canal para ese nombre.`);
-        return;
+        throw new Error("Kick no devolvió un canal para ese nombre.");
     }
     const stream = platform === "TikTok" ? channelInfo.stream : channelInfo?.stream;
     // Kick represents an offline channel with a null/missing `stream` object.
     // Some API responses omit `is_live` while returning the active stream.
     if (!stream || stream.is_live === false) {
+        setDiagnosticSnapshot(state, "offline");
         if (state.lastStreamId) {
             state.lastStreamId = null;
             state.messageId = null;
             state.lastViewers = null;
-            await state.save();
         }
+        await state.save();
         return;
     }
+    setDiagnosticSnapshot(state, "online", stream);
+    await state.save();
     const streamId = String(stream.id || stream.start_time || `${alert.slug}:${stream.stream_title || "live"}`);
     if (streamId !== state.lastStreamId) {
         await sendLiveAlert(client, alert, state, { ...channelInfo, ...stream, stream_title: stream.stream_title || stream.title });
@@ -460,6 +519,7 @@ async function poll(client) {
             try { await checkAlert(client, alert); }
             catch (error) {
                 const platform = alert.platform || "Kick";
+                await recordDiagnosticFailure(alert, error).catch(saveError => console.error(`[SOCIALALERTS] No pude guardar el diagnóstico de ${platform} ${alert.slug} (${alert.guildId}):`, saveError.message));
                 const missingCredentials = (error.message.startsWith("Faltan ") && error.message.includes("_CLIENT_")) || error.message === "Falta YOUTUBE_API_KEY.";
                 if (!missingCredentials || !warnedMissingCredentials.has(platform)) {
                     console.error(`[SOCIALALERTS] ${alert.platform || "Kick"} ${alert.slug} (${alert.guildId}):`, error.message);

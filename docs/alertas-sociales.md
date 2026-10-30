@@ -2,6 +2,8 @@
 
 La web permite configurar alertas sociales por servidor. El bot comprueba las plataformas cada minuto y publica un mensaje Components V2 al detectar un directo.
 
+La sección **Alertas sociales** de la dashboard también muestra un diagnóstico por alerta: estado del canal, última consulta, últimos datos recibidos y errores recientes. Los datos se actualizan aproximadamente cada minuto mientras la sección permanece abierta. El botón **Actualizar** vuelve a cargar el último diagnóstico guardado; no inicia una consulta adicional al canal.
+
 ## Configuración de Kick
 
 Registra una aplicación en el portal de desarrolladores de Kick y añade estas variables al entorno del proceso del bot:
