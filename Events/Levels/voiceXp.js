@@ -14,6 +14,7 @@ const questHandler =
     require("../../Functions/questHandler");
 const { getLevelSettings } = require("../../Functions/levelSettings");
 const { sendLevelNotification } = require("../../Functions/levelNotification");
+const { trackAchievementProgress } = require("../../Functions/achievementTracker");
 
 //////////////////////////////////////////////////
 // CACHE
@@ -382,6 +383,12 @@ module.exports = {
                             //////////////////////////////////////////////////
 
                             await data.save();
+                            if (data.level > Number(data.achievementLevelReported || 0)) {
+                                await trackAchievementProgress(guild, member.user, "level", data.level, { absolute: true })
+                                    .catch(error => console.warn("[Achievements] No se pudo registrar level:", error.message));
+                                data.achievementLevelReported = data.level;
+                                await data.save();
+                            }
 
                             // QUESTS DE VOZ: cada ciclo valido equivale a 5 minutos.
                             await questHandler(
