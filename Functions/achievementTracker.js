@@ -7,6 +7,32 @@ const { EmbedBuilder } = require("discord.js");
 const { sendTrophyCard, sendTrophyComponents } = require("./trophyCard");
 
 const seededGuilds = new Map();
+
+function achievementComparatorReached(value, goal, comparator = "gte") {
+    const current = Number(value);
+    const target = Number(goal);
+    if (!Number.isFinite(current) || !Number.isFinite(target)) return false;
+    switch (comparator) {
+        case "gt": return current > target;
+        case "eq": return current === target;
+        case "lte": return current <= target;
+        case "lt": return current < target;
+        case "gte":
+        default: return current >= target;
+    }
+}
+
+async function hasAchievementPrerequisites(guildId, userId, prerequisiteIds = []) {
+    const required = [...new Set((prerequisiteIds || []).filter(id => typeof id === "string" && id.trim()))];
+    if (!required.length) return true;
+    const completed = await UserAchievement.countDocuments({
+        guildId,
+        userId,
+        achievementId: { $in: required },
+        unlockedAt: { $ne: null }
+    });
+    return completed === required.length;
+}
 const DEFAULT_ACHIEVEMENTS = [
     { achievementId: "first_steps", name: "Primeros pasos", description: "Envía 1 mensaje en el servidor.", emoji: "👋", category: "activity", metric: "messages", goal: 1, rewardCoins: 100, points: 5 },
     { achievementId: "chatty_100", name: "Conversador", description: "Envía 100 mensajes en el servidor.", emoji: "💬", category: "activity", metric: "messages", goal: 100, rewardCoins: 250, points: 10 },
@@ -91,6 +117,7 @@ async function trackAchievementProgress(guild, user, metric, amount = 1) {
     const multiplier = Math.max(0, Math.min(100, Number(settings?.pointsMultiplier ?? 1)));
     const unlocked = [];
     for (const achievement of definitions) {
+        if (!await hasAchievementPrerequisites(guild.id, user.id, achievement.prerequisiteIds)) continue;
         try {
             await UserAchievement.updateOne(
                 { guildId: guild.id, userId: user.id, achievementId: achievement.achievementId },
@@ -109,9 +136,15 @@ async function trackAchievementProgress(guild, user, metric, amount = 1) {
             { $inc: { progress: amount } }, { new: true }
         );
         if (!current) continue;
-        const progress = Math.min(current.progress, goals[goals.length - 1]);
+        const comparator = achievement.comparator || "gte";
+        // Los logros escalonados usan umbrales acumulativos; los comparadores alternativos
+        // se evalúan contra un único umbral para respetar la regla importada.
+        const progress = current.progress;
         for (let i = 0; i < goals.length; i += 1) {
-            if (progress < goals[i]) continue;
+            const reached = comparator === "gte"
+                ? achievementComparatorReached(progress, goals[i], "gte")
+                : goals.length === 1 && achievementComparatorReached(progress, goals[i], comparator);
+            if (!reached) continue;
             const points = Math.max(0, Math.round((Number.isFinite(pointsList[i]) && pointsList[i] >= 0 ? pointsList[i] : Number(achievement.points ?? 10)) * multiplier));
             const update = await UserAchievement.updateOne(
                 { _id: current._id, unlockedLevels: { $ne: i + 1 } },
@@ -172,11 +205,16 @@ async function trackAchievementProgress(guild, user, metric, amount = 1) {
         const after = await UserAchievement.findById(current._id).lean();
         if (after && goals.every((_goal, index) => (after.unlockedLevels || []).includes(index + 1))) {
             await UserAchievement.updateOne({ _id: current._id, unlockedAt: null }, { $set: { unlockedAt: new Date(), progress: goals[goals.length - 1] } });
-        } else if (after && after.progress > goals[goals.length - 1]) {
+        } else if (after && comparator === "gte" && after.progress > goals[goals.length - 1]) {
             await UserAchievement.updateOne({ _id: current._id }, { $set: { progress: goals[goals.length - 1] } });
         }
     }
     return unlocked;
 }
 
-module.exports = { trackAchievementProgress, ensureDefaultAchievements };
+module.exports = {
+    trackAchievementProgress,
+    ensureDefaultAchievements,
+    achievementComparatorReached,
+    hasAchievementPrerequisites
+};
