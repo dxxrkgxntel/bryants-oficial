@@ -6,9 +6,9 @@
 
 - Catálogo: **397 logros / 106 métricas únicas**.
 - Conectadas: **39**.
-- Parciales: **16**.
+- Parciales: **17**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **2**.
-- Pendientes de localizar/implementar o validar: **49**.
+- Pendientes de localizar/implementar o validar: **48**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
 ## Matriz
@@ -90,7 +90,7 @@
 | 73 | `questions_asked` | 6 | **Pendiente** | asistente IA/dashboard; falta definir pregunta válida | Curious (25); Inquirer (250) |
 | 74 | `reactions_added` | 9 | **Conectada** | Events/Logs/personalReactionStats.js · messageReactionAdd — Cuenta reacciones añadidas. | Give or Take (10); True Star (100) |
 | 75 | `reactions_received` | 6 | **Conectada** | Events/Logs/personalReactionStats.js · messageReactionAdd — Cuenta reacciones recibidas por el autor. | First Fan (10); Crowd Pleaser (100) |
-| 76 | `referrals` | 3 | **Pendiente** | Models/DashboardReferral.js; verificar si la referencia pertenece a un miembro/servidor | Referrer (1); Brand Ambassador (5) |
+| 76 | `referrals` | 3 | **Parcial** | Models/DashboardReferral.js + Functions/referralAchievementMetrics.js + Events/Client/ready.js · el bot agrupa referidos confirmados por servidor e invitador y sincroniza el total con progreso absoluto; el dashboard conserva su transacción de recompensa sin depender del cliente Discord; pendiente validación en Discord real | Referrer (1); Brand Ambassador (5) |
 | 77 | `replies_sent` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · mensajes con referencia a otro mensaje | Replier (100); Conversationalist (1000) |
 | 78 | `reviews_written` | 5 | **Pendiente** | sin sistema de reseñas identificado | Reviewer (1); Critic (10) |
 | 79 | `roles_count` | 2 | **Parcial** | Functions/memberAchievementMetrics.js + Events/Guild/achievementMemberUpdate.js + Events/Levels/messageCreate2.js · cuenta roles asignados, excluye `@everyone` y roles gestionados; guarda el máximo alcanzado mediante progreso absoluto; pendiente validación en Discord real | Role Collector (10); Role Hoarder (25) |
@@ -135,7 +135,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 - `daily_streak` de actividad y `economy_daily_streak` son conceptos diferentes.
 - `games_played`, `games_won` y `games_streak` se actualizan desde casino y minijuegos Fun con fuentes separadas. Los minijuegos singleplayer y multiplayer persisten contadores y rachas en `MiniGameStats`; se requiere validación funcional en Discord para cerrar las tres métricas. Los timeouts multijugador no cuentan como partida finalizada; los empates cuentan como partida y reinician la racha.
 - `first_unlocks` adjudica una sola vez cada logro por servidor mediante un índice único; `achievements_unlocked` suma una vez cada transición a logro completado, sin contar tiers como logros separados. `account_age_days` y `membership_days` se actualizan al entrar y en la actividad del miembro; `roles_count` se actualiza al entrar, cambiar roles y enviar mensajes; `items_owned` se calcula después de una compra confirmada sobre la mochila persistida; `boost_months` conserva el máximo de meses calendario completos de una racha continua de impulso. La validación en Discord real sigue pendiente.
-- Las acciones `mod_actions` incluyen ban, unban, kick, mute, unmute y purge confirmados por Discord. `warns_issued` registra advertencias persistidas con clave única por interacción; solo confirma la advertencia al usuario si la escritura en MongoDB termina correctamente.\n- Los tickets actuales son tickets del centro de soporte web, no tickets de soporte abiertos por miembros dentro de sus propios servidores; no se conectan a métricas de logros hasta resolver esa diferencia de alcance y atribución.
+- Las acciones `mod_actions` incluyen ban, unban, kick, mute, unmute y purge confirmados por Discord. `warns_issued` registra advertencias persistidas con clave única por interacción; solo confirma la advertencia al usuario si la escritura en MongoDB termina correctamente. `referrals` se sincroniza desde `DashboardReferral` por servidor e invitador con snapshots absolutos; la transacción original de recompensa no se modifica y la sincronización puede repetirse sin incrementar dos veces el progreso.\n- Los tickets actuales son tickets del centro de soporte web, no tickets de soporte abiertos por miembros dentro de sus propios servidores; no se conectan a métricas de logros hasta resolver esa diferencia de alcance y atribución.
 - Las métricas de clanes, negocios, propiedades, inversiones, pesca y minería no tienen modelos correspondientes en el árbol de modelos revisado; deben declararse no aplicables o implementar primero esos sistemas, nunca simular progreso.
 
 ## Orden recomendado de implementación
