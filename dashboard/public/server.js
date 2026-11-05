@@ -2281,6 +2281,7 @@ function renderList(key, definition, editItem = null) {
         return `<div class="record-row" data-record-id="${escapeHtml(record._id)}" data-search="${escapeHtml(getRecordSearchText(key, record, definition))}"><div class="record-title">${escapeHtml(label)}</div><div class="record-actions"><button type="button" class="quiet-button" data-edit="${escapeHtml(record._id)}">Editar</button><button type="button" class="quiet-button danger-text" data-delete="${escapeHtml(record._id)}">Eliminar</button></div></div>`;
     }).join("");
     const search = records.length > 3 ? `<div class="list-toolbar"><span>${records.length} elementos</span><label class="record-search"><span class="sr-only">Buscar en ${escapeHtml(definition.title)}</span><input type="search" id="record-search" placeholder="Buscar en la lista…" autocomplete="off"></label></div>` : "";
+    const backupToolbar = key === "achievements" ? `<div class="list-toolbar achievements-backup-toolbar"><div><strong>Backup de logros</strong><span>Importa un catálogo JSON o descarga una copia del servidor.</span></div><label class="record-search"><span class="sr-only">Modo de importación</span><select id="achievement-import-mode"><option value="merge">Añadir sin sobrescribir</option><option value="update">Actualizar existentes</option><option value="replace">Reemplazar logros importados de Notoq</option></select></label><input id="achievement-backup-file" type="file" accept=".json,application/json" hidden><button type="button" class="quiet-button" id="achievement-import-trigger">Importar JSON</button><button type="button" class="quiet-button" id="achievement-export-trigger">Exportar JSON</button></div>` : "";
     const alertPreview = key === "socialAlerts" ? renderPreviewMarkup(key, {
         title: editItem?.title || definition.fields.find(field => field.name === "title")?.default || "",
         description: editItem?.messageTemplate || definition.fields.find(field => field.name === "messageTemplate")?.default || "",
@@ -2291,7 +2292,52 @@ function renderList(key, definition, editItem = null) {
         platform: editItem?.platform || "Kick"
     }) : "";
     const socialDiagnostics = key === "socialAlerts" ? '<section class="social-diagnostics" data-social-diagnostics aria-live="polite"><div class="social-diagnostics-heading"><div><span class="eyebrow">ESTADO DEL BOT</span><h3>Diagnóstico de alertas</h3><p>El bot revisa cada alerta aproximadamente una vez por minuto. Actualizar vuelve a cargar el último diagnóstico guardado.</p></div><button class="quiet-button" type="button" data-social-diagnostics-refresh>Actualizar</button></div><div class="social-diagnostics-grid" data-social-diagnostics-list><p class="social-diagnostics-empty">Consultando el estado del bot…</p></div></section>' : "";
-    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div>${definition.description ? `<p class="card-description">${escapeHtml(definition.description)}</p>` : ""}${socialDiagnostics}${alertPreview}${search}<div class="records-list">${rows || '<p class="empty-state">Todavía no hay elementos configurados.</p>'}<p id="list-no-results" class="empty-state" hidden>No hay elementos que coincidan con la búsqueda.</p></div><div class="form-divider"></div><h3>${editing ? "Editar elemento" : "Añadir elemento"}</h3>${form}</article>`;
+    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div>${definition.description ? `<p class="card-description">${escapeHtml(definition.description)}</p>` : ""}${backupToolbar}${socialDiagnostics}${alertPreview}${search}<div class="records-list">${rows || '<p class="empty-state">Todavía no hay elementos configurados.</p>'}<p id="list-no-results" class="empty-state" hidden>No hay elementos que coincidan con la búsqueda.</p></div><div class="form-divider"></div><h3>${editing ? "Editar elemento" : "Añadir elemento"}</h3>${form}</article>`;
+
+    if (key === "achievements") {
+        const fileInput = content.querySelector("#achievement-backup-file");
+        content.querySelector("#achievement-import-trigger")?.addEventListener("click", () => fileInput?.click());
+        fileInput?.addEventListener("change", async event => {
+            const file = event.currentTarget.files?.[0];
+            if (!file) return;
+            if (!confirmDiscardChanges()) { event.currentTarget.value = ""; return; }
+            try {
+                const backup = JSON.parse(await file.text());
+                const mode = content.querySelector("#achievement-import-mode")?.value || "merge";
+                const result = await api(`/api/guilds/${encodeURIComponent(guildId)}/achievements/import`, {
+                    method: "POST",
+                    body: JSON.stringify({ backup, mode })
+                });
+                activeFormGuard = null;
+                configState.lists.achievements = result.items || [];
+                renderList(key, definition);
+                showNotice(`Backup procesado: ${result.received} logros recibidos, ${result.inserted} nuevos y ${result.total} en total.`);
+            } catch (error) {
+                showNotice(error.message || "No pude importar el backup.", true);
+            } finally {
+                event.currentTarget.value = "";
+            }
+        });
+        content.querySelector("#achievement-export-trigger")?.addEventListener("click", async buttonEvent => {
+            const button = buttonEvent.currentTarget;
+            button.disabled = true;
+            try {
+                const backup = await api(`/api/guilds/${encodeURIComponent(guildId)}/achievements/export`);
+                const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = `bryvex-achievements-${guildId}.json`;
+                link.click();
+                URL.revokeObjectURL(url);
+                showNotice("Backup de logros exportado.");
+            } catch (error) {
+                showNotice(error.message || "No pude exportar el backup.", true);
+            } finally {
+                button.disabled = false;
+            }
+        });
+    }
 
     if (key === "socialAlerts") startSocialDiagnosticsRefresh();
 
