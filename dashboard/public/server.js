@@ -2298,9 +2298,10 @@ function renderList(key, definition, editItem = null) {
         const fileInput = content.querySelector("#achievement-backup-file");
         content.querySelector("#achievement-import-trigger")?.addEventListener("click", () => fileInput?.click());
         fileInput?.addEventListener("change", async event => {
-            const file = event.currentTarget.files?.[0];
+            const input = event.currentTarget;
+            const file = input.files?.[0];
             if (!file) return;
-            if (!confirmDiscardChanges()) { event.currentTarget.value = ""; return; }
+            if (!confirmDiscardChanges()) { input.value = ""; return; }
             try {
                 const backup = JSON.parse(await file.text());
                 const mode = content.querySelector("#achievement-import-mode")?.value || "merge";
@@ -2315,7 +2316,7 @@ function renderList(key, definition, editItem = null) {
             } catch (error) {
                 showNotice(error.message || "No pude importar el backup.", true);
             } finally {
-                event.currentTarget.value = "";
+                input.value = "";
             }
         });
         content.querySelector("#achievement-export-trigger")?.addEventListener("click", async buttonEvent => {
