@@ -1,6 +1,8 @@
 const assert = require("node:assert/strict");
 const {
     normalizeMiniGameResult,
+    extractMiniGameGuessCount,
+    isPerfectMiniGame,
     buildMiniGameStatsPipeline
 } = require("../Functions/minigameAchievementMetrics");
 const { getCasinoAchievementSnapshot } = require("../Functions/casinoAchievementMetrics");
@@ -11,6 +13,33 @@ assert.equal(normalizeMiniGameResult({ result: "tie" }), "tie");
 assert.equal(normalizeMiniGameResult({ result: "finish" }), "finish");
 assert.equal(normalizeMiniGameResult({ result: "timeout" }), null);
 assert.equal(normalizeMiniGameResult({}), null);
+
+assert.equal(extractMiniGameGuessCount({ guessed: ["casa", "perro"] }), 2);
+assert.equal(extractMiniGameGuessCount({ turns: 4 }), 4);
+assert.equal(extractMiniGameGuessCount({ tilesTurned: 8 }), 8);
+assert.equal(extractMiniGameGuessCount({ blocksTurned: 6 }), 6);
+assert.equal(extractMiniGameGuessCount({ selected: "answer" }), 1);
+assert.equal(extractMiniGameGuessCount({ selectedEmoji: "🍉" }), 1);
+assert.equal(extractMiniGameGuessCount({ result: "lose" }), 0);
+
+assert.equal(isPerfectMiniGame({ guessed: ["casa"] }, "win"), true);
+assert.equal(isPerfectMiniGame({ guessed: ["casa", "perro"] }, "win"), false);
+assert.equal(isPerfectMiniGame({ guessed: ["a"], damage: 0 }, "win"), true);
+assert.equal(isPerfectMiniGame({ guessed: ["a", "b"], damage: 1 }, "win"), false);
+assert.equal(isPerfectMiniGame({ selectedEmoji: "🍉", correctEmoji: "🍉" }, "win"), true);
+assert.equal(isPerfectMiniGame({ selectedEmoji: "🍉", correctEmoji: "🍇" }, "win"), false);
+assert.equal(isPerfectMiniGame({ selected: "correct answer" }, "win"), true);
+assert.equal(isPerfectMiniGame({ blocksTurned: 20 }, "win"), true);
+assert.equal(isPerfectMiniGame({ blocksTurned: 20 }, "lose"), false);
+assert.equal(isPerfectMiniGame({ turns: 2 }, "win"), false);
+
+const metricPipeline = buildMiniGameStatsPipeline(true, { guesses: 3, perfect: true });
+assert.deepEqual(metricPipeline[0].$set.totalGuesses, { $add: [{ $ifNull: ["$totalGuesses", 0] }, 3] });
+assert.deepEqual(metricPipeline[0].$set.perfectGames, { $add: [{ $ifNull: ["$perfectGames", 0] }, 1] });
+
+const noMetricPipeline = buildMiniGameStatsPipeline(false);
+assert.deepEqual(noMetricPipeline[0].$set.totalGuesses, { $add: [{ $ifNull: ["$totalGuesses", 0] }, 0] });
+assert.deepEqual(noMetricPipeline[0].$set.perfectGames, { $add: [{ $ifNull: ["$perfectGames", 0] }, 0] });
 
 const winPipeline = buildMiniGameStatsPipeline(true);
 assert.equal(winPipeline.length, 1);
