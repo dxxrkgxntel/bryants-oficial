@@ -1,7 +1,7 @@
 const PersonalVoiceActivity = require("../Models/PersonalVoiceActivity");
 const { addDuration } = require("./personalStats");
 const { trackAchievementProgress } = require("./achievementTracker");
-const { minutesProgress } = require("./voiceActivityMath");
+const { voiceMinutesSnapshot } = require("./voiceActivityMath");
 const { extractVoiceAchievementMetrics } = require("./voiceAchievementMetrics");
 
 async function closeDuration(activity, member, guild, startField, totalField, reportedField, metric, statsField, mapKey, now) {
@@ -12,15 +12,16 @@ async function closeDuration(activity, member, guild, startField, totalField, re
     if (!seconds) return;
 
     const previousTotal = Number(activity[totalField] || 0);
-    const previousReported = Number(activity[reportedField] || 0);
     const nextTotal = previousTotal + seconds;
-    const delta = minutesProgress(nextTotal, previousReported);
+    const snapshot = voiceMinutesSnapshot(nextTotal, activity[reportedField]);
 
     await addDuration(member.id, guild.id, statsField, seconds, new Date(startedAt), now, mapKey);
     activity[totalField] = nextTotal;
-    if (delta > 0) {
-        activity[reportedField] = previousReported + delta;
-        await trackAchievementProgress(guild, member.user, metric, delta).catch(error => console.warn(`[Achievements] No se pudo registrar ${metric}:`, error.message));
+    if (snapshot.shouldReport) {
+        // El progreso absoluto hace que un reintento sea idempotente si MongoDB falla
+        // después de actualizar el logro pero antes de guardar el watermark local.
+        await trackAchievementProgress(guild, member.user, metric, snapshot.totalMinutes, { absolute: true });
+        activity[reportedField] = snapshot.totalMinutes;
     }
 }
 
