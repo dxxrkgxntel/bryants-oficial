@@ -42,7 +42,7 @@
 | 25 | `clan_xp_contributed` | 3 | **Pendiente** | sin sistema de clanes identificado | Contributor (10000); Pillar of the Clan (100000) |
 | 26 | `code_blocks_sent` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · cuenta bloques cercados de código | Coder (10); Developer (100) |
 | 27 | `coins` | 7 | **Conectada** | Functions/economyAchievementMetrics.js + Commands/Administration/weeklydrop.js + Functions/questHandler.js · máximo saldo simultáneo de wallet; incluye drops semanales, recompensas de misiones y operaciones económicas principales | Piggy Bank (1000); Coin Stacker (10000) |
-| 28 | `commands_used` | 4 | **Pendiente** | Events/Messages/messageCreate.js + Events/Interaction/interactionCreate.js | Command Curious (25); Power User (250) |
+| 28 | `commands_used` | 4 | **Parcial** | Events/Interaction/interactionCreate.js + Events/Messages/messageCreate.js + Functions/commandAchievementMetrics.js · registra comandos slash y prefijo solo después de una ejecución sin error; excluye comandos bloqueados, inexistentes y rechazados por cooldown; pendiente CI y validación con Discord real | Command Curious (25); Power User (250) |
 | 29 | `counting_correct` | 6 | **Pendiente** | Localizar evento/comando responsable y conectar en el punto de éxito. | Counter (10); Number Cruncher (100) |
 | 30 | `counting_highest` | 4 | **Pendiente** | Localizar evento/comando responsable y conectar en el punto de éxito. | Hundred Club (100); Thousand Reach (1000) |
 | 31 | `counting_streak` | 4 | **Pendiente** | Localizar evento/comando responsable y conectar en el punto de éxito. | Steady Counter (25); Focused Counter (100) |
