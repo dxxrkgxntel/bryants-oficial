@@ -16,6 +16,8 @@ const economyUser = new Schema({
   lastBankBonus: {type: Number, default: 0},
   dailyStreak: {type: Number, default: 0},
   lastDailyDate: {type: String, default: null},
+  workStreak: {type: Number, default: 0},
+  lastWorkDate: {type: String, default: null},
   debt: {type: Number, default: 0},
   loanTaken: {type: Boolean, default: false},
   loanDate: {type: Date, default: null},
