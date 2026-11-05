@@ -5,9 +5,9 @@
 ## Resumen
 
 - Catálogo: **397 logros / 106 métricas únicas**.
-- Conectadas: **34**.
+- Conectadas: **37**.
 - Parciales: **4**.
-- Fuente existente o dato calculable, sin conexión al catálogo: **15**.
+- Fuente existente o dato calculable, sin conexión al catálogo: **12**.
 - Pendientes de localizar/implementar o validar: **53**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
@@ -24,7 +24,7 @@
 | 7 | `applications_accepted` | 2 | **Pendiente** | sin sistema de solicitudes identificado | Welcome Aboard (1); Team Player (5) |
 | 8 | `applications_sent` | 2 | **Pendiente** | sin sistema de solicitudes identificado | Applicant (1); Persistent Applicant (5) |
 | 9 | `attachments_sent` | 2 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · cuenta adjuntos reales del mensaje | File Sharer (100); Data Hoarder (1000) |
-| 10 | `bank_balance` | 3 | **Dato existente; falta conexión** | Models/EconomyUser.js + Commands/Economy/economy.js — Saldo bancario consultable. | Banker (100000); Vault Keeper (5000000) |
+| 10 | `bank_balance` | 3 | **Conectada** | Functions/economyAchievementMetrics.js · registra el máximo saldo bancario tras depósitos, retiros, transferencias, préstamos, pagos, donaciones y distribuciones | Banker (100000); Vault Keeper (5000000) |
 | 11 | `birthday_celebrations` | 3 | **Conectada** | Handlers/birthdaySystem.js + Models/Birthday.js · suma solo después de enviar el aviso y guarda el año celebrado para evitar repeticiones | First Birthday (1); Birthday Regular (3) |
 | 12 | `birthday_set` | 1 | **Conectada** | Commands/Utility/birthday.js · suma únicamente el primer registro; editar la fecha no repite el logro | Party Ready (1) |
 | 13 | `boost_months` | 4 | **Dato calculable; falta conexión** | Events/Logs/boostSystem.js · guildMemberUpdate — Calcular meses desde premiumSince; verificar continuidad del boost. | Loyal Booster (3); Boost Legend (12) |
@@ -41,7 +41,7 @@
 | 24 | `clan_wars_won` | 2 | **Pendiente** | sin sistema de clanes identificado | War Hero (1); Warlord (10) |
 | 25 | `clan_xp_contributed` | 3 | **Pendiente** | sin sistema de clanes identificado | Contributor (10000); Pillar of the Clan (100000) |
 | 26 | `code_blocks_sent` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · cuenta bloques cercados de código | Coder (10); Developer (100) |
-| 27 | `coins` | 7 | **Dato parcial; falta definir semántica** | Models/EconomyUser.js + Commands/Economy/economy.js — Hay wallet y bank; confirmar si el logro mide saldo total o wallet. | Piggy Bank (1000); Coin Stacker (10000) |
+| 27 | `coins` | 7 | **Conectada** | Functions/economyAchievementMetrics.js · representa el máximo saldo simultáneo de wallet (dinero disponible en cartera); no suma depósitos bancarios | Piggy Bank (1000); Coin Stacker (10000) |
 | 28 | `commands_used` | 4 | **Pendiente** | Events/Messages/messageCreate.js + Events/Interaction/interactionCreate.js | Command Curious (25); Power User (250) |
 | 29 | `counting_correct` | 6 | **Pendiente** | Localizar evento/comando responsable y conectar en el punto de éxito. | Counter (10); Number Cruncher (100) |
 | 30 | `counting_highest` | 4 | **Pendiente** | Localizar evento/comando responsable y conectar en el punto de éxito. | Hundred Club (100); Thousand Reach (1000) |
@@ -80,7 +80,7 @@
 | 63 | `messages_starred` | 3 | **Pendiente** | sin sistema Starboard identificado | On the Board (1); Board Regular (10) |
 | 64 | `mining_trips` | 4 | **Pendiente** | sin sistema de minería identificado | First Dig (1); Miner (25) |
 | 65 | `mod_actions` | 4 | **Pendiente** | Commands/Administration/moderation.js; falta tracker por acción | Rookie Mod (1); Peacekeeper (25) |
-| 66 | `net_worth` | 6 | **Dato derivable; falta conexión** | Models/EconomyUser.js — Patrimonio = wallet + bank; no incluye deuda/activos hasta definir fórmula. | Getting Comfortable (10000); Well Off (100000) |
+| 66 | `net_worth` | 6 | **Conectada** | Functions/economyAchievementMetrics.js · patrimonio líquido neto = wallet + bank − deuda, con mínimo de cero; no incluye bienes externos a la economía del bot | Getting Comfortable (10000); Well Off (100000) |
 | 67 | `night_owl_messages` | 3 | **Conectada** | Functions/achievementMessageMetrics.js · 00:00–05:59 en America/Santo_Domingo | Night Owl (100); Moon Dweller (1000) |
 | 68 | `polls_created` | 3 | **Conectada** | Commands/Utility/poll.js · creación de encuesta — Suma al crear encuesta. | Pollster (5); Poll Maker (50) |
 | 69 | `prestige_level` | 2 | **Conectada** | Commands/Economy/prestige.js · suma solo después de guardar correctamente el nuevo prestigio | Prestige (1); Prestige Master (5) |
@@ -130,7 +130,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 
 - Las sesiones de voz, transmisión y cámara se guardan en `PersonalVoiceActivity`; deben validarse en un servidor Discord real, especialmente tras reiniciar el proceso.
 - `level` representa el máximo nivel alcanzado; `achievementLevelReported` evita reportar de nuevo el mismo nivel incluso tras prestigio. `xp` en Level sigue siendo saldo de progreso actual; la métrica acumulada suma las fuentes principales conocidas, pero requiere auditar otras posibles fuentes.
-- `coins`, `bank_balance`, `net_worth` son métricas de saldo: requieren evaluación de estado, no sumar el saldo en cada transacción.
+- `coins` mide el saldo de cartera; `bank_balance`, el saldo bancario; `net_worth`, el patrimonio líquido neto (cartera + banco − deuda). Se actualizan con progreso absoluto para conservar el máximo alcanzado.
 - `total_earned` y `total_spent` requieren historial transaccional; no deben inferirse del saldo actual.
 - `daily_streak` de actividad y `economy_daily_streak` son conceptos diferentes.
 - `games_played`/`games_won`/`games_streak` tienen fuente de datos en CasinoStats; no deben confundirse con los minijuegos de `Commands/Fun/minijuegos.js`.
