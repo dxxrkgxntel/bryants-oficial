@@ -1,4 +1,5 @@
 function getCasinoAchievementSnapshot(stats = {}) {
+    stats = stats || {};
     return {
         games_played: Math.max(0, Number(stats.totalGames) || 0),
         games_won: Math.max(0, Number(stats.totalWins) || 0),
