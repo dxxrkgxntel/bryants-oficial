@@ -30,7 +30,7 @@ async function recordPlayerResult(guild, user, outcome) {
     const stats = await MiniGameStats.findOneAndUpdate(
         { guildId: guild.id, userId: user.id },
         buildMiniGameStatsPipeline(outcome === "win"),
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        { upsert: true, new: true }
     );
 
     const updates = [
