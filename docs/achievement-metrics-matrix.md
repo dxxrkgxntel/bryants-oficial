@@ -5,7 +5,7 @@
 ## Resumen
 
 - Catálogo: **397 logros / 106 métricas únicas**.
-- Conectadas: **30**.
+- Conectadas: **31**.
 - Parciales: **3**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **22**.
 - Pendientes de localizar/implementar o validar: **53**.
@@ -71,7 +71,7 @@
 | 54 | `investments_made` | 3 | **Pendiente** | sin sistema de inversiones identificado | Investor (1); Portfolio Builder (10) |
 | 55 | `invites` | 7 | **Conectada** | Utils/inviteTracker.js · suma al invitador solo después de atribuir y guardar una invitación usada | Recruiter (1); Connector (10) |
 | 56 | `items_owned` | 3 | **Dato existente; falta conexión** | Models/EconomyUser.js + Utils/shopHandlers.js — Existe inventario; el evento heredado itemsPurchased no mide artículos actualmente poseídos. | Collector (25); Window Shopper (5) |
-| 57 | `level` | 11 | **Dato existente; falta conexión** | Models/Level.js + Events/Levels/messageCreate2.js — Nivel actual almacenado; conectar al alcanzar/cargar el nivel y cubrir subidas por voz. | Rookie (5); Apprentice (10) |
+| 57 | `level` | 11 | **Conectada** | Models/Level.js + Events/Levels/messageCreate2.js + Events/Levels/voiceXp.js · reporta el máximo nivel alcanzado con actualización absoluta y evita repetir reportes | Rookie (5); Apprentice (10) |
 | 58 | `links_sent` | 2 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · enlaces HTTP(S) escritos en el contenido | Link Dropper (50); Web Weaver (500) |
 | 59 | `long_messages` | 3 | **Conectada** | Functions/achievementMessageMetrics.js · mensaje de 500 caracteres o más | Essayist (10); Wall of Text (100) |
 | 60 | `membership_days` | 9 | **Dato calculable; falta conexión** | Events/Guild/sistemaDeIngreso.js + member.joinedAt — Calcular antigüedad de membresía con joinedAt; necesita actualización periódica o cálculo al evaluar. | Fresh Face (7); Familiar Face (30) |
@@ -129,7 +129,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 ## Riesgos detectados
 
 - Las sesiones de voz, transmisión y cámara se guardan en `PersonalVoiceActivity`; deben validarse en un servidor Discord real, especialmente tras reiniciar el proceso.
-- `level` y `xp` tienen datos persistidos, pero el XP del modelo es progreso actual, no necesariamente XP histórico total.
+- `level` representa el máximo nivel alcanzado; `achievementLevelReported` evita reportar de nuevo el mismo nivel incluso tras prestigio. `xp` en Level sigue siendo saldo de progreso actual, no XP histórico total.
 - `coins`, `bank_balance`, `net_worth` son métricas de saldo: requieren evaluación de estado, no sumar el saldo en cada transacción.
 - `total_earned` y `total_spent` requieren historial transaccional; no deben inferirse del saldo actual.
 - `daily_streak` de actividad y `economy_daily_streak` son conceptos diferentes.
@@ -140,7 +140,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 
 1. **Mensajes y actividad:** ya conectados palabras, caracteres, imágenes, GIF, links, stickers, adjuntos, respuestas, menciones, spoilers y bloques de código; las cuatro métricas restantes ya están conectadas: mensajes de 500+ caracteres, madrugada (00:00–05:59), temprano (06:00–08:59) y fines de semana, todo en America/Santo_Domingo. Días activos, racha y creación de hilos también conectados.
 2. **Voz:** joins conectados; minutos de voz, transmisión y cámara ya tienen sesiones persistentes y quedan parciales hasta validación en Discord real.
-3. **Economía y niveles:** `prestige_level` conectado; pendientes transacciones, saldos vs acumulados, XP y niveles por texto/voz.
+3. **Economía y niveles:** `level` y `prestige_level` conectados; pendientes XP histórico, transacciones y saldos vs acumulados.
 4. **Comunidad:** invitaciones, primer registro de cumpleaños y boosts conectados; pendientes meses de boost, auto-roles, tickets y moderación.
 5. **Juegos y eventos:** casino, minijuegos y sorteos con registros individuales.
 6. **Temporadas y meta-logros:** primer desbloqueo, podios, victorias y premios semanales/mensuales.
