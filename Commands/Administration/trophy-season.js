@@ -235,7 +235,7 @@ module.exports = {
                 : "La temporada terminó sin participantes con puntos.";
             return interaction.editReply(seasonPanel(
                 "🏁 Temporada cerrada",
-                `**Temporada:** ${seasonKey}\n\n**Podio**\n${summary}\n\nLos logros `season_podiums` y `season_wins` fueron procesados. Puedes iniciar la siguiente temporada con un identificador nuevo.`,
+                `**Temporada:** ${seasonKey}\n\n**Podio**\n${summary}\n\nLos logros season_podiums y season_wins fueron procesados. Puedes iniciar la siguiente temporada con un identificador nuevo.`,
                 0x00AA66
             ));
         }
