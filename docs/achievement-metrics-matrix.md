@@ -5,10 +5,10 @@
 ## Resumen
 
 - Catálogo: **397 logros / 106 métricas únicas**.
-- Conectadas: **26**.
+- Conectadas: **28**.
 - Parciales: **3**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **22**.
-- Pendientes de localizar/implementar o validar: **55**.
+- Pendientes de localizar/implementar o validar: **53**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
 ## Matriz
@@ -26,7 +26,7 @@
 | 9 | `attachments_sent` | 2 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · cuenta adjuntos reales del mensaje | File Sharer (100); Data Hoarder (1000) |
 | 10 | `bank_balance` | 3 | **Dato existente; falta conexión** | Models/EconomyUser.js + Commands/Economy/economy.js — Saldo bancario consultable. | Banker (100000); Vault Keeper (5000000) |
 | 11 | `birthday_celebrations` | 3 | **Pendiente** | Handlers/birthdaySystem.js; verificar cómo identifica quién celebra | First Birthday (1); Birthday Regular (3) |
-| 12 | `birthday_set` | 1 | **Dato existente; falta conexión** | Models/Birthday.js + Commands/Utility/birthday.js — Existe registro de cumpleaños. | Party Ready (1) |
+| 12 | `birthday_set` | 1 | **Conectada** | Commands/Utility/birthday.js · suma únicamente el primer registro; editar la fecha no repite el logro | Party Ready (1) |
 | 13 | `boost_months` | 4 | **Dato calculable; falta conexión** | Events/Logs/boostSystem.js · guildMemberUpdate — Calcular meses desde premiumSince; verificar continuidad del boost. | Loyal Booster (3); Boost Legend (12) |
 | 14 | `boosts` | 1 | **Dato disponible; falta conexión** | Events/Logs/boostSystem.js · guildMemberUpdate — Discord expone premiumSince; contar inicios de boost. | Supporter (1) |
 | 15 | `bot_mentions` | 3 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Cuenta menciones al bot. | Hey Bot (10); Bot Buddy (100) |
@@ -69,7 +69,7 @@
 | 52 | `images_sent` | 4 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · adjuntos con MIME de imagen, excluye GIF | Shutterbug (50); Gallery Owner (500) |
 | 53 | `investment_profit` | 2 | **Pendiente** | sin sistema de inversiones identificado | In the Green (10000); Bull Market (1000000) |
 | 54 | `investments_made` | 3 | **Pendiente** | sin sistema de inversiones identificado | Investor (1); Portfolio Builder (10) |
-| 55 | `invites` | 7 | **Dato existente; falta conexión** | Models/InviteTracker.js + Utils/inviteTracker.js + Events/Logs/inviteTrackerMemberAdd.js — Invitaciones atribuidas a invitador. | Recruiter (1); Connector (10) |
+| 55 | `invites` | 7 | **Conectada** | Utils/inviteTracker.js · suma al invitador solo después de atribuir y guardar una invitación usada | Recruiter (1); Connector (10) |
 | 56 | `items_owned` | 3 | **Dato existente; falta conexión** | Models/EconomyUser.js + Utils/shopHandlers.js — Existe inventario; el evento heredado itemsPurchased no mide artículos actualmente poseídos. | Collector (25); Window Shopper (5) |
 | 57 | `level` | 11 | **Dato existente; falta conexión** | Models/Level.js + Events/Levels/messageCreate2.js — Nivel actual almacenado; conectar al alcanzar/cargar el nivel y cubrir subidas por voz. | Rookie (5); Apprentice (10) |
 | 58 | `links_sent` | 2 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · enlaces HTTP(S) escritos en el contenido | Link Dropper (50); Web Weaver (500) |
@@ -141,7 +141,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 1. **Mensajes y actividad:** ya conectados palabras, caracteres, imágenes, GIF, links, stickers, adjuntos, respuestas, menciones, spoilers y bloques de código; las cuatro métricas restantes ya están conectadas: mensajes de 500+ caracteres, madrugada (00:00–05:59), temprano (06:00–08:59) y fines de semana, todo en America/Santo_Domingo. Días activos, racha y creación de hilos también conectados.
 2. **Voz:** joins conectados; minutos de voz, transmisión y cámara ya tienen sesiones persistentes y quedan parciales hasta validación en Discord real.
 3. **Economía y niveles:** conectar las transacciones confirmadas y decidir semántica de saldos vs acumulados; cubrir XP y niveles tanto por texto como por voz.
-4. **Comunidad:** invitaciones, boosts, cumpleaños, auto-roles, tickets y moderación.
+4. **Comunidad:** invitaciones y primer registro de cumpleaños conectados; pendientes boosts, auto-roles, tickets y moderación.
 5. **Juegos y eventos:** casino, minijuegos y sorteos con registros individuales.
 6. **Temporadas y meta-logros:** primer desbloqueo, podios, victorias y premios semanales/mensuales.
 7. **No aplicables:** clanes, negocios, propiedades, inversiones, pesca/minería, solicitudes y otras funciones que no existan en Bryvex; confirmar con el producto antes de eliminar del catálogo.
