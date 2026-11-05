@@ -18,6 +18,7 @@ const trophySettingsSchema = new Schema({
     seasonKey: { type: String, default: "" },
     seasonStartedAt: { type: Date, default: null },
     lastSeasonKey: { type: String, default: "" },
+    usedSeasonKeys: { type: [String], default: [] },
     lastSeasonClosedAt: { type: Date, default: null },
     firstPlaceRoleId: { type: String, default: null },
     secondPlaceRoleId: { type: String, default: null },
