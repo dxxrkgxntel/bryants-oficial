@@ -8,6 +8,12 @@ const { sendTrophyCard, sendTrophyComponents } = require("./trophyCard");
 const { achievementComparatorReached, achievementProgressUpdate } = require("./achievementRules");
 const { buildTotalAchievementPointsPipeline, normalizeTotalAchievementPoints } = require("./achievementPoints");
 const { recordFirstAchievementUnlock } = require("./firstUnlockAchievementMetric");
+const { createAchievementCompletionRecorder } = require("./achievementCompletionMetrics");
+
+const recordAchievementCompletions = createAchievementCompletionRecorder({
+    trackProgress: (...args) => trackAchievementProgress(...args),
+    recordFirstUnlock: recordFirstAchievementUnlock
+});
 
 const seededGuilds = new Map();
 const totalPointsSyncCache = new Set();
@@ -243,15 +249,7 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
             await UserAchievement.updateOne({ _id: current._id }, { $set: { progress: goals[goals.length - 1] } });
         }
     }
-    for (const achievementId of newlyCompleted) {
-        await recordFirstAchievementUnlock({
-            guildId: guild.id,
-            userId: user.id,
-            achievementId,
-            guild,
-            user
-        });
-    }
+    await recordAchievementCompletions({ guild, user, achievementIds: newlyCompleted });
     if ((pointsAwarded || unlocked.some(achievement => Number(achievement.rewardXP) > 0)) && metric !== "total_points" && options?.skipTotalPointsSync !== true) {
         await syncTotalAchievementPoints(guild, user);
     }
