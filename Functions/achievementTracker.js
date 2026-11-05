@@ -159,11 +159,13 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
                 }
             }
             if (achievement.rewardCoins > 0) {
-                await EconomyUser.findOneAndUpdate(
+                const rewardedEconomy = await EconomyUser.findOneAndUpdate(
                     { guildId: guild.id, userId: user.id },
                     { $inc: { wallet: achievement.rewardCoins }, $setOnInsert: { guildId: guild.id, userId: user.id } },
                     { upsert: true, new: true, setDefaultsOnInsert: true }
                 );
+                const { trackEconomyAchievementSnapshot } = require("./economyAchievementMetrics");
+                await trackEconomyAchievementSnapshot(guild, user, rewardedEconomy);
             }
             const mode = achievement.announce === false ? "silent" : (settings?.announcementMode || "embed");
             if (mode !== "silent") {
