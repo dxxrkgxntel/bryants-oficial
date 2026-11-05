@@ -5,8 +5,8 @@
 ## Resumen
 
 - Catálogo: **397 logros / 106 métricas únicas**.
-- Conectadas: **37**.
-- Parciales: **4**.
+- Conectadas: **36**.
+- Parciales: **5**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **12**.
 - Pendientes de localizar/implementar o validar: **53**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
@@ -41,7 +41,7 @@
 | 24 | `clan_wars_won` | 2 | **Pendiente** | sin sistema de clanes identificado | War Hero (1); Warlord (10) |
 | 25 | `clan_xp_contributed` | 3 | **Pendiente** | sin sistema de clanes identificado | Contributor (10000); Pillar of the Clan (100000) |
 | 26 | `code_blocks_sent` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · cuenta bloques cercados de código | Coder (10); Developer (100) |
-| 27 | `coins` | 7 | **Conectada** | Functions/economyAchievementMetrics.js · representa el máximo saldo simultáneo de wallet (dinero disponible en cartera); no suma depósitos bancarios | Piggy Bank (1000); Coin Stacker (10000) |
+| 27 | `coins` | 7 | **Parcial** | Functions/economyAchievementMetrics.js · máximo saldo simultáneo de wallet; faltan las recompensas de WeeklyDrop y misiones que actualizan EconomyUser sin pasar por el helper | Piggy Bank (1000); Coin Stacker (10000) |
 | 28 | `commands_used` | 4 | **Pendiente** | Events/Messages/messageCreate.js + Events/Interaction/interactionCreate.js | Command Curious (25); Power User (250) |
 | 29 | `counting_correct` | 6 | **Pendiente** | Localizar evento/comando responsable y conectar en el punto de éxito. | Counter (10); Number Cruncher (100) |
 | 30 | `counting_highest` | 4 | **Pendiente** | Localizar evento/comando responsable y conectar en el punto de éxito. | Hundred Club (100); Thousand Reach (1000) |
@@ -80,7 +80,7 @@
 | 63 | `messages_starred` | 3 | **Pendiente** | sin sistema Starboard identificado | On the Board (1); Board Regular (10) |
 | 64 | `mining_trips` | 4 | **Pendiente** | sin sistema de minería identificado | First Dig (1); Miner (25) |
 | 65 | `mod_actions` | 4 | **Pendiente** | Commands/Administration/moderation.js; falta tracker por acción | Rookie Mod (1); Peacekeeper (25) |
-| 66 | `net_worth` | 6 | **Conectada** | Functions/economyAchievementMetrics.js · patrimonio líquido neto = wallet + bank − deuda, con mínimo de cero; no incluye bienes externos a la economía del bot | Getting Comfortable (10000); Well Off (100000) |
+| 66 | `net_worth` | 6 | **Parcial** | Functions/economyAchievementMetrics.js · patrimonio líquido neto = wallet + bank − deuda; faltan WeeklyDrop y recompensas de misiones, que pueden alterar wallet sin refrescar el máximo | Getting Comfortable (10000); Well Off (100000) |
 | 67 | `night_owl_messages` | 3 | **Conectada** | Functions/achievementMessageMetrics.js · 00:00–05:59 en America/Santo_Domingo | Night Owl (100); Moon Dweller (1000) |
 | 68 | `polls_created` | 3 | **Conectada** | Commands/Utility/poll.js · creación de encuesta — Suma al crear encuesta. | Pollster (5); Poll Maker (50) |
 | 69 | `prestige_level` | 2 | **Conectada** | Commands/Economy/prestige.js · suma solo después de guardar correctamente el nuevo prestigio | Prestige (1); Prestige Master (5) |
