@@ -1,11 +1,10 @@
-const EconomyTransaction = require("../Models/EconomyTransaction");
-
 function normalizeSpendAmount(amount) {
     const value = Number(amount);
     return Number.isFinite(value) && value > 0 ? Math.round(value * 100) / 100 : 0;
 }
 
 async function recordEconomySpend({ guild, user, amount, category, operationId }) {
+    const EconomyTransaction = require("../Models/EconomyTransaction");
     const normalizedAmount = normalizeSpendAmount(amount);
     if (!guild?.id || !user?.id || !operationId || !category || !normalizedAmount) {
         return { recorded: false, totalSpent: null };
