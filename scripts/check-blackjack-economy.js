@@ -37,7 +37,7 @@ async function run() {
     await settleBlackjackBet({ ...identity, amount: 80, result: "loss" });
     assert.equal(wallet, 20, "a loss consumes the amount already reserved");
     await releaseBlackjackBet({ ...identity, amount: 80 });
-    assert.equal(wallet, 100, "cancel returns the reserved stake");
+    assert.equal(wallet, 100, "rollback after a failed game-message delivery releases the reservation");
 
     await reserveBlackjackBet({ ...identity, amount: 40 });
     await settleBlackjackBet({ ...identity, amount: 40, result: "win" });
@@ -48,7 +48,7 @@ async function run() {
 
     assert.equal(await reserveBlackjackBet({ ...identity, amount: 1000 }), null);
     assert.equal(await reserveBlackjackBet({ ...identity, amount: 0 }), null);
-    console.log("Blackjack economy tests passed: atomic concurrent reservations, loss, win, draw and cancellation.");
+    console.log("Blackjack economy tests passed: atomic concurrent reservations, loss, win, draw and rollback.");
 }
 
 run().catch(error => {
