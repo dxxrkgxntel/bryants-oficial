@@ -171,11 +171,7 @@ function buildLevelDetails({ user, data, position, needed, profile, economy = {}
         `**Nivel:** ${data.level}`,
         `**Experiencia:** ${data.xp.toLocaleString()} / ${needed.toLocaleString()} XP (${Math.floor(Math.min(1, data.xp / needed) * 100)}%)`
     ];
-    if (profile) {
-        rows.push(`**Cartera:** ${(economy.wallet || 0).toLocaleString()}`);
-        rows.push(`**Banco:** ${(economy.bank || 0).toLocaleString()}`);
-    }
-    return rows.join("\\n");
+    return rows.join("\n");
 }
 
 async function sendLevelResponse(interaction, options) {
@@ -187,10 +183,10 @@ async function sendLevelResponse(interaction, options) {
     const title = profile ? "👤 Bryvex Levels • Perfil" : "⭐ Bryvex Levels • Rank";
     const avatarUrl = user.displayAvatarURL({ extension: "png", size: 512, forceStatic: true });
     const badgeLine = profile && config.levelProfileShowBadges !== false
-        ? `\\n**Badges:** ${badges.length ? badges.join(" · ") : "Ninguno"}`
+        ? `\n**Badges:** ${badges.length ? badges.join(" · ") : "Ninguno"}`
         : "";
-    const profileLine = profile ? `${config.levelProfileShowWallet === false ? "" : `\\n**Cartera:** ${(economy.wallet || 0).toLocaleString()}`}${config.levelProfileShowBank === false ? "" : `\\n**Banco:** ${(economy.bank || 0).toLocaleString()}`}${config.levelProfileShowRanking === false ? "" : `\\n**Ranking:** #${position}`}${badgeLine}` : "";
-    const textContent = `## ${title}\\n**Usuario:** ${user}\\n**Nivel:** ${data.level}\\n**Rango:** #${position}\\n**XP:** ${data.xp.toLocaleString()} / ${needed.toLocaleString()} (${Math.floor(Math.min(1, data.xp / needed) * 100)}%)${profileLine}`;
+    const profileLine = profile ? `${config.levelProfileShowWallet === false ? "" : `\n**Cartera:** ${(economy.wallet || 0).toLocaleString()}`}${config.levelProfileShowBank === false ? "" : `\n**Banco:** ${(economy.bank || 0).toLocaleString()}`}${config.levelProfileShowRanking === false ? "" : `\n**Ranking:** #${position}`}${badgeLine}` : "";
+    const textContent = `## ${title}\n**Usuario:** ${user}\n**Nivel:** ${data.level}\n**Rango:** #${position}\n**XP:** ${data.xp.toLocaleString()} / ${needed.toLocaleString()} (${Math.floor(Math.min(1, data.xp / needed) * 100)}%)${profileLine}`;
 
     if (format === "text") return interaction.editReply({ content: textContent });
     if (format === "embed") {
@@ -200,7 +196,7 @@ async function sendLevelResponse(interaction, options) {
     }
     if (format === "components") {
         const container = new ContainerBuilder().setAccentColor(color);
-        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}\\n${details}${profileLine}`));
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}\n${details}${profileLine}`));
         if (config[`${prefix}ShowAvatar`] !== false) {
             container.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small));
             container.addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(avatarUrl)));
