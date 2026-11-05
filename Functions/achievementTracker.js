@@ -5,22 +5,9 @@ const Level = require("../Models/Level");
 const TrophySettings = require("../Models/TrophySettings");
 const { EmbedBuilder } = require("discord.js");
 const { sendTrophyCard, sendTrophyComponents } = require("./trophyCard");
+const { achievementComparatorReached } = require("./achievementRules");
 
 const seededGuilds = new Map();
-
-function achievementComparatorReached(value, goal, comparator = "gte") {
-    const current = Number(value);
-    const target = Number(goal);
-    if (!Number.isFinite(current) || !Number.isFinite(target)) return false;
-    switch (comparator) {
-        case "gt": return current > target;
-        case "eq": return current === target;
-        case "lte": return current <= target;
-        case "lt": return current < target;
-        case "gte":
-        default: return current >= target;
-    }
-}
 
 async function hasAchievementPrerequisites(guildId, userId, prerequisiteIds = []) {
     const required = [...new Set((prerequisiteIds || []).filter(id => typeof id === "string" && id.trim()))];
