@@ -15,6 +15,7 @@ const questHandler = require("../../Functions/questHandler");
 const { trackAchievementProgress } = require("../../Functions/achievementTracker");
 const { calculateCalendarStreak } = require("../../Functions/calendarStreak");
 const { trackEconomyAchievementSnapshot } = require("../../Functions/economyAchievementMetrics");
+const { recordEconomySpend } = require("../../Functions/economySpendMetrics");
 
 const BALANCE_BANNER = "https://i.imgur.com/joAe57D.png";
 const WORK_BANNER = "https://i.imgur.com/joAe57D.png";
@@ -337,6 +338,7 @@ async function runTransfer(interaction) {
    await freshSender.save();
    await freshReceiver.save();
    await globalBank.save();
+   await recordEconomySpend({ guild: interaction.guild, user: interaction.user, amount, category: "outgoing_transfer", operationId: interaction.id }).catch(error => console.warn("[Economy] No se pudo registrar transferencia:", error.message));
    await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, freshSender);
    await trackEconomyAchievementSnapshot(interaction.guild, target, freshReceiver);
    collector.stop("confirmed");
@@ -380,6 +382,7 @@ async function runRob(interaction) {
   if (fine > robberData.wallet) fine = robberData.wallet;
   robberData.wallet = Math.max(0, robberData.wallet - fine);
   await robberData.save();
+  await recordEconomySpend({ guild: interaction.guild, user: interaction.user, amount: fine, category: "failed_robbery_fine", operationId: interaction.id }).catch(error => console.warn("[Economy] No se pudo registrar multa:", error.message));
   await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, robberData);
   await RobCooldown.findOneAndUpdate(
    { guildId: interaction.guild.id, userId: interaction.user.id },
