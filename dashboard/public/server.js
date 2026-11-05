@@ -2305,6 +2305,7 @@ function renderList(key, definition, editItem = null) {
             try {
                 const backup = JSON.parse(await file.text());
                 const mode = content.querySelector("#achievement-import-mode")?.value || "merge";
+                if (mode === "replace" && !window.confirm("Esto eliminará los logros importados de Notoq que no estén en el archivo. ¿Deseas continuar?")) return;
                 const result = await api(`/api/guilds/${encodeURIComponent(guildId)}/achievements/import`, {
                     method: "POST",
                     body: JSON.stringify({ backup, mode })
