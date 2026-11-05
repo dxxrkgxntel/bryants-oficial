@@ -5,10 +5,10 @@
 ## Resumen
 
 - Catálogo: **397 logros / 106 métricas únicas**.
-- Conectadas: **37**.
+- Conectadas: **38**.
 - Parciales: **16**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **2**.
-- Pendientes de localizar/implementar o validar: **51**.
+- Pendientes de localizar/implementar o validar: **50**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
 ## Matriz
@@ -79,7 +79,7 @@
 | 62 | `messages_sent` | 13 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Suma mensajes de usuarios. | Casual Typer (100); Chatterbox (500) |
 | 63 | `messages_starred` | 3 | **Pendiente** | sin sistema Starboard identificado | On the Board (1); Board Regular (10) |
 | 64 | `mining_trips` | 4 | **Pendiente** | sin sistema de minería identificado | First Dig (1); Miner (25) |
-| 65 | `mod_actions` | 4 | **Pendiente** | Commands/Administration/moderation.js; falta tracker por acción | Rookie Mod (1); Peacekeeper (25) |
+| 65 | `mod_actions` | 4 | **Conectada** | Commands/Administration/moderation.js + Functions/moderationAchievementMetrics.js + Models/ModerationAchievementAction.js · registra ban, unban, kick, mute, unmute y purge solo después del éxito de Discord; usa `interactionId` único y recalcula el total persistido con progreso absoluto para evitar duplicados | Rookie Mod (1); Peacekeeper (25) |
 | 66 | `net_worth` | 6 | **Conectada** | Functions/economyAchievementMetrics.js + Commands/Administration/weeklydrop.js + Functions/questHandler.js · patrimonio líquido neto = wallet + bank − deuda, con actualización tras las fuentes conocidas de recompensas y transacciones | Getting Comfortable (10000); Well Off (100000) |
 | 67 | `night_owl_messages` | 3 | **Conectada** | Functions/achievementMessageMetrics.js · 00:00–05:59 en America/Santo_Domingo | Night Owl (100); Moon Dweller (1000) |
 | 68 | `polls_created` | 3 | **Conectada** | Commands/Utility/poll.js · creación de encuesta — Suma al crear encuesta. | Pollster (5); Poll Maker (50) |
@@ -135,7 +135,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 - `daily_streak` de actividad y `economy_daily_streak` son conceptos diferentes.
 - `games_played`, `games_won` y `games_streak` se actualizan desde casino y minijuegos Fun con fuentes separadas. Los minijuegos singleplayer y multiplayer persisten contadores y rachas en `MiniGameStats`; se requiere validación funcional en Discord para cerrar las tres métricas. Los timeouts multijugador no cuentan como partida finalizada; los empates cuentan como partida y reinician la racha.
 - `first_unlocks` adjudica una sola vez cada logro por servidor mediante un índice único; `achievements_unlocked` suma una vez cada transición a logro completado, sin contar tiers como logros separados. `account_age_days` y `membership_days` se actualizan al entrar y en la actividad del miembro; `roles_count` se actualiza al entrar, cambiar roles y enviar mensajes; `items_owned` se calcula después de una compra confirmada sobre la mochila persistida; `boost_months` conserva el máximo de meses calendario completos de una racha continua de impulso. La validación en Discord real sigue pendiente.
-- Los tickets actuales son tickets del centro de soporte web, no tickets de soporte abiertos por miembros dentro de sus propios servidores; no se conectan a métricas de logros hasta resolver esa diferencia de alcance y atribución.
+- Las acciones `mod_actions` incluyen ban, unban, kick, mute, unmute y purge confirmados por Discord. `warns_issued` sigue pendiente: el subcomando `warn` actual solo responde al usuario y no persiste una advertencia real.\n- Los tickets actuales son tickets del centro de soporte web, no tickets de soporte abiertos por miembros dentro de sus propios servidores; no se conectan a métricas de logros hasta resolver esa diferencia de alcance y atribución.
 - Las métricas de clanes, negocios, propiedades, inversiones, pesca y minería no tienen modelos correspondientes en el árbol de modelos revisado; deben declararse no aplicables o implementar primero esos sistemas, nunca simular progreso.
 
 ## Orden recomendado de implementación
