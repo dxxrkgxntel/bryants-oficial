@@ -255,6 +255,9 @@ async function runWithdraw(interaction) {
    globalBank.totalCollected += fee;
    await user.save();
    await globalBank.save();
+   if (fee > 0) {
+    await recordEconomySpend({ guild: interaction.guild, user: interaction.user, amount: fee, category: "bank_withdrawal_fee", operationId: interaction.id }).catch(error => console.warn("[Economy] No se pudo registrar comisión bancaria:", error.message));
+   }
    await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, user);
    collector.stop("confirmed");
    return i.update({ components: [transactionPanel("💸 Retiro realizado",
