@@ -39,11 +39,7 @@ function blackjackRow(userId, amount, playerHand, dealerHand) {
             .setLabel("Pedir").setEmoji("➕").setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
             .setCustomId(`blackjack_stand_${userId}_${amount}_${playerHand.join("-")}_${dealerHand.join("-")}`)
-            .setLabel("Plantarse").setEmoji("🛑").setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder()
-            .setCustomId(`blackjack_cancel_${userId}_${amount}_${playerHand.join("-")}_${dealerHand.join("-")}`)
-            .setLabel("Cancelar").setEmoji("↩️").setStyle(ButtonStyle.Danger)
-    );
+            .setLabel("Plantarse").setEmoji("🛑").setStyle(ButtonStyle.Secondary)    );
 }
 
 module.exports = {
@@ -75,14 +71,6 @@ module.exports = {
             await interaction.deferUpdate();
             const userData = await EconomyUser.findOne({ guildId: interaction.guild.id, userId });
             if (!userData) return interaction.editReply(panel("## ❌ Blackjack\nNo se encontraron tus datos económicos."));
-
-            if (action === "cancel") {
-                const refundedUser = await releaseBlackjackBet({ guildId: interaction.guild.id, userId, amount });
-                return interaction.editReply(panel(
-                    `## 🃏 Blackjack — Partida cancelada\n↩️ Se devolvieron **${amount.toLocaleString()} monedas**.\n👛 Wallet: **${(refundedUser?.wallet ?? userData.wallet).toLocaleString()} monedas**`,
-                    null, 0xED4245
-                ));
-            }
 
             let stats = await CasinoStats.findOne({ guildId: interaction.guild.id, userId });
             if (!stats) stats = new CasinoStats({ guildId: interaction.guild.id, userId });
@@ -152,7 +140,7 @@ module.exports = {
         } catch (error) {
             console.error("[Blackjack] Error procesando partida:", error);
             if (interaction.deferred || interaction.replied) {
-                await interaction.editReply(panel("## ❌ Blackjack\nOcurrió un error al procesar la partida. Si tu apuesta quedó reservada, pulsa **Cancelar** para recuperarla.")).catch(() => null);
+                await interaction.editReply(panel("## ❌ Blackjack\nOcurrió un error al procesar la partida. La apuesta permanece reservada; vuelve a intentarlo.")).catch(() => null);
             }
         } finally {
             activeGames.delete(gameKey);
