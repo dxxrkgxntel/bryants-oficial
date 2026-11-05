@@ -6,9 +6,9 @@
 
 - Catálogo: **397 logros / 106 métricas únicas**.
 - Conectadas: **39**.
-- Parciales: **18**.
+- Parciales: **21**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **2**.
-- Pendientes de localizar/implementar o validar: **47**.
+- Pendientes de localizar/implementar o validar: **44**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
 ## Matriz
@@ -19,8 +19,8 @@
 | 2 | `achievements_unlocked` | 8 | **Parcial** | Models/UserAchievement.js + Functions/achievementTracker.js + Functions/achievementCompletionMetrics.js · suma una vez por logro cuando se produce la transición atómica a `unlockedAt`; no cuenta niveles repetidos como logros separados; pendiente validación con MongoDB/Discord real | Collector (5); Achiever (10) |
 | 3 | `activity_awards` | 3 | **Pendiente** | sistema de temporada/premios; no se localizó adjudicación por usuario | Top Member (1); Community Champion (5) |
 | 4 | `activity_coins` | 2 | **Pendiente** | sin sistema de pesca/minería identificado | Gatherer (100000); Resource Baron (1000000) |
-| 5 | `ai_conversations` | 2 | **Pendiente** | asistente IA/dashboard; falta identificar inicio de conversación | Conversationalist (10); Deep Talker (100) |
-| 6 | `ai_messages` | 6 | **Pendiente** | asistente IA/dashboard; falta localizar flujo y definir userId/guildId | AI Curious (10); AI Chatter (100) |
+| 5 | `ai_conversations` | 2 | **Parcial** | Models/DashboardAssistantUsage.js + dashboard/server.js + Functions/assistantAchievementMetrics.js + Events/Client/ready.js · registra una conversación cuando se envía la primera pregunta de un hilo de IA y sincroniza el total por servidor/usuario; pendiente validar en dashboard y Discord real | First Conversation (1); Conversationalist (10) |
+| 6 | `ai_messages` | 6 | **Parcial** | Models/DashboardAssistantUsage.js + dashboard/server.js + Functions/assistantAchievementMetrics.js + Events/Client/ready.js · cuenta el mensaje del usuario y la respuesta IA solo cuando OpenAI devuelve una respuesta válida; no guarda el contenido del chat; pendiente validar en producción | AI Curious (10); AI Chatter (100) |
 | 7 | `applications_accepted` | 2 | **Pendiente** | sin sistema de solicitudes identificado | Welcome Aboard (1); Team Player (5) |
 | 8 | `applications_sent` | 2 | **Pendiente** | sin sistema de solicitudes identificado | Applicant (1); Persistent Applicant (5) |
 | 9 | `attachments_sent` | 2 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · cuenta adjuntos reales del mensaje | File Sharer (100); Data Hoarder (1000) |
@@ -87,7 +87,7 @@
 | 70 | `prestige_points` | 2 | **Pendiente** | Localizar evento/comando responsable y conectar en el punto de éxito. | Prestige Points (100); Prestige Grinder (1000) |
 | 71 | `properties_owned` | 3 | **Pendiente** | sin modelo de propiedades identificado | Homeowner (1); Landlord (5) |
 | 72 | `property_income` | 3 | **Pendiente** | sin modelo de propiedades identificado | First Rent (10000); Rent Collector (1000000) |
-| 73 | `questions_asked` | 6 | **Pendiente** | asistente IA/dashboard; falta definir pregunta válida | Curious (25); Inquirer (250) |
+| 73 | `questions_asked` | 6 | **Parcial** | Models/DashboardAssistantUsage.js + dashboard/server.js + Functions/assistantAchievementMetrics.js + Events/Client/ready.js · cuenta preguntas respondidas por el asistente IA; excluye solicitudes fallidas y respuestas locales sin llamada a OpenAI; pendiente validar en producción | Curious (25); Inquirer (250) |
 | 74 | `reactions_added` | 9 | **Conectada** | Events/Logs/personalReactionStats.js · messageReactionAdd — Cuenta reacciones añadidas. | Give or Take (10); True Star (100) |
 | 75 | `reactions_received` | 6 | **Conectada** | Events/Logs/personalReactionStats.js · messageReactionAdd — Cuenta reacciones recibidas por el autor. | First Fan (10); Crowd Pleaser (100) |
 | 76 | `referrals` | 3 | **Parcial** | Models/DashboardReferral.js + Functions/referralAchievementMetrics.js + Events/Client/ready.js · el bot agrupa referidos confirmados por servidor e invitador y sincroniza el total con progreso absoluto; el dashboard conserva su transacción de recompensa sin depender del cliente Discord; pendiente validación en Discord real | Referrer (1); Brand Ambassador (5) |
@@ -110,7 +110,7 @@
 | 93 | `top_star_post` | 2 | **Pendiente** | sin sistema Starboard identificado | Going Viral (25); Viral Sensation (100) |
 | 94 | `total_earned` | 6 | **Pendiente** | todos los puntos de pago/recompensa · requiere ledger histórico | Hard Worker (10000); Grinder (100000) |
 | 95 | `total_points` | 6 | **Parcial** | Functions/achievementTracker.js + Models/UserAchievement.js · suma `pointsEarned` de todos los logros del usuario dentro del servidor; excluye `TrophyScore.points` (puntuación de temporada); actualiza `total_points` con progreso absoluto y vuelve a evaluar umbrales si los propios logros meta conceden puntos; pendiente CI y validación con datos persistidos | Point Starter (100); Point Collector (500) |
-| 96 | `total_spent` | 4 | **Pendiente** | Utils/shopHandlers.js + comandos de economía · requiere ledger histórico | Shopper (10000); Big Spender (100000) |
+| 96 | `total_spent` | 4 | **Parcial** | Models/EconomyTransaction.js + Functions/economySpendMetrics.js · ledger persistente con clave única por operación y progreso absoluto; conectado a compras confirmadas, apuestas de casino, transferencias salientes, donaciones, pagos de deuda y multas por robos fallidos; faltan auditoría de otros comandos de cobro y validación con datos reales | Shopper (10000); Big Spender (100000) |
 | 97 | `verified` | 1 | **Pendiente** | flujo de verificación; no se identificó modelo/evento específico | Verified (1) |
 | 98 | `voice_joins` | 3 | **Conectada** | Events/Logs/personalVoiceStats.js + Functions/voiceAchievementMetrics.js · cuenta solo entrada real desde fuera de voz | Channel Hopper (25); Frequent Flyer (250) |
 | 99 | `voice_minutes` | 12 | **Parcial** | Models/PersonalVoiceActivity.js + Functions/voiceActivity.js + Functions/voiceActivityMath.js · guarda inicio de sesión y segundos/minutos reportados; snapshots absolutos permiten reintentar fallos sin duplicar minutos; falta validar recuperación en Discord real. | New Here? (5); Warming Up (30) |
@@ -131,7 +131,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 - Las sesiones de voz, transmisión y cámara se guardan en `PersonalVoiceActivity`; deben validarse en un servidor Discord real, especialmente tras reiniciar el proceso.
 - `level` representa el máximo nivel alcanzado; `achievementLevelReported` evita reportar de nuevo el mismo nivel incluso tras prestigio. `xp` en Level sigue siendo saldo de progreso actual; la métrica acumulada suma las fuentes principales conocidas, pero requiere auditar otras posibles fuentes.
 - `coins` mide el máximo saldo de cartera; `bank_balance`, el máximo saldo bancario; `net_worth`, el máximo patrimonio líquido neto (cartera + banco − deuda). Se actualizan con progreso absoluto para conservar el máximo alcanzado, incluidas recompensas de WeeklyDrop y misiones.
-- `total_earned` y `total_spent` requieren historial transaccional; no deben inferirse del saldo actual.
+- `total_earned` requiere historial transaccional; no debe inferirse del saldo actual. `total_spent` usa `EconomyTransaction` como ledger acumulativo con `operationId` único; solo registra operaciones confirmadas y mantiene el total mediante agregación, sin inferirlo del saldo actual. La cobertura de todos los puntos de cobro aún requiere auditoría.
 - `daily_streak` de actividad y `economy_daily_streak` son conceptos diferentes.
 - `games_played`, `games_won` y `games_streak` se actualizan desde casino y minijuegos Fun con fuentes separadas. Los minijuegos singleplayer y multiplayer persisten contadores y rachas en `MiniGameStats`; se requiere validación funcional en Discord para cerrar las tres métricas. Los timeouts multijugador no cuentan como partida finalizada; los empates cuentan como partida y reinician la racha.
 - `first_unlocks` adjudica una sola vez cada logro por servidor mediante un índice único; `achievements_unlocked` suma una vez cada transición a logro completado, sin contar tiers como logros separados. `account_age_days` y `membership_days` se actualizan al entrar y en la actividad del miembro; `roles_count` se actualiza al entrar, cambiar roles y enviar mensajes; `items_owned` se calcula después de una compra confirmada sobre la mochila persistida; `boost_months` conserva el máximo de meses calendario completos de una racha continua de impulso. La validación en Discord real sigue pendiente.

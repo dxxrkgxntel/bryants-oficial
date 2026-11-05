@@ -7,6 +7,7 @@ const {
 
 const EconomyUser = require("../../Models/EconomyUser");
 const CasinoStats = require("../../Models/CasinoStats");
+const { recordEconomySpend } = require("../../Functions/economySpendMetrics");
 
 const BANNER = "https://i.imgur.com/joAe57D.png";
 const cards = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
@@ -66,6 +67,7 @@ module.exports = {
                 stats.moneyLost += amount;
                 stats.currentStreak = 0;
                 await Promise.all([userData.save(), stats.save()]);
+                await recordEconomySpend({ guild: interaction.guild, user: interaction.user, amount, category: "casino_blackjack", operationId: `blackjack:${interaction.message.id}:${userId}` }).catch(error => console.warn("[Economy] No se pudo registrar apuesta blackjack:", error.message));
                 return interaction.editReply(panel(
                     `## 🃏 Blackjack — ❌ Te pasaste\n### 🎴 Dealer\n**${dealerHand.join("  •  ")}**\n💯 Total: **${calculateHand(dealerHand)}**\n\n### 👤 ${interaction.user.username}\n**${playerHand.join("  •  ")}**\n💯 Total: **${total}**\n\n💸 Perdiste **${amount.toLocaleString()} monedas**\n👛 Balance: **${userData.wallet.toLocaleString()} monedas**`,
                     null, 0xED4245
@@ -113,6 +115,7 @@ module.exports = {
             }
 
             await Promise.all([userData.save(), stats.save()]);
+            await recordEconomySpend({ guild: interaction.guild, user: interaction.user, amount, category: "casino_blackjack", operationId: `blackjack:${interaction.message.id}:${userId}` }).catch(error => console.warn("[Economy] No se pudo registrar apuesta blackjack:", error.message));
             return interaction.editReply(panel(
                 `## 🃏 Blackjack — Resultado\n### 🎴 Dealer\n**${dealerHand.join("  •  ")}**\n💯 Total: **${dealerTotal}**\n\n### 👤 ${interaction.user.username}\n**${playerHand.join("  •  ")}**\n💯 Total: **${playerTotal}**\n\n${result}\n👛 Balance: **${userData.wallet.toLocaleString()} monedas**`,
                 null, accent

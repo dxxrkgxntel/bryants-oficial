@@ -1,6 +1,7 @@
 const { MessageFlags } = require("discord.js");
 const EconomyUser = require("../../Models/EconomyUser");
 const CasinoStats = require("../../Models/CasinoStats");
+const { recordEconomySpend } = require("../../Functions/economySpendMetrics");
 
 const BANNER = "https://i.imgur.com/joAe57D.png";
 function panel(text, accent = 0x8A2BE2) {
@@ -78,6 +79,10 @@ module.exports = {
             loserStats.currentStreak = 0;
 
             await Promise.all([authorData.save(), targetData.save(), winnerStats.save(), loserStats.save()]);
+            await Promise.all([
+                recordEconomySpend({ guild: interaction.guild, user: await interaction.client.users.fetch(authorId), amount, category: "casino_coinflip", operationId: `coinflip:${interaction.message.id}:${authorId}` }),
+                recordEconomySpend({ guild: interaction.guild, user: await interaction.client.users.fetch(targetId), amount, category: "casino_coinflip", operationId: `coinflip:${interaction.message.id}:${targetId}` })
+            ]).catch(error => console.warn("[Economy] No se pudieron registrar apuestas coinflip:", error.message));
 
             return interaction.editReply(panel(
                 `## 🪙 Resultado Coinflip\n🎉 <@${winnerId}> ganó la apuesta.\n\n🏆 Premio: **${totalPrize.toLocaleString()} monedas**\n📉 Perdedor: <@${loserId}>\n\n💰 Ganancia neta del ganador: **${amount.toLocaleString()} monedas**`,
