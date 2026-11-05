@@ -82,7 +82,7 @@ async function positionOf(guildId, data) {
 async function renderLevelCard({ user, member, data, position, needed, backgroundUrl, backgroundMode = "blur", accentColor, showAvatar = true, showXPBar = true, showWallet = true, showBank = true, showRanking = true, showBadges = true, profile = false, economy = {}, badges = [] }) {
     const width = profile ? 1500 : 1200, height = profile ? 650 : 390;
     const canvas = createCanvas(width, height), ctx = canvas.getContext("2d");
-    const accent = /^#[\\da-f]{6}$/i.test(accentColor || "") ? accentColor : position === 1 ? "#ffd166" : position === 2 ? "#d7e0ed" : position === 3 ? "#d99a68" : "#b56cff";
+    const accent = /^#[\da-f]{6}$/i.test(accentColor || "") ? accentColor : position === 1 ? "#ffd166" : position === 2 ? "#d7e0ed" : position === 3 ? "#d99a68" : "#b56cff";
     const progress = Math.max(0, Math.min(1, data.xp / needed)), pct = Math.floor(progress * 100);
     const bg = ctx.createLinearGradient(0, 0, width, height);
     bg.addColorStop(0, "#090611"); bg.addColorStop(0.52, "#21103d"); bg.addColorStop(1, "#080b1a");
@@ -110,7 +110,7 @@ async function renderLevelCard({ user, member, data, position, needed, backgroun
         const radial=ctx.createRadialGradient(g.x,g.y,0,g.x,g.y,g.r); radial.addColorStop(0,g.c); radial.addColorStop(1,"rgba(0,0,0,0)");
         ctx.fillStyle=radial; ctx.fillRect(0,0,width,height);
     }
-    ctx.save(); ctx.shadowColor="rgba(164,76,255,0.55)"; ctx.shadowBlur=30; ctx.lineWidth=3; ctx.strokeStyle="rgba(190,125,255,0.88)";
+    ctx.save(); ctx.shadowColor=accent; ctx.shadowBlur=30; ctx.lineWidth=3; ctx.strokeStyle=accent;
     ctx.roundRect(18,18,width-36,height-36,34); ctx.stroke(); ctx.restore();
     ctx.fillStyle="rgba(13,10,25,0.32)"; ctx.roundRect(22,22,width-44,height-44,30); ctx.fill();
 
@@ -139,7 +139,7 @@ async function renderLevelCard({ user, member, data, position, needed, backgroun
     if (showXPBar !== false) {
         const barX=x,barY=levelY+28,barWidth=right-x,barHeight=34;
         ctx.fillStyle="rgba(3,4,14,0.88)"; ctx.roundRect(barX,barY,barWidth,barHeight,18); ctx.fill();
-        if(progress>0){const grad=ctx.createLinearGradient(barX,0,barX+barWidth,0);grad.addColorStop(0,"#9b4dff");grad.addColorStop(.55,"#d16cff");grad.addColorStop(1,"#69a7ff");ctx.save();ctx.shadowColor=accent;ctx.shadowBlur=18;ctx.fillStyle=grad;ctx.roundRect(barX,barY,Math.max(barHeight,barWidth*progress),barHeight,18);ctx.fill();ctx.restore();}
+        if(progress>0){const grad=ctx.createLinearGradient(barX,0,barX+barWidth,0);grad.addColorStop(0,accent);grad.addColorStop(.55,"#d16cff");grad.addColorStop(1,"#69a7ff");ctx.save();ctx.shadowColor=accent;ctx.shadowBlur=18;ctx.fillStyle=grad;ctx.roundRect(barX,barY,Math.max(barHeight,barWidth*progress),barHeight,18);ctx.fill();ctx.restore();}
         ctx.fillStyle="#fff";ctx.font="20px Arial";ctx.fillText(pct+"% completado",barX,barY+66);ctx.textAlign="right";
         ctx.fillText(Math.max(0,needed-data.xp).toLocaleString()+" XP para el siguiente nivel",right,barY+66);ctx.textAlign="left";
     }
@@ -161,7 +161,7 @@ async function renderLevelCard({ user, member, data, position, needed, backgroun
 
 
 function colorNumber(value) {
-    return /^#[\\da-f]{6}$/i.test(value || "") ? parseInt(value.slice(1), 16) : PURPLE;
+    return /^#[\da-f]{6}$/i.test(value || "") ? parseInt(value.slice(1), 16) : PURPLE;
 }
 
 function buildLevelDetails({ user, data, position, needed, profile, economy = {} }) {
@@ -210,7 +210,7 @@ async function sendLevelResponse(interaction, options) {
         backgroundMode: config[`${prefix}BackgroundMode`] || "blur",
         accentColor: config[`${prefix}Color`],
         showAvatar: config[`${prefix}ShowAvatar`] !== false,
-        showXPBar: profile || config.levelRankShowXPBar !== false,
+        showXPBar: profile ? config.levelProfileShowXPBar !== false : config.levelRankShowXPBar !== false,
         showWallet: config.levelProfileShowWallet !== false,
         showBank: config.levelProfileShowBank !== false,
         showRanking: config.levelProfileShowRanking !== false,
@@ -240,7 +240,7 @@ async function perfil(interaction) {
         Level.findOne({ guildId: interaction.guild.id, userId: user.id }),
         EconomyUser.findOne({ guildId: interaction.guild.id, userId: user.id }),
         interaction.guild.members.fetch(user.id).catch(() => null),
-        LevelConfig.findOne({ guildId: interaction.guild.id }).select("levelProfileFormat levelProfileImage levelProfileColor levelProfileBackgroundMode levelProfileShowAvatar levelProfileShowWallet levelProfileShowBank levelProfileShowRanking levelProfileShowBadges").lean()
+        LevelConfig.findOne({ guildId: interaction.guild.id }).select("levelProfileFormat levelProfileImage levelProfileColor levelProfileBackgroundMode levelProfileShowAvatar levelProfileShowXPBar levelProfileShowWallet levelProfileShowBank levelProfileShowRanking levelProfileShowBadges").lean()
     ]);
     if (!data) return interaction.editReply(await configuredPanel(interaction, "levelProfileImage", "## 👤 Bryvex Levels • Perfil\\n❌ Este usuario todavía no tiene datos de nivel.", 0xED4245));
     const pos = await positionOf(interaction.guild.id, data), needed = xpNeeded(data.level), badges = [];
