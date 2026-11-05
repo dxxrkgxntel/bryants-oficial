@@ -6,9 +6,9 @@
 
 - Catálogo: **397 logros / 106 métricas únicas**.
 - Conectadas: **39**.
-- Parciales: **18**.
+- Parciales: **21**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **2**.
-- Pendientes de localizar/implementar o validar: **47**.
+- Pendientes de localizar/implementar o validar: **44**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
 ## Matriz
@@ -19,8 +19,8 @@
 | 2 | `achievements_unlocked` | 8 | **Parcial** | Models/UserAchievement.js + Functions/achievementTracker.js + Functions/achievementCompletionMetrics.js · suma una vez por logro cuando se produce la transición atómica a `unlockedAt`; no cuenta niveles repetidos como logros separados; pendiente validación con MongoDB/Discord real | Collector (5); Achiever (10) |
 | 3 | `activity_awards` | 3 | **Pendiente** | sistema de temporada/premios; no se localizó adjudicación por usuario | Top Member (1); Community Champion (5) |
 | 4 | `activity_coins` | 2 | **Pendiente** | sin sistema de pesca/minería identificado | Gatherer (100000); Resource Baron (1000000) |
-| 5 | `ai_conversations` | 2 | **Pendiente** | asistente IA/dashboard; falta identificar inicio de conversación | Conversationalist (10); Deep Talker (100) |
-| 6 | `ai_messages` | 6 | **Pendiente** | asistente IA/dashboard; falta localizar flujo y definir userId/guildId | AI Curious (10); AI Chatter (100) |
+| 5 | `ai_conversations` | 2 | **Parcial** | Models/DashboardAssistantUsage.js + dashboard/server.js + Functions/assistantAchievementMetrics.js + Events/Client/ready.js · registra una conversación cuando se envía la primera pregunta de un hilo de IA y sincroniza el total por servidor/usuario; pendiente validar en dashboard y Discord real | First Conversation (1); Conversationalist (10) |
+| 6 | `ai_messages` | 6 | **Parcial** | Models/DashboardAssistantUsage.js + dashboard/server.js + Functions/assistantAchievementMetrics.js + Events/Client/ready.js · cuenta el mensaje del usuario y la respuesta IA solo cuando OpenAI devuelve una respuesta válida; no guarda el contenido del chat; pendiente validar en producción | AI Curious (10); AI Chatter (100) |
 | 7 | `applications_accepted` | 2 | **Pendiente** | sin sistema de solicitudes identificado | Welcome Aboard (1); Team Player (5) |
 | 8 | `applications_sent` | 2 | **Pendiente** | sin sistema de solicitudes identificado | Applicant (1); Persistent Applicant (5) |
 | 9 | `attachments_sent` | 2 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · cuenta adjuntos reales del mensaje | File Sharer (100); Data Hoarder (1000) |
@@ -87,7 +87,7 @@
 | 70 | `prestige_points` | 2 | **Pendiente** | Localizar evento/comando responsable y conectar en el punto de éxito. | Prestige Points (100); Prestige Grinder (1000) |
 | 71 | `properties_owned` | 3 | **Pendiente** | sin modelo de propiedades identificado | Homeowner (1); Landlord (5) |
 | 72 | `property_income` | 3 | **Pendiente** | sin modelo de propiedades identificado | First Rent (10000); Rent Collector (1000000) |
-| 73 | `questions_asked` | 6 | **Pendiente** | asistente IA/dashboard; falta definir pregunta válida | Curious (25); Inquirer (250) |
+| 73 | `questions_asked` | 6 | **Parcial** | Models/DashboardAssistantUsage.js + dashboard/server.js + Functions/assistantAchievementMetrics.js + Events/Client/ready.js · cuenta preguntas respondidas por el asistente IA; excluye solicitudes fallidas y respuestas locales sin llamada a OpenAI; pendiente validar en producción | Curious (25); Inquirer (250) |
 | 74 | `reactions_added` | 9 | **Conectada** | Events/Logs/personalReactionStats.js · messageReactionAdd — Cuenta reacciones añadidas. | Give or Take (10); True Star (100) |
 | 75 | `reactions_received` | 6 | **Conectada** | Events/Logs/personalReactionStats.js · messageReactionAdd — Cuenta reacciones recibidas por el autor. | First Fan (10); Crowd Pleaser (100) |
 | 76 | `referrals` | 3 | **Parcial** | Models/DashboardReferral.js + Functions/referralAchievementMetrics.js + Events/Client/ready.js · el bot agrupa referidos confirmados por servidor e invitador y sincroniza el total con progreso absoluto; el dashboard conserva su transacción de recompensa sin depender del cliente Discord; pendiente validación en Discord real | Referrer (1); Brand Ambassador (5) |
