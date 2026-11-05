@@ -8,6 +8,7 @@ const { sendTrophyCard, sendTrophyComponents } = require("./trophyCard");
 const { achievementComparatorReached, achievementProgressUpdate } = require("./achievementRules");
 
 const seededGuilds = new Map();
+const totalPointsSyncCache = new Set();
 
 async function hasAchievementPrerequisites(guildId, userId, prerequisiteIds = []) {
     const required = [...new Set((prerequisiteIds || []).filter(id => typeof id === "string" && id.trim()))];
@@ -130,6 +131,14 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
     const minAge = Number(settings?.minimumAccountAgeDays || 0);
     if (minAge > 0 && user.createdAt && Date.now() - user.createdAt.getTime() < minAge * 86400000) return [];
     await ensureDefaultAchievements(guild.id);
+    const syncKey = `${guild.id}:${user.id}`;
+    if (metric !== "total_points" && options?.skipTotalPointsSync !== true && !totalPointsSyncCache.has(syncKey)) {
+        await syncTotalAchievementPoints(guild, user);
+        totalPointsSyncCache.add(syncKey);
+        if (totalPointsSyncCache.size > 20000) {
+            totalPointsSyncCache.delete(totalPointsSyncCache.values().next().value);
+        }
+    }
     const definitions = await Achievement.find({ guildId: guild.id, enabled: true, metric }).lean();
     if (!definitions.length) return [];
     const multiplier = Math.max(0, Math.min(100, Number(settings?.pointsMultiplier ?? 1)));
