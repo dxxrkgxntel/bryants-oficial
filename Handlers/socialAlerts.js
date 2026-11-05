@@ -11,6 +11,7 @@ const {
 } = require("discord.js");
 const SocialAlert = require("../Models/SocialAlert");
 const SocialAlertState = require("../Models/SocialAlertState");
+const mongoose = require("mongoose");
 
 const POLL_INTERVAL_MS = 60_000;
 const VIEWER_REFRESH_MS = 5 * 60_000;
@@ -545,7 +546,7 @@ async function checkAlert(client, alert) {
 }
 
 async function poll(client) {
-    if (pollRunning) return;
+    if (mongoose.connection.readyState !== 1 || pollRunning) return;
     pollRunning = true;
     try {
         const alerts = await SocialAlert.find({ platform: { $in: ["Kick", "TikTok", "Twitch", "YouTube"] }, enabled: { $ne: false } }).lean();

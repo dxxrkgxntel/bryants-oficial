@@ -3,11 +3,21 @@ const welcomeSchema = require("../../Models/welcomeSchema");
 const { renderConfiguredMessage, parseConfiguredColor } = require("../../Functions/renderConfiguredMessage");
 const { buildV2MessageComponents } = require("../../Functions/buildV2MessageComponents");
 const { buildConfiguredButtonRows } = require("../../Functions/buildConfiguredButtons");
+const { trackAchievementProgress } = require("../../Functions/achievementTracker");
+const { createMemberAchievementMetricTracker } = require("../../Functions/memberAchievementMetrics");
+const { trackBoostAchievementMetric } = require("../../Functions/boostAchievementMetrics");
+const trackMemberAchievementMetrics = createMemberAchievementMetricTracker({ trackProgress: trackAchievementProgress });
 
 module.exports = {
     name: "guildMemberAdd",
     async execute(member) {
         try {
+            await trackMemberAchievementMetrics(member.guild, member.user, member)
+                .catch(error => console.warn("[Achievements] No se pudieron registrar métricas de miembro:", error.message));
+            if (member.premiumSince) {
+                await trackBoostAchievementMetric(member.guild, member)
+                    .catch(error => console.warn("[Achievements] No se pudo registrar boost_months:", error.message));
+            }
             const data = await welcomeSchema.findOne({ Guild: member.guild.id }).lean();
             if (!data) return;
             if (data.IgnoreBots && member.user.bot) return;

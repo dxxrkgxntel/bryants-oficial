@@ -6,6 +6,9 @@ const { getLevelSettings } = require("../../Functions/levelSettings");
 const { sendLevelNotification } = require("../../Functions/levelNotification");
 const { trackAchievementProgress } = require("../../Functions/achievementTracker");
 const { extractMessageAchievementMetrics } = require("../../Functions/achievementMessageMetrics");
+const { createMemberAchievementMetricTracker } = require("../../Functions/memberAchievementMetrics");
+const { trackBoostAchievementMetric } = require("../../Functions/boostAchievementMetrics");
+const trackMemberAchievementMetrics = createMemberAchievementMetricTracker({ trackProgress: trackAchievementProgress });
 
 function xpNeeded(level) {
     return 5 * (level ** 2) + 50 * level + 100;
@@ -34,6 +37,13 @@ module.exports = {
             message.author.bot ||
             !message.guild
         ) return;
+
+        await trackMemberAchievementMetrics(message.guild, message.author, message.member)
+            .catch(error => console.warn("[Achievements] No se pudieron registrar edad/roles:", error.message));
+        if (message.member?.premiumSince) {
+            await trackBoostAchievementMetric(message.guild, message.member)
+                .catch(error => console.warn("[Achievements] No se pudo actualizar boost_months:", error.message));
+        }
 
         await trackAchievementProgress(message.guild, message.author, "messages", 1)
             .catch(error => console.warn("[Achievements] No se pudo registrar el mensaje:", error.message));

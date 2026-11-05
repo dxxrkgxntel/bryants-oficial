@@ -1,22 +1,22 @@
 # Matriz de auditoría de las 106 métricas de logros — Bryvex Bot
 
-> Rama: `feature/notoq-achievements-import`. Estado basado en evidencia localizada en código y modelos. «Pendiente» significa que no hay llamada confirmada al tracker, aunque pueda existir una fuente de datos aprovechable.
+> Rama: `feature/notoq-metrics-next`. Estado basado en evidencia localizada en código y modelos. «Pendiente» significa que no hay llamada confirmada al tracker, aunque pueda existir una fuente de datos aprovechable.
 
 ## Resumen
 
 - Catálogo: **397 logros / 106 métricas únicas**.
 - Conectadas: **37**.
-- Parciales: **7**.
-- Fuente existente o dato calculable, sin conexión al catálogo: **9**.
-- Pendientes de localizar/implementar o validar: **53**.
+- Parciales: **16**.
+- Fuente existente o dato calculable, sin conexión al catálogo: **2**.
+- Pendientes de localizar/implementar o validar: **51**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
 ## Matriz
 
 | # | Métrica | Logros | Estado | Evidencia actual / siguiente punto de integración | Ejemplos |
 |---:|---|---:|---|---|---|
-| 1 | `account_age_days` | 2 | **Dato calculable; falta conexión** | Discord User.createdAt + Events/Guild/sistemaDeIngreso.js — Calcular edad de cuenta; respetar mínimo de edad de cuenta del sistema. | Discord Veteran (1825); Discord Ancient (3650) |
-| 2 | `achievements_unlocked` | 8 | **Dato existente; falta conexión** | Models/UserAchievement.js — Se puede contar desbloqueos, excluyendo niveles repetidos del mismo logro según definición. | Collector (5); Achiever (10) |
+| 1 | `account_age_days` | 2 | **Parcial** | Functions/memberAchievementMetrics.js + Events/Guild/sistemaDeIngreso.js + Events/Levels/messageCreate2.js · calcula días completos desde `user.createdAt` y reporta progreso absoluto al entrar o enviar mensajes; pendiente validación en Discord real | Discord Veteran (1825); Discord Ancient (3650) |
+| 2 | `achievements_unlocked` | 8 | **Parcial** | Models/UserAchievement.js + Functions/achievementTracker.js + Functions/achievementCompletionMetrics.js · suma una vez por logro cuando se produce la transición atómica a `unlockedAt`; no cuenta niveles repetidos como logros separados; pendiente validación con MongoDB/Discord real | Collector (5); Achiever (10) |
 | 3 | `activity_awards` | 3 | **Pendiente** | sistema de temporada/premios; no se localizó adjudicación por usuario | Top Member (1); Community Champion (5) |
 | 4 | `activity_coins` | 2 | **Pendiente** | sin sistema de pesca/minería identificado | Gatherer (100000); Resource Baron (1000000) |
 | 5 | `ai_conversations` | 2 | **Pendiente** | asistente IA/dashboard; falta identificar inicio de conversación | Conversationalist (10); Deep Talker (100) |
@@ -27,7 +27,7 @@
 | 10 | `bank_balance` | 3 | **Conectada** | Functions/economyAchievementMetrics.js · registra el máximo saldo bancario tras depósitos, retiros, transferencias, préstamos, pagos, donaciones y distribuciones | Banker (100000); Vault Keeper (5000000) |
 | 11 | `birthday_celebrations` | 3 | **Conectada** | Handlers/birthdaySystem.js + Models/Birthday.js · suma solo después de enviar el aviso y guarda el año celebrado para evitar repeticiones | First Birthday (1); Birthday Regular (3) |
 | 12 | `birthday_set` | 1 | **Conectada** | Commands/Utility/birthday.js · suma únicamente el primer registro; editar la fecha no repite el logro | Party Ready (1) |
-| 13 | `boost_months` | 4 | **Dato calculable; falta conexión** | Events/Logs/boostSystem.js · guildMemberUpdate — Calcular meses desde premiumSince; verificar continuidad del boost. | Loyal Booster (3); Boost Legend (12) |
+| 13 | `boost_months` | 4 | **Parcial** | Models/BoostAchievementStats.js + Functions/boostAchievementMetrics.js + Events/Guild/achievementMemberUpdate.js + Events/Levels/messageCreate2.js · calcula meses calendario completos desde `premiumSince`, conserva el máximo de una racha continua y aprovecha `oldMember.premiumSince` al dejar de impulsar; se reevalúa en cambios de miembro y mensajes mientras impulsa; pendiente validación con Discord real | Loyal Booster (3); Boost Legend (12) |
 | 14 | `boosts` | 1 | **Conectada** | Events/Logs/boostSystem.js · cuenta el inicio de un boost tras detectar premiumSince por primera vez | Supporter (1) |
 | 15 | `bot_mentions` | 3 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Cuenta menciones al bot. | Hey Bot (10); Bot Buddy (100) |
 | 16 | `business_earnings` | 4 | **Pendiente** | sin modelo de negocios identificado | Small Business (100000); Business Owner (1000000) |
@@ -52,7 +52,7 @@
 | 35 | `early_bird_messages` | 2 | **Conectada** | Functions/achievementMessageMetrics.js · 06:00–08:59 en America/Santo_Domingo | Early Bird (100); Sunrise Soul (1000) |
 | 36 | `economy_daily_streak` | 3 | **Conectada** | Commands/Economy/economy.js + Functions/birthdayDates.js · informa la mejor racha diaria económica con fechas de America/Santo_Domingo | Daily Devotee (7); Daily Loyalist (30) |
 | 37 | `embeds_posted` | 2 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Suma embeds adjuntos al mensaje. | Embed Enjoyer (25); Rich Poster (250) |
-| 38 | `first_unlocks` | 4 | **Pendiente** | Functions/achievementTracker.js; falta detección atómica del primer desbloqueo | Pioneer (1); Trailblazer (5) |
+| 38 | `first_unlocks` | 4 | **Parcial** | Functions/achievementTracker.js + Functions/firstUnlockAchievementMetric.js + Models/AchievementFirstUnlock.js · al completar un logro, una inserción atómica con índice único por servidor/logro adjudica el primer desbloqueo a un solo usuario; solo ese ganador suma 1 a `first_unlocks`; pendiente validación con MongoDB/Discord real | Pioneer (1); Trailblazer (5) |
 | 39 | `fishing_trips` | 5 | **Pendiente** | sin sistema de pesca identificado | First Catch (1); Angler (25) |
 | 40 | `flags_collected` | 5 | **Pendiente** | sin juego de banderas identificado | Globetrotter (10); Cartographer (50) |
 | 41 | `game_guesses` | 3 | **Pendiente** | Commands/Fun/minijuegos.js; falta contar intentos | Guesser (100); Sharp Eye (1000) |
@@ -70,11 +70,11 @@
 | 53 | `investment_profit` | 2 | **Pendiente** | sin sistema de inversiones identificado | In the Green (10000); Bull Market (1000000) |
 | 54 | `investments_made` | 3 | **Pendiente** | sin sistema de inversiones identificado | Investor (1); Portfolio Builder (10) |
 | 55 | `invites` | 7 | **Conectada** | Utils/inviteTracker.js · suma al invitador solo después de atribuir y guardar una invitación usada | Recruiter (1); Connector (10) |
-| 56 | `items_owned` | 3 | **Dato existente; falta conexión** | Models/EconomyUser.js + Utils/shopHandlers.js — Existe inventario; el evento heredado itemsPurchased no mide artículos actualmente poseídos. | Collector (25); Window Shopper (5) |
+| 56 | `items_owned` | 3 | **Parcial** | Models/EconomyUser.js + Utils/shopHandlers.js + Functions/inventoryAchievementMetrics.js · tras una compra exitosa calcula la suma de cantidades de artículos `type=item` en la mochila; excluye roles; reporta máximo alcanzado con progreso absoluto; pendiente integrar futuros consumos/ventas si se habilitan y validar MongoDB/Discord real | Collector (25); Window Shopper (5) |
 | 57 | `level` | 11 | **Conectada** | Models/Level.js + Events/Levels/messageCreate2.js + Events/Levels/voiceXp.js · reporta el máximo nivel alcanzado con actualización absoluta y evita repetir reportes | Rookie (5); Apprentice (10) |
 | 58 | `links_sent` | 2 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · enlaces HTTP(S) escritos en el contenido | Link Dropper (50); Web Weaver (500) |
 | 59 | `long_messages` | 3 | **Conectada** | Functions/achievementMessageMetrics.js · mensaje de 500 caracteres o más | Essayist (10); Wall of Text (100) |
-| 60 | `membership_days` | 9 | **Dato calculable; falta conexión** | Events/Guild/sistemaDeIngreso.js + member.joinedAt — Calcular antigüedad de membresía con joinedAt; necesita actualización periódica o cálculo al evaluar. | Fresh Face (7); Familiar Face (30) |
+| 60 | `membership_days` | 9 | **Parcial** | Functions/memberAchievementMetrics.js + Events/Guild/sistemaDeIngreso.js + Events/Guild/achievementMemberUpdate.js + Events/Levels/messageCreate2.js · calcula días completos desde `member.joinedAt` y reporta progreso absoluto al entrar, cambiar el miembro o enviar mensajes; los inactivos se ponen al día en su siguiente evento; pendiente validación en Discord real | Fresh Face (7); Familiar Face (30) |
 | 61 | `mentions_made` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · menciones a usuarios distintos del autor | Name Dropper (100); Social Pinger (1000) |
 | 62 | `messages_sent` | 13 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Suma mensajes de usuarios. | Casual Typer (100); Chatterbox (500) |
 | 63 | `messages_starred` | 3 | **Pendiente** | sin sistema Starboard identificado | On the Board (1); Board Regular (10) |
@@ -93,7 +93,7 @@
 | 76 | `referrals` | 3 | **Pendiente** | Models/DashboardReferral.js; verificar si la referencia pertenece a un miembro/servidor | Referrer (1); Brand Ambassador (5) |
 | 77 | `replies_sent` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · mensajes con referencia a otro mensaje | Replier (100); Conversationalist (1000) |
 | 78 | `reviews_written` | 5 | **Pendiente** | sin sistema de reseñas identificado | Reviewer (1); Critic (10) |
-| 79 | `roles_count` | 2 | **Dato calculable; falta conexión** | Discord GuildMember.roles.cache — Contar roles del miembro excluyendo @everyone y roles gestionados si procede. | Role Collector (10); Role Hoarder (25) |
+| 79 | `roles_count` | 2 | **Parcial** | Functions/memberAchievementMetrics.js + Events/Guild/achievementMemberUpdate.js + Events/Levels/messageCreate2.js · cuenta roles asignados, excluye `@everyone` y roles gestionados; guarda el máximo alcanzado mediante progreso absoluto; pendiente validación en Discord real | Role Collector (10); Role Hoarder (25) |
 | 80 | `season_podiums` | 2 | **Pendiente** | Models/TrophyScore.js + TrophySettings; falta cálculo de podio | Podium Finish (1); Podium Regular (5) |
 | 81 | `season_wins` | 3 | **Pendiente** | Models/TrophyScore.js + TrophySettings; falta cierre y adjudicación de temporadas | Season Champion (1); Title Defender (3) |
 | 82 | `self_roles_taken` | 3 | **Pendiente** | Utils/SetupHandlers/autoRoleUB.js + Events/Interaction/* | Self-Made (1); Role Picker (10) |
@@ -104,8 +104,8 @@
 | 87 | `streaming_minutes` | 4 | **Parcial** | Models/PersonalVoiceActivity.js + Functions/voiceActivity.js · sesión persistente de transmisión; falta validación en Discord real | Go Live (30); Streamer (600) |
 | 88 | `threads_created` | 3 | **Conectada** | Events/Messages/threadCreateAchievement.js · threadCreate, atribuye el hilo a ownerId | Thread Starter (5); Thread Weaver (50) |
 | 89 | `tickets_claimed` | 3 | **Pendiente** | Models/SupportTicket.js; no existe campo claimant confirmado | Ticket Claimer (10); Support Specialist (100) |
-| 90 | `tickets_closed` | 3 | **Dato existente; falta conexión** | Models/SupportTicket.js + flujo de cierre de tickets — El modelo conserva closedAt. | Support Hero (10); Support Champion (100) |
-| 91 | `tickets_opened` | 2 | **Dato existente; falta conexión** | Models/SupportTicket.js + flujo de creación de tickets — El modelo conserva estado open/closed. | Need Help? (1); Frequent Visitor (10) |
+| 90 | `tickets_closed` | 3 | **Dato existente; falta conexión** | Models/SupportTicket.js + dashboard/server.js · existe cierre de tickets web y `closedAt`, pero el actor de cierre puede ser staff web y `guildId` apunta al servidor de soporte configurado, no necesariamente al servidor del usuario; no atribuir a logros de servidor hasta disponer de vínculo/actor Discord verificable | Support Hero (10); Support Champion (100) |
+| 91 | `tickets_opened` | 2 | **Dato existente; falta conexión** | Models/SupportTicket.js + dashboard/server.js · los tickets actuales se crean desde el centro web y guardan el usuario global de Discord junto al servidor de soporte; no equivalen a tickets abiertos dentro del servidor del usuario, por lo que falta definir el alcance antes de conectarlos | Need Help? (1); Frequent Visitor (10) |
 | 92 | `tokens` | 5 | **Pendiente** | sin campo o sistema de tokens identificado | Token Starter (10); Token Collector (100) |
 | 93 | `top_star_post` | 2 | **Pendiente** | sin sistema Starboard identificado | Going Viral (25); Viral Sensation (100) |
 | 94 | `total_earned` | 6 | **Pendiente** | todos los puntos de pago/recompensa · requiere ledger histórico | Hard Worker (10000); Grinder (100000) |
@@ -134,6 +134,8 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 - `total_earned` y `total_spent` requieren historial transaccional; no deben inferirse del saldo actual.
 - `daily_streak` de actividad y `economy_daily_streak` son conceptos diferentes.
 - `games_played`, `games_won` y `games_streak` se actualizan desde casino y minijuegos Fun con fuentes separadas. Los minijuegos singleplayer y multiplayer persisten contadores y rachas en `MiniGameStats`; se requiere validación funcional en Discord para cerrar las tres métricas. Los timeouts multijugador no cuentan como partida finalizada; los empates cuentan como partida y reinician la racha.
+- `first_unlocks` adjudica una sola vez cada logro por servidor mediante un índice único; `achievements_unlocked` suma una vez cada transición a logro completado, sin contar tiers como logros separados. `account_age_days` y `membership_days` se actualizan al entrar y en la actividad del miembro; `roles_count` se actualiza al entrar, cambiar roles y enviar mensajes; `items_owned` se calcula después de una compra confirmada sobre la mochila persistida; `boost_months` conserva el máximo de meses calendario completos de una racha continua de impulso. La validación en Discord real sigue pendiente.
+- Los tickets actuales son tickets del centro de soporte web, no tickets de soporte abiertos por miembros dentro de sus propios servidores; no se conectan a métricas de logros hasta resolver esa diferencia de alcance y atribución.
 - Las métricas de clanes, negocios, propiedades, inversiones, pesca y minería no tienen modelos correspondientes en el árbol de modelos revisado; deben declararse no aplicables o implementar primero esos sistemas, nunca simular progreso.
 
 ## Orden recomendado de implementación

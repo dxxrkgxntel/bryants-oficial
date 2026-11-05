@@ -7,6 +7,13 @@ const { EmbedBuilder } = require("discord.js");
 const { sendTrophyCard, sendTrophyComponents } = require("./trophyCard");
 const { achievementComparatorReached, achievementProgressUpdate } = require("./achievementRules");
 const { buildTotalAchievementPointsPipeline, normalizeTotalAchievementPoints } = require("./achievementPoints");
+const { recordFirstAchievementUnlock } = require("./firstUnlockAchievementMetric");
+const { createAchievementCompletionRecorder } = require("./achievementCompletionMetrics");
+
+const recordAchievementCompletions = createAchievementCompletionRecorder({
+    trackProgress: (...args) => trackAchievementProgress(...args),
+    recordFirstUnlock: recordFirstAchievementUnlock
+});
 
 const seededGuilds = new Map();
 const totalPointsSyncCache = new Set();
@@ -137,6 +144,7 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
     if (!definitions.length) return [];
     const multiplier = Math.max(0, Math.min(100, Number(settings?.pointsMultiplier ?? 1)));
     const unlocked = [];
+    const newlyCompleted = [];
     let pointsAwarded = false;
     for (const achievement of definitions) {
         if (!await hasAchievementPrerequisites(guild.id, user.id, achievement.prerequisiteIds)) continue;
@@ -232,11 +240,16 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
         }
         const after = await UserAchievement.findById(current._id).lean();
         if (after && goals.every((_goal, index) => (after.unlockedLevels || []).includes(index + 1))) {
-            await UserAchievement.updateOne({ _id: current._id, unlockedAt: null }, { $set: { unlockedAt: new Date(), progress: goals[goals.length - 1] } });
+            const completion = await UserAchievement.updateOne(
+                { _id: current._id, unlockedAt: null },
+                { $set: { unlockedAt: new Date(), progress: goals[goals.length - 1] } }
+            );
+            if (completion.modifiedCount) newlyCompleted.push(achievement.achievementId);
         } else if (after && comparator === "gte" && after.progress > goals[goals.length - 1]) {
             await UserAchievement.updateOne({ _id: current._id }, { $set: { progress: goals[goals.length - 1] } });
         }
     }
+    await recordAchievementCompletions({ guild, user, achievementIds: newlyCompleted });
     if ((pointsAwarded || unlocked.some(achievement => Number(achievement.rewardXP) > 0)) && metric !== "total_points" && options?.skipTotalPointsSync !== true) {
         await syncTotalAchievementPoints(guild, user);
     }

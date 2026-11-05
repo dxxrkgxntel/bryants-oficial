@@ -16,6 +16,8 @@ const { restoreVoiceConnections, startVoiceConnectionSync } = require('../../Han
 const { restoreServerStats } = require('../../Functions/serverStats');
 const { renderWeeklyDropDescription } = require('../../Functions/weeklyDropDescription');
 const { initializeInviteCache } = require('../../Utils/inviteTracker');
+const autoPollEnd = require("../../Functions/autoPollEnd");
+const startSocialAlerts = require("../../Handlers/socialAlerts");
 
 require('colors');
 
@@ -81,6 +83,9 @@ module.exports = {
             await restoreVoiceConnections(client);
             startVoiceConnectionSync(client);
             await restoreServerStats(client);
+            // Los procesos que consultan MongoDB solo se inician tras confirmar la conexión.
+            autoPollEnd(client);
+            startSocialAlerts(client);
         } else {
             console.error('[DAILY PURGE] No se pudo iniciar: MongoDB no está conectado.');
         }
@@ -90,6 +95,7 @@ module.exports = {
         //////////////////////////////////////////////////
 
         const runWeeklyDrops = async () => {
+            if (mongoose.connection.readyState !== 1) return;
             try {
                 const now = new Date();
                 const drops = await WeeklyDrop.find({
@@ -159,8 +165,12 @@ module.exports = {
             }
         };
 
-        await runWeeklyDrops();
-        setInterval(runWeeklyDrops, 60 * 60 * 1000);
+        if (mongoose.connection.readyState === 1) {
+            await runWeeklyDrops();
+            setInterval(runWeeklyDrops, 60 * 60 * 1000);
+        } else {
+            console.error("[WeeklyDrop] Scheduler omitido: MongoDB no está conectado.");
+        }
 
         //////////////////////////////////////////////////
         // PRESENCIAS
