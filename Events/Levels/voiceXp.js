@@ -384,10 +384,13 @@ module.exports = {
 
                             await data.save();
                             if (data.level > Number(data.achievementLevelReported || 0)) {
-                                await trackAchievementProgress(guild, member.user, "level", data.level, { absolute: true })
-                                    .catch(error => console.warn("[Achievements] No se pudo registrar level:", error.message));
-                                data.achievementLevelReported = data.level;
-                                await data.save();
+                                try {
+                                    await trackAchievementProgress(guild, member.user, "level", data.level, { absolute: true });
+                                    data.achievementLevelReported = data.level;
+                                    await data.save();
+                                } catch (error) {
+                                    console.warn("[Achievements] No se pudo registrar level:", error.message);
+                                }
                             }
 
                             // QUESTS DE VOZ: cada ciclo valido equivale a 5 minutos.
