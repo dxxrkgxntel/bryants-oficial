@@ -25,8 +25,8 @@ function createReferralAchievementMetricSync({ ReferralModel, trackProgress, get
                     continue;
                 }
                 try {
-                    const [guild, user] = await Promise.all([getGuild(guildId), getUser(userId)]);
-                    if (!guild?.id || !user?.id) {
+                    const guild = await getGuild(guildId);
+                    if (!guild?.id) {
                         skipped += 1;
                         continue;
                     }
@@ -50,7 +50,7 @@ function createReferralAchievementMetricSync({ ReferralModel, trackProgress, get
 }
 
 function startReferralAchievementMetricSync(client, { intervalMs = 60_000 } = {}) {
-    if (!client?.guilds || typeof client.users?.fetch !== "function") {
+    if (!client?.guilds) {
         throw new TypeError("A Discord client is required to sync referral achievements.");
     }
     const DashboardReferral = require("../Models/DashboardReferral");
@@ -59,7 +59,6 @@ function startReferralAchievementMetricSync(client, { intervalMs = 60_000 } = {}
         ReferralModel: DashboardReferral,
         trackProgress: trackAchievementProgress,
         getGuild: async guildId => client.guilds.cache.get(guildId) || client.guilds.fetch(guildId),
-        getUser: userId => client.users.fetch(userId),
         getMember: (guild, userId) => guild.members.fetch(userId).catch(() => null)
     });
     const run = () => sync().catch(error => console.error("[Achievement Referrals] Error de sincronización:", error));
