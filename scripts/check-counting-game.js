@@ -13,4 +13,4 @@ assert.deepEqual(evaluateCountingMessage({ content: "2", currentNumber: 1, curre
 assert.deepEqual(evaluateCountingMessage({ content: "2", currentNumber: 1, currentStreak: 1, lastUserId: "a", authorId: "b" }), { type: "correct", number: 2, streak: 2 });
 assert.deepEqual(evaluateCountingMessage({ content: "0", currentNumber: 0, currentStreak: 0, lastUserId: null, authorId: "a" }), { type: "reset", submitted: 0, expected: 1 });
 assert.deepEqual(evaluateCountingMessage({ content: "hola", currentNumber: 1, currentStreak: 1, lastUserId: "a", authorId: "b" }), { type: "ignore" });
-console.log("Counting game: 12 assertions passed.");
+console.log("Counting game: 13 assertions passed.");
