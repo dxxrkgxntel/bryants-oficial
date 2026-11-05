@@ -92,6 +92,33 @@ async function ensureDefaultAchievements(guildId) {
     return pending;
 }
 
+async function getTotalAchievementPoints(guildId, userId) {
+    const [result] = await UserAchievement.aggregate([
+        { $match: { guildId, userId } },
+        { $group: { _id: null, totalPoints: { $sum: "$pointsEarned" } } }
+    ]);
+    return Math.max(0, Number(result?.totalPoints) || 0);
+}
+
+async function syncTotalAchievementPoints(guild, user) {
+    if (!guild?.id || !user?.id) return;
+    try {
+        for (let pass = 0; pass < 100; pass += 1) {
+            const total = await getTotalAchievementPoints(guild.id, user.id);
+            if (total <= 0) return;
+            await trackAchievementProgress(guild, user, "total_points", total, {
+                absolute: true,
+                skipTotalPointsSync: true
+            });
+            const updatedTotal = await getTotalAchievementPoints(guild.id, user.id);
+            if (updatedTotal <= total) return;
+        }
+        console.warn("[Achievements] La sincronización de total_points alcanzó el límite de iteraciones.");
+    } catch (error) {
+        console.warn("[Achievements] No se pudo sincronizar total_points:", error.message);
+    }
+}
+
 async function trackAchievementProgress(guild, user, metric, amount = 1, options = {}) {
     if (!guild?.id || !user?.id || !Number.isFinite(amount) || amount <= 0) return [];
     const settings = await TrophySettings.findOne({ guildId: guild.id }).lean();
@@ -148,7 +175,7 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
                     { upsert: true, new: true, setDefaultsOnInsert: true }
                 );
                 if (metric !== "xp") {
-                    await trackAchievementProgress(guild, user, "xp", achievement.rewardXP);
+                    await trackAchievementProgress(guild, user, "xp", achievement.rewardXP, { skipTotalPointsSync: true });
                 }
             }
             if (achievement.rewardRoleIds?.length || achievement.rewardRemoveRoleIds?.length) {
@@ -201,6 +228,9 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
             await UserAchievement.updateOne({ _id: current._id }, { $set: { progress: goals[goals.length - 1] } });
         }
     }
+    if (options?.skipTotalPointsSync !== true) {
+        await syncTotalAchievementPoints(guild, user);
+    }
     return unlocked;
 }
 
@@ -209,5 +239,7 @@ module.exports = {
     ensureDefaultAchievements,
     achievementComparatorReached,
     achievementProgressUpdate,
-    hasAchievementPrerequisites
+    hasAchievementPrerequisites,
+    getTotalAchievementPoints,
+    syncTotalAchievementPoints
 };
