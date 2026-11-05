@@ -625,6 +625,7 @@ module.exports = {
                 Game.startGame();
                 Game.on('gameOver', async result => {
                     await recordSinglePlayerGame(interaction.guild, interaction.user, result);
+                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
                 break;
