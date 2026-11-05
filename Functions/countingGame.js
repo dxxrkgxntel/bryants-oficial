@@ -2,7 +2,7 @@ function parseCountMessage(content) {
   const value = String(content ?? "").trim();
   if (!/^\d+$/.test(value)) return null;
   const number = Number(value);
-  return Number.isSafeInteger(number) && number > 0 ? number : null;
+  return Number.isSafeInteger(number) ? number : null;
 }
 function evaluateCountingMessage({ content, currentNumber = 0, currentStreak = 0, lastUserId = null, authorId }) {
   const submitted = parseCountMessage(content);
