@@ -5,7 +5,7 @@
 ## Resumen
 
 - Catálogo: **397 logros / 106 métricas únicas**.
-- Conectadas: **29**.
+- Conectadas: **30**.
 - Parciales: **3**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **22**.
 - Pendientes de localizar/implementar o validar: **53**.
@@ -28,7 +28,7 @@
 | 11 | `birthday_celebrations` | 3 | **Pendiente** | Handlers/birthdaySystem.js; verificar cómo identifica quién celebra | First Birthday (1); Birthday Regular (3) |
 | 12 | `birthday_set` | 1 | **Conectada** | Commands/Utility/birthday.js · suma únicamente el primer registro; editar la fecha no repite el logro | Party Ready (1) |
 | 13 | `boost_months` | 4 | **Dato calculable; falta conexión** | Events/Logs/boostSystem.js · guildMemberUpdate — Calcular meses desde premiumSince; verificar continuidad del boost. | Loyal Booster (3); Boost Legend (12) |
-| 14 | `boosts` | 1 | **Dato disponible; falta conexión** | Events/Logs/boostSystem.js · guildMemberUpdate — Discord expone premiumSince; contar inicios de boost. | Supporter (1) |
+| 14 | `boosts` | 1 | **Conectada** | Events/Logs/boostSystem.js · cuenta el inicio de un boost tras detectar premiumSince por primera vez | Supporter (1) |
 | 15 | `bot_mentions` | 3 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Cuenta menciones al bot. | Hey Bot (10); Bot Buddy (100) |
 | 16 | `business_earnings` | 4 | **Pendiente** | sin modelo de negocios identificado | Small Business (100000); Business Owner (1000000) |
 | 17 | `businesses_owned` | 2 | **Pendiente** | sin modelo de negocios identificado | Entrepreneur (1); Business Empire (5) |
@@ -141,7 +141,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 1. **Mensajes y actividad:** ya conectados palabras, caracteres, imágenes, GIF, links, stickers, adjuntos, respuestas, menciones, spoilers y bloques de código; las cuatro métricas restantes ya están conectadas: mensajes de 500+ caracteres, madrugada (00:00–05:59), temprano (06:00–08:59) y fines de semana, todo en America/Santo_Domingo. Días activos, racha y creación de hilos también conectados.
 2. **Voz:** joins conectados; minutos de voz, transmisión y cámara ya tienen sesiones persistentes y quedan parciales hasta validación en Discord real.
 3. **Economía y niveles:** `prestige_level` conectado; pendientes transacciones, saldos vs acumulados, XP y niveles por texto/voz.
-4. **Comunidad:** invitaciones y primer registro de cumpleaños conectados; pendientes boosts, auto-roles, tickets y moderación.
+4. **Comunidad:** invitaciones, primer registro de cumpleaños y boosts conectados; pendientes meses de boost, auto-roles, tickets y moderación.
 5. **Juegos y eventos:** casino, minijuegos y sorteos con registros individuales.
 6. **Temporadas y meta-logros:** primer desbloqueo, podios, victorias y premios semanales/mensuales.
 7. **No aplicables:** clanes, negocios, propiedades, inversiones, pesca/minería, solicitudes y otras funciones que no existan en Bryvex; confirmar con el producto antes de eliminar del catálogo.
