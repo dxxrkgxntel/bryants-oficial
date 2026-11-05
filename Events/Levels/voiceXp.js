@@ -400,7 +400,8 @@ module.exports = {
                                 member.id,
                                 guild.id,
                                 "voice",
-                                5
+                                5,
+                                { guild, user: member.user }
                             );
                         }
                     }
