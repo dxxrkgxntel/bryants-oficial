@@ -6,6 +6,7 @@ const TrophySettings = require("../Models/TrophySettings");
 const { EmbedBuilder } = require("discord.js");
 const { sendTrophyCard, sendTrophyComponents } = require("./trophyCard");
 const { achievementComparatorReached, achievementProgressUpdate } = require("./achievementRules");
+const { buildTotalAchievementPointsPipeline, normalizeTotalAchievementPoints } = require("./achievementPoints");
 
 const seededGuilds = new Map();
 const totalPointsSyncCache = new Set();
@@ -93,16 +94,9 @@ async function ensureDefaultAchievements(guildId) {
     return pending;
 }
 
-function buildTotalAchievementPointsPipeline(guildId, userId) {
-    return [
-        { $match: { guildId, userId } },
-        { $group: { _id: null, totalPoints: { $sum: "$pointsEarned" } } }
-    ];
-}
-
 async function getTotalAchievementPoints(guildId, userId) {
     const [result] = await UserAchievement.aggregate(buildTotalAchievementPointsPipeline(guildId, userId));
-    return Math.max(0, Number(result?.totalPoints) || 0);
+    return normalizeTotalAchievementPoints(result);
 }
 
 async function syncTotalAchievementPoints(guild, user) {
@@ -255,7 +249,6 @@ module.exports = {
     achievementComparatorReached,
     achievementProgressUpdate,
     hasAchievementPrerequisites,
-    buildTotalAchievementPointsPipeline,
     getTotalAchievementPoints,
     syncTotalAchievementPoints
 };
