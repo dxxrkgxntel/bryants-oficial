@@ -306,10 +306,13 @@ module.exports = {
 
         await data.save();
         if (data.level > Number(data.achievementLevelReported || 0)) {
-            await trackAchievementProgress(message.guild, message.author, "level", data.level, { absolute: true })
-                .catch(error => console.warn("[Achievements] No se pudo registrar level:", error.message));
-            data.achievementLevelReported = data.level;
-            await data.save();
+            try {
+                await trackAchievementProgress(message.guild, message.author, "level", data.level, { absolute: true });
+                data.achievementLevelReported = data.level;
+                await data.save();
+            } catch (error) {
+                console.warn("[Achievements] No se pudo registrar level:", error.message);
+            }
         }
 
         console.log(`XP añadido a ${message.author.username}`.green);
