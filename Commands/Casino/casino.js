@@ -9,6 +9,7 @@ const {
 
 const EconomyUser = require("../../Models/EconomyUser");
 const CasinoStats = require("../../Models/CasinoStats");
+const MiniGameStats = require("../../Models/MiniGameStats");
 const getUser = require("../../Utils/getUser");
 const getConfig = require("../../Utils/getConfig");
 const { trackEconomyAchievementSnapshot } = require("../../Functions/economyAchievementMetrics");
@@ -23,7 +24,8 @@ const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
 const slots = ["🍒","🍋","🍉","💎","👑","⭐"];
 function drawCard() { return cards[Math.floor(Math.random() * cards.length)]; }
 async function trackCasinoAchievementProgress(guild, user, stats) {
-    const snapshot = getCasinoAchievementSnapshot(stats);
+    const miniGameStats = await MiniGameStats.findOne({ guildId: guild.id, userId: user.id }).lean();
+    const snapshot = getCasinoAchievementSnapshot(stats, miniGameStats);
     await Promise.all(Object.entries(snapshot).map(([metric, value]) =>
         trackAchievementProgress(guild, user, metric, value, { absolute: true })
     ).map(promise => promise.catch(error => {
