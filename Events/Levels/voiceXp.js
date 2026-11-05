@@ -383,6 +383,8 @@ module.exports = {
                             //////////////////////////////////////////////////
 
                             await data.save();
+                            await trackAchievementProgress(guild, member.user, "xp", levelSettings.voiceXpAmount)
+                                .catch(error => console.warn("[Achievements] No se pudo registrar xp de voz:", error.message));
                             if (data.level > Number(data.achievementLevelReported || 0)) {
                                 try {
                                     await trackAchievementProgress(guild, member.user, "level", data.level, { absolute: true });
