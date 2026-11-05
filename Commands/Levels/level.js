@@ -48,18 +48,84 @@ async function positionOf(guildId, data) {
     })) + 1;
 }
 
+
+
+async function renderLevelCard({ user, member, data, position, needed, backgroundUrl, profile = false, economy = {}, badges = [] }) {
+    const width = profile ? 1500 : 1200, height = profile ? 650 : 390;
+    const canvas = createCanvas(width, height), ctx = canvas.getContext("2d");
+    const accent = position === 1 ? "#ffd166" : position === 2 ? "#d7e0ed" : position === 3 ? "#d99a68" : "#b56cff";
+    const progress = Math.max(0, Math.min(1, data.xp / needed)), pct = Math.floor(progress * 100);
+    const bg = ctx.createLinearGradient(0, 0, width, height);
+    bg.addColorStop(0, "#090611"); bg.addColorStop(0.52, "#21103d"); bg.addColorStop(1, "#080b1a");
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, width, height);
+    if (backgroundUrl) {
+        try {
+            const image = await loadImage(backgroundUrl), scale = Math.max(width / image.width, height / image.height);
+            ctx.save(); ctx.filter = "blur(18px)"; ctx.globalAlpha = 0.32;
+            ctx.drawImage(image, (width-image.width*scale)/2, (height-image.height*scale)/2, image.width*scale, image.height*scale);
+            ctx.restore();
+        } catch (_) {}
+    }
+    const shade = ctx.createLinearGradient(0, 0, width, height);
+    shade.addColorStop(0, "rgba(5,3,14,0.48)"); shade.addColorStop(1, "rgba(4,7,18,0.78)");
+    ctx.fillStyle = shade; ctx.fillRect(0, 0, width, height);
+    for (const g of [{x:width*.78,y:height*.16,r:profile?260:190,c:"rgba(174,75,255,0.24)"},{x:width*.12,y:height*.9,r:profile?220:160,c:"rgba(64,93,255,0.18)"}]) {
+        const radial=ctx.createRadialGradient(g.x,g.y,0,g.x,g.y,g.r); radial.addColorStop(0,g.c); radial.addColorStop(1,"rgba(0,0,0,0)");
+        ctx.fillStyle=radial; ctx.fillRect(0,0,width,height);
+    }
+    ctx.save(); ctx.shadowColor="rgba(164,76,255,0.55)"; ctx.shadowBlur=30; ctx.lineWidth=3; ctx.strokeStyle="rgba(190,125,255,0.88)";
+    ctx.roundRect(18,18,width-36,height-36,34); ctx.stroke(); ctx.restore();
+    ctx.fillStyle="rgba(13,10,25,0.32)"; ctx.roundRect(22,22,width-44,height-44,30); ctx.fill();
+
+    const avatarSize=profile?250:220, avatarX=profile?78:72, avatarY=(height-avatarSize)/2-(profile?22:0);
+    ctx.save(); ctx.shadowColor=accent; ctx.shadowBlur=38; ctx.beginPath(); ctx.arc(avatarX+avatarSize/2,avatarY+avatarSize/2,avatarSize/2+8,0,Math.PI*2); ctx.fillStyle=accent; ctx.fill(); ctx.restore();
+    ctx.save(); ctx.beginPath(); ctx.arc(avatarX+avatarSize/2,avatarY+avatarSize/2,avatarSize/2,0,Math.PI*2); ctx.clip();
+    try { const avatar=await loadImage(user.displayAvatarURL({extension:"png",size:512})); ctx.drawImage(avatar,avatarX,avatarY,avatarSize,avatarSize); }
+    catch (_) { ctx.fillStyle="#302044"; ctx.fillRect(avatarX,avatarY,avatarSize,avatarSize); }
+    ctx.restore();
+
+    const x=profile?390:350, right=width-78, displayName=member?.displayName||user.globalName||user.username;
+    ctx.textBaseline="alphabetic"; ctx.fillStyle="#fff"; ctx.font="bold "+(profile?58:54)+"px Audiowide, sans-serif";
+    let name=displayName; while(ctx.measureText(name).width>(right-x-260)&&name.length>5) name=name.slice(0,-2)+"…";
+    ctx.fillText(name,x,profile?142:126);
+    const rankLabel="RANGO #"+position; ctx.font="bold 25px Arial";
+    const badgeWidth=Math.max(190,ctx.measureText(rankLabel).width+44), badgeX=right-badgeWidth;
+    ctx.fillStyle="rgba(153,83,220,0.22)"; ctx.roundRect(badgeX,profile?82:70,badgeWidth,58,18); ctx.fill();
+    ctx.strokeStyle="rgba(202,150,255,0.8)"; ctx.lineWidth=2; ctx.stroke(); ctx.fillStyle=accent; ctx.textAlign="center";
+    ctx.fillText(rankLabel,badgeX+badgeWidth/2,profile?120:108); ctx.textAlign="left";
+    ctx.fillStyle="#cdb7e8"; ctx.font="25px Arial"; ctx.fillText("@"+user.username,x,profile?190:174);
+
+    const levelY=profile?270:238; ctx.fillStyle="#d7b4ff"; ctx.font="bold "+(profile?43:40)+"px Arial"; ctx.fillText("LEVEL "+data.level,x,levelY);
+    ctx.fillStyle="#fff"; ctx.font="bold 25px Arial"; ctx.textAlign="right"; ctx.fillText(data.xp.toLocaleString()+" / "+needed.toLocaleString()+" XP",right,levelY); ctx.textAlign="left";
+    const barX=x,barY=levelY+28,barWidth=right-x,barHeight=34;
+    ctx.fillStyle="rgba(3,4,14,0.88)"; ctx.roundRect(barX,barY,barWidth,barHeight,18); ctx.fill();
+    if(progress>0){const grad=ctx.createLinearGradient(barX,0,barX+barWidth,0);grad.addColorStop(0,"#9b4dff");grad.addColorStop(.55,"#d16cff");grad.addColorStop(1,"#69a7ff");ctx.save();ctx.shadowColor="#b65cff";ctx.shadowBlur=18;ctx.fillStyle=grad;ctx.roundRect(barX,barY,Math.max(barHeight,barWidth*progress),barHeight,18);ctx.fill();ctx.restore();}
+    ctx.fillStyle="#fff";ctx.font="20px Arial";ctx.fillText(pct+"% completado",barX,barY+66);ctx.textAlign="right";
+    ctx.fillText(Math.max(0,needed-data.xp).toLocaleString()+" XP para el siguiente nivel",right,barY+66);ctx.textAlign="left";
+
+    if(profile){
+        const infoY=465,columns=[
+            {x,label:"WALLET",value:(economy.wallet||0).toLocaleString(),color:"#e8c5ff"},
+            {x:x+360,label:"BANCO",value:(economy.bank||0).toLocaleString(),color:"#a8c8ff"},
+            {x:x+720,label:"RANKING",value:"#"+position,color:accent}
+        ];
+        for(const item of columns){ctx.fillStyle="rgba(255,255,255,0.07)";ctx.roundRect(item.x,infoY-42,310,92,18);ctx.fill();ctx.fillStyle="#a99ab9";ctx.font="bold 18px Arial";ctx.fillText(item.label,item.x+20,infoY-10);ctx.fillStyle=item.color;ctx.font="bold 29px Arial";ctx.fillText(item.value,item.x+20,infoY+28);}
+        ctx.fillStyle="#d9c8ed";ctx.font="bold 20px Arial";ctx.fillText("BADGES",x,585);ctx.font="20px Arial";ctx.fillStyle="#fff";
+        const badgeText=badges.length?badges.join("  •  "):"Ninguno";ctx.fillText(badgeText.length>92?badgeText.slice(0,89)+"…":badgeText,x+105,585);
+    } else {ctx.fillStyle="rgba(255,255,255,0.58)";ctx.font="bold 18px Arial";ctx.fillText("BRYVEX LEVELS  •  RANK CARD",x,height-42);}
+    return await canvas.encode("png");
+}
+
+
 async function rank(interaction) {
     await interaction.deferReply();
     const user = interaction.options.getUser("usuario") || interaction.user;
     const data = await Level.findOne({ guildId: interaction.guild.id, userId: user.id });
     if (!data) return interaction.editReply(await configuredPanel(interaction, "levelRankImage", "## ⭐ Bryvex Levels • Rank\n❌ Ese usuario todavía no tiene datos de nivel.", 0xED4245));
-    const needed = xpNeeded(data.level);
-    const pos = await positionOf(interaction.guild.id, data);
-    const pct = Math.min(100, Math.floor((data.xp / needed) * 100));
-    const filled = Math.min(10, Math.floor(pct / 10));
-    return interaction.editReply(await configuredPanel(interaction, "levelRankImage",
-        `## ⭐ Bryvex Levels • Rank\n### <@${user.id}>\n🏆 **Posición:** #${pos}\n⭐ **Nivel:** ${data.level}\n✨ **XP:** ${data.xp.toLocaleString()} / ${needed.toLocaleString()}\n📈 ${"🟪".repeat(filled)}${"⬛".repeat(10-filled)} **${pct}%**`
-    ));
+    const needed = xpNeeded(data.level), pos = await positionOf(interaction.guild.id, data);
+    const config = await LevelConfig.findOne({ guildId: interaction.guild.id }).select("levelRankImage").lean();
+    const buffer = await renderLevelCard({ user, data, position: pos, needed, backgroundUrl: config?.levelRankImage });
+    return interaction.editReply({ files: [new AttachmentBuilder(buffer, { name: "bryvex-rank.png" })] });
 }
 
 async function perfil(interaction) {
@@ -71,18 +137,16 @@ async function perfil(interaction) {
         interaction.guild.members.fetch(user.id).catch(() => null)
     ]);
     if (!data) return interaction.editReply(await configuredPanel(interaction, "levelProfileImage", "## 👤 Bryvex Levels • Perfil\n❌ Este usuario todavía no tiene datos de nivel.", 0xED4245));
-    const pos = await positionOf(interaction.guild.id, data);
-    const needed = xpNeeded(data.level);
-    const badges = [];
+    const pos = await positionOf(interaction.guild.id, data), needed = xpNeeded(data.level), badges = [];
     if (interaction.guild.ownerId === user.id) badges.push("👑 Owner");
     if (member?.permissions.has(PermissionFlagsBits.Administrator)) badges.push("🛠️ Admin");
     if (member?.premiumSince) badges.push("🚀 Booster");
-    if (pos <= 3) badges.push(pos===1?"🥇 Top 1":pos===2?"🥈 Top 2":"🥉 Top 3");
+    if (pos <= 3) badges.push(pos === 1 ? "🥇 Top 1" : pos === 2 ? "🥈 Top 2" : "🥉 Top 3");
     if ((economy?.wallet || 0) >= 100000) badges.push("💰 Magnate");
     if (data.level >= 25) badges.push("🔥 Nivel 25+");
-    return interaction.editReply(await configuredPanel(interaction, "levelProfileImage",
-        `## 👤 Bryvex Levels • Perfil\n### <@${user.id}>\n⭐ **Nivel:** ${data.level}\n🏆 **Ranking:** #${pos}\n✨ **XP:** ${data.xp.toLocaleString()} / ${needed.toLocaleString()}\n💰 **Wallet:** ${(economy?.wallet || 0).toLocaleString()}\n🏦 **Banco:** ${(economy?.bank || 0).toLocaleString()}\n🎖️ **Badges:** ${badges.join(" • ") || "Ninguno"}`
-    ));
+    const config = await LevelConfig.findOne({ guildId: interaction.guild.id }).select("levelProfileImage").lean();
+    const buffer = await renderLevelCard({ user, member, data, position: pos, needed, backgroundUrl: config?.levelProfileImage, profile: true, economy: economy || { wallet: 0, bank: 0 }, badges });
+    return interaction.editReply({ files: [new AttachmentBuilder(buffer, { name: "bryvex-perfil.png" })] });
 }
 
 async function renderTop(interaction, page, ownerId, config) {
