@@ -211,20 +211,22 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
                 const seasonKey = settings.seasonKey.trim().toLowerCase();
                 const scoreEventKey = `season:${seasonKey}:achievement:${achievement.achievementId}:level:${i + 1}`;
                 try {
-                    await TrophyScore.updateOne(
-                        {
-                            guildId: guild.id,
-                            userId: user.id,
-                            seasonKey,
-                            processedEventKeys: { $ne: scoreEventKey }
-                        },
-                        {
+                    const scoreFilter = { guildId: guild.id, userId: user.id, seasonKey };
+                    const existingScore = await TrophyScore.findOne(scoreFilter).select("processedEventKeys").lean();
+                    if (!existingScore?.processedEventKeys?.includes(scoreEventKey)) {
+                        const scoreEventFilter = { ...scoreFilter, processedEventKeys: { $ne: scoreEventKey } };
+                        const scoreUpdate = {
                             $inc: { points, unlocks: 1 },
                             $addToSet: { processedEventKeys: scoreEventKey },
                             $setOnInsert: { guildId: guild.id, userId: user.id, seasonKey }
-                        },
-                        { upsert: true }
-                    );
+                        };
+                        try {
+                            await TrophyScore.updateOne(scoreEventFilter, scoreUpdate, { upsert: true });
+                        } catch (error) {
+                            if (error.code !== 11000) throw error;
+                            await TrophyScore.updateOne(scoreEventFilter, scoreUpdate);
+                        }
+                    }
                 } catch (error) {
                     console.warn("[Trophy Season] No se pudo actualizar el ranking:", error.message);
                 }
