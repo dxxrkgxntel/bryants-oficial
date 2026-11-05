@@ -129,9 +129,16 @@ async function runWork(interaction) {
 
  const amount = Math.floor(Math.random() * (config.workMax - config.workMin + 1)) + config.workMin;
  const randomJob = jobs[Math.floor(Math.random() * jobs.length)];
+ const today = getZonedDateString(new Date(now));
+ const yesterday = getAdjacentZonedDateString(new Date(now), -1);
+ if (user.lastWorkDate === yesterday) user.workStreak += 1;
+ else if (user.lastWorkDate !== today) user.workStreak = 1;
+ user.lastWorkDate = today;
  user.wallet += amount;
  user.lastWork = now;
  await user.save();
+ await trackAchievementProgress(interaction.guild, interaction.user, "work_streak", user.workStreak, { absolute: true })
+  .catch(error => console.warn("[Achievements] No se pudo registrar work_streak:", error.message));
  await trackAchievementProgress(interaction.guild, interaction.user, "workClaims", 1)
   .catch(error => console.warn("[Achievements] No se pudo registrar work:", error.message));
  await trackAchievementProgress(interaction.guild, interaction.user, "coinsEarned", amount)
