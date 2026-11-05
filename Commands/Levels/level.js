@@ -127,11 +127,13 @@ async function renderLevelCard({ user, member, data, position, needed, backgroun
     ctx.textBaseline="alphabetic"; ctx.fillStyle="#fff"; ctx.font="bold "+(profile?58:54)+"px Audiowide, sans-serif";
     let name=displayName; while(ctx.measureText(name).width>(right-x-260)&&name.length>5) name=name.slice(0,-2)+"…";
     ctx.fillText(name,x,profile?142:126);
-    const rankLabel="RANGO #"+position; ctx.font="bold 25px Arial";
-    const badgeWidth=Math.max(190,ctx.measureText(rankLabel).width+44), badgeX=right-badgeWidth;
-    ctx.fillStyle="rgba(153,83,220,0.22)"; ctx.roundRect(badgeX,profile?82:70,badgeWidth,58,18); ctx.fill();
-    ctx.strokeStyle="rgba(202,150,255,0.8)"; ctx.lineWidth=2; ctx.stroke(); ctx.fillStyle=accent; ctx.textAlign="center";
-    ctx.fillText(rankLabel,badgeX+badgeWidth/2,profile?120:108); ctx.textAlign="left";
+    if (!profile || showRanking !== false) {
+        const rankLabel="RANGO #"+position; ctx.font="bold 25px Arial";
+        const badgeWidth=Math.max(190,ctx.measureText(rankLabel).width+44), badgeX=right-badgeWidth;
+        ctx.fillStyle="rgba(153,83,220,0.22)"; ctx.roundRect(badgeX,profile?82:70,badgeWidth,58,18); ctx.fill();
+        ctx.strokeStyle=accent; ctx.lineWidth=2; ctx.stroke(); ctx.fillStyle=accent; ctx.textAlign="center";
+        ctx.fillText(rankLabel,badgeX+badgeWidth/2,profile?120:108); ctx.textAlign="left";
+    }
     ctx.fillStyle="#cdb7e8"; ctx.font="25px Arial"; ctx.fillText("@"+user.username,x,profile?190:174);
 
     const levelY=profile?270:238; ctx.fillStyle="#d7b4ff"; ctx.font="bold "+(profile?43:40)+"px Arial"; ctx.fillText("LEVEL "+data.level,x,levelY);
@@ -164,13 +166,11 @@ function colorNumber(value) {
     return /^#[\da-f]{6}$/i.test(value || "") ? parseInt(value.slice(1), 16) : PURPLE;
 }
 
-function buildLevelDetails({ user, data, position, needed, profile, economy = {} }) {
-    const rows = [
-        `**Usuario:** <@${user.id}>`,
-        `**Rango:** #${position}`,
-        `**Nivel:** ${data.level}`,
-        `**Experiencia:** ${data.xp.toLocaleString()} / ${needed.toLocaleString()} XP (${Math.floor(Math.min(1, data.xp / needed) * 100)}%)`
-    ];
+function buildLevelDetails({ user, data, position, needed, profile, showRanking = true }) {
+    const rows = [`**Usuario:** <@${user.id}>`];
+    if (!profile || showRanking) rows.push(`**Rango:** #${position}`);
+    rows.push(`**Nivel:** ${data.level}`);
+    rows.push(`**Experiencia:** ${data.xp.toLocaleString()} / ${needed.toLocaleString()} XP (${Math.floor(Math.min(1, data.xp / needed) * 100)}%)`);
     return rows.join("\n");
 }
 
@@ -179,14 +179,15 @@ async function sendLevelResponse(interaction, options) {
     const prefix = profile ? "levelProfile" : "levelRank";
     const format = config[`${prefix}Format`] || "card";
     const color = colorNumber(config[`${prefix}Color`]);
-    const details = buildLevelDetails({ user, data, position, needed, profile, economy });
+    const details = buildLevelDetails({ user, data, position, needed, profile, showRanking: config.levelProfileShowRanking !== false });
     const title = profile ? "👤 Bryvex Levels • Perfil" : "⭐ Bryvex Levels • Rank";
     const avatarUrl = user.displayAvatarURL({ extension: "png", size: 512, forceStatic: true });
     const badgeLine = profile && config.levelProfileShowBadges !== false
         ? `\n**Badges:** ${badges.length ? badges.join(" · ") : "Ninguno"}`
         : "";
-    const profileLine = profile ? `${config.levelProfileShowWallet === false ? "" : `\n**Cartera:** ${(economy.wallet || 0).toLocaleString()}`}${config.levelProfileShowBank === false ? "" : `\n**Banco:** ${(economy.bank || 0).toLocaleString()}`}${config.levelProfileShowRanking === false ? "" : `\n**Ranking:** #${position}`}${badgeLine}` : "";
-    const textContent = `## ${title}\n**Usuario:** ${user}\n**Nivel:** ${data.level}\n**Rango:** #${position}\n**XP:** ${data.xp.toLocaleString()} / ${needed.toLocaleString()} (${Math.floor(Math.min(1, data.xp / needed) * 100)}%)${profileLine}`;
+    const profileLine = profile ? `${config.levelProfileShowWallet === false ? "" : `\n**Cartera:** ${(economy.wallet || 0).toLocaleString()}`}${config.levelProfileShowBank === false ? "" : `\n**Banco:** ${(economy.bank || 0).toLocaleString()}`}${badgeLine}` : "";
+    const rankText = !profile || config.levelProfileShowRanking !== false ? `\n**Rango:** #${position}` : "";
+    const textContent = `## ${title}\n**Usuario:** ${user}\n**Nivel:** ${data.level}${rankText}\n**XP:** ${data.xp.toLocaleString()} / ${needed.toLocaleString()} (${Math.floor(Math.min(1, data.xp / needed) * 100)}%)${profileLine}`;
 
     if (format === "text") return interaction.editReply({ content: textContent });
     if (format === "embed") {
