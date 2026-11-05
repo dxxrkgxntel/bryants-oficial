@@ -1,8 +1,8 @@
-function createReferralAchievementMetricSync({ ReferralModel, trackProgress, getGuild, getUser, getMember } = {}) {
+function createReferralAchievementMetricSync({ ReferralModel, trackProgress, getGuild, getMember } = {}) {
     if (!ReferralModel || typeof ReferralModel.aggregate !== "function") {
         throw new TypeError("A referral model with aggregate() is required.");
     }
-    if (typeof trackProgress !== "function" || typeof getGuild !== "function" || typeof getUser !== "function" || typeof getMember !== "function") {
+    if (typeof trackProgress !== "function" || typeof getGuild !== "function" || typeof getMember !== "function") {
         throw new TypeError("Referral achievement sync callbacks are required.");
     }
 
