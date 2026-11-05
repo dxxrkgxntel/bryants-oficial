@@ -650,8 +650,9 @@ async function run_gamble(interaction) {
 
                 //////////////////////////////////////////////////
 
+                // El premio es un pago bruto: primero se descuenta la apuesta.
                 freshUser.wallet +=
-                    winnings;
+                    winnings - amount;
 
                 //////////////////////////////////////////////////
                 // STATS USER
