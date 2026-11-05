@@ -561,6 +561,10 @@ async function handleModal(interaction) {
         "temp_rename_modal", "temp_limit_modal", "temp_bitrate_modal", "temp_region_modal"
     ].includes(interaction.customId)) return false;
 
+    // Acknowledge modal submissions immediately. Database lookups and Discord
+    // channel operations below can exceed Discord's 3-second interaction window.
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
     const room = await getRoom(interaction);
     if (!room) {
         await respond(interaction, "❌ Debes estar en tu canal temporal y ser su propietario.");
@@ -919,7 +923,9 @@ module.exports = {
             }
         } catch (error) {
             console.error("[TempVoice] Error al procesar una acción:", error);
-            if (interaction.isRepliable()) {
+            // Discord code 10062 means the interaction token has expired.
+            // Do not attempt a second initial response for an already-expired interaction.
+            if (interaction.isRepliable() && error?.code !== 10062) {
                 await respond(interaction, "❌ No se pudo completar la acción. Comprueba los permisos del bot y vuelve a intentarlo.").catch(() => {});
             }
         }
