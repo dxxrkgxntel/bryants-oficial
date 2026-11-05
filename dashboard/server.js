@@ -1546,7 +1546,7 @@ app.post("/api/guilds/:guildId/achievements/import", requireLogin, requireCsrf, 
                 symbol: item.symbol ? String(item.symbol).slice(0, 80) : null,
                 badgeFrame: item.badge_frame || item.badgeFrame ? String(item.badge_frame || item.badgeFrame).slice(0, 50) : null,
                 color: item.color ? String(item.color).slice(0, 20) : null,
-                source: String(backup.source || "notoq").slice(0, 40),
+                source: String(backup.source || "notoq").trim().toLowerCase().slice(0, 40),
                 builtinKey: item.builtin_key || item.builtinKey || achievementId,
                 enabled: item.enabled !== false && item.self_enabled !== false
             };
@@ -1561,7 +1561,7 @@ app.post("/api/guilds/:guildId/achievements/import", requireLogin, requireCsrf, 
         const operations = normalized.map(item => ({
             updateOne: {
                 filter: { guildId: req.params.guildId, achievementId: item.achievementId },
-                update: mode === "merge" ? { $setOnInsert: item } : { $set: item, $setOnInsert: { guildId: req.params.guildId, achievementId: item.achievementId } },
+                update: mode === "merge" ? { $setOnInsert: item } : { $set: item },
                 upsert: true
             }
         }));
