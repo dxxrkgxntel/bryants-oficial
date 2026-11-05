@@ -13,6 +13,7 @@ const RobCooldown = require("../../Models/RobCooldown");
 const { runGlobalBank, runDonate, runLoan, runPayDebt, runDistribute } = require("../../Utils/economyBankHandlers");
 const questHandler = require("../../Functions/questHandler");
 const { trackAchievementProgress } = require("../../Functions/achievementTracker");
+const { getZonedDateString, getAdjacentZonedDateString } = require("../../Functions/birthdayDates");
 
 const BALANCE_BANNER = "https://i.imgur.com/joAe57D.png";
 const WORK_BANNER = "https://i.imgur.com/joAe57D.png";
@@ -86,8 +87,8 @@ async function runDaily(interaction) {
    `Ya reclamaste tu recompensa diaria.\n\n🕒 Vuelve en **${hours} horas**.`, 0xFF0000, true, DAILY_BANNER);
  }
 
- const today = new Date().toDateString();
- const yesterday = new Date(Date.now() - 86400000).toDateString();
+ const today = getZonedDateString(new Date());
+ const yesterday = getAdjacentZonedDateString(new Date(), -1);
  if (user.lastDailyDate === yesterday) user.dailyStreak += 1;
  else if (user.lastDailyDate !== today) user.dailyStreak = 1;
 
@@ -97,6 +98,8 @@ async function runDaily(interaction) {
  user.lastDaily = now;
  user.lastDailyDate = today;
  await user.save();
+ await trackAchievementProgress(interaction.guild, interaction.user, "economy_daily_streak", user.dailyStreak, { absolute: true })
+  .catch(error => console.warn("[Achievements] No se pudo registrar economy_daily_streak:", error.message));
  await trackAchievementProgress(interaction.guild, interaction.user, "dailyClaims", 1)
   .catch(error => console.warn("[Achievements] No se pudo registrar daily:", error.message));
  await trackAchievementProgress(interaction.guild, interaction.user, "coinsEarned", totalReward)
