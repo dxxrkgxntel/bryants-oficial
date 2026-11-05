@@ -6,9 +6,9 @@
 
 - Catálogo: **397 logros / 106 métricas únicas**.
 - Conectadas: **42**.
-- Parciales: **21**.
+- Parciales: **23**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **2**.
-- Pendientes de localizar/implementar o validar: **41**.
+- Pendientes de localizar/implementar o validar: **39**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
 ## Matriz
@@ -55,8 +55,8 @@
 | 38 | `first_unlocks` | 4 | **Parcial** | Functions/achievementTracker.js + Functions/firstUnlockAchievementMetric.js + Models/AchievementFirstUnlock.js · al completar un logro, una inserción atómica con índice único por servidor/logro adjudica el primer desbloqueo a un solo usuario; solo ese ganador suma 1 a `first_unlocks`; pendiente validación con MongoDB/Discord real | Pioneer (1); Trailblazer (5) |
 | 39 | `fishing_trips` | 5 | **Pendiente** | sin sistema de pesca identificado | First Catch (1); Angler (25) |
 | 40 | `flags_collected` | 5 | **Pendiente** | sin juego de banderas identificado | Globetrotter (10); Cartographer (50) |
-| 41 | `game_guesses` | 3 | **Pendiente** | Commands/Fun/minijuegos.js; falta contar intentos | Guesser (100); Sharp Eye (1000) |
-| 42 | `games_perfect` | 3 | **Pendiente** | Commands/Fun/minijuegos.js; falta registrar resultado perfecto | Perfectionist (10); Flawless Master (100) |
+| 41 | `game_guesses` | 3 | **Parcial** | Functions/minigameAchievementMetrics.js + Commands/Fun/minijuegos.js · cuenta intentos explícitos de Wordle/Hangman (`guessed`), Flood (`turns`), MatchPairs (`tilesTurned`), Minesweeper (`blocksTurned`), Trivia (`selected`) y FindEmoji (`selectedEmoji`). No atribuye intentos en juegos cuyo evento no expone si hubo entrada del jugador (p. ej. GuessThePokemon/FastType). | Guesser (100); Sharp Eye (1000) |
+| 42 | `games_perfect` | 3 | **Parcial** | Functions/minigameAchievementMetrics.js · registra rondas sin error cuando hay evidencia explícita: Wordle resuelto al primer intento, Hangman sin daño, FindEmoji/Trivia acertados y Minesweeper completado. No extrapola «perfecto» a juegos sin datos de errores o puntuación óptima. | Perfectionist (10); Flawless Master (100) |
 | 43 | `games_played` | 4 | **Parcial** | Commands/Casino/casino.js + Commands/Fun/minijuegos.js + Commands/Fun/miniJuegoMultiplayer.js + Functions/minigameAchievementMetrics.js + Models/MiniGameStats.js · suma los totales persistidos de CasinoStats + MiniGameStats y reporta el snapshot combinado en ambas fuentes; pendiente validación funcional en Discord | Casual Gamer (10); Regular Player (100) |
 | 44 | `games_streak` | 2 | **Parcial** | Models/CasinoStats.js + Commands/Casino/casino.js + Models/MiniGameStats.js + Functions/minigameAchievementMetrics.js · conserva el máximo de racha entre CasinoStats y MiniGameStats; empate/derrota reinicia la racha Fun; no concatena secuencias entre casino y Fun; pendiente validación en Discord | Hot Streak (10); On Fire (25) |
 | 45 | `games_won` | 4 | **Parcial** | Commands/Casino/casino.js + Commands/Fun/minijuegos.js + Commands/Fun/miniJuegoMultiplayer.js + Functions/minigameAchievementMetrics.js · cuenta solo resultados `win`; en multiplayer atribuye la victoria mediante `winner`; empates y timeouts no generan victorias; pendiente validación en Discord | Winner (10); Champion (100) |
