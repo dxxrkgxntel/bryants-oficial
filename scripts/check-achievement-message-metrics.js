@@ -31,7 +31,8 @@ assert.equal(metrics.mentions_made, 1);
 assert.equal(metrics.spoilers_sent, 1);
 assert.equal(metrics.code_blocks_sent, 1);
 
-assert.deepEqual(extractMessageAchievementMetrics(message({ content: "   " })), {});
+assert.deepEqual(extractMessageAchievementMetrics(message({ content: "   " })), { characters_typed: 3 });
+assert.deepEqual(extractMessageAchievementMetrics(message({ content: "" })), {});
 assert.equal(extractMessageAchievementMetrics(message({ content: "https://example.com/a.gif" })).gifs_sent, 1);
 assert.equal(extractMessageAchievementMetrics(message({ content: "https://example.com/a.png" })).links_sent, 1);
 
