@@ -1,0 +1,53 @@
+const PersonalActivity = require("../Models/PersonalActivity");
+
+async function recordDailyActivity(userId, guildId, date = new Date()) {
+    if (!/^\d{17,20}$/.test(String(userId || "")) || !/^\d{17,20}$/.test(String(guildId || ""))) return null;
+    const currentDate = new Date(date);
+    if (!Number.isFinite(currentDate.getTime())) return null;
+
+    const today = currentDate.toISOString().slice(0, 10);
+    const yesterday = new Date(Date.UTC(
+        currentDate.getUTCFullYear(),
+        currentDate.getUTCMonth(),
+        currentDate.getUTCDate() - 1
+    )).toISOString().slice(0, 10);
+
+    return PersonalActivity.findOneAndUpdate(
+        { userId: String(userId), guildId: String(guildId) },
+        [{
+            $set: {
+                userId: String(userId),
+                guildId: String(guildId),
+                daysActive: {
+                    $add: [
+                        { $ifNull: ["$daysActive", 0] },
+                        { $cond: [{ $eq: ["$lastActiveDay", today] }, 0, 1] }
+                    ]
+                },
+                currentStreak: {
+                    $cond: [
+                        { $eq: ["$lastActiveDay", today] },
+                        { $ifNull: ["$currentStreak", 0] },
+                        { $cond: [{ $eq: ["$lastActiveDay", yesterday] }, { $add: [{ $ifNull: ["$currentStreak", 0] }, 1] }, 1] }
+                    ]
+                },
+                bestStreak: {
+                    $max: [
+                        { $ifNull: ["$bestStreak", 0] },
+                        {
+                            $cond: [
+                                { $eq: ["$lastActiveDay", today] },
+                                { $ifNull: ["$currentStreak", 0] },
+                                { $cond: [{ $eq: ["$lastActiveDay", yesterday] }, { $add: [{ $ifNull: ["$currentStreak", 0] }, 1] }, 1] }
+                            ]
+                        }
+                    ]
+                },
+                lastActiveDay: today
+            }
+        }],
+        { upsert: true, new: true }
+    ).lean();
+}
+
+module.exports = { recordDailyActivity };
