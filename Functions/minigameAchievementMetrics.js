@@ -21,6 +21,7 @@ function buildMiniGameStatsPipeline(won) {
     }];
 }
 
+/** Returns only attempts explicitly exposed by Gamecord's terminal game payload. */
 function extractMiniGameGuessCount(result) {
     if (!result || typeof result !== "object") return 0;
     if (Array.isArray(result.guessed)) return result.guessed.length;
