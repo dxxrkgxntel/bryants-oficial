@@ -26,8 +26,8 @@ function calculateActivityTransition(previous = {}, date = new Date()) {
         daysActive,
         currentStreak,
         bestStreak,
-        daysActiveProgressDelta: Math.max(0, daysActive - Number(previous.daysActiveReported ?? previous.daysActive || 0)),
-        bestStreakProgressDelta: Math.max(0, bestStreak - Number(previous.bestStreakReported ?? previous.bestStreak || 0))
+        daysActiveProgressDelta: Math.max(0, daysActive - Number(previous.daysActiveReported ?? previous.daysActive ?? 0)),
+        bestStreakProgressDelta: Math.max(0, bestStreak - Number(previous.bestStreakReported ?? previous.bestStreak ?? 0))
     };
 }
 
