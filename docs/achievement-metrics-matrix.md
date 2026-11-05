@@ -7,8 +7,8 @@
 - Catálogo: **397 logros / 106 métricas únicas**.
 - Conectadas: **34**.
 - Parciales: **4**.
-- Fuente existente o dato calculable, sin conexión al catálogo: **14**.
-- Pendientes de localizar/implementar o validar: **54**.
+- Fuente existente o dato calculable, sin conexión al catálogo: **15**.
+- Pendientes de localizar/implementar o validar: **53**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
 ## Matriz
