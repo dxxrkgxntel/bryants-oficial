@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { achievementComparatorReached } = require("../Functions/achievementRules");
+const { achievementComparatorReached, achievementProgressUpdate } = require("../Functions/achievementRules");
 
 const cases = [
     ["gte accepts equality", 10, 10, "gte", true],
@@ -23,4 +23,8 @@ for (const [name, value, goal, comparator, expected] of cases) {
     assert.equal(achievementComparatorReached(value, goal, comparator), expected, name);
 }
 
-console.log(`Achievement comparator tests passed: ${cases.length} cases.`);
+assert.deepEqual(achievementProgressUpdate(5), { $inc: { progress: 5 } });
+assert.deepEqual(achievementProgressUpdate(10, true), { $max: { progress: 10 } });
+assert.deepEqual(achievementProgressUpdate(1, true), { $max: { progress: 1 } });
+
+console.log(`Achievement comparator tests passed: ${cases.length} cases plus absolute progress checks.`);
