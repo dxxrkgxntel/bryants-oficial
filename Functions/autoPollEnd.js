@@ -7,10 +7,13 @@ require("../Models/Poll");
 
 const progressBar =
 require("./progressBar");
+const mongoose = require("mongoose");
 
 module.exports = async (client) => {
 
     setInterval(async () => {
+
+        if (mongoose.connection.readyState !== 1) return;
 
         try {
 
