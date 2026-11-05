@@ -198,7 +198,7 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
             );
             if (!update.modifiedCount) continue;
             if (points > 0) pointsAwarded = true;
-            if (points > 0 && settings?.seasonEnabled === true && typeof settings.seasonKey === "string" && settings.seasonKey.trim()) {
+            if (settings?.seasonEnabled === true && typeof settings.seasonKey === "string" && settings.seasonKey.trim()) {
                 try {
                     await TrophyScore.updateOne(
                         { guildId: guild.id, userId: user.id, seasonKey: settings.seasonKey.trim().toLowerCase() },
