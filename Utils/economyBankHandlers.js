@@ -42,6 +42,7 @@ async function runDonate(interaction){
  if(u.wallet>=amount)u.wallet-=amount;else{const r=amount-u.wallet;u.wallet=0;u.bank-=r;}
  const b=await bank(interaction.guild.id);b.balance=Number(b.balance||0)+amount;u.bankDonated=Number(u.bankDonated||0)+amount;
  await u.save();await b.save();
+ await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, u);
  const unlocked=[],roles=await BankDonorRole.find({guildId:interaction.guild.id});
  for(const d of roles){if(u.bankDonated<d.requiredAmount)continue;const role=interaction.guild.roles.cache.get(d.roleId);if(role&&!interaction.member.roles.cache.has(role.id)){await interaction.member.roles.add(role).catch(()=>null);if(interaction.member.roles.cache.has(role.id))unlocked.push(role.toString());}}
  let t="💸 Has donado **"+amount.toLocaleString()+" monedas** al banco global.\n\n🏦 **Banco global actual:** "+b.balance.toLocaleString()+" monedas\n📈 **Total donado:** "+u.bankDonated.toLocaleString()+" monedas";
@@ -64,7 +65,7 @@ async function runLoan(interaction){
   if(i.customId==="loan_cancel"){col.stop("cancelled");return interaction.editReply({components:[panel("❌ Solicitud cancelada","No se realizó ningún préstamo.",null,0xFF0000,LOAN_BANNER)]});}
   const fresh=await getUser(interaction.guild.id,interaction.user.id);await updateDebt(fresh);const gb=await bank(interaction.guild.id);
   if(fresh.debt>0||fresh.loanTaken||gb.balance<amount){col.stop("invalid");return interaction.editReply({components:[panel("❌ Préstamo no disponible","Las condiciones cambiaron antes de confirmar.",null,0xFF0000,LOAN_BANNER)]});}
-  fresh.wallet+=amount;fresh.debt=debt;fresh.loanTaken=true;fresh.loanDate=new Date();gb.balance-=amount;await fresh.save();await gb.save();col.stop("confirmed");
+  fresh.wallet+=amount;fresh.debt=debt;fresh.loanTaken=true;fresh.loanDate=new Date();gb.balance-=amount;await fresh.save();await gb.save();await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, fresh);col.stop("confirmed");
   return interaction.editReply({components:[panel("🏦 Préstamo aprobado","💰 Has recibido **"+amount.toLocaleString()+" monedas**.\n\n📉 **Deuda inicial:** "+debt.toLocaleString()+" monedas\n\n⚠️ Usa /economy paydebt para reducirla.",null,0x00FF99,LOAN_BANNER)]});
  });
  col.on("end",async(_,r)=>{if(r==="time")await interaction.editReply({components:[panel("⌛ Tiempo agotado","No confirmaste el préstamo dentro de los 30 segundos.",null,0xFF0000,LOAN_BANNER)]}).catch(()=>{});});
@@ -75,7 +76,7 @@ async function runPayDebt(interaction){
  if(Number(u.wallet||0)+Number(u.bank||0)<amount)return reply(interaction,"❌ Fondos insuficientes","No tienes suficiente dinero para pagar esa cantidad.",0xFF0000,true,PAYDEBT_BANNER);
  if(amount>u.debt)return reply(interaction,"❌ Cantidad inválida","Tu deuda actual es de **"+u.debt.toLocaleString()+" monedas**.",0xFF0000,true,PAYDEBT_BANNER);
  if(u.wallet>=amount)u.wallet-=amount;else{const r=amount-u.wallet;u.wallet=0;u.bank-=r;}u.debt-=amount;b.balance+=amount;
- if(u.debt<=0){u.debt=0;u.loanTaken=false;u.loanDate=null;}await u.save();await b.save();
+ if(u.debt<=0){u.debt=0;u.loanTaken=false;u.loanDate=null;}await u.save();await b.save();await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, u);
  return reply(interaction,"💳 Pago de deuda realizado","💸 Has pagado **"+amount.toLocaleString()+" monedas**.\n\n📉 **Deuda restante:** "+u.debt.toLocaleString()+" monedas\n🏛️ **Estado:** "+(u.debt>0?"🔴 Deuda pendiente":"🟢 Sin deuda")+"\n💵 **Wallet:** "+u.wallet.toLocaleString()+"\n🏦 **Banco:** "+u.bank.toLocaleString()+"\n\n📈 **Intereses:** "+(added>0?"+"+added.toLocaleString()+" monedas":"No se generaron nuevos intereses"),0x00FF99,false,PAYDEBT_BANNER);
 }
 async function runDistribute(interaction){
@@ -91,7 +92,7 @@ async function runDistribute(interaction){
   await i.deferUpdate();
   if(i.customId==="global_cancel"){col.stop("cancelled");return interaction.editReply({components:[panel("❌ Operación cancelada","No se realizó ningún cambio.",null,0xFF0000,DISTRIBUTE_BANNER)]});}
   const gb=await GlobalBank.findOne({guildId:interaction.guild.id});if(!gb||gb.balance<amount){col.stop("insufficient");return interaction.editReply({components:[panel("🏦 Fondos insuficientes","El balance global cambió y ya no hay suficientes monedas.",null,0xFF0000,DISTRIBUTE_BANNER)]});}
-  const user=await getUser(interaction.guild.id,target.id);user.wallet+=amount;gb.balance-=amount;gb.totalDistributed=Number(gb.totalDistributed||0)+amount;await user.save();await gb.save();col.stop("confirmed");
+  const user=await getUser(interaction.guild.id,target.id);user.wallet+=amount;gb.balance-=amount;gb.totalDistributed=Number(gb.totalDistributed||0)+amount;await user.save();await gb.save();await trackEconomyAchievementSnapshot(interaction.guild, target, user);col.stop("confirmed");
   return interaction.editReply({components:[panel("🏦 Dinero distribuido","👤 **Usuario:** "+target+"\n💰 **Cantidad:** "+amount.toLocaleString()+" monedas\n🏦 **Nuevo balance:** "+gb.balance.toLocaleString()+" monedas",null,0x00FF99,DISTRIBUTE_BANNER)]});
  });
  col.on("end",async(_,r)=>{if(r==="time")await interaction.editReply({components:[panel("⌛ Tiempo agotado","No confirmaste la distribución.",null,0xFF0000,DISTRIBUTE_BANNER)]}).catch(()=>{});});
