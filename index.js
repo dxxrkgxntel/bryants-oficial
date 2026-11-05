@@ -5,9 +5,7 @@ const { loadEvents } = require('./Handlers/eventHandler');
 const { loadCommands } = require('./Handlers/commandHandler');
 const { loadInteractions } = require('./Handlers/interactionHandler');
 const { startWatcher } = require('./Handlers/watcher');
-const autoPollEnd = require("./Functions/autoPollEnd");
 const { loadScamDomains } = require("./Utils/antiscam/scamCache");
-const startSocialAlerts = require("./Handlers/socialAlerts");
 
 const client = new Client({
   intents: Object.values(GatewayIntentBits),
@@ -35,8 +33,6 @@ client.login(process.env.DISCORD_TOKEN || config.token).then(() => {
   loadEvents(client);
   loadCommands(client);
   loadInteractions(client);
-  autoPollEnd(client);
-  startSocialAlerts(client);
 
 });
 
