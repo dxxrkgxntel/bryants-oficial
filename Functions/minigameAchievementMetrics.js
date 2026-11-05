@@ -7,7 +7,7 @@ function normalizeMiniGameResult(result) {
     return null;
 }
 
-function buildMiniGameStatsPipeline(won) {
+function buildMiniGameStatsPipeline(won, gameMetrics = {}) {
     const nextStreak = won
         ? { $add: [{ $ifNull: ["$currentStreak", 0] }, 1] }
         : 0;
@@ -16,7 +16,9 @@ function buildMiniGameStatsPipeline(won) {
             totalGames: { $add: [{ $ifNull: ["$totalGames", 0] }, 1] },
             totalWins: { $add: [{ $ifNull: ["$totalWins", 0] }, won ? 1 : 0] },
             currentStreak: nextStreak,
-            bestStreak: { $max: [{ $ifNull: ["$bestStreak", 0] }, nextStreak] }
+            bestStreak: { $max: [{ $ifNull: ["$bestStreak", 0] }, nextStreak] },
+            totalGuesses: { $add: [{ $ifNull: ["$totalGuesses", 0] }, Math.max(0, Math.floor(Number(gameMetrics.guesses) || 0))] },
+            perfectGames: { $add: [{ $ifNull: ["$perfectGames", 0] }, gameMetrics.perfect === true ? 1 : 0] }
         }
     }];
 }
@@ -57,12 +59,14 @@ async function recordPlayerResult(guild, user, outcome, gameMetrics = {}) {
 
     const stats = await MiniGameStats.findOneAndUpdate(
         { guildId: guild.id, userId: user.id },
-        buildMiniGameStatsPipeline(outcome === "win"),
+        buildMiniGameStatsPipeline(outcome === "win", gameMetrics),
         { upsert: true, new: true }
     );
 
     const casinoStats = await CasinoStats.findOne({ guildId: guild.id, userId: user.id }).lean();
     const snapshot = getCasinoAchievementSnapshot(casinoStats, stats);
+    snapshot.game_guesses = Math.max(0, Number(stats.totalGuesses) || 0);
+    snapshot.games_perfect = Math.max(0, Number(stats.perfectGames) || 0);
     const updates = Object.entries(snapshot).map(([metric, value]) =>
         trackAchievementProgress(guild, user, metric, value, { absolute: true })
     );
@@ -99,6 +103,8 @@ async function recordMultiplayerGame(result) {
 module.exports = {
     normalizeMiniGameResult,
     buildMiniGameStatsPipeline,
+    extractMiniGameGuessCount,
+    isPerfectMiniGame,
     recordSinglePlayerGame,
     recordMultiplayerGame
 };
