@@ -401,6 +401,7 @@ async function runRob(interaction) {
  robberData.wallet += amount;
  await targetData.save();
  await robberData.save();
+ await recordEconomySpend({ guild: interaction.guild, user: target, amount, category: "victim_loss", operationId: interaction.id }).catch(error => console.warn("[Economy] No se pudo registrar salida de patrimonio:", error.message));
  await trackEconomyAchievementSnapshot(interaction.guild, target, targetData);
  await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, robberData);
  await RobCooldown.findOneAndUpdate(
