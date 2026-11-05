@@ -5,10 +5,10 @@
 ## Resumen
 
 - Catálogo: **397 logros / 106 métricas únicas**.
-- Conectadas: **25**.
+- Conectadas: **26**.
 - Parciales: **1**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **22**.
-- Pendientes de localizar/implementar o validar: **58**.
+- Pendientes de localizar/implementar o validar: **57**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
 ## Matriz
@@ -112,7 +112,7 @@
 | 95 | `total_points` | 6 | **Dato existente; falta conexión** | Models/TrophyScore.js + Models/UserAchievement.js — Hay puntos de temporada y puntos ganados en logros; definir si global o por temporada. | Point Starter (100); Point Collector (500) |
 | 96 | `total_spent` | 4 | **Pendiente** | Utils/shopHandlers.js + comandos de economía · requiere ledger histórico | Shopper (10000); Big Spender (100000) |
 | 97 | `verified` | 1 | **Pendiente** | flujo de verificación; no se identificó modelo/evento específico | Verified (1) |
-| 98 | `voice_joins` | 3 | **Pendiente** | Events/Logs/personalVoiceStats.js · voiceStateUpdate | Channel Hopper (25); Frequent Flyer (250) |
+| 98 | `voice_joins` | 3 | **Conectada** | Events/Logs/personalVoiceStats.js + Functions/voiceAchievementMetrics.js · cuenta solo entrada real desde fuera de voz | Channel Hopper (25); Frequent Flyer (250) |
 | 99 | `voice_minutes` | 12 | **Parcial** | Events/Logs/personalVoiceStats.js · voiceStateUpdate — Se suma al cerrar/cambiar sesión; reinicio del proceso puede perder sesiones abiertas. | New Here? (5); Warming Up (30) |
 | 100 | `voice_video_minutes` | 6 | **Pendiente** | Events/Logs/personalVoiceStats.js · voiceStateUpdate (cámara) | On Camera (30); Face Reveal (300) |
 | 101 | `votes` | 4 | **Pendiente** | sin integración de votos identificada | Voter (1); Loyal Voter (25) |
@@ -139,7 +139,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 ## Orden recomendado de implementación
 
 1. **Mensajes y actividad:** ya conectados palabras, caracteres, imágenes, GIF, links, stickers, adjuntos, respuestas, menciones, spoilers y bloques de código; las cuatro métricas restantes ya están conectadas: mensajes de 500+ caracteres, madrugada (00:00–05:59), temprano (06:00–08:59) y fines de semana, todo en America/Santo_Domingo. Días activos, racha y creación de hilos también conectados.
-2. **Voz:** joins, streaming, cámara y persistencia de sesiones.
+2. **Voz:** joins conectados; pendientes streaming, cámara y persistencia robusta de sesiones.
 3. **Economía y niveles:** conectar las transacciones confirmadas y decidir semántica de saldos vs acumulados; cubrir XP y niveles tanto por texto como por voz.
 4. **Comunidad:** invitaciones, boosts, cumpleaños, auto-roles, tickets y moderación.
 5. **Juegos y eventos:** casino, minijuegos y sorteos con registros individuales.
