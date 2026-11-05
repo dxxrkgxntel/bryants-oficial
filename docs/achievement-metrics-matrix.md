@@ -5,9 +5,9 @@
 ## Resumen
 
 - Catálogo: **397 logros / 106 métricas únicas**.
-- Conectadas: **32**.
+- Conectadas: **33**.
 - Parciales: **4**.
-- Fuente existente o dato calculable, sin conexión al catálogo: **16**.
+- Fuente existente o dato calculable, sin conexión al catálogo: **15**.
 - Pendientes de localizar/implementar o validar: **54**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
@@ -50,7 +50,7 @@
 | 33 | `daily_streak` | 8 | **Conectada** | Models/PersonalActivity.js + Functions/personalActivity.js — Mejor racha de días activos, independiente de la racha de recompensas económicas. | On a Roll (3); Week Streak (7) |
 | 34 | `days_active` | 6 | **Conectada** | Models/PersonalActivity.js + Functions/personalActivity.js — Cuenta días UTC distintos con al menos un mensaje. | Regular (7); Committed (30) |
 | 35 | `early_bird_messages` | 2 | **Conectada** | Functions/achievementMessageMetrics.js · 06:00–08:59 en America/Santo_Domingo | Early Bird (100); Sunrise Soul (1000) |
-| 36 | `economy_daily_streak` | 3 | **Dato existente; falta conexión** | Models/EconomyUser.js + Commands/Economy/economy.js — Existe dailyStreak en economía. | Daily Devotee (7); Daily Loyalist (30) |
+| 36 | `economy_daily_streak` | 3 | **Conectada** | Commands/Economy/economy.js + Functions/birthdayDates.js · informa la mejor racha diaria económica con fechas de America/Santo_Domingo | Daily Devotee (7); Daily Loyalist (30) |
 | 37 | `embeds_posted` | 2 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Suma embeds adjuntos al mensaje. | Embed Enjoyer (25); Rich Poster (250) |
 | 38 | `first_unlocks` | 4 | **Pendiente** | Functions/achievementTracker.js; falta detección atómica del primer desbloqueo | Pioneer (1); Trailblazer (5) |
 | 39 | `fishing_trips` | 5 | **Pendiente** | sin sistema de pesca identificado | First Catch (1); Angler (25) |
@@ -140,7 +140,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 
 1. **Mensajes y actividad:** ya conectados palabras, caracteres, imágenes, GIF, links, stickers, adjuntos, respuestas, menciones, spoilers y bloques de código; las cuatro métricas restantes ya están conectadas: mensajes de 500+ caracteres, madrugada (00:00–05:59), temprano (06:00–08:59) y fines de semana, todo en America/Santo_Domingo. Días activos, racha y creación de hilos también conectados.
 2. **Voz:** joins conectados; minutos de voz, transmisión y cámara ya tienen sesiones persistentes y quedan parciales hasta validación en Discord real.
-3. **Economía y niveles:** `level` y `prestige_level` conectados; XP parcialmente conectado desde texto, voz y recompensas de logros; pendientes otras fuentes y saldos/transacciones.
+3. **Economía y niveles:** `level`, `prestige_level` y `economy_daily_streak` conectados; XP parcialmente conectado desde texto, voz y recompensas de logros; pendientes otras fuentes y saldos/transacciones.
 4. **Comunidad:** invitaciones, registro y celebraciones de cumpleaños, y boosts conectados; pendientes meses de boost, auto-roles, tickets y moderación.
 5. **Juegos y eventos:** casino, minijuegos y sorteos con registros individuales.
 6. **Temporadas y meta-logros:** primer desbloqueo, podios, victorias y premios semanales/mensuales.
