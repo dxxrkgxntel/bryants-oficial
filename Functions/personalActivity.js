@@ -1,16 +1,14 @@
 const PersonalActivity = require("../Models/PersonalActivity");
+const { activityDayKeys } = require("./activityMath");
 
 async function recordDailyActivity(userId, guildId, date = new Date()) {
     if (!/^\\d{17,20}$/.test(String(userId || "")) || !/^\\d{17,20}$/.test(String(guildId || ""))) return null;
     const currentDate = new Date(date);
     if (!Number.isFinite(currentDate.getTime())) return null;
 
-    const today = currentDate.toISOString().slice(0, 10);
-    const yesterday = new Date(Date.UTC(
-        currentDate.getUTCFullYear(),
-        currentDate.getUTCMonth(),
-        currentDate.getUTCDate() - 1
-    )).toISOString().slice(0, 10);
+    const dayKeys = activityDayKeys(currentDate);
+    if (!dayKeys) return null;
+    const { today, yesterday } = dayKeys;
 
     const daysActive = {
         $add: [
