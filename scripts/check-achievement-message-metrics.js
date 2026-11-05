@@ -35,4 +35,4 @@ assert.deepEqual(extractMessageAchievementMetrics(message({ content: "   " })), 
 assert.equal(extractMessageAchievementMetrics(message({ content: "https://example.com/a.gif" })).gifs_sent, 1);
 assert.equal(extractMessageAchievementMetrics(message({ content: "https://example.com/a.png" })).links_sent, 1);
 
-console.log("Achievement message metric tests passed: 13 assertions.");
+console.log("Achievement message metric tests passed: 14 assertions.");
