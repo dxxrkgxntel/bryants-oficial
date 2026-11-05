@@ -5,6 +5,7 @@ const EconomyUser = require("../../Models/EconomyUser");
 const { getLevelSettings } = require("../../Functions/levelSettings");
 const { sendLevelNotification } = require("../../Functions/levelNotification");
 const { trackAchievementProgress } = require("../../Functions/achievementTracker");
+const { extractMessageAchievementMetrics } = require("../../Functions/achievementMessageMetrics");
 
 function xpNeeded(level) {
     return 5 * (level ** 2) + 50 * level + 100;
@@ -50,6 +51,12 @@ module.exports = {
         if (message.embeds?.length) {
             await trackAchievementProgress(message.guild, message.author, "embeds_posted", message.embeds.length)
                 .catch(error => console.warn("[Achievements] No se pudo registrar embeds_posted:", error.message));
+        }
+
+        const messageMetrics = extractMessageAchievementMetrics(message);
+        for (const [metric, amount] of Object.entries(messageMetrics)) {
+            await trackAchievementProgress(message.guild, message.author, metric, amount)
+                .catch(error => console.warn(`[Achievements] No se pudo registrar ${metric}:`, error.message));
         }
 
         ////////////////////////////////////////
