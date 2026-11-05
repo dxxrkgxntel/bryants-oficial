@@ -176,11 +176,21 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
                 processedEventKeys: String(options.idempotencyKey)
             };
         }
-        const current = await UserAchievement.findOneAndUpdate(
+        let current = await UserAchievement.findOneAndUpdate(
             progressFilter,
             progressUpdate,
             { new: true }
         );
+        if (!current && options?.idempotencyKey) {
+            current = await UserAchievement.findOne({
+                guildId: guild.id,
+                userId: user.id,
+                achievementId: achievement.achievementId,
+                unlockedAt: null,
+                processedEventKeys: String(options.idempotencyKey)
+            });
+            if (current) pointsAwarded = true;
+        }
         if (!current) continue;
         const comparator = achievement.comparator || "gte";
         // Los logros escalonados usan umbrales acumulativos; los comparadores alternativos
@@ -196,15 +206,22 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
                 { _id: current._id, unlockedLevels: { $ne: i + 1 } },
                 { $addToSet: { unlockedLevels: i + 1 }, $inc: { pointsEarned: points } }
             );
-            if (!update.modifiedCount) continue;
-            if (points > 0) pointsAwarded = true;
-            if (settings?.seasonEnabled === true && typeof settings.seasonKey === "string" && settings.seasonKey.trim()) {
+            const levelAlreadyUnlocked = (current.unlockedLevels || []).includes(i + 1);
+            if (settings?.seasonEnabled === true && typeof settings.seasonKey === "string" && settings.seasonKey.trim() && (update.modifiedCount || levelAlreadyUnlocked)) {
+                const seasonKey = settings.seasonKey.trim().toLowerCase();
+                const scoreEventKey = `season:${seasonKey}:achievement:${achievement.achievementId}:level:${i + 1}`;
                 try {
                     await TrophyScore.updateOne(
-                        { guildId: guild.id, userId: user.id, seasonKey: settings.seasonKey.trim().toLowerCase() },
+                        {
+                            guildId: guild.id,
+                            userId: user.id,
+                            seasonKey,
+                            processedEventKeys: { $ne: scoreEventKey }
+                        },
                         {
                             $inc: { points, unlocks: 1 },
-                            $setOnInsert: { guildId: guild.id, userId: user.id, seasonKey: settings.seasonKey.trim().toLowerCase() }
+                            $addToSet: { processedEventKeys: scoreEventKey },
+                            $setOnInsert: { guildId: guild.id, userId: user.id, seasonKey }
                         },
                         { upsert: true }
                     );
@@ -212,6 +229,8 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
                     console.warn("[Trophy Season] No se pudo actualizar el ranking:", error.message);
                 }
             }
+            if (!update.modifiedCount) continue;
+            if (points > 0) pointsAwarded = true;
             const rarity = ["common", "uncommon", "rare", "epic", "legendary", "mythic"].includes(rarityList[i]) ? rarityList[i] : (achievement.rarity || "common");
             const tier = { level: i + 1, goal: goals[i], points, rarity };
             unlocked.push({ ...achievement, level: tier.level, awardedPoints: points, rarity });
