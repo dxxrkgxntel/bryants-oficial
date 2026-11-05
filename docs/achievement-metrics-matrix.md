@@ -6,8 +6,8 @@
 
 - Catálogo: **397 logros / 106 métricas únicas**.
 - Conectadas: **37**.
-- Parciales: **15**.
-- Fuente existente o dato calculable, sin conexión al catálogo: **3**.
+- Parciales: **16**.
+- Fuente existente o dato calculable, sin conexión al catálogo: **2**.
 - Pendientes de localizar/implementar o validar: **51**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
@@ -27,7 +27,7 @@
 | 10 | `bank_balance` | 3 | **Conectada** | Functions/economyAchievementMetrics.js · registra el máximo saldo bancario tras depósitos, retiros, transferencias, préstamos, pagos, donaciones y distribuciones | Banker (100000); Vault Keeper (5000000) |
 | 11 | `birthday_celebrations` | 3 | **Conectada** | Handlers/birthdaySystem.js + Models/Birthday.js · suma solo después de enviar el aviso y guarda el año celebrado para evitar repeticiones | First Birthday (1); Birthday Regular (3) |
 | 12 | `birthday_set` | 1 | **Conectada** | Commands/Utility/birthday.js · suma únicamente el primer registro; editar la fecha no repite el logro | Party Ready (1) |
-| 13 | `boost_months` | 4 | **Dato calculable; falta conexión** | Events/Logs/boostSystem.js · guildMemberUpdate — Calcular meses desde premiumSince; verificar continuidad del boost. | Loyal Booster (3); Boost Legend (12) |
+| 13 | `boost_months` | 4 | **Parcial** | Models/BoostAchievementStats.js + Functions/boostAchievementMetrics.js + Events/Guild/achievementMemberUpdate.js + Events/Levels/messageCreate2.js · calcula meses calendario completos desde `premiumSince`, conserva el máximo de una racha continua y aprovecha `oldMember.premiumSince` al dejar de impulsar; se reevalúa en cambios de miembro y mensajes mientras impulsa; pendiente validación con Discord real | Loyal Booster (3); Boost Legend (12) |
 | 14 | `boosts` | 1 | **Conectada** | Events/Logs/boostSystem.js · cuenta el inicio de un boost tras detectar premiumSince por primera vez | Supporter (1) |
 | 15 | `bot_mentions` | 3 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Cuenta menciones al bot. | Hey Bot (10); Bot Buddy (100) |
 | 16 | `business_earnings` | 4 | **Pendiente** | sin modelo de negocios identificado | Small Business (100000); Business Owner (1000000) |
@@ -134,7 +134,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 - `total_earned` y `total_spent` requieren historial transaccional; no deben inferirse del saldo actual.
 - `daily_streak` de actividad y `economy_daily_streak` son conceptos diferentes.
 - `games_played`, `games_won` y `games_streak` se actualizan desde casino y minijuegos Fun con fuentes separadas. Los minijuegos singleplayer y multiplayer persisten contadores y rachas en `MiniGameStats`; se requiere validación funcional en Discord para cerrar las tres métricas. Los timeouts multijugador no cuentan como partida finalizada; los empates cuentan como partida y reinician la racha.
-- `first_unlocks` adjudica una sola vez cada logro por servidor mediante un índice único; `achievements_unlocked` suma una vez cada transición a logro completado, sin contar tiers como logros separados. `account_age_days` y `membership_days` se actualizan al entrar y en la actividad del miembro; `roles_count` se actualiza al entrar, cambiar roles y enviar mensajes; `items_owned` se calcula después de una compra confirmada sobre la mochila persistida. La validación en Discord real sigue pendiente.
+- `first_unlocks` adjudica una sola vez cada logro por servidor mediante un índice único; `achievements_unlocked` suma una vez cada transición a logro completado, sin contar tiers como logros separados. `account_age_days` y `membership_days` se actualizan al entrar y en la actividad del miembro; `roles_count` se actualiza al entrar, cambiar roles y enviar mensajes; `items_owned` se calcula después de una compra confirmada sobre la mochila persistida; `boost_months` conserva el máximo de meses calendario completos de una racha continua de impulso. La validación en Discord real sigue pendiente.
 - Los tickets actuales son tickets del centro de soporte web, no tickets de soporte abiertos por miembros dentro de sus propios servidores; no se conectan a métricas de logros hasta resolver esa diferencia de alcance y atribución.
 - Las métricas de clanes, negocios, propiedades, inversiones, pesca y minería no tienen modelos correspondientes en el árbol de modelos revisado; deben declararse no aplicables o implementar primero esos sistemas, nunca simular progreso.
 
