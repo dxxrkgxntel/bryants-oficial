@@ -6,6 +6,7 @@ const levelSchema = new Schema({
     xp: { type: Number, default: 0 },
     level: { type: Number, default: 0 },
     prestige: { type: Number, default: 0 },
+    achievementLevelReported: { type: Number, default: 0 },
 });
 
 levelSchema.index({ guildId: 1, level: -1, xp: -1, prestige: -1 });
