@@ -1,6 +1,6 @@
 # Matriz de auditoría de las 106 métricas de logros — Bryvex Bot
 
-> Rama: `feature/notoq-metrics-next`. Estado basado en evidencia localizada en código y modelos. «Pendiente» significa que no hay llamada confirmada al tracker, aunque pueda existir una fuente de datos aprovechable.
+> Rama: `feature/achievement-moderation-metrics`. Estado basado en evidencia localizada en código y modelos. «Pendiente» significa que no hay llamada confirmada al tracker, aunque pueda existir una fuente de datos aprovechable.
 
 ## Resumen
 
