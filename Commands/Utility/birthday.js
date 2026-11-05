@@ -11,6 +11,7 @@ require("../../Models/Birthday");
 const BirthdayConfig =
 require("../../Models/BirthdayConfig");
 const { buildBirthdayNotification } = require("../../Functions/birthdayNotification");
+const { trackAchievementProgress } = require("../../Functions/achievementTracker");
 
 module.exports = {
 
@@ -366,6 +367,8 @@ module.exports = {
 
             //////////////////////////////////////////////////
 
+            const isFirstRegistration = !data;
+
             if (!data) {
 
                 data =
@@ -396,6 +399,8 @@ module.exports = {
             //////////////////////////////////////////////////
 
             await data.save();
+            if (isFirstRegistration) await trackAchievementProgress(interaction.guild, interaction.user, "birthday_set", 1)
+                .catch(error => console.warn("[Achievements] No se pudo registrar birthday_set:", error.message));
 
             //////////////////////////////////////////////////
 
