@@ -36,6 +36,21 @@ module.exports = {
 
         await trackAchievementProgress(message.guild, message.author, "messages", 1)
             .catch(error => console.warn("[Achievements] No se pudo registrar el mensaje:", error.message));
+        await trackAchievementProgress(message.guild, message.author, "messages_sent", 1)
+            .catch(error => console.warn("[Achievements] No se pudo registrar messages_sent:", error.message));
+        if (message.mentions.users.has(message.client.user.id)) {
+            await trackAchievementProgress(message.guild, message.author, "bot_mentions", 1)
+                .catch(error => console.warn("[Achievements] No se pudo registrar bot_mentions:", error.message));
+        }
+        const customEmojiCount = (message.content.match(/<a?:[a-zA-Z0-9_]+:\d{17,20}>/g) || []).length;
+        if (customEmojiCount) {
+            await trackAchievementProgress(message.guild, message.author, "custom_emojis_used", customEmojiCount)
+                .catch(error => console.warn("[Achievements] No se pudo registrar custom_emojis_used:", error.message));
+        }
+        if (message.embeds?.length) {
+            await trackAchievementProgress(message.guild, message.author, "embeds_posted", message.embeds.length)
+                .catch(error => console.warn("[Achievements] No se pudo registrar embeds_posted:", error.message));
+        }
 
         ////////////////////////////////////////
         // COOLDOWN POR SERVER + USER
