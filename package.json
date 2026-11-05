@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node .",
     "start:dashboard": "node dashboard/server.js",
-    "test": "node scripts/check-syntax.js && node scripts/check-dashboard-security.js && node scripts/check-achievement-engine.js && node scripts/check-achievement-message-metrics.js && node scripts/check-personal-activity.js && node scripts/check-achievement-matrix.js"
+    "test": "node scripts/check-syntax.js && node scripts/check-dashboard-security.js && node scripts/check-achievement-engine.js && node scripts/check-achievement-message-metrics.js && node scripts/check-personal-activity.js && node scripts/check-achievement-matrix.js && node scripts/check-voice-achievement-metrics.js"
   },
   "keywords": [],
   "author": "",
