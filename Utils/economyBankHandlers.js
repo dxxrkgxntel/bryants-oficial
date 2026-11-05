@@ -8,6 +8,7 @@ const updateDebt = require("./updateDebt");
 const GlobalBank = require("../Models/GlobalBank");
 const BankDonorRole = require("../Models/BankDonorRoles");
 const { trackEconomyAchievementSnapshot } = require("../Functions/economyAchievementMetrics");
+const { recordEconomySpend } = require("../Functions/economySpendMetrics");
 
 const BANK_BANNER = "https://i.imgur.com/joAe57D.png";
 const DONATE_BANNER = "https://i.imgur.com/joAe57D.png";
@@ -43,6 +44,7 @@ async function runDonate(interaction){
  if(u.wallet>=amount)u.wallet-=amount;else{const r=amount-u.wallet;u.wallet=0;u.bank-=r;}
  const b=await bank(interaction.guild.id);b.balance=Number(b.balance||0)+amount;u.bankDonated=Number(u.bankDonated||0)+amount;
  await u.save();await b.save();
+ await recordEconomySpend({ guild: interaction.guild, user: interaction.user, amount, category: "global_donation", operationId: interaction.id }).catch(error => console.warn("[Economy] No se pudo registrar donación:", error.message));
  await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, u);
  const unlocked=[],roles=await BankDonorRole.find({guildId:interaction.guild.id});
  for(const d of roles){if(u.bankDonated<d.requiredAmount)continue;const role=interaction.guild.roles.cache.get(d.roleId);if(role&&!interaction.member.roles.cache.has(role.id)){await interaction.member.roles.add(role).catch(()=>null);if(interaction.member.roles.cache.has(role.id))unlocked.push(role.toString());}}
@@ -77,7 +79,9 @@ async function runPayDebt(interaction){
  if(Number(u.wallet||0)+Number(u.bank||0)<amount)return reply(interaction,"❌ Fondos insuficientes","No tienes suficiente dinero para pagar esa cantidad.",0xFF0000,true,PAYDEBT_BANNER);
  if(amount>u.debt)return reply(interaction,"❌ Cantidad inválida","Tu deuda actual es de **"+u.debt.toLocaleString()+" monedas**.",0xFF0000,true,PAYDEBT_BANNER);
  if(u.wallet>=amount)u.wallet-=amount;else{const r=amount-u.wallet;u.wallet=0;u.bank-=r;}u.debt-=amount;b.balance+=amount;
- if(u.debt<=0){u.debt=0;u.loanTaken=false;u.loanDate=null;}await u.save();await b.save();await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, u);
+ if(u.debt<=0){u.debt=0;u.loanTaken=false;u.loanDate=null;}await u.save();await b.save();
+ await recordEconomySpend({ guild: interaction.guild, user: interaction.user, amount, category: "debt_payment", operationId: interaction.id }).catch(error => console.warn("[Economy] No se pudo registrar pago de deuda:", error.message));
+ await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, u);
  return reply(interaction,"💳 Pago de deuda realizado","💸 Has pagado **"+amount.toLocaleString()+" monedas**.\n\n📉 **Deuda restante:** "+u.debt.toLocaleString()+" monedas\n🏛️ **Estado:** "+(u.debt>0?"🔴 Deuda pendiente":"🟢 Sin deuda")+"\n💵 **Wallet:** "+u.wallet.toLocaleString()+"\n🏦 **Banco:** "+u.bank.toLocaleString()+"\n\n📈 **Intereses:** "+(added>0?"+"+added.toLocaleString()+" monedas":"No se generaron nuevos intereses"),0x00FF99,false,PAYDEBT_BANNER);
 }
 async function runDistribute(interaction){
