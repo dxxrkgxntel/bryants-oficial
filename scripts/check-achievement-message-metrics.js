@@ -62,7 +62,7 @@ assert.equal(weekendMetrics.weekend_messages, 1);
 
 const weekdayMetrics = extractMessageAchievementMetrics(message({
     content: "viernes",
-    createdAt: new Date("2026-11-07T04:00:00.000Z")
+    createdAt: new Date("2026-11-07T03:00:00.000Z")
 }));
 assert.equal(weekdayMetrics.weekend_messages, undefined);
 
