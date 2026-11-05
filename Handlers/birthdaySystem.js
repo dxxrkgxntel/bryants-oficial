@@ -11,6 +11,8 @@ const EconomyUser =
     require("../Models/EconomyUser");
 
 const { buildBirthdayNotification, renderBirthdayReminder } = require("../Functions/birthdayNotification");
+const { trackAchievementProgress } = require("../Functions/achievementTracker");
+const { getZonedDateParts, getNextZonedDateParts } = require("../Functions/birthdayDates");
 
 module.exports = (client) => {
 
@@ -35,36 +37,18 @@ module.exports = (client) => {
 
                 //////////////////////////////////////////////////
 
-                const day =
-                    now.getDate();
-
-                //////////////////////////////////////////////////
-
-                const month =
-                    now.getMonth() + 1;
+                const today = getZonedDateParts(now);
+                const day = today.day;
+                const month = today.month;
+                const year = today.year;
 
                 //////////////////////////////////////////////////
                 // TOMORROW
                 //////////////////////////////////////////////////
 
-                const tomorrow =
-                    new Date();
-
-                //////////////////////////////////////////////////
-
-                tomorrow.setDate(
-                    tomorrow.getDate() + 1
-                );
-
-                //////////////////////////////////////////////////
-
-                const tomorrowDay =
-                    tomorrow.getDate();
-
-                //////////////////////////////////////////////////
-
-                const tomorrowMonth =
-                    tomorrow.getMonth() + 1;
+                const tomorrow = getNextZonedDateParts(now);
+                const tomorrowDay = tomorrow.day;
+                const tomorrowMonth = tomorrow.month;
 
                 //////////////////////////////////////////////////
                 // TODAY BIRTHDAYS
@@ -159,6 +143,8 @@ module.exports = (client) => {
                         if (!channel)
                             continue;
 
+                        if (data.lastCelebratedYear === year) continue;
+
                         //////////////////////////////////////////////////
                         // ROLE
                         //////////////////////////////////////////////////
@@ -212,7 +198,15 @@ module.exports = (client) => {
                         //////////////////////////////////////////////////
 
                         const payload = buildBirthdayNotification(config, guild, member, reward);
-                        if (payload) await channel.send(payload);
+                        if (payload) {
+                            await channel.send(payload);
+                            await Birthday.updateOne(
+                                { _id: data._id, lastCelebratedYear: { $ne: year } },
+                                { $set: { lastCelebratedYear: year } }
+                            );
+                            await trackAchievementProgress(guild, member.user, "birthday_celebrations", 1)
+                                .catch(error => console.warn("[Achievements] No se pudo registrar birthday_celebrations:", error.message));
+                        }
 
                     } catch (err) {
 
