@@ -59,7 +59,7 @@ module.exports = {
             .setDescription("Configura los roles que recibirá el podio")
             .addRoleOption(option => option.setName("primero").setDescription("Rol para el primer lugar"))
             .addRoleOption(option => option.setName("segundo").setDescription("Rol para el segundo lugar"))
-            .addRoleOption(option => option.setName("tercero").setDescription("Rol para el tercer lugar))),
+            .addRoleOption(option => option.setName("tercero").setDescription("Rol para el tercer lugar"))),
 
     async execute(interaction) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
