@@ -6,8 +6,8 @@
 
 - Catálogo: **397 logros / 106 métricas únicas**.
 - Conectadas: **37**.
-- Parciales: **10**.
-- Fuente existente o dato calculable, sin conexión al catálogo: **8**.
+- Parciales: **11**.
+- Fuente existente o dato calculable, sin conexión al catálogo: **7**.
 - Pendientes de localizar/implementar o validar: **51**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
@@ -16,7 +16,7 @@
 | # | Métrica | Logros | Estado | Evidencia actual / siguiente punto de integración | Ejemplos |
 |---:|---|---:|---|---|---|
 | 1 | `account_age_days` | 2 | **Dato calculable; falta conexión** | Discord User.createdAt + Events/Guild/sistemaDeIngreso.js — Calcular edad de cuenta; respetar mínimo de edad de cuenta del sistema. | Discord Veteran (1825); Discord Ancient (3650) |
-| 2 | `achievements_unlocked` | 8 | **Dato existente; falta conexión** | Models/UserAchievement.js — Se puede contar desbloqueos, excluyendo niveles repetidos del mismo logro según definición. | Collector (5); Achiever (10) |
+| 2 | `achievements_unlocked` | 8 | **Parcial** | Models/UserAchievement.js + Functions/achievementTracker.js + Functions/achievementCompletionMetrics.js · suma una vez por logro cuando se produce la transición atómica a `unlockedAt`; no cuenta niveles repetidos como logros separados; pendiente validación con MongoDB/Discord real | Collector (5); Achiever (10) |
 | 3 | `activity_awards` | 3 | **Pendiente** | sistema de temporada/premios; no se localizó adjudicación por usuario | Top Member (1); Community Champion (5) |
 | 4 | `activity_coins` | 2 | **Pendiente** | sin sistema de pesca/minería identificado | Gatherer (100000); Resource Baron (1000000) |
 | 5 | `ai_conversations` | 2 | **Pendiente** | asistente IA/dashboard; falta identificar inicio de conversación | Conversationalist (10); Deep Talker (100) |
@@ -134,7 +134,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 - `total_earned` y `total_spent` requieren historial transaccional; no deben inferirse del saldo actual.
 - `daily_streak` de actividad y `economy_daily_streak` son conceptos diferentes.
 - `games_played`, `games_won` y `games_streak` se actualizan desde casino y minijuegos Fun con fuentes separadas. Los minijuegos singleplayer y multiplayer persisten contadores y rachas en `MiniGameStats`; se requiere validación funcional en Discord para cerrar las tres métricas. Los timeouts multijugador no cuentan como partida finalizada; los empates cuentan como partida y reinician la racha.
-- `first_unlocks` adjudica una sola vez cada logro por servidor mediante un índice único; la validación concurrente y en MongoDB/Discord real sigue pendiente.
+- `first_unlocks` adjudica una sola vez cada logro por servidor mediante un índice único; `achievements_unlocked` suma una vez cada transición a logro completado, sin contar tiers como logros separados. La validación concurrente y en MongoDB/Discord real sigue pendiente.
 - Las métricas de clanes, negocios, propiedades, inversiones, pesca y minería no tienen modelos correspondientes en el árbol de modelos revisado; deben declararse no aplicables o implementar primero esos sistemas, nunca simular progreso.
 
 ## Orden recomendado de implementación
