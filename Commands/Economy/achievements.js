@@ -24,7 +24,11 @@ module.exports = {
         const progressById = new Map(progress.map(entry => [entry.achievementId, entry]));
         const unlocked = definitions.filter(item => progressById.get(item.achievementId)?.unlockedAt);
         const visibleDefinitions = definitions.filter(item => !item.secret || progressById.get(item.achievementId)?.unlockedAt);
-        const lines = visibleDefinitions.slice(0, 20).map(item => {
+        const pageSize = 10;
+        const totalPages = Math.max(1, Math.ceil(visibleDefinitions.length / pageSize));
+        const page = Math.min(interaction.options.getInteger("pagina") || 1, totalPages);
+        const pageItems = visibleDefinitions.slice((page - 1) * pageSize, page * pageSize);
+        const lines = pageItems.map(item => {
             const entry = progressById.get(item.achievementId);
             const done = Boolean(entry?.unlockedAt);
             const current = Math.min(item.goal, entry?.progress || 0);
@@ -34,7 +38,7 @@ module.exports = {
         const container = new ContainerBuilder().setAccentColor(0x8A2BE2);
         container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## 🏆 Logros de ${target.username}`));
         container.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small));
-        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`Desbloqueados: **${unlocked.length}/${definitions.length}**\n\n${lines.join("\n\n")}${visibleDefinitions.length > 20 ? "\n\n_Muestra limitada a los primeros 20 logros. Configura categorías para organizar el catálogo._" : ""}`));
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`Desbloqueados: **${unlocked.length}/${definitions.length}** · Página **${page}/${totalPages}**\n\n${lines.join("\n\n")}${totalPages > 1 ? "\n\n_Usa la opción pagina para consultar el resto del catálogo._" : ""}`));
         return interaction.editReply({ flags: MessageFlags.IsComponentsV2, components: [container] });
     }
 };
