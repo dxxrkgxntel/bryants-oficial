@@ -147,6 +147,9 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
                     { $inc: { xp: achievement.rewardXP }, $setOnInsert: { guildId: guild.id, userId: user.id } },
                     { upsert: true, new: true, setDefaultsOnInsert: true }
                 );
+                if (metric !== "xp") {
+                    await trackAchievementProgress(guild, user, "xp", achievement.rewardXP);
+                }
             }
             if (achievement.rewardRoleIds?.length || achievement.rewardRemoveRoleIds?.length) {
                 const member = await guild.members.fetch(user.id).catch(() => null);
