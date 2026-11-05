@@ -11,6 +11,7 @@ const EconomyUser = require("../../Models/EconomyUser");
 const CasinoStats = require("../../Models/CasinoStats");
 const getUser = require("../../Utils/getUser");
 const getConfig = require("../../Utils/getConfig");
+const { trackEconomyAchievementSnapshot } = require("../../Functions/economyAchievementMetrics");
 
 const activeBets = new Set();
 const activeGambles = new Set();
