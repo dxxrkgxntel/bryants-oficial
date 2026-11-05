@@ -179,8 +179,13 @@ module.exports = {
                 });
 
                 Game.startGame();
-                Game.on('gameOver', result => {
-                    console.log(result);  // =>  { result... }
+                Game.on('gameOver', async result => {
+                    console.log(result);
+                    await recordMultiplayerGame({ ...result, guild: interaction.guild });
+                    const participants = [result.player, result.opponent].filter(player => player?.id && !player.bot);
+                    await Promise.all(participants.map(player =>
+                        questHandler(player.id, interaction.guild.id, "games", 1)
+                    ));
                 })
             }
                 break;
