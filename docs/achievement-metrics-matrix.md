@@ -6,8 +6,8 @@
 
 - Catálogo: **397 logros / 106 métricas únicas**.
 - Conectadas: **37**.
-- Parciales: **11**.
-- Fuente existente o dato calculable, sin conexión al catálogo: **7**.
+- Parciales: **14**.
+- Fuente existente o dato calculable, sin conexión al catálogo: **4**.
 - Pendientes de localizar/implementar o validar: **51**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
@@ -15,7 +15,7 @@
 
 | # | Métrica | Logros | Estado | Evidencia actual / siguiente punto de integración | Ejemplos |
 |---:|---|---:|---|---|---|
-| 1 | `account_age_days` | 2 | **Dato calculable; falta conexión** | Discord User.createdAt + Events/Guild/sistemaDeIngreso.js — Calcular edad de cuenta; respetar mínimo de edad de cuenta del sistema. | Discord Veteran (1825); Discord Ancient (3650) |
+| 1 | `account_age_days` | 2 | **Parcial** | Functions/memberAchievementMetrics.js + Events/Guild/sistemaDeIngreso.js + Events/Levels/messageCreate2.js · calcula días completos desde `user.createdAt` y reporta progreso absoluto al entrar o enviar mensajes; pendiente validación en Discord real | Discord Veteran (1825); Discord Ancient (3650) |
 | 2 | `achievements_unlocked` | 8 | **Parcial** | Models/UserAchievement.js + Functions/achievementTracker.js + Functions/achievementCompletionMetrics.js · suma una vez por logro cuando se produce la transición atómica a `unlockedAt`; no cuenta niveles repetidos como logros separados; pendiente validación con MongoDB/Discord real | Collector (5); Achiever (10) |
 | 3 | `activity_awards` | 3 | **Pendiente** | sistema de temporada/premios; no se localizó adjudicación por usuario | Top Member (1); Community Champion (5) |
 | 4 | `activity_coins` | 2 | **Pendiente** | sin sistema de pesca/minería identificado | Gatherer (100000); Resource Baron (1000000) |
@@ -74,7 +74,7 @@
 | 57 | `level` | 11 | **Conectada** | Models/Level.js + Events/Levels/messageCreate2.js + Events/Levels/voiceXp.js · reporta el máximo nivel alcanzado con actualización absoluta y evita repetir reportes | Rookie (5); Apprentice (10) |
 | 58 | `links_sent` | 2 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · enlaces HTTP(S) escritos en el contenido | Link Dropper (50); Web Weaver (500) |
 | 59 | `long_messages` | 3 | **Conectada** | Functions/achievementMessageMetrics.js · mensaje de 500 caracteres o más | Essayist (10); Wall of Text (100) |
-| 60 | `membership_days` | 9 | **Dato calculable; falta conexión** | Events/Guild/sistemaDeIngreso.js + member.joinedAt — Calcular antigüedad de membresía con joinedAt; necesita actualización periódica o cálculo al evaluar. | Fresh Face (7); Familiar Face (30) |
+| 60 | `membership_days` | 9 | **Parcial** | Functions/memberAchievementMetrics.js + Events/Guild/sistemaDeIngreso.js + Events/Guild/achievementMemberUpdate.js + Events/Levels/messageCreate2.js · calcula días completos desde `member.joinedAt` y reporta progreso absoluto al entrar, cambiar el miembro o enviar mensajes; los inactivos se ponen al día en su siguiente evento; pendiente validación en Discord real | Fresh Face (7); Familiar Face (30) |
 | 61 | `mentions_made` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · menciones a usuarios distintos del autor | Name Dropper (100); Social Pinger (1000) |
 | 62 | `messages_sent` | 13 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Suma mensajes de usuarios. | Casual Typer (100); Chatterbox (500) |
 | 63 | `messages_starred` | 3 | **Pendiente** | sin sistema Starboard identificado | On the Board (1); Board Regular (10) |
@@ -93,7 +93,7 @@
 | 76 | `referrals` | 3 | **Pendiente** | Models/DashboardReferral.js; verificar si la referencia pertenece a un miembro/servidor | Referrer (1); Brand Ambassador (5) |
 | 77 | `replies_sent` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · mensajes con referencia a otro mensaje | Replier (100); Conversationalist (1000) |
 | 78 | `reviews_written` | 5 | **Pendiente** | sin sistema de reseñas identificado | Reviewer (1); Critic (10) |
-| 79 | `roles_count` | 2 | **Dato calculable; falta conexión** | Discord GuildMember.roles.cache — Contar roles del miembro excluyendo @everyone y roles gestionados si procede. | Role Collector (10); Role Hoarder (25) |
+| 79 | `roles_count` | 2 | **Parcial** | Functions/memberAchievementMetrics.js + Events/Guild/achievementMemberUpdate.js + Events/Levels/messageCreate2.js · cuenta roles asignados, excluye `@everyone` y roles gestionados; guarda el máximo alcanzado mediante progreso absoluto; pendiente validación en Discord real | Role Collector (10); Role Hoarder (25) |
 | 80 | `season_podiums` | 2 | **Pendiente** | Models/TrophyScore.js + TrophySettings; falta cálculo de podio | Podium Finish (1); Podium Regular (5) |
 | 81 | `season_wins` | 3 | **Pendiente** | Models/TrophyScore.js + TrophySettings; falta cierre y adjudicación de temporadas | Season Champion (1); Title Defender (3) |
 | 82 | `self_roles_taken` | 3 | **Pendiente** | Utils/SetupHandlers/autoRoleUB.js + Events/Interaction/* | Self-Made (1); Role Picker (10) |
@@ -134,7 +134,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 - `total_earned` y `total_spent` requieren historial transaccional; no deben inferirse del saldo actual.
 - `daily_streak` de actividad y `economy_daily_streak` son conceptos diferentes.
 - `games_played`, `games_won` y `games_streak` se actualizan desde casino y minijuegos Fun con fuentes separadas. Los minijuegos singleplayer y multiplayer persisten contadores y rachas en `MiniGameStats`; se requiere validación funcional en Discord para cerrar las tres métricas. Los timeouts multijugador no cuentan como partida finalizada; los empates cuentan como partida y reinician la racha.
-- `first_unlocks` adjudica una sola vez cada logro por servidor mediante un índice único; `achievements_unlocked` suma una vez cada transición a logro completado, sin contar tiers como logros separados. La validación concurrente y en MongoDB/Discord real sigue pendiente.
+- `first_unlocks` adjudica una sola vez cada logro por servidor mediante un índice único; `achievements_unlocked` suma una vez cada transición a logro completado, sin contar tiers como logros separados. `account_age_days` y `membership_days` se actualizan al entrar y en la actividad del miembro; `roles_count` se actualiza al entrar, cambiar roles y enviar mensajes. La validación en Discord real sigue pendiente.
 - Las métricas de clanes, negocios, propiedades, inversiones, pesca y minería no tienen modelos correspondientes en el árbol de modelos revisado; deben declararse no aplicables o implementar primero esos sistemas, nunca simular progreso.
 
 ## Orden recomendado de implementación
