@@ -92,11 +92,15 @@ async function ensureDefaultAchievements(guildId) {
     return pending;
 }
 
-async function getTotalAchievementPoints(guildId, userId) {
-    const [result] = await UserAchievement.aggregate([
+function buildTotalAchievementPointsPipeline(guildId, userId) {
+    return [
         { $match: { guildId, userId } },
         { $group: { _id: null, totalPoints: { $sum: "$pointsEarned" } } }
-    ]);
+    ];
+}
+
+async function getTotalAchievementPoints(guildId, userId) {
+    const [result] = await UserAchievement.aggregate(buildTotalAchievementPointsPipeline(guildId, userId));
     return Math.max(0, Number(result?.totalPoints) || 0);
 }
 
@@ -130,6 +134,7 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
     if (!definitions.length) return [];
     const multiplier = Math.max(0, Math.min(100, Number(settings?.pointsMultiplier ?? 1)));
     const unlocked = [];
+    let pointsAwarded = false;
     for (const achievement of definitions) {
         if (!await hasAchievementPrerequisites(guild.id, user.id, achievement.prerequisiteIds)) continue;
         try {
@@ -165,6 +170,7 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
                 { $addToSet: { unlockedLevels: i + 1 }, $inc: { pointsEarned: points } }
             );
             if (!update.modifiedCount) continue;
+            if (points > 0) pointsAwarded = true;
             const rarity = ["common", "uncommon", "rare", "epic", "legendary", "mythic"].includes(rarityList[i]) ? rarityList[i] : (achievement.rarity || "common");
             const tier = { level: i + 1, goal: goals[i], points, rarity };
             unlocked.push({ ...achievement, level: tier.level, awardedPoints: points, rarity });
@@ -228,7 +234,7 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
             await UserAchievement.updateOne({ _id: current._id }, { $set: { progress: goals[goals.length - 1] } });
         }
     }
-    if (options?.skipTotalPointsSync !== true) {
+    if (pointsAwarded && metric !== "total_points" && options?.skipTotalPointsSync !== true) {
         await syncTotalAchievementPoints(guild, user);
     }
     return unlocked;
@@ -240,6 +246,7 @@ module.exports = {
     achievementComparatorReached,
     achievementProgressUpdate,
     hasAchievementPrerequisites,
+    buildTotalAchievementPointsPipeline,
     getTotalAchievementPoints,
     syncTotalAchievementPoints
 };
