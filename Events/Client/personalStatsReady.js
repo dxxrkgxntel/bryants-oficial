@@ -1,4 +1,3 @@
-const { voiceSessions } = require("../Logs/personalVoiceStats");
 const { presenceSessions } = require("../Logs/personalPresenceStats");
 
 module.exports = {
@@ -10,10 +9,6 @@ module.exports = {
             for (const state of guild.voiceStates.cache.values()) {
                 const member = state.member;
                 if (state.channelId && member && !member.user.bot) {
-                    voiceSessions.set(`${guild.id}:${member.id}`, {
-                        channelId: state.channelId,
-                        startedAt: now
-                    });
                 }
             }
             for (const member of guild.members.cache.values()) {
