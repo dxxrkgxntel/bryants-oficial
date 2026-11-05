@@ -5,10 +5,10 @@
 ## Resumen
 
 - Catálogo: **397 logros / 106 métricas únicas**.
-- Conectadas: **39**.
+- Conectadas: **42**.
 - Parciales: **21**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **2**.
-- Pendientes de localizar/implementar o validar: **44**.
+- Pendientes de localizar/implementar o validar: **41**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
 ## Matriz
@@ -43,9 +43,9 @@
 | 26 | `code_blocks_sent` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · cuenta bloques cercados de código | Coder (10); Developer (100) |
 | 27 | `coins` | 7 | **Conectada** | Functions/economyAchievementMetrics.js + Commands/Administration/weeklydrop.js + Functions/questHandler.js · máximo saldo simultáneo de wallet; incluye drops semanales, recompensas de misiones y operaciones económicas principales | Piggy Bank (1000); Coin Stacker (10000) |
 | 28 | `commands_used` | 4 | **Parcial** | Events/Interaction/interactionCreate.js + Events/Messages/messageCreate.js + Functions/commandAchievementMetrics.js · registra comandos slash y prefijo solo después de una ejecución sin error; excluye comandos bloqueados, inexistentes y rechazados por cooldown; pendiente CI y validación con Discord real | Command Curious (25); Power User (250) |
-| 29 | `counting_correct` | 6 | **Pendiente** | Localizar evento/comando responsable y conectar en el punto de éxito. | Counter (10); Number Cruncher (100) |
-| 30 | `counting_highest` | 4 | **Pendiente** | Localizar evento/comando responsable y conectar en el punto de éxito. | Hundred Club (100); Thousand Reach (1000) |
-| 31 | `counting_streak` | 4 | **Pendiente** | Localizar evento/comando responsable y conectar en el punto de éxito. | Steady Counter (25); Focused Counter (100) |
+| 29 | `counting_correct` | 6 | **Conectada** | Models/CountingConfig.js + Events/Levels/countingMessage.js + Functions/countingGame.js · suma cada número correcto confirmado por actualización atómica del estado del canal; los mensajes simultáneos no duplican el avance. | Counter (10); Number Cruncher (100) |
+| 30 | `counting_highest` | 4 | **Conectada** | Events/Levels/countingMessage.js · reporta como progreso absoluto el mayor número que cada usuario haya contado correctamente; el récord global del canal también se conserva en CountingConfig. | Hundred Club (100); Thousand Reach (1000) |
+| 31 | `counting_streak` | 4 | **Conectada** | Models/CountingConfig.js + Events/Levels/countingMessage.js · mantiene la racha compartida de números consecutivos válidos y reporta progreso absoluto a cada participante en su turno; cualquier error reinicia la racha. | Steady Counter (25); Focused Counter (100) |
 | 32 | `custom_emojis_used` | 7 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Cuenta cada emoji personalizado del contenido. | Emoji User (50); Emoji Fan (500) |
 | 33 | `daily_streak` | 8 | **Conectada** | Models/PersonalActivity.js + Functions/personalActivity.js — Mejor racha de días activos, independiente de la racha de recompensas económicas. | On a Roll (3); Week Streak (7) |
 | 34 | `days_active` | 6 | **Conectada** | Models/PersonalActivity.js + Functions/personalActivity.js — Cuenta días UTC distintos con al menos un mensaje. | Regular (7); Committed (30) |
