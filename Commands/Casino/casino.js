@@ -16,6 +16,7 @@ const { trackEconomyAchievementSnapshot } = require("../../Functions/economyAchi
 const { trackAchievementProgress } = require("../../Functions/achievementTracker");
 const { getCasinoAchievementSnapshot } = require("../../Functions/casinoAchievementMetrics");
 const { recordEconomySpend } = require("../../Functions/economySpendMetrics");
+const { reserveBlackjackBet, releaseBlackjackBet } = require("../../Functions/blackjackEconomy");
 
 const activeBets = new Set();
 const activeGambles = new Set();
@@ -69,7 +70,13 @@ async function run_blackjack(interaction) {
         });
     }
 
-    if (userData.wallet < amount) {
+    const reservedUser = await reserveBlackjackBet({
+        guildId: interaction.guild.id,
+        userId: interaction.user.id,
+        amount
+    });
+
+    if (!reservedUser) {
         return interaction.editReply({
             flags: MessageFlags.IsComponentsV2,
             components: [{
@@ -98,10 +105,16 @@ async function run_blackjack(interaction) {
             .setCustomId(`blackjack_stand_${interaction.user.id}_${amount}_${playerHand.join("-")}_${dealerHand.join("-")}`)
             .setLabel("Plantarse")
             .setEmoji("🛑")
-            .setStyle(ButtonStyle.Secondary)
+            .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+            .setCustomId(`blackjack_cancel_${interaction.user.id}_${amount}_${playerHand.join("-")}_${dealerHand.join("-")}`)
+            .setLabel("Cancelar")
+            .setEmoji("↩️")
+            .setStyle(ButtonStyle.Danger)
     );
 
-    return interaction.editReply({
+    try {
+        const response = await interaction.editReply({
         flags: MessageFlags.IsComponentsV2,
         components: [{
             type: 17,
@@ -109,12 +122,25 @@ async function run_blackjack(interaction) {
             components: [
                 { type: 12, items: [{ media: { url: "https://i.imgur.com/joAe57D.png" } }] },
                                 { type: 14, divider: true, spacing: 1 },
-{ type: 10, content: `## 🃏 Blackjack\n### 🎴 Dealer\n❓  **${dealerHand[1]}**\n\n### 👤 ${interaction.user.username}\n**${playerHand.join("  •  ")}**\n\n💯 Total: **${playerTotal}**\n💰 Apuesta: **${amount.toLocaleString()} monedas**\n👛 Wallet: **${userData.wallet.toLocaleString()} monedas**` },
+{ type: 10, content: `## 🃏 Blackjack\n### 🎴 Dealer\n❓  **${dealerHand[1]}**\n\n### 👤 ${interaction.user.username}\n**${playerHand.join("  •  ")}**\n\n💯 Total: **${playerTotal}**\n💰 Apuesta: **${amount.toLocaleString()} monedas**\n👛 Wallet tras reservar: **${reservedUser.wallet.toLocaleString()} monedas**` },
                 { type: 14, divider: true, spacing: 1 },
                 row.toJSON()
             ]
         }]
-    });
+        });
+        await recordEconomySpend({
+            guild: interaction.guild,
+            user: interaction.user,
+            amount,
+            category: "casino_blackjack",
+            operationId: `blackjack:${interaction.id}`
+        }).catch(error => console.warn("[Economy] No se pudo registrar apuesta blackjack:", error.message));
+        return response;
+    } catch (error) {
+        await releaseBlackjackBet({ guildId: interaction.guild.id, userId: interaction.user.id, amount })
+            .catch(refundError => console.error("[Blackjack] No se pudo liberar la apuesta tras un error:", refundError));
+        throw error;
+    }
 }
 
 async function run_stats(interaction) {
