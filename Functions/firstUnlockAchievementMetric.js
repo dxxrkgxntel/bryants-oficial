@@ -1,5 +1,3 @@
-const AchievementFirstUnlock = require("../Models/AchievementFirstUnlock");
-
 function createFirstUnlockRecorder({ model, onFirstUnlock } = {}) {
     if (!model || typeof model.updateOne !== "function") {
         throw new TypeError("A first-unlock persistence model is required.");
@@ -38,14 +36,19 @@ function createFirstUnlockRecorder({ model, onFirstUnlock } = {}) {
     };
 }
 
-const recordFirstAchievementUnlock = createFirstUnlockRecorder({
-    model: AchievementFirstUnlock,
-    onFirstUnlock: async ({ guild, user }) => {
-        if (!guild?.id || !user?.id) return;
-        const { trackAchievementProgress } = require("./achievementTracker");
-        await trackAchievementProgress(guild, user, "first_unlocks", 1);
-    }
-});
+async function recordFirstAchievementUnlock(args = {}) {
+    // Load Mongoose only in the live persistence path; regression tests inject a fake model.
+    const AchievementFirstUnlock = require("../Models/AchievementFirstUnlock");
+    const record = createFirstUnlockRecorder({
+        model: AchievementFirstUnlock,
+        onFirstUnlock: async ({ guild, user }) => {
+            if (!guild?.id || !user?.id) return;
+            const { trackAchievementProgress } = require("./achievementTracker");
+            await trackAchievementProgress(guild, user, "first_unlocks", 1);
+        }
+    });
+    return record(args);
+}
 
 module.exports = {
     createFirstUnlockRecorder,
