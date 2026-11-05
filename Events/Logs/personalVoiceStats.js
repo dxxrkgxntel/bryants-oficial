@@ -1,5 +1,6 @@
 const { addDuration } = require("../../Functions/personalStats");
 const { trackAchievementProgress } = require("../../Functions/achievementTracker");
+const { extractVoiceAchievementMetrics } = require("../../Functions/voiceAchievementMetrics");
 
 const voiceSessions = new Map();
 
@@ -15,6 +16,11 @@ module.exports = {
         const oldChannelId = oldState.channelId;
         const newChannelId = newState.channelId;
         if (oldChannelId === newChannelId) return;
+
+        for (const [metric, amount] of Object.entries(extractVoiceAchievementMetrics(oldState, newState))) {
+            await trackAchievementProgress(guild, member.user, metric, amount)
+                .catch(error => console.warn(`[Achievements] No se pudo registrar ${metric}:`, error.message));
+        }
 
         const session = voiceSessions.get(key);
         if (session && oldChannelId) {
