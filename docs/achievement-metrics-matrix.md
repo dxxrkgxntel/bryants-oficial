@@ -5,7 +5,7 @@
 ## Resumen
 
 - Catálogo: **397 logros / 106 métricas únicas**.
-- Conectadas: **28**.
+- Conectadas: **29**.
 - Parciales: **3**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **22**.
 - Pendientes de localizar/implementar o validar: **53**.
@@ -83,7 +83,7 @@
 | 66 | `net_worth` | 6 | **Dato derivable; falta conexión** | Models/EconomyUser.js — Patrimonio = wallet + bank; no incluye deuda/activos hasta definir fórmula. | Getting Comfortable (10000); Well Off (100000) |
 | 67 | `night_owl_messages` | 3 | **Conectada** | Functions/achievementMessageMetrics.js · 00:00–05:59 en America/Santo_Domingo | Night Owl (100); Moon Dweller (1000) |
 | 68 | `polls_created` | 3 | **Conectada** | Commands/Utility/poll.js · creación de encuesta — Suma al crear encuesta. | Pollster (5); Poll Maker (50) |
-| 69 | `prestige_level` | 2 | **Dato existente; falta conexión** | Models/Prestige.js + Commands/Economy/prestige.js — El modelo guarda el nivel de prestigio. | Prestige (1); Prestige Master (5) |
+| 69 | `prestige_level` | 2 | **Conectada** | Commands/Economy/prestige.js · suma solo después de guardar correctamente el nuevo prestigio | Prestige (1); Prestige Master (5) |
 | 70 | `prestige_points` | 2 | **Pendiente** | Localizar evento/comando responsable y conectar en el punto de éxito. | Prestige Points (100); Prestige Grinder (1000) |
 | 71 | `properties_owned` | 3 | **Pendiente** | sin modelo de propiedades identificado | Homeowner (1); Landlord (5) |
 | 72 | `property_income` | 3 | **Pendiente** | sin modelo de propiedades identificado | First Rent (10000); Rent Collector (1000000) |
@@ -140,7 +140,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 
 1. **Mensajes y actividad:** ya conectados palabras, caracteres, imágenes, GIF, links, stickers, adjuntos, respuestas, menciones, spoilers y bloques de código; las cuatro métricas restantes ya están conectadas: mensajes de 500+ caracteres, madrugada (00:00–05:59), temprano (06:00–08:59) y fines de semana, todo en America/Santo_Domingo. Días activos, racha y creación de hilos también conectados.
 2. **Voz:** joins conectados; minutos de voz, transmisión y cámara ya tienen sesiones persistentes y quedan parciales hasta validación en Discord real.
-3. **Economía y niveles:** conectar las transacciones confirmadas y decidir semántica de saldos vs acumulados; cubrir XP y niveles tanto por texto como por voz.
+3. **Economía y niveles:** `prestige_level` conectado; pendientes transacciones, saldos vs acumulados, XP y niveles por texto/voz.
 4. **Comunidad:** invitaciones y primer registro de cumpleaños conectados; pendientes boosts, auto-roles, tickets y moderación.
 5. **Juegos y eventos:** casino, minijuegos y sorteos con registros individuales.
 6. **Temporadas y meta-logros:** primer desbloqueo, podios, victorias y premios semanales/mensuales.
