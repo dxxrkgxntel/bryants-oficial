@@ -1,4 +1,5 @@
 const { addDuration } = require("../../Functions/personalStats");
+const { trackAchievementProgress } = require("../../Functions/achievementTracker");
 
 const voiceSessions = new Map();
 
@@ -19,8 +20,11 @@ module.exports = {
         if (session && oldChannelId) {
             const seconds = Math.floor((Date.now() - session.startedAt) / 1000);
             if (seconds > 0) {
-                try { await addDuration(member.id, guild.id, "voiceSeconds", seconds, new Date(session.startedAt), new Date()); }
-                catch (error) { console.error("[Personal Stats] No se pudo registrar voz:", error.message); }
+                try {
+                    await addDuration(member.id, guild.id, "voiceSeconds", seconds, new Date(session.startedAt), new Date());
+                    const minutes = Math.floor(seconds / 60);
+                    if (minutes > 0) await trackAchievementProgress(guild, member.user, "voice_minutes", minutes);
+                } catch (error) { console.error("[Personal Stats] No se pudo registrar voz:", error.message); }
             }
         }
 
