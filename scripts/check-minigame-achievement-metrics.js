@@ -1,6 +1,8 @@
 const assert = require("node:assert/strict");
 const {
     normalizeMiniGameResult,
+    extractMiniGameGuessCount,
+    isPerfectMiniGame,
     buildMiniGameStatsPipeline
 } = require("../Functions/minigameAchievementMetrics");
 const { getCasinoAchievementSnapshot } = require("../Functions/casinoAchievementMetrics");
