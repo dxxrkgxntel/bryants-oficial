@@ -8,7 +8,7 @@
 - Conectadas: **39**.
 - Parciales: **16**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **2**.
-- Pendientes de localizar/implementar o validar: **50**.
+- Pendientes de localizar/implementar o validar: **49**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
 ## Matriz
