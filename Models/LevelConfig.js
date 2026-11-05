@@ -25,6 +25,21 @@ const levelConfigSchema =
 
         levelRoleImage: String,
 
+        levelRankFormat: { type: String, enum: ["card", "components", "embed", "text"], default: "card" },
+        levelProfileFormat: { type: String, enum: ["card", "components", "embed", "text"], default: "card" },
+        levelRankColor: { type: String, default: "#8A2BE2" },
+        levelProfileColor: { type: String, default: "#8A2BE2" },
+        levelRankBackgroundMode: { type: String, enum: ["blur", "cover", "contain"], default: "blur" },
+        levelProfileBackgroundMode: { type: String, enum: ["blur", "cover", "contain"], default: "blur" },
+        levelRankShowAvatar: { type: Boolean, default: true },
+        levelRankShowXPBar: { type: Boolean, default: true },
+        levelProfileShowAvatar: { type: Boolean, default: true },
+        levelProfileShowXPBar: { type: Boolean, default: true },
+        levelProfileShowWallet: { type: Boolean, default: true },
+        levelProfileShowBank: { type: Boolean, default: true },
+        levelProfileShowRanking: { type: Boolean, default: true },
+        levelProfileShowBadges: { type: Boolean, default: true },
+
         levelThumbnail: String,
 
         levelColor: String,
