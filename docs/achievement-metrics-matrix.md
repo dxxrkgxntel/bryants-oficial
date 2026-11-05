@@ -5,9 +5,9 @@
 ## Resumen
 
 - Catálogo: **397 logros / 106 métricas únicas**.
-- Conectadas: **33**.
+- Conectadas: **34**.
 - Parciales: **4**.
-- Fuente existente o dato calculable, sin conexión al catálogo: **15**.
+- Fuente existente o dato calculable, sin conexión al catálogo: **14**.
 - Pendientes de localizar/implementar o validar: **54**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
@@ -119,7 +119,7 @@
 | 102 | `warns_issued` | 2 | **Pendiente** | Commands/Administration/moderation.js; falta tracker por advertencia | Rule Enforcer (10); The Hammer (100) |
 | 103 | `weekend_messages` | 2 | **Conectada** | Functions/achievementMessageMetrics.js · sábado y domingo según America/Santo_Domingo | Weekend Warrior (500); Weekend Legend (5000) |
 | 104 | `words_typed` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · palabras separadas por espacios | Word Novice (1000); Author (50000) |
-| 105 | `work_streak` | 2 | **Pendiente** | Commands/Economy/economy.js · runWork (el modelo no conserva racha histórica) | Workaholic (25); Never Off the Clock (100) |
+| 105 | `work_streak` | 2 | **Conectada** | Models/EconomyUser.js + Commands/Economy/economy.js · racha de días de trabajo según America/Santo_Domingo; el progreso guarda el máximo alcanzado | Workaholic (25); Never Off the Clock (100) |
 | 106 | `xp` | 4 | **Parcial** | Events/Levels/messageCreate2.js + Events/Levels/voiceXp.js + Functions/achievementTracker.js · suma XP de texto, voz y recompensas de logros; falta auditar otras posibles fuentes de XP | XP Collector (10000); XP Hoarder (100000) |
 
 ## Diferencias entre el catálogo y el tracker heredado
@@ -140,7 +140,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 
 1. **Mensajes y actividad:** ya conectados palabras, caracteres, imágenes, GIF, links, stickers, adjuntos, respuestas, menciones, spoilers y bloques de código; las cuatro métricas restantes ya están conectadas: mensajes de 500+ caracteres, madrugada (00:00–05:59), temprano (06:00–08:59) y fines de semana, todo en America/Santo_Domingo. Días activos, racha y creación de hilos también conectados.
 2. **Voz:** joins conectados; minutos de voz, transmisión y cámara ya tienen sesiones persistentes y quedan parciales hasta validación en Discord real.
-3. **Economía y niveles:** `level`, `prestige_level` y `economy_daily_streak` conectados; XP parcialmente conectado desde texto, voz y recompensas de logros; pendientes otras fuentes y saldos/transacciones.
+3. **Economía y niveles:** `level`, `prestige_level`, `economy_daily_streak` y `work_streak` conectados; XP parcialmente conectado desde texto, voz y recompensas de logros; pendientes otras fuentes y saldos/transacciones.
 4. **Comunidad:** invitaciones, registro y celebraciones de cumpleaños, y boosts conectados; pendientes meses de boost, auto-roles, tickets y moderación.
 5. **Juegos y eventos:** casino, minijuegos y sorteos con registros individuales.
 6. **Temporadas y meta-logros:** primer desbloqueo, podios, victorias y premios semanales/mensuales.
