@@ -32,7 +32,11 @@ module.exports = {
             const entry = progressById.get(item.achievementId);
             const done = Boolean(entry?.unlockedAt);
             const current = Math.min(item.goal, entry?.progress || 0);
-            const reward = item.rewardCoins > 0 ? ` · 💰 ${item.rewardCoins.toLocaleString()}` : "";
+            const rewards = [
+                item.rewardCoins > 0 ? `💰 ${item.rewardCoins.toLocaleString()}` : "",
+                item.rewardXP > 0 ? `✨ ${item.rewardXP.toLocaleString()} XP` : ""
+            ].filter(Boolean);
+            const reward = rewards.length ? ` · ${rewards.join(" · ")}` : "";
             return `${done ? "🏆" : "🔒"} ${item.emoji || "🏆"} **${item.name}** — ${done ? "Desbloqueado" : `${current.toLocaleString()}/${item.goal.toLocaleString()}`}\n> ${item.description}${reward}`;
         });
         const container = new ContainerBuilder().setAccentColor(0x8A2BE2);
