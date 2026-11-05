@@ -5,7 +5,7 @@ const Level = require("../Models/Level");
 const TrophySettings = require("../Models/TrophySettings");
 const { EmbedBuilder } = require("discord.js");
 const { sendTrophyCard, sendTrophyComponents } = require("./trophyCard");
-const { achievementComparatorReached } = require("./achievementRules");
+const { achievementComparatorReached, achievementProgressUpdate } = require("./achievementRules");
 
 const seededGuilds = new Map();
 
@@ -92,7 +92,7 @@ async function ensureDefaultAchievements(guildId) {
     return pending;
 }
 
-async function trackAchievementProgress(guild, user, metric, amount = 1) {
+async function trackAchievementProgress(guild, user, metric, amount = 1, options = {}) {
     if (!guild?.id || !user?.id || !Number.isFinite(amount) || amount <= 0) return [];
     const settings = await TrophySettings.findOne({ guildId: guild.id }).lean();
     if (settings?.enabled === false || (user.bot && settings?.includeBots !== true)) return [];
@@ -120,7 +120,7 @@ async function trackAchievementProgress(guild, user, metric, amount = 1) {
         const rarityList = String(achievement.levelRarities || "").split(",").map(x => x.trim().toLowerCase());
         const current = await UserAchievement.findOneAndUpdate(
             { guildId: guild.id, userId: user.id, achievementId: achievement.achievementId, unlockedAt: null },
-            { $inc: { progress: amount } }, { new: true }
+            achievementProgressUpdate(amount, options?.absolute === true), { new: true }
         );
         if (!current) continue;
         const comparator = achievement.comparator || "gte";
@@ -203,5 +203,6 @@ module.exports = {
     trackAchievementProgress,
     ensureDefaultAchievements,
     achievementComparatorReached,
+    achievementProgressUpdate,
     hasAchievementPrerequisites
 };
