@@ -7,6 +7,7 @@ const userAchievementSchema = new Schema({
     progress: { type: Number, default: 0, min: 0 },
     unlockedLevels: { type: [Number], default: [] },
     pointsEarned: { type: Number, default: 0, min: 0 },
+    processedEventKeys: { type: [String], default: [] },
     unlockedAt: { type: Date, default: null }
 }, { timestamps: true });
 
