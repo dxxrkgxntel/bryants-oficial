@@ -8,7 +8,7 @@
 - Conectadas: **39**.
 - Parciales: **18**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **2**.
-- Pendientes de localizar/implementar o validar: **46**.
+- Pendientes de localizar/implementar o validar: **47**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
 ## Matriz
@@ -115,7 +115,7 @@
 | 98 | `voice_joins` | 3 | **Conectada** | Events/Logs/personalVoiceStats.js + Functions/voiceAchievementMetrics.js · cuenta solo entrada real desde fuera de voz | Channel Hopper (25); Frequent Flyer (250) |
 | 99 | `voice_minutes` | 12 | **Parcial** | Models/PersonalVoiceActivity.js + Functions/voiceActivity.js + Functions/voiceActivityMath.js · guarda inicio de sesión y segundos/minutos reportados; snapshots absolutos permiten reintentar fallos sin duplicar minutos; falta validar recuperación en Discord real. | New Here? (5); Warming Up (30) |
 | 100 | `voice_video_minutes` | 6 | **Parcial** | Models/PersonalVoiceActivity.js + Functions/voiceActivity.js + Functions/voiceActivityMath.js · registra intervalos de cámara con persistencia y snapshots absolutos reintentables; falta validación en Discord real | On Camera (30); Face Reveal (300) |
-| 101 | `votes` | 4 | **Dato existente; falta conexión** | Models/DashboardAccount.js + dashboard/server.js · Top.gg incrementa `voteCount` global y acredita en `TOPGG_REWARD_GUILD_ID`; falta persistir una atribución de voto por servidor y resolver el historial antes de conectarlo al logro | Voter (1); Loyal Voter (25) |
+| 101 | `votes` | 4 | **Parcial** | Models/DashboardVote.js + dashboard/server.js + Functions/voteAchievementMetrics.js + Events/Client/ready.js · registra cada voto aceptado en la misma transacción que la recompensa, conserva el servidor de crédito y sincroniza el total por usuario/servidor con progreso absoluto; pendiente validación en Discord real | Voter (1); Loyal Voter (25) |
 | 102 | `warns_issued` | 2 | **Conectada** | Commands/Administration/moderation.js + Functions/warningAchievementMetrics.js + Models/ModerationWarning.js · guarda cada advertencia real con `interactionId` único, moderador, destinatario y motivo; cuenta advertencias persistidas por moderador/servidor y reporta progreso absoluto | Rule Enforcer (10); The Hammer (100) |
 | 103 | `weekend_messages` | 2 | **Conectada** | Functions/achievementMessageMetrics.js · sábado y domingo según America/Santo_Domingo | Weekend Warrior (500); Weekend Legend (5000) |
 | 104 | `words_typed` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · palabras separadas por espacios | Word Novice (1000); Author (50000) |
