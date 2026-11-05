@@ -8,5 +8,4 @@ const schema = new Schema({
   currentStreak: { type: Number, default: 0, min: 0 },
   lastUserId: { type: String, default: null }
 }, { timestamps: true });
-schema.index({ guildId: 1 }, { unique: true });
 module.exports = model("CountingConfig", schema);
