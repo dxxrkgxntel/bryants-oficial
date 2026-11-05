@@ -1,5 +1,6 @@
 const { MessageFlags } = require("discord.js");
 const getUser = require("../../Utils/getUser");
+const { recordEconomySpend } = require("../../Functions/economySpendMetrics");
 const BANNER = "https://i.imgur.com/joAe57D.png";
 
 function panel(text, accent = 0x8A2BE2) {
@@ -56,6 +57,7 @@ module.exports = {
         }
 
         await userData.save();
+        await recordEconomySpend({ guild: interaction.guild, user: interaction.user, amount: bet, category: "casino_dice", operationId: interaction.id }).catch(error => console.warn("[Economy] No se pudo registrar apuesta de dados:", error.message));
 
         return interaction.editReply(panel(
             `## 🎲 Resultado — Dados\n### 👤 Tú\n🎲 Resultado: **${userDice}**\n\n### 🤖 Bryvex Casino\n🎲 Resultado: **${botDice}**\n\n${result}\n👛 Wallet actual: **${userData.wallet.toLocaleString()} monedas**`,
