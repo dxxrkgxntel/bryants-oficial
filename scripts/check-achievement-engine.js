@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { achievementComparatorReached } = require("../Functions/achievementTracker");
+const { achievementComparatorReached } = require("../Functions/achievementRules");
 
 const cases = [
     ["gte accepts equality", 10, 10, "gte", true],
