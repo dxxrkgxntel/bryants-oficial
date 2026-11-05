@@ -769,6 +769,13 @@ button:disabled { opacity: .55; cursor: wait !important; }
 .record-row[hidden] { display: none !important; }
 .list-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin: 18px 0 4px; color: #95899e; font-size: 10px; }
 .record-search { width: min(100%, 260px); }
+
+.achievements-backup-toolbar { flex-wrap: wrap; align-items: center; padding: 13px; border: 1px solid #ffffff14; border-radius: 12px; background: #100c1680; }
+.achievements-backup-toolbar > div:first-child { display: grid; flex: 1 1 220px; gap: 4px; }
+.achievements-backup-toolbar > div:first-child strong { color: #eee5f5; font-size: 12px; }
+.achievements-backup-toolbar > div:first-child span { color: #95899e; font-size: 10px; }
+.achievements-backup-toolbar select { width: 100%; min-height: 34px; }
+
 .record-title { overflow: hidden; color: #e6ddeb; font-size: 12px; font-weight: 650; text-overflow: ellipsis; }
 .record-actions { display: flex; flex: 0 0 auto; gap: 7px; }
 .danger-text { color: #ff9ba9; }
