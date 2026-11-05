@@ -1,145 +1,151 @@
 # Matriz de auditoría de las 106 métricas de logros — Bryvex Bot
 
-> Estado inicial de auditoría de la rama `feature/notoq-achievements-import`. Una métrica solo se marca conectada cuando se ha encontrado una llamada explícita al tracker en un punto real del flujo. «Pendiente de rastreo» no significa que la funcionalidad no exista: significa que todavía no se ha demostrado el cableado en el código auditado.
+> Rama: `feature/notoq-achievements-import`. Estado basado en evidencia localizada en código y modelos. «Pendiente» significa que no hay llamada confirmada al tracker, aunque pueda existir una fuente de datos aprovechable.
 
 ## Resumen
 
-- Logros del catálogo: **397**
-- Métricas únicas: **106**
-- Métricas conectadas explícitamente: **7**
-- Métricas parcialmente conectadas: **1**
-- Métricas pendientes de rastreo/conexión: **98**
-- Comparador del catálogo: actualmente todos los registros revisados usan `gte`.
-- Importante: los nombres antiguos `messages`, `levels`, `dailyClaims`, `workClaims` y `coinsEarned` que aparecen en el código no coinciden con métricas del catálogo Notoq y no hacen avanzar por sí solos los logros importados.
+- Catálogo: **397 logros / 106 métricas únicas**.
+- Conectadas: **7**.
+- Parciales: **1**.
+- Fuente existente o dato calculable, sin conexión al catálogo: **24**.
+- Pendientes de localizar/implementar o validar: **74**.
+- Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
-## Matriz completa
+## Matriz
 
-| # | Métrica | Logros | Categorías | Estado | Punto de registro / siguiente integración | Ejemplos de logros |
-|---:|---|---:|---|---|---|---|
-| 1 | `account_age_days` | 2 | loyalty | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Discord Veteran (1825); Discord Ancient (3650) |
-| 2 | `achievements_unlocked` | 8 | meta | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Collector (5); Achiever (10) |
-| 3 | `activity_awards` | 3 | loyalty | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Top Member (1); Community Champion (5) |
-| 4 | `activity_coins` | 2 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Gatherer (100000); Resource Baron (1000000) |
-| 5 | `ai_conversations` | 2 | ai | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Conversationalist (10); Deep Talker (100) |
-| 6 | `ai_messages` | 6 | ai | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | AI Curious (10); AI Chatter (100) |
-| 7 | `applications_accepted` | 2 | applications | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Welcome Aboard (1); Team Player (5) |
-| 8 | `applications_sent` | 2 | applications | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Applicant (1); Persistent Applicant (5) |
-| 9 | `attachments_sent` | 2 | messages | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | File Sharer (100); Data Hoarder (1000) |
-| 10 | `bank_balance` | 3 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Banker (100000); Vault Keeper (5000000) |
-| 11 | `birthday_celebrations` | 3 | birthdays | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | First Birthday (1); Birthday Regular (3) |
-| 12 | `birthday_set` | 1 | birthdays | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Party Ready (1) |
-| 13 | `boost_months` | 4 | boosting | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Loyal Booster (3); Boost Legend (12) |
-| 14 | `boosts` | 1 | boosting | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Supporter (1) |
-| 15 | `bot_mentions` | 3 | messages | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Cuenta menciones al propio bot, no todas las menciones a usuarios. | Hey Bot (10); Bot Buddy (100) |
-| 16 | `business_earnings` | 4 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Small Business (100000); Business Owner (1000000) |
-| 17 | `businesses_owned` | 2 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Entrepreneur (1); Business Empire (5) |
-| 18 | `characters_typed` | 3 | messages | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Getting Started (5000); Ink Slinger (250000) |
-| 19 | `clan_level` | 1 | clan | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Stronghold (10) |
-| 20 | `clan_member` | 1 | clan | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Sworn In (1) |
-| 21 | `clan_raids_won` | 2 | clan | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Raid Hunter (1); Boss Slayer (25) |
-| 22 | `clan_recruits` | 3 | clan | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Recruiter (1); Headhunter (10) |
-| 23 | `clan_season_league` | 2 | clan | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Diamond Season (4); Champion Season (5) |
-| 24 | `clan_wars_won` | 2 | clan | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | War Hero (1); Warlord (10) |
-| 25 | `clan_xp_contributed` | 3 | clan | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Contributor (10000); Pillar of the Clan (100000) |
-| 26 | `code_blocks_sent` | 3 | messages | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Coder (10); Developer (100) |
-| 27 | `coins` | 7 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Piggy Bank (1000); Coin Stacker (10000) |
-| 28 | `commands_used` | 4 | messages | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Command Curious (25); Power User (250) |
-| 29 | `counting_correct` | 6 | counting | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Counter (10); Number Cruncher (100) |
-| 30 | `counting_highest` | 4 | counting | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Hundred Club (100); Thousand Reach (1000) |
-| 31 | `counting_streak` | 4 | counting | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Steady Counter (25); Focused Counter (100) |
-| 32 | `custom_emojis_used` | 7 | messages | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Suma la cantidad de emojis personalizados detectados en el contenido. | Emoji User (50); Emoji Fan (500) |
-| 33 | `daily_streak` | 8 | activity | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | On a Roll (3); Week Streak (7) |
-| 34 | `days_active` | 6 | activity | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Regular (7); Committed (30) |
-| 35 | `early_bird_messages` | 2 | activity | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Early Bird (100); Sunrise Soul (1000) |
-| 36 | `economy_daily_streak` | 3 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Daily Devotee (7); Daily Loyalist (30) |
-| 37 | `embeds_posted` | 2 | messages | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Suma el número de embeds del mensaje. | Embed Enjoyer (25); Rich Poster (250) |
-| 38 | `first_unlocks` | 4 | meta | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Pioneer (1); Trailblazer (5) |
-| 39 | `fishing_trips` | 5 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | First Catch (1); Angler (25) |
-| 40 | `flags_collected` | 5 | games | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Globetrotter (10); Cartographer (50) |
-| 41 | `game_guesses` | 3 | games | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Guesser (100); Sharp Eye (1000) |
-| 42 | `games_perfect` | 3 | games | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Perfectionist (10); Flawless Master (100) |
-| 43 | `games_played` | 4 | games | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Casual Gamer (10); Regular Player (100) |
-| 44 | `games_streak` | 2 | games | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Hot Streak (10); On Fire (25) |
-| 45 | `games_won` | 4 | games | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Winner (10); Champion (100) |
-| 46 | `gems` | 3 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Gem Collector (50); Gem Baron (1000) |
-| 47 | `gifs_sent` | 4 | messages | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | GIF Enjoyer (50); GIF Master (500) |
-| 48 | `giveaways_created` | 4 | events | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Giveaway Host (1); Generous Host (10) |
-| 49 | `giveaways_entered` | 3 | events | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Hopeful (1); Lucky Participant (25) |
-| 50 | `giveaways_won` | 3 | events | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Lucky Winner (1); Fortune's Favorite (5) |
-| 51 | `hall_of_fame` | 2 | starboard | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Hall of Famer (1); Immortalized (10) |
-| 52 | `images_sent` | 4 | messages | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Shutterbug (50); Gallery Owner (500) |
-| 53 | `investment_profit` | 2 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | In the Green (10000); Bull Market (1000000) |
-| 54 | `investments_made` | 3 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Investor (1); Portfolio Builder (10) |
-| 55 | `invites` | 7 | invites | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Recruiter (1); Connector (10) |
-| 56 | `items_owned` | 3 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Collector (25); Window Shopper (5) |
-| 57 | `level` | 11 | leveling | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Rookie (5); Apprentice (10) |
-| 58 | `links_sent` | 2 | messages | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Link Dropper (50); Web Weaver (500) |
-| 59 | `long_messages` | 3 | messages | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Essayist (10); Wall of Text (100) |
-| 60 | `membership_days` | 9 | loyalty | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Fresh Face (7); Familiar Face (30) |
-| 61 | `mentions_made` | 3 | messages | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Name Dropper (100); Social Pinger (1000) |
-| 62 | `messages_sent` | 13 | messages | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Suma 1 por mensaje de usuario; el evento ignora bots y DMs. | Casual Typer (100); Chatterbox (500) |
-| 63 | `messages_starred` | 3 | starboard | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | On the Board (1); Board Regular (10) |
-| 64 | `mining_trips` | 4 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | First Dig (1); Miner (25) |
-| 65 | `mod_actions` | 4 | moderation | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Rookie Mod (1); Peacekeeper (25) |
-| 66 | `net_worth` | 6 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Getting Comfortable (10000); Well Off (100000) |
-| 67 | `night_owl_messages` | 3 | activity | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Night Owl (100); Moon Dweller (1000) |
-| 68 | `polls_created` | 3 | messages | **Conectada** | Commands/Utility/poll.js · creación de encuesta — Se registra al crear una encuesta. | Pollster (5); Poll Maker (50) |
-| 69 | `prestige_level` | 2 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Prestige (1); Prestige Master (5) |
-| 70 | `prestige_points` | 2 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Prestige Points (100); Prestige Grinder (1000) |
-| 71 | `properties_owned` | 3 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Homeowner (1); Landlord (5) |
-| 72 | `property_income` | 3 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | First Rent (10000); Rent Collector (1000000) |
-| 73 | `questions_asked` | 6 | messages | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Curious (25); Inquirer (250) |
-| 74 | `reactions_added` | 9 | reactions | **Conectada** | Events/Logs/personalReactionStats.js · messageReactionAdd — Cuenta reacciones añadidas por el usuario. | Give or Take (10); True Star (100) |
-| 75 | `reactions_received` | 6 | reactions | **Conectada** | Events/Logs/personalReactionStats.js · messageReactionAdd — Cuenta reacciones recibidas por el autor del mensaje. | First Fan (10); Crowd Pleaser (100) |
-| 76 | `referrals` | 3 | social | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Referrer (1); Brand Ambassador (5) |
-| 77 | `replies_sent` | 3 | messages | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Replier (100); Conversationalist (1000) |
-| 78 | `reviews_written` | 5 | reviews | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Reviewer (1); Critic (10) |
-| 79 | `roles_count` | 2 | roles | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Role Collector (10); Role Hoarder (25) |
-| 80 | `season_podiums` | 2 | meta | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Podium Finish (1); Podium Regular (5) |
-| 81 | `season_wins` | 3 | meta | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Season Champion (1); Title Defender (3) |
-| 82 | `self_roles_taken` | 3 | roles | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Self-Made (1); Role Picker (10) |
-| 83 | `spoilers_sent` | 3 | messages | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Spoiler Alert (10); Secret Keeper (100) |
-| 84 | `stars_given` | 3 | starboard | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Star Giver (25); Generous Soul (250) |
-| 85 | `stars_received` | 5 | starboard | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Star Struck (1); Shining (25) |
-| 86 | `stickers_sent` | 2 | messages | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Sticker Fan (50); Sticker Addict (500) |
-| 87 | `streaming_minutes` | 4 | voice | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Go Live (30); Streamer (600) |
-| 88 | `threads_created` | 3 | messages | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Thread Starter (5); Thread Weaver (50) |
-| 89 | `tickets_claimed` | 3 | tickets | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Ticket Claimer (10); Support Specialist (100) |
-| 90 | `tickets_closed` | 3 | tickets | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Support Hero (10); Support Champion (100) |
-| 91 | `tickets_opened` | 2 | tickets | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Need Help? (1); Frequent Visitor (10) |
-| 92 | `tokens` | 5 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Token Starter (10); Token Collector (100) |
-| 93 | `top_star_post` | 2 | starboard | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Going Viral (25); Viral Sensation (100) |
-| 94 | `total_earned` | 6 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Hard Worker (10000); Grinder (100000) |
-| 95 | `total_points` | 6 | meta | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Point Starter (100); Point Collector (500) |
-| 96 | `total_spent` | 4 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Shopper (10000); Big Spender (100000) |
-| 97 | `verified` | 1 | social | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Verified (1) |
-| 98 | `voice_joins` | 3 | voice | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Channel Hopper (25); Frequent Flyer (250) |
-| 99 | `voice_minutes` | 12 | voice | **Parcial** | Events/Logs/personalVoiceStats.js · voiceStateUpdate — Se registra al salir/cambiar de canal; sesiones activas al reiniciar el bot se pierden. | New Here? (5); Warming Up (30) |
-| 100 | `voice_video_minutes` | 6 | voice | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | On Camera (30); Face Reveal (300) |
-| 101 | `votes` | 4 | social | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Voter (1); Loyal Voter (25) |
-| 102 | `warns_issued` | 2 | moderation | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Rule Enforcer (10); The Hammer (100) |
-| 103 | `weekend_messages` | 2 | activity | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Weekend Warrior (500); Weekend Legend (5000) |
-| 104 | `words_typed` | 3 | messages | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Word Novice (1000); Author (50000) |
-| 105 | `work_streak` | 2 | economy | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | Workaholic (25); Never Off the Clock (100) |
-| 106 | `xp` | 4 | leveling | **Pendiente de rastreo** | Localizar el comando/evento que produce este dato; añadir una llamada idempotente a `trackAchievementProgress(guild, user, metric, amount)` en el punto de confirmación del evento. | XP Collector (10000); XP Hoarder (100000) |
+| # | Métrica | Logros | Estado | Evidencia actual / siguiente punto de integración | Ejemplos |
+|---:|---|---:|---|---|---|
+| 1 | `account_age_days` | 2 | **Dato calculable; falta conexión** | Discord User.createdAt + Events/Guild/sistemaDeIngreso.js — Calcular edad de cuenta; respetar mínimo de edad de cuenta del sistema. | Discord Veteran (1825); Discord Ancient (3650) |
+| 2 | `achievements_unlocked` | 8 | **Dato existente; falta conexión** | Models/UserAchievement.js — Se puede contar desbloqueos, excluyendo niveles repetidos del mismo logro según definición. | Collector (5); Achiever (10) |
+| 3 | `activity_awards` | 3 | **Pendiente** | sistema de temporada/premios; no se localizó adjudicación por usuario | Top Member (1); Community Champion (5) |
+| 4 | `activity_coins` | 2 | **Pendiente** | sin sistema de pesca/minería identificado | Gatherer (100000); Resource Baron (1000000) |
+| 5 | `ai_conversations` | 2 | **Pendiente** | asistente IA/dashboard; falta identificar inicio de conversación | Conversationalist (10); Deep Talker (100) |
+| 6 | `ai_messages` | 6 | **Pendiente** | asistente IA/dashboard; falta localizar flujo y definir userId/guildId | AI Curious (10); AI Chatter (100) |
+| 7 | `applications_accepted` | 2 | **Pendiente** | sin sistema de solicitudes identificado | Welcome Aboard (1); Team Player (5) |
+| 8 | `applications_sent` | 2 | **Pendiente** | sin sistema de solicitudes identificado | Applicant (1); Persistent Applicant (5) |
+| 9 | `attachments_sent` | 2 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate | File Sharer (100); Data Hoarder (1000) |
+| 10 | `bank_balance` | 3 | **Dato existente; falta conexión** | Models/EconomyUser.js + Commands/Economy/economy.js — Saldo bancario consultable. | Banker (100000); Vault Keeper (5000000) |
+| 11 | `birthday_celebrations` | 3 | **Pendiente** | Handlers/birthdaySystem.js; verificar cómo identifica quién celebra | First Birthday (1); Birthday Regular (3) |
+| 12 | `birthday_set` | 1 | **Dato existente; falta conexión** | Models/Birthday.js + Commands/Utility/birthday.js — Existe registro de cumpleaños. | Party Ready (1) |
+| 13 | `boost_months` | 4 | **Dato calculable; falta conexión** | Events/Logs/boostSystem.js · guildMemberUpdate — Calcular meses desde premiumSince; verificar continuidad del boost. | Loyal Booster (3); Boost Legend (12) |
+| 14 | `boosts` | 1 | **Dato disponible; falta conexión** | Events/Logs/boostSystem.js · guildMemberUpdate — Discord expone premiumSince; contar inicios de boost. | Supporter (1) |
+| 15 | `bot_mentions` | 3 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Cuenta menciones al bot. | Hey Bot (10); Bot Buddy (100) |
+| 16 | `business_earnings` | 4 | **Pendiente** | sin modelo de negocios identificado | Small Business (100000); Business Owner (1000000) |
+| 17 | `businesses_owned` | 2 | **Pendiente** | sin modelo de negocios identificado | Entrepreneur (1); Business Empire (5) |
+| 18 | `characters_typed` | 3 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate | Getting Started (5000); Ink Slinger (250000) |
+| 19 | `clan_level` | 1 | **Pendiente** | sin sistema de clanes identificado | Stronghold (10) |
+| 20 | `clan_member` | 1 | **Pendiente** | sin sistema de clanes identificado | Sworn In (1) |
+| 21 | `clan_raids_won` | 2 | **Pendiente** | sin sistema de clanes identificado | Raid Hunter (1); Boss Slayer (25) |
+| 22 | `clan_recruits` | 3 | **Pendiente** | sin sistema de clanes identificado | Recruiter (1); Headhunter (10) |
+| 23 | `clan_season_league` | 2 | **Pendiente** | sin sistema de clanes identificado | Diamond Season (4); Champion Season (5) |
+| 24 | `clan_wars_won` | 2 | **Pendiente** | sin sistema de clanes identificado | War Hero (1); Warlord (10) |
+| 25 | `clan_xp_contributed` | 3 | **Pendiente** | sin sistema de clanes identificado | Contributor (10000); Pillar of the Clan (100000) |
+| 26 | `code_blocks_sent` | 3 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate | Coder (10); Developer (100) |
+| 27 | `coins` | 7 | **Dato parcial; falta definir semántica** | Models/EconomyUser.js + Commands/Economy/economy.js — Hay wallet y bank; confirmar si el logro mide saldo total o wallet. | Piggy Bank (1000); Coin Stacker (10000) |
+| 28 | `commands_used` | 4 | **Pendiente** | Events/Messages/messageCreate.js + Events/Interaction/interactionCreate.js | Command Curious (25); Power User (250) |
+| 29 | `counting_correct` | 6 | **Pendiente** | Localizar evento/comando responsable y conectar en el punto de éxito. | Counter (10); Number Cruncher (100) |
+| 30 | `counting_highest` | 4 | **Pendiente** | Localizar evento/comando responsable y conectar en el punto de éxito. | Hundred Club (100); Thousand Reach (1000) |
+| 31 | `counting_streak` | 4 | **Pendiente** | Localizar evento/comando responsable y conectar en el punto de éxito. | Steady Counter (25); Focused Counter (100) |
+| 32 | `custom_emojis_used` | 7 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Cuenta cada emoji personalizado del contenido. | Emoji User (50); Emoji Fan (500) |
+| 33 | `daily_streak` | 8 | **Dato existente; falta conexión** | Models/EconomyUser.js + Commands/Economy/economy.js — Existe dailyStreak en economía; no equivale automáticamente a racha de actividad. | On a Roll (3); Week Streak (7) |
+| 34 | `days_active` | 6 | **Dato existente; falta conexión** | Models/PersonalStatsDaily.js + Functions/personalStats.js — Se puede contar días distintos con actividad registrada. | Regular (7); Committed (30) |
+| 35 | `early_bird_messages` | 2 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate + zona horaria configurable | Early Bird (100); Sunrise Soul (1000) |
+| 36 | `economy_daily_streak` | 3 | **Dato existente; falta conexión** | Models/EconomyUser.js + Commands/Economy/economy.js — Existe dailyStreak en economía. | Daily Devotee (7); Daily Loyalist (30) |
+| 37 | `embeds_posted` | 2 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Suma embeds adjuntos al mensaje. | Embed Enjoyer (25); Rich Poster (250) |
+| 38 | `first_unlocks` | 4 | **Pendiente** | Functions/achievementTracker.js; falta detección atómica del primer desbloqueo | Pioneer (1); Trailblazer (5) |
+| 39 | `fishing_trips` | 5 | **Pendiente** | sin sistema de pesca identificado | First Catch (1); Angler (25) |
+| 40 | `flags_collected` | 5 | **Pendiente** | sin juego de banderas identificado | Globetrotter (10); Cartographer (50) |
+| 41 | `game_guesses` | 3 | **Pendiente** | Commands/Fun/minijuegos.js; falta contar intentos | Guesser (100); Sharp Eye (1000) |
+| 42 | `games_perfect` | 3 | **Pendiente** | Commands/Fun/minijuegos.js; falta registrar resultado perfecto | Perfectionist (10); Flawless Master (100) |
+| 43 | `games_played` | 4 | **Dato existente; falta conexión** | Models/CasinoStats.js + Commands/Casino/casino.js — Existe totalGames para casino; comprobar si el catálogo quiere incluir solo casino o todos los minijuegos. | Casual Gamer (10); Regular Player (100) |
+| 44 | `games_streak` | 2 | **Dato existente; falta conexión** | Models/CasinoStats.js + Commands/Casino/casino.js — Existe currentStreak de victorias. | Hot Streak (10); On Fire (25) |
+| 45 | `games_won` | 4 | **Dato existente; falta conexión** | Models/CasinoStats.js + Commands/Casino/casino.js — Existe totalWins en estadísticas de casino. | Winner (10); Champion (100) |
+| 46 | `gems` | 3 | **Pendiente** | sin sistema de gemas identificado | Gem Collector (50); Gem Baron (1000) |
+| 47 | `gifs_sent` | 4 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate | GIF Enjoyer (50); GIF Master (500) |
+| 48 | `giveaways_created` | 4 | **Pendiente** | Commands/Administration/weeklydrop.js; confirmar si equivale a sorteo creado por miembro | Giveaway Host (1); Generous Host (10) |
+| 49 | `giveaways_entered` | 3 | **Pendiente** | Commands/Administration/weeklydrop.js; no se localizó registro individual de participantes | Hopeful (1); Lucky Participant (25) |
+| 50 | `giveaways_won` | 3 | **Pendiente** | Commands/Administration/weeklydrop.js; no se localizó registro individual de ganadores | Lucky Winner (1); Fortune's Favorite (5) |
+| 51 | `hall_of_fame` | 2 | **Pendiente** | sin sistema Hall of Fame identificado | Hall of Famer (1); Immortalized (10) |
+| 52 | `images_sent` | 4 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate | Shutterbug (50); Gallery Owner (500) |
+| 53 | `investment_profit` | 2 | **Pendiente** | sin sistema de inversiones identificado | In the Green (10000); Bull Market (1000000) |
+| 54 | `investments_made` | 3 | **Pendiente** | sin sistema de inversiones identificado | Investor (1); Portfolio Builder (10) |
+| 55 | `invites` | 7 | **Dato existente; falta conexión** | Models/InviteTracker.js + Utils/inviteTracker.js + Events/Logs/inviteTrackerMemberAdd.js — Invitaciones atribuidas a invitador. | Recruiter (1); Connector (10) |
+| 56 | `items_owned` | 3 | **Dato existente; falta conexión** | Models/EconomyUser.js + Utils/shopHandlers.js — Existe inventario; el evento heredado itemsPurchased no mide artículos actualmente poseídos. | Collector (25); Window Shopper (5) |
+| 57 | `level` | 11 | **Dato existente; falta conexión** | Models/Level.js + Events/Levels/messageCreate2.js — Nivel actual almacenado; conectar al alcanzar/cargar el nivel y cubrir subidas por voz. | Rookie (5); Apprentice (10) |
+| 58 | `links_sent` | 2 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate | Link Dropper (50); Web Weaver (500) |
+| 59 | `long_messages` | 3 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate | Essayist (10); Wall of Text (100) |
+| 60 | `membership_days` | 9 | **Dato calculable; falta conexión** | Events/Guild/sistemaDeIngreso.js + member.joinedAt — Calcular antigüedad de membresía con joinedAt; necesita actualización periódica o cálculo al evaluar. | Fresh Face (7); Familiar Face (30) |
+| 61 | `mentions_made` | 3 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate | Name Dropper (100); Social Pinger (1000) |
+| 62 | `messages_sent` | 13 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Suma mensajes de usuarios. | Casual Typer (100); Chatterbox (500) |
+| 63 | `messages_starred` | 3 | **Pendiente** | sin sistema Starboard identificado | On the Board (1); Board Regular (10) |
+| 64 | `mining_trips` | 4 | **Pendiente** | sin sistema de minería identificado | First Dig (1); Miner (25) |
+| 65 | `mod_actions` | 4 | **Pendiente** | Commands/Administration/moderation.js; falta tracker por acción | Rookie Mod (1); Peacekeeper (25) |
+| 66 | `net_worth` | 6 | **Dato derivable; falta conexión** | Models/EconomyUser.js — Patrimonio = wallet + bank; no incluye deuda/activos hasta definir fórmula. | Getting Comfortable (10000); Well Off (100000) |
+| 67 | `night_owl_messages` | 3 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate + zona horaria configurable | Night Owl (100); Moon Dweller (1000) |
+| 68 | `polls_created` | 3 | **Conectada** | Commands/Utility/poll.js · creación de encuesta — Suma al crear encuesta. | Pollster (5); Poll Maker (50) |
+| 69 | `prestige_level` | 2 | **Dato existente; falta conexión** | Models/Prestige.js + Commands/Economy/prestige.js — El modelo guarda el nivel de prestigio. | Prestige (1); Prestige Master (5) |
+| 70 | `prestige_points` | 2 | **Pendiente** | Localizar evento/comando responsable y conectar en el punto de éxito. | Prestige Points (100); Prestige Grinder (1000) |
+| 71 | `properties_owned` | 3 | **Pendiente** | sin modelo de propiedades identificado | Homeowner (1); Landlord (5) |
+| 72 | `property_income` | 3 | **Pendiente** | sin modelo de propiedades identificado | First Rent (10000); Rent Collector (1000000) |
+| 73 | `questions_asked` | 6 | **Pendiente** | asistente IA/dashboard; falta definir pregunta válida | Curious (25); Inquirer (250) |
+| 74 | `reactions_added` | 9 | **Conectada** | Events/Logs/personalReactionStats.js · messageReactionAdd — Cuenta reacciones añadidas. | Give or Take (10); True Star (100) |
+| 75 | `reactions_received` | 6 | **Conectada** | Events/Logs/personalReactionStats.js · messageReactionAdd — Cuenta reacciones recibidas por el autor. | First Fan (10); Crowd Pleaser (100) |
+| 76 | `referrals` | 3 | **Pendiente** | Models/DashboardReferral.js; verificar si la referencia pertenece a un miembro/servidor | Referrer (1); Brand Ambassador (5) |
+| 77 | `replies_sent` | 3 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate | Replier (100); Conversationalist (1000) |
+| 78 | `reviews_written` | 5 | **Pendiente** | sin sistema de reseñas identificado | Reviewer (1); Critic (10) |
+| 79 | `roles_count` | 2 | **Dato calculable; falta conexión** | Discord GuildMember.roles.cache — Contar roles del miembro excluyendo @everyone y roles gestionados si procede. | Role Collector (10); Role Hoarder (25) |
+| 80 | `season_podiums` | 2 | **Pendiente** | Models/TrophyScore.js + TrophySettings; falta cálculo de podio | Podium Finish (1); Podium Regular (5) |
+| 81 | `season_wins` | 3 | **Pendiente** | Models/TrophyScore.js + TrophySettings; falta cierre y adjudicación de temporadas | Season Champion (1); Title Defender (3) |
+| 82 | `self_roles_taken` | 3 | **Pendiente** | Utils/SetupHandlers/autoRoleUB.js + Events/Interaction/* | Self-Made (1); Role Picker (10) |
+| 83 | `spoilers_sent` | 3 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate | Spoiler Alert (10); Secret Keeper (100) |
+| 84 | `stars_given` | 3 | **Pendiente** | sin sistema de estrellas identificado | Star Giver (25); Generous Soul (250) |
+| 85 | `stars_received` | 5 | **Pendiente** | sin sistema de estrellas identificado | Star Struck (1); Shining (25) |
+| 86 | `stickers_sent` | 2 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate | Sticker Fan (50); Sticker Addict (500) |
+| 87 | `streaming_minutes` | 4 | **Pendiente** | Events/Logs/personalVoiceStats.js · voiceStateUpdate (streaming) | Go Live (30); Streamer (600) |
+| 88 | `threads_created` | 3 | **Pendiente** | evento threadCreate (no localizado) | Thread Starter (5); Thread Weaver (50) |
+| 89 | `tickets_claimed` | 3 | **Pendiente** | Models/SupportTicket.js; no existe campo claimant confirmado | Ticket Claimer (10); Support Specialist (100) |
+| 90 | `tickets_closed` | 3 | **Dato existente; falta conexión** | Models/SupportTicket.js + flujo de cierre de tickets — El modelo conserva closedAt. | Support Hero (10); Support Champion (100) |
+| 91 | `tickets_opened` | 2 | **Dato existente; falta conexión** | Models/SupportTicket.js + flujo de creación de tickets — El modelo conserva estado open/closed. | Need Help? (1); Frequent Visitor (10) |
+| 92 | `tokens` | 5 | **Pendiente** | sin campo o sistema de tokens identificado | Token Starter (10); Token Collector (100) |
+| 93 | `top_star_post` | 2 | **Pendiente** | sin sistema Starboard identificado | Going Viral (25); Viral Sensation (100) |
+| 94 | `total_earned` | 6 | **Pendiente** | todos los puntos de pago/recompensa · requiere ledger histórico | Hard Worker (10000); Grinder (100000) |
+| 95 | `total_points` | 6 | **Dato existente; falta conexión** | Models/TrophyScore.js + Models/UserAchievement.js — Hay puntos de temporada y puntos ganados en logros; definir si global o por temporada. | Point Starter (100); Point Collector (500) |
+| 96 | `total_spent` | 4 | **Pendiente** | Utils/shopHandlers.js + comandos de economía · requiere ledger histórico | Shopper (10000); Big Spender (100000) |
+| 97 | `verified` | 1 | **Pendiente** | flujo de verificación; no se identificó modelo/evento específico | Verified (1) |
+| 98 | `voice_joins` | 3 | **Pendiente** | Events/Logs/personalVoiceStats.js · voiceStateUpdate | Channel Hopper (25); Frequent Flyer (250) |
+| 99 | `voice_minutes` | 12 | **Parcial** | Events/Logs/personalVoiceStats.js · voiceStateUpdate — Se suma al cerrar/cambiar sesión; reinicio del proceso puede perder sesiones abiertas. | New Here? (5); Warming Up (30) |
+| 100 | `voice_video_minutes` | 6 | **Pendiente** | Events/Logs/personalVoiceStats.js · voiceStateUpdate (cámara) | On Camera (30); Face Reveal (300) |
+| 101 | `votes` | 4 | **Pendiente** | sin integración de votos identificada | Voter (1); Loyal Voter (25) |
+| 102 | `warns_issued` | 2 | **Pendiente** | Commands/Administration/moderation.js; falta tracker por advertencia | Rule Enforcer (10); The Hammer (100) |
+| 103 | `weekend_messages` | 2 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate | Weekend Warrior (500); Weekend Legend (5000) |
+| 104 | `words_typed` | 3 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate | Word Novice (1000); Author (50000) |
+| 105 | `work_streak` | 2 | **Pendiente** | Commands/Economy/economy.js · runWork (el modelo no conserva racha histórica) | Workaholic (25); Never Off the Clock (100) |
+| 106 | `xp` | 4 | **Dato existente; falta conexión** | Models/Level.js + Events/Levels/messageCreate2.js + Events/Levels/voiceXp.js — El campo XP es saldo de progreso actual, no total histórico ganado. | XP Collector (10000); XP Hoarder (100000) |
 
-## Métricas heredadas que no deben confundirse con el catálogo importado
+## Diferencias entre el catálogo y el tracker heredado
 
-El tracker antiguo registra algunos nombres que no están en las 106 métricas Notoq. Deben mapearse deliberadamente o eliminarse cuando se reemplace el sistema antiguo; no se deben renombrar en bloque sin comprobar semántica:
+El motor heredado todavía registra métricas como `messages`, `levels`, `dailyClaims`, `workClaims`, `coinsEarned` e `itemsPurchased`. Esos nombres no coinciden con las métricas importadas. No se deben tratar como conexiones: hay que mapearlas a semánticas correctas y evitar contar dos veces.
 
-- `messages` / `levels` — usados por el evento de niveles para logros internos heredados.
-- `dailyClaims`, `workClaims`, `coinsEarned` — usados por `/economy daily` y `/economy work`; no corresponden directamente a `daily_streak`, `coins`, `total_earned` o `economy_daily_streak`.
-- `games` — usado por minijuegos para misiones; no equivale automáticamente a `games_played`, `games_won`, `game_guesses` o `games_perfect`.
+## Riesgos detectados
 
-## Reglas para completar el cableado
+- `voice_minutes` se incrementa al salir/cambiar de canal y mantiene sesiones en memoria; se pierden si el proceso se reinicia.
+- `level` y `xp` tienen datos persistidos, pero el XP del modelo es progreso actual, no necesariamente XP histórico total.
+- `coins`, `bank_balance`, `net_worth` son métricas de saldo: requieren evaluación de estado, no sumar el saldo en cada transacción.
+- `total_earned` y `total_spent` requieren historial transaccional; no deben inferirse del saldo actual.
+- `daily_streak` de actividad y `economy_daily_streak` son conceptos diferentes.
+- `games_played`/`games_won`/`games_streak` tienen fuente de datos en CasinoStats; no deben confundirse con los minijuegos de `Commands/Fun/minijuegos.js`.
+- Las métricas de clanes, negocios, propiedades, inversiones, pesca y minería no tienen modelos correspondientes en el árbol de modelos revisado; deben declararse no aplicables o implementar primero esos sistemas, nunca simular progreso.
 
-1. Registrar solo acciones confirmadas (compra completada, ticket reclamado, premio entregado, reacción añadida), no al abrir un menú o iniciar una operación.
-2. Evitar duplicados por reintentos de Discord, collectors o eventos parciales; usar IDs de evento/transacción cuando la métrica no sea naturalmente única.
-3. No derivar acumulados (monedas, XP, patrimonio, días activos) a partir del saldo actual si el logro describe un total histórico.
-4. Las métricas temporales deben conservar sesiones entre reinicios o cerrar sesiones de forma segura; la sesión de voz actual es volátil.
-5. Para métricas que dependen de funciones que no existen en el bot (clanes, temporadas, raids, inversiones, pesca/minería, aplicaciones, IA, etc.), primero decidir si la función existe realmente. No inventar eventos ni conceder logros ficticios.
-6. Añadir pruebas unitarias por cada familia y pruebas de integración para desbloqueo, recompensas, requisitos previos, anuncios y persistencia.
+## Orden recomendado de implementación
 
-## Alcance de esta pasada
+1. **Mensajes y actividad:** completar contadores derivados de `messageCreate` (palabras, caracteres, imágenes, GIF, links, stickers, adjuntos, respuestas, menciones, spoilers, bloques de código, mensajes largos y franjas horarias).
+2. **Voz:** joins, streaming, cámara y persistencia de sesiones.
+3. **Economía y niveles:** conectar las transacciones confirmadas y decidir semántica de saldos vs acumulados; cubrir XP y niveles tanto por texto como por voz.
+4. **Comunidad:** invitaciones, boosts, cumpleaños, auto-roles, tickets y moderación.
+5. **Juegos y eventos:** casino, minijuegos y sorteos con registros individuales.
+6. **Temporadas y meta-logros:** primer desbloqueo, podios, victorias y premios semanales/mensuales.
+7. **No aplicables:** clanes, negocios, propiedades, inversiones, pesca/minería, solicitudes y otras funciones que no existan en Bryvex; confirmar con el producto antes de eliminar del catálogo.
 
-Se verificaron directamente los puntos de seguimiento del motor, los eventos de mensajes/reacciones/voz, economía, juegos y encuestas, y se contrastaron con los 106 nombres de métrica del backup. La matriz deja como pendientes las métricas cuyo origen aún no ha sido confirmado en un archivo ejecutable. La siguiente pasada debe rastrear las familias restantes archivo por archivo y convertir las filas pendientes en «Conectada», «Parcial» o «No aplicable» con evidencia concreta.
+## Criterio de cierre
+
+Una métrica solo pasará a **Conectada** cuando: (a) se actualice en el punto de éxito correcto; (b) sobreviva reinicios si es acumulativa; (c) no se duplique en reintentos/eventos parciales; (d) respete comparadores, niveles, prerrequisitos y recompensas; y (e) tenga prueba automatizada.
