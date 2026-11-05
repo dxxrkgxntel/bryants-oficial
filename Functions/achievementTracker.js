@@ -16,10 +16,42 @@ const DEFAULT_ACHIEVEMENTS = [
     { achievementId: "coins_10000", name: "Pequeña fortuna", description: "Gana 10.000 monedas mediante recompensas compatibles.", emoji: "💰", category: "economy", metric: "coinsEarned", goal: 10000, rewardCoins: 1000, points: 20 }
 ];
 
+const NOTOQ_BACKUP = require("../data/backups/notoq-achievements-page-2.json");
+const NOTOQ_ACHIEVEMENTS = NOTOQ_BACKUP.achievements.map(item => ({
+    achievementId: item.id,
+    name: item.name,
+    description: item.description || item.raw_description || item.name,
+    emoji: item.icon || "🏆",
+    category: item.category,
+    metric: item.metric,
+    comparator: item.comparator || "gte",
+    goal: item.threshold,
+    points: item.points,
+    rarity: item.rarity,
+    rewardCoins: item.reward_coins || 0,
+    rewardXP: item.reward_xp || 0,
+    rewardRoleIds: item.reward_role_ids || [],
+    rewardRemoveRoleIds: item.reward_remove_role_ids || [],
+    rewardTitle: item.reward_title || null,
+    secret: Boolean(item.secret),
+    repeatable: Boolean(item.repeatable),
+    announce: item.announce !== false,
+    prerequisiteIds: item.prerequisite_ids || [],
+    icon: item.icon || "🏆",
+    iconType: item.icon_type || "emoji",
+    iconUrl: item.icon_url || null,
+    symbol: item.symbol || null,
+    badgeFrame: item.badge_frame || null,
+    color: item.color || null,
+    source: "notoq",
+    builtinKey: item.builtin_key || item.id,
+    enabled: item.enabled !== false
+}));
+
 async function ensureDefaultAchievements(guildId) {
     if (!guildId) return;
     if (seededGuilds.has(guildId)) return seededGuilds.get(guildId);
-    const pending = Promise.all(DEFAULT_ACHIEVEMENTS.map(item => Achievement.updateOne(
+    const pending = Promise.all([...DEFAULT_ACHIEVEMENTS, ...NOTOQ_ACHIEVEMENTS].map(item => Achievement.updateOne(
         { guildId, achievementId: item.achievementId },
         { $setOnInsert: { ...item, guildId, enabled: true } },
         { upsert: true }
