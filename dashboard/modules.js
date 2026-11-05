@@ -374,6 +374,7 @@ const configurations = {
             { name: "levelProfileBackgroundMode", label: "Modo de fondo", type: "select", options: ["blur", "cover", "contain"], optionLabels: { blur: "Difuminado", cover: "Cubrir toda la tarjeta", contain: "Imagen completa" }, default: "blur" },
             { name: "levelProfileColor", label: "Color principal", type: "color", default: "#8A2BE2" },
             { name: "levelProfileShowAvatar", label: "Mostrar avatar", type: "boolean", default: true },
+            { name: "levelProfileShowXPBar", label: "Mostrar barra de XP", type: "boolean", default: true },
             { name: "levelProfileShowWallet", label: "Mostrar cartera", type: "boolean", default: true },
             { name: "levelProfileShowBank", label: "Mostrar banco", type: "boolean", default: true },
             { name: "levelProfileShowRanking", label: "Mostrar posición del ranking", type: "boolean", default: true },
