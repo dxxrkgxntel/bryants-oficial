@@ -730,7 +730,7 @@ function renderField(field, value, prefix = "") {
         return `<div class="field checkbox-field system-toggle-field"><span><strong id="${id}-label">${escapeHtml(field.label)}</strong>${help}</span><button id="${id}" class="system-toggle ${enabled ? "is-active" : ""}" type="button" name="${escapeHtml(field.name)}" data-toggle-field="${escapeHtml(field.name)}" data-enabled="${enabled}" aria-labelledby="${id}-label" aria-pressed="${enabled}">${enabled ? "ACTIVO" : "DESACTIVADO"}</button></div>`;
     }
     if (field.type === "select") {
-        const options = field.options.map(option => `<option value="${escapeHtml(option)}" ${safeValue === option ? "selected" : ""}>${escapeHtml(option)}</option>`).join("");
+        const options = field.options.map(option => `<option value="${escapeHtml(option)}" ${safeValue === option ? "selected" : ""}>${escapeHtml(field.optionLabels?.[option] || option)}</option>`).join("");
         return `<label class="field" for="${id}"><span>${escapeHtml(field.label)}</span><select id="${id}" name="${escapeHtml(field.name)}" ${required}><option value="">Elige una opción</option>${options}</select>${help}</label>`;
     }
     if (["kick-channel", "social-channel"].includes(field.type)) {
