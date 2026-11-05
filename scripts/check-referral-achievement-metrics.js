@@ -17,7 +17,8 @@ async function run() {
         } },
         trackProgress: async (...args) => calls.push(args),
         getGuild: async id => ({ id }),
-        getUser: async id => ({ id })
+        getUser: async id => ({ id }),
+        getMember: async (_guild, id) => ({ user: { id } })
     });
 
     assert.deepEqual(await sync(), { processed: 2, skipped: 2 });
@@ -35,11 +36,21 @@ async function run() {
     assert.equal(calls.length, 2);
     assert(calls.every(call => call[3] === 4 && call[4].absolute === true));
 
+    const noMember = createReferralAchievementMetricSync({
+        ReferralModel: { aggregate: async () => [{ _id: { guildId: "g", userId: "u" }, total: 1 }] },
+        trackProgress: async (...args) => calls.push(args),
+        getGuild: async id => ({ id }),
+        getUser: async id => ({ id }),
+        getMember: async () => null
+    });
+    assert.deepEqual(await noMember(), { processed: 0, skipped: 1 });
+
     const failing = createReferralAchievementMetricSync({
         ReferralModel: { aggregate: async () => [{ _id: { guildId: "g", userId: "u" }, total: 1 }] },
         trackProgress: async () => { throw new Error("temporary tracker failure"); },
         getGuild: async id => ({ id }),
-        getUser: async id => ({ id })
+        getUser: async id => ({ id }),
+        getMember: async (_guild, id) => ({ user: { id } })
     });
     assert.deepEqual(await failing(), { processed: 0, skipped: 1 });
 
