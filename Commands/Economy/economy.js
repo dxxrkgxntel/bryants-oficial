@@ -13,7 +13,7 @@ const RobCooldown = require("../../Models/RobCooldown");
 const { runGlobalBank, runDonate, runLoan, runPayDebt, runDistribute } = require("../../Utils/economyBankHandlers");
 const questHandler = require("../../Functions/questHandler");
 const { trackAchievementProgress } = require("../../Functions/achievementTracker");
-const { getZonedDateString, getAdjacentZonedDateString } = require("../../Functions/birthdayDates");
+const { calculateCalendarStreak } = require("../../Functions/calendarStreak");
 
 const BALANCE_BANNER = "https://i.imgur.com/joAe57D.png";
 const WORK_BANNER = "https://i.imgur.com/joAe57D.png";
@@ -87,10 +87,9 @@ async function runDaily(interaction) {
    `Ya reclamaste tu recompensa diaria.\n\n🕒 Vuelve en **${hours} horas**.`, 0xFF0000, true, DAILY_BANNER);
  }
 
- const today = getZonedDateString(new Date());
- const yesterday = getAdjacentZonedDateString(new Date(), -1);
- if (user.lastDailyDate === yesterday) user.dailyStreak += 1;
- else if (user.lastDailyDate !== today) user.dailyStreak = 1;
+ const dailyStreak = calculateCalendarStreak(user.dailyStreak, user.lastDailyDate, new Date(now));
+ user.dailyStreak = dailyStreak.streak;
+ const today = dailyStreak.today;
 
  const streakBonus = user.dailyStreak * 100;
  const totalReward = config.dailyAmount + streakBonus;
@@ -129,11 +128,9 @@ async function runWork(interaction) {
 
  const amount = Math.floor(Math.random() * (config.workMax - config.workMin + 1)) + config.workMin;
  const randomJob = jobs[Math.floor(Math.random() * jobs.length)];
- const today = getZonedDateString(new Date(now));
- const yesterday = getAdjacentZonedDateString(new Date(now), -1);
- if (user.lastWorkDate === yesterday) user.workStreak += 1;
- else if (user.lastWorkDate !== today) user.workStreak = 1;
- user.lastWorkDate = today;
+ const workStreak = calculateCalendarStreak(user.workStreak, user.lastWorkDate, new Date(now));
+ user.workStreak = workStreak.streak;
+ user.lastWorkDate = workStreak.today;
  user.wallet += amount;
  user.lastWork = now;
  await user.save();
