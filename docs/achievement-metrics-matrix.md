@@ -133,7 +133,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 - `coins` mide el máximo saldo de cartera; `bank_balance`, el máximo saldo bancario; `net_worth`, el máximo patrimonio líquido neto (cartera + banco − deuda). Se actualizan con progreso absoluto para conservar el máximo alcanzado, incluidas recompensas de WeeklyDrop y misiones.
 - `total_earned` y `total_spent` requieren historial transaccional; no deben inferirse del saldo actual.
 - `daily_streak` de actividad y `economy_daily_streak` son conceptos diferentes.
-- `games_played`, `games_won` y `games_streak` ya se actualizan desde las partidas del casino con progreso absoluto; siguen parciales hasta incluir los minijuegos de `Commands/Fun/minijuegos.js`.
+- `games_played`, `games_won` y `games_streak` se actualizan desde casino y minijuegos Fun con fuentes separadas. Los minijuegos singleplayer y multiplayer persisten contadores y rachas en `MiniGameStats`; se requiere validación funcional en Discord para cerrar las tres métricas. Los timeouts multijugador no cuentan como partida finalizada; los empates cuentan como partida y reinician la racha.
 - Las métricas de clanes, negocios, propiedades, inversiones, pesca y minería no tienen modelos correspondientes en el árbol de modelos revisado; deben declararse no aplicables o implementar primero esos sistemas, nunca simular progreso.
 
 ## Orden recomendado de implementación
