@@ -1566,7 +1566,7 @@ app.post("/api/guilds/:guildId/achievements/import", requireLogin, requireCsrf, 
             }
         }));
         const result = await Achievement.bulkWrite(operations, { ordered: false });
-        if (String(backup.source || "").trim().toLowerCase() === "notoq" && Number(backup.sourcePage) === 2) {
+        if (String(backup.source || "").trim().toLowerCase() === "notoq" && (Number(backup.sourceTotal) >= 397 || Number(backup.count) >= 397)) {
             await TrophySettings.updateOne(
                 { guildId: req.params.guildId },
                 { $set: { notoqPage2Seeded: true }, $setOnInsert: { guildId: req.params.guildId } },
