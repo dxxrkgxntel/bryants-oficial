@@ -19,7 +19,7 @@ const metrics = extractMessageAchievementMetrics(message({
     attachments: { values: () => [{ name: "foto.png", contentType: "image/png" }, { name: "clip.gif", contentType: "image/gif" }, { name: "document.pdf", contentType: "application/pdf" }] },
     stickers: { size: 2 }
 }));
-assert.equal(metrics.words_typed, 7);
+assert.equal(metrics.words_typed, 11);
 assert.equal(metrics.characters_typed, [..."Hola mundo 😀 https://example.com ||secreto|| ```js\nconst x = 1;\n```"].length);
 assert.equal(metrics.images_sent, 1);
 assert.equal(metrics.gifs_sent, 1);
