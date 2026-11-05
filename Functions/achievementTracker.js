@@ -1,6 +1,7 @@
 const Achievement = require("../Models/Achievement");
 const UserAchievement = require("../Models/UserAchievement");
 const EconomyUser = require("../Models/EconomyUser");
+const Level = require("../Models/Level");
 const TrophySettings = require("../Models/TrophySettings");
 const { EmbedBuilder } = require("discord.js");
 const { sendTrophyCard, sendTrophyComponents } = require("./trophyCard");
@@ -51,11 +52,26 @@ const NOTOQ_ACHIEVEMENTS = NOTOQ_BACKUP.achievements.map(item => ({
 async function ensureDefaultAchievements(guildId) {
     if (!guildId) return;
     if (seededGuilds.has(guildId)) return seededGuilds.get(guildId);
-    const pending = Promise.all([...DEFAULT_ACHIEVEMENTS, ...NOTOQ_ACHIEVEMENTS].map(item => Achievement.updateOne(
-        { guildId, achievementId: item.achievementId },
-        { $setOnInsert: { ...item, guildId, enabled: true } },
-        { upsert: true }
-    ))).catch(error => {
+    const pending = (async () => {
+        await Promise.all(DEFAULT_ACHIEVEMENTS.map(item => Achievement.updateOne(
+            { guildId, achievementId: item.achievementId },
+            { $setOnInsert: { ...item, guildId, enabled: true } },
+            { upsert: true }
+        )));
+        const settings = await TrophySettings.findOne({ guildId }).select("notoqPage2Seeded").lean();
+        if (!settings?.notoqPage2Seeded) {
+            await Promise.all(NOTOQ_ACHIEVEMENTS.map(item => Achievement.updateOne(
+                { guildId, achievementId: item.achievementId },
+                { $setOnInsert: { ...item, guildId } },
+                { upsert: true }
+            )));
+            await TrophySettings.updateOne(
+                { guildId },
+                { $set: { notoqPage2Seeded: true }, $setOnInsert: { guildId } },
+                { upsert: true }
+            );
+        }
+    })().catch(error => {
         seededGuilds.delete(guildId);
         throw error;
     });
@@ -105,6 +121,20 @@ async function trackAchievementProgress(guild, user, metric, amount = 1) {
             const rarity = ["common", "uncommon", "rare", "epic", "legendary", "mythic"].includes(rarityList[i]) ? rarityList[i] : (achievement.rarity || "common");
             const tier = { level: i + 1, goal: goals[i], points, rarity };
             unlocked.push({ ...achievement, level: tier.level, awardedPoints: points, rarity });
+            if (achievement.rewardXP > 0) {
+                await Level.findOneAndUpdate(
+                    { guildId: guild.id, userId: user.id },
+                    { $inc: { xp: achievement.rewardXP }, $setOnInsert: { guildId: guild.id, userId: user.id } },
+                    { upsert: true, new: true, setDefaultsOnInsert: true }
+                );
+            }
+            if (achievement.rewardRoleIds?.length || achievement.rewardRemoveRoleIds?.length) {
+                const member = await guild.members.fetch(user.id).catch(() => null);
+                if (member) {
+                    if (achievement.rewardRoleIds?.length) await member.roles.add(achievement.rewardRoleIds).catch(error => console.warn("[Achievements] No se pudieron asignar roles:", error.message));
+                    if (achievement.rewardRemoveRoleIds?.length) await member.roles.remove(achievement.rewardRemoveRoleIds).catch(error => console.warn("[Achievements] No se pudieron retirar roles:", error.message));
+                }
+            }
             if (achievement.rewardCoins > 0) {
                 await EconomyUser.findOneAndUpdate(
                     { guildId: guild.id, userId: user.id },
@@ -112,7 +142,7 @@ async function trackAchievementProgress(guild, user, metric, amount = 1) {
                     { upsert: true, new: true, setDefaultsOnInsert: true }
                 );
             }
-            const mode = settings?.announcementMode || "embed";
+            const mode = achievement.announce === false ? "silent" : (settings?.announcementMode || "embed");
             if (mode !== "silent") {
                 const channelId = achievement.announcementChannelId || settings?.announcementChannelId;
                 const channel = mode === "dm" ? user : channelId ? (guild.channels.cache.get(channelId) || await guild.channels.fetch(channelId).catch(() => null)) : null;
