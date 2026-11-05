@@ -1,14 +1,14 @@
 # Matriz de auditoría de las 106 métricas de logros — Bryvex Bot
 
-> Rama: `feature/notoq-achievements-import`. Estado basado en evidencia localizada en código y modelos. «Pendiente» significa que no hay llamada confirmada al tracker, aunque pueda existir una fuente de datos aprovechable.
+> Rama: `feature/notoq-metrics-next`. Estado basado en evidencia localizada en código y modelos. «Pendiente» significa que no hay llamada confirmada al tracker, aunque pueda existir una fuente de datos aprovechable.
 
 ## Resumen
 
 - Catálogo: **397 logros / 106 métricas únicas**.
 - Conectadas: **37**.
-- Parciales: **7**.
-- Fuente existente o dato calculable, sin conexión al catálogo: **9**.
-- Pendientes de localizar/implementar o validar: **53**.
+- Parciales: **10**.
+- Fuente existente o dato calculable, sin conexión al catálogo: **8**.
+- Pendientes de localizar/implementar o validar: **51**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
 ## Matriz
@@ -52,7 +52,7 @@
 | 35 | `early_bird_messages` | 2 | **Conectada** | Functions/achievementMessageMetrics.js · 06:00–08:59 en America/Santo_Domingo | Early Bird (100); Sunrise Soul (1000) |
 | 36 | `economy_daily_streak` | 3 | **Conectada** | Commands/Economy/economy.js + Functions/birthdayDates.js · informa la mejor racha diaria económica con fechas de America/Santo_Domingo | Daily Devotee (7); Daily Loyalist (30) |
 | 37 | `embeds_posted` | 2 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Suma embeds adjuntos al mensaje. | Embed Enjoyer (25); Rich Poster (250) |
-| 38 | `first_unlocks` | 4 | **Pendiente** | Functions/achievementTracker.js; falta detección atómica del primer desbloqueo | Pioneer (1); Trailblazer (5) |
+| 38 | `first_unlocks` | 4 | **Parcial** | Functions/achievementTracker.js + Functions/firstUnlockAchievementMetric.js + Models/AchievementFirstUnlock.js · al completar un logro, una inserción atómica con índice único por servidor/logro adjudica el primer desbloqueo a un solo usuario; solo ese ganador suma 1 a `first_unlocks`; pendiente validación con MongoDB/Discord real | Pioneer (1); Trailblazer (5) |
 | 39 | `fishing_trips` | 5 | **Pendiente** | sin sistema de pesca identificado | First Catch (1); Angler (25) |
 | 40 | `flags_collected` | 5 | **Pendiente** | sin juego de banderas identificado | Globetrotter (10); Cartographer (50) |
 | 41 | `game_guesses` | 3 | **Pendiente** | Commands/Fun/minijuegos.js; falta contar intentos | Guesser (100); Sharp Eye (1000) |
@@ -134,6 +134,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 - `total_earned` y `total_spent` requieren historial transaccional; no deben inferirse del saldo actual.
 - `daily_streak` de actividad y `economy_daily_streak` son conceptos diferentes.
 - `games_played`, `games_won` y `games_streak` se actualizan desde casino y minijuegos Fun con fuentes separadas. Los minijuegos singleplayer y multiplayer persisten contadores y rachas en `MiniGameStats`; se requiere validación funcional en Discord para cerrar las tres métricas. Los timeouts multijugador no cuentan como partida finalizada; los empates cuentan como partida y reinician la racha.
+- `first_unlocks` adjudica una sola vez cada logro por servidor mediante un índice único; la validación concurrente y en MongoDB/Discord real sigue pendiente.
 - Las métricas de clanes, negocios, propiedades, inversiones, pesca y minería no tienen modelos correspondientes en el árbol de modelos revisado; deben declararse no aplicables o implementar primero esos sistemas, nunca simular progreso.
 
 ## Orden recomendado de implementación
