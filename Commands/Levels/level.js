@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, MediaGalleryBuilder, MediaGalleryItemBuilder } = require("discord.js");
+const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags, AttachmentBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, MediaGalleryBuilder, MediaGalleryItemBuilder } = require("discord.js");
 const Level = require("../../Models/Level");
 const LevelConfig = require("../../Models/LevelConfig");
 const LevelReward = require("../../Models/LevelReward");
@@ -41,6 +41,35 @@ function xpNeeded(level) {
     return 5 * (level ** 2) + 50 * level + 100;
 }
 
+async function loadRemoteImage(url) {
+    if (!url) throw new Error("No hay URL de imagen.");
+    const response = await fetch(url, {
+        headers: { Accept: "image/png,image/jpeg,image/webp,image/gif,image/*;q=0.8" },
+        signal: AbortSignal.timeout(10000)
+    });
+    if (!response.ok) throw new Error(`La imagen respondió ${response.status}.`);
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.toLowerCase().startsWith("image/")) throw new Error("La URL no devolvió una imagen.");
+    const contentLength = Number(response.headers.get("content-length") || 0);
+    if (contentLength > 8 * 1024 * 1024) throw new Error("La imagen supera el límite de 8 MB.");
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (!buffer.length || buffer.length > 8 * 1024 * 1024) throw new Error("La imagen está vacía o supera 8 MB.");
+    return loadImage(buffer);
+}
+
+async function loadUserAvatar(user) {
+    const urls = [
+        user.displayAvatarURL({ extension: "png", size: 512, forceStatic: true }),
+        user.defaultAvatarURL
+    ].filter(Boolean);
+    let lastError;
+    for (const url of [...new Set(urls)]) {
+        try { return await loadRemoteImage(url); }
+        catch (error) { lastError = error; }
+    }
+    throw lastError || new Error("No se pudo cargar el avatar de Discord.");
+}
+
 async function positionOf(guildId, data) {
     return (await Level.countDocuments({
         guildId,
@@ -50,21 +79,29 @@ async function positionOf(guildId, data) {
 
 
 
-async function renderLevelCard({ user, member, data, position, needed, backgroundUrl, profile = false, economy = {}, badges = [] }) {
+async function renderLevelCard({ user, member, data, position, needed, backgroundUrl, backgroundMode = "blur", accentColor, showAvatar = true, showXPBar = true, showWallet = true, showBank = true, showRanking = true, showBadges = true, profile = false, economy = {}, badges = [] }) {
     const width = profile ? 1500 : 1200, height = profile ? 650 : 390;
     const canvas = createCanvas(width, height), ctx = canvas.getContext("2d");
-    const accent = position === 1 ? "#ffd166" : position === 2 ? "#d7e0ed" : position === 3 ? "#d99a68" : "#b56cff";
+    const accent = /^#[\\da-f]{6}$/i.test(accentColor || "") ? accentColor : position === 1 ? "#ffd166" : position === 2 ? "#d7e0ed" : position === 3 ? "#d99a68" : "#b56cff";
     const progress = Math.max(0, Math.min(1, data.xp / needed)), pct = Math.floor(progress * 100);
     const bg = ctx.createLinearGradient(0, 0, width, height);
     bg.addColorStop(0, "#090611"); bg.addColorStop(0.52, "#21103d"); bg.addColorStop(1, "#080b1a");
     ctx.fillStyle = bg; ctx.fillRect(0, 0, width, height);
     if (backgroundUrl) {
         try {
-            const image = await loadImage(backgroundUrl), scale = Math.max(width / image.width, height / image.height);
-            ctx.save(); ctx.filter = "blur(18px)"; ctx.globalAlpha = 0.32;
-            ctx.drawImage(image, (width-image.width*scale)/2, (height-image.height*scale)/2, image.width*scale, image.height*scale);
+            const image = await loadRemoteImage(backgroundUrl);
+            const scale = backgroundMode === "contain"
+                ? Math.min(width / image.width, height / image.height)
+                : Math.max(width / image.width, height / image.height);
+            const drawWidth = image.width * scale, drawHeight = image.height * scale;
+            ctx.save();
+            ctx.globalAlpha = backgroundMode === "blur" ? 0.32 : 0.24;
+            if (backgroundMode === "blur") ctx.filter = "blur(18px)";
+            ctx.drawImage(image, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight);
             ctx.restore();
-        } catch (_) {}
+        } catch (error) {
+            console.warn("[Bryvex Levels] No pude cargar el fondo personalizado:", error.message);
+        }
     }
     const shade = ctx.createLinearGradient(0, 0, width, height);
     shade.addColorStop(0, "rgba(5,3,14,0.48)"); shade.addColorStop(1, "rgba(4,7,18,0.78)");
@@ -78,11 +115,13 @@ async function renderLevelCard({ user, member, data, position, needed, backgroun
     ctx.fillStyle="rgba(13,10,25,0.32)"; ctx.roundRect(22,22,width-44,height-44,30); ctx.fill();
 
     const avatarSize=profile?250:220, avatarX=profile?78:72, avatarY=(height-avatarSize)/2-(profile?22:0);
-    ctx.save(); ctx.shadowColor=accent; ctx.shadowBlur=38; ctx.beginPath(); ctx.arc(avatarX+avatarSize/2,avatarY+avatarSize/2,avatarSize/2+8,0,Math.PI*2); ctx.fillStyle=accent; ctx.fill(); ctx.restore();
-    ctx.save(); ctx.beginPath(); ctx.arc(avatarX+avatarSize/2,avatarY+avatarSize/2,avatarSize/2,0,Math.PI*2); ctx.clip();
-    try { const avatar=await loadImage(user.displayAvatarURL({extension:"png",size:512})); ctx.drawImage(avatar,avatarX,avatarY,avatarSize,avatarSize); }
-    catch (_) { ctx.fillStyle="#302044"; ctx.fillRect(avatarX,avatarY,avatarSize,avatarSize); }
-    ctx.restore();
+    if (showAvatar !== false) {
+        ctx.save(); ctx.shadowColor=accent; ctx.shadowBlur=38; ctx.beginPath(); ctx.arc(avatarX+avatarSize/2,avatarY+avatarSize/2,avatarSize/2+8,0,Math.PI*2); ctx.fillStyle=accent; ctx.fill(); ctx.restore();
+        ctx.save(); ctx.beginPath(); ctx.arc(avatarX+avatarSize/2,avatarY+avatarSize/2,avatarSize/2,0,Math.PI*2); ctx.clip();
+        try { const avatar=await loadUserAvatar(user); ctx.drawImage(avatar,avatarX,avatarY,avatarSize,avatarSize); }
+        catch (error) { console.warn("[Bryvex Levels] No pude cargar el avatar de Discord:", error.message); ctx.fillStyle="#302044"; ctx.fillRect(avatarX,avatarY,avatarSize,avatarSize); }
+        ctx.restore();
+    }
 
     const x=profile?390:350, right=width-78, displayName=member?.displayName||user.globalName||user.username;
     ctx.textBaseline="alphabetic"; ctx.fillStyle="#fff"; ctx.font="bold "+(profile?58:54)+"px Audiowide, sans-serif";
@@ -97,46 +136,117 @@ async function renderLevelCard({ user, member, data, position, needed, backgroun
 
     const levelY=profile?270:238; ctx.fillStyle="#d7b4ff"; ctx.font="bold "+(profile?43:40)+"px Arial"; ctx.fillText("LEVEL "+data.level,x,levelY);
     ctx.fillStyle="#fff"; ctx.font="bold 25px Arial"; ctx.textAlign="right"; ctx.fillText(data.xp.toLocaleString()+" / "+needed.toLocaleString()+" XP",right,levelY); ctx.textAlign="left";
-    const barX=x,barY=levelY+28,barWidth=right-x,barHeight=34;
-    ctx.fillStyle="rgba(3,4,14,0.88)"; ctx.roundRect(barX,barY,barWidth,barHeight,18); ctx.fill();
-    if(progress>0){const grad=ctx.createLinearGradient(barX,0,barX+barWidth,0);grad.addColorStop(0,"#9b4dff");grad.addColorStop(.55,"#d16cff");grad.addColorStop(1,"#69a7ff");ctx.save();ctx.shadowColor="#b65cff";ctx.shadowBlur=18;ctx.fillStyle=grad;ctx.roundRect(barX,barY,Math.max(barHeight,barWidth*progress),barHeight,18);ctx.fill();ctx.restore();}
-    ctx.fillStyle="#fff";ctx.font="20px Arial";ctx.fillText(pct+"% completado",barX,barY+66);ctx.textAlign="right";
-    ctx.fillText(Math.max(0,needed-data.xp).toLocaleString()+" XP para el siguiente nivel",right,barY+66);ctx.textAlign="left";
+    if (showXPBar !== false) {
+        const barX=x,barY=levelY+28,barWidth=right-x,barHeight=34;
+        ctx.fillStyle="rgba(3,4,14,0.88)"; ctx.roundRect(barX,barY,barWidth,barHeight,18); ctx.fill();
+        if(progress>0){const grad=ctx.createLinearGradient(barX,0,barX+barWidth,0);grad.addColorStop(0,"#9b4dff");grad.addColorStop(.55,"#d16cff");grad.addColorStop(1,"#69a7ff");ctx.save();ctx.shadowColor=accent;ctx.shadowBlur=18;ctx.fillStyle=grad;ctx.roundRect(barX,barY,Math.max(barHeight,barWidth*progress),barHeight,18);ctx.fill();ctx.restore();}
+        ctx.fillStyle="#fff";ctx.font="20px Arial";ctx.fillText(pct+"% completado",barX,barY+66);ctx.textAlign="right";
+        ctx.fillText(Math.max(0,needed-data.xp).toLocaleString()+" XP para el siguiente nivel",right,barY+66);ctx.textAlign="left";
+    }
 
     if(profile){
         const infoY=465,columns=[
-            {x,label:"WALLET",value:(economy.wallet||0).toLocaleString(),color:"#e8c5ff"},
-            {x:x+360,label:"BANCO",value:(economy.bank||0).toLocaleString(),color:"#a8c8ff"},
-            {x:x+720,label:"RANKING",value:"#"+position,color:accent}
+            ...(showWallet !== false ? [{x,label:"WALLET",value:(economy.wallet||0).toLocaleString(),color:"#e8c5ff"}] : []),
+            ...(showBank !== false ? [{x:x+360,label:"BANCO",value:(economy.bank||0).toLocaleString(),color:"#a8c8ff"}] : []),
+            ...(showRanking !== false ? [{x:x+720,label:"RANKING",value:"#"+position,color:accent}] : [])
         ];
         for(const item of columns){ctx.fillStyle="rgba(255,255,255,0.07)";ctx.roundRect(item.x,infoY-42,310,92,18);ctx.fill();ctx.fillStyle="#a99ab9";ctx.font="bold 18px Arial";ctx.fillText(item.label,item.x+20,infoY-10);ctx.fillStyle=item.color;ctx.font="bold 29px Arial";ctx.fillText(item.value,item.x+20,infoY+28);}
-        ctx.fillStyle="#d9c8ed";ctx.font="bold 20px Arial";ctx.fillText("BADGES",x,585);ctx.font="20px Arial";ctx.fillStyle="#fff";
-        const badgeText=badges.length?badges.join("  •  "):"Ninguno";ctx.fillText(badgeText.length>92?badgeText.slice(0,89)+"…":badgeText,x+105,585);
+        if (showBadges !== false) {
+            ctx.fillStyle="#d9c8ed";ctx.font="bold 20px Arial";ctx.fillText("BADGES",x,585);ctx.font="20px Arial";ctx.fillStyle="#fff";
+            const badgeText=badges.length?badges.join("  •  "):"Ninguno";ctx.fillText(badgeText.length>92?badgeText.slice(0,89)+"…":badgeText,x+105,585);
+        }
     } else {ctx.fillStyle="rgba(255,255,255,0.58)";ctx.font="bold 18px Arial";ctx.fillText("BRYVEX LEVELS  •  RANK CARD",x,height-42);}
     return await canvas.encode("png");
 }
 
 
+function colorNumber(value) {
+    return /^#[\\da-f]{6}$/i.test(value || "") ? parseInt(value.slice(1), 16) : PURPLE;
+}
+
+function buildLevelDetails({ user, data, position, needed, profile, economy = {} }) {
+    const rows = [
+        `**Usuario:** <@${user.id}>`,
+        `**Rango:** #${position}`,
+        `**Nivel:** ${data.level}`,
+        `**Experiencia:** ${data.xp.toLocaleString()} / ${needed.toLocaleString()} XP (${Math.floor(Math.min(1, data.xp / needed) * 100)}%)`
+    ];
+    if (profile) {
+        rows.push(`**Cartera:** ${(economy.wallet || 0).toLocaleString()}`);
+        rows.push(`**Banco:** ${(economy.bank || 0).toLocaleString()}`);
+    }
+    return rows.join("\\n");
+}
+
+async function sendLevelResponse(interaction, options) {
+    const { user, member, data, position, needed, profile = false, economy = {}, badges = [], config = {} } = options;
+    const prefix = profile ? "levelProfile" : "levelRank";
+    const format = config[`${prefix}Format`] || "card";
+    const color = colorNumber(config[`${prefix}Color`]);
+    const details = buildLevelDetails({ user, data, position, needed, profile, economy });
+    const title = profile ? "👤 Bryvex Levels • Perfil" : "⭐ Bryvex Levels • Rank";
+    const avatarUrl = user.displayAvatarURL({ extension: "png", size: 512, forceStatic: true });
+    const badgeLine = profile && config.levelProfileShowBadges !== false
+        ? `\\n**Badges:** ${badges.length ? badges.join(" · ") : "Ninguno"}`
+        : "";
+    const profileLine = profile ? `${config.levelProfileShowWallet === false ? "" : `\\n**Cartera:** ${(economy.wallet || 0).toLocaleString()}`}${config.levelProfileShowBank === false ? "" : `\\n**Banco:** ${(economy.bank || 0).toLocaleString()}`}${config.levelProfileShowRanking === false ? "" : `\\n**Ranking:** #${position}`}${badgeLine}` : "";
+    const textContent = `## ${title}\\n**Usuario:** ${user}\\n**Nivel:** ${data.level}\\n**Rango:** #${position}\\n**XP:** ${data.xp.toLocaleString()} / ${needed.toLocaleString()} (${Math.floor(Math.min(1, data.xp / needed) * 100)}%)${profileLine}`;
+
+    if (format === "text") return interaction.editReply({ content: textContent });
+    if (format === "embed") {
+        const embed = new EmbedBuilder().setColor(color).setTitle(title).setDescription(details + profileLine).setFooter({ text: "BRYVEX LEVELS" });
+        if (config[`${prefix}ShowAvatar`] !== false) embed.setThumbnail(avatarUrl);
+        return interaction.editReply({ embeds: [embed] });
+    }
+    if (format === "components") {
+        const container = new ContainerBuilder().setAccentColor(color);
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}\\n${details}${profileLine}`));
+        if (config[`${prefix}ShowAvatar`] !== false) {
+            container.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small));
+            container.addMediaGalleryComponents(new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(avatarUrl)));
+        }
+        return interaction.editReply({ flags: MessageFlags.IsComponentsV2, components: [container] });
+    }
+
+    const buffer = await renderLevelCard({
+        user, member, data, position, needed,
+        backgroundUrl: config[`${prefix === "levelRank" ? "levelRankImage" : "levelProfileImage"}`],
+        backgroundMode: config[`${prefix}BackgroundMode`] || "blur",
+        accentColor: config[`${prefix}Color`],
+        showAvatar: config[`${prefix}ShowAvatar`] !== false,
+        showXPBar: profile || config.levelRankShowXPBar !== false,
+        showWallet: config.levelProfileShowWallet !== false,
+        showBank: config.levelProfileShowBank !== false,
+        showRanking: config.levelProfileShowRanking !== false,
+        showBadges: config.levelProfileShowBadges !== false,
+        profile, economy, badges
+    });
+    return interaction.editReply({ files: [new AttachmentBuilder(buffer, { name: profile ? "bryvex-perfil.png" : "bryvex-rank.png" })] });
+}
+
 async function rank(interaction) {
     await interaction.deferReply();
     const user = interaction.options.getUser("usuario") || interaction.user;
-    const data = await Level.findOne({ guildId: interaction.guild.id, userId: user.id });
-    if (!data) return interaction.editReply(await configuredPanel(interaction, "levelRankImage", "## ⭐ Bryvex Levels • Rank\n❌ Ese usuario todavía no tiene datos de nivel.", 0xED4245));
+    const [data, member, config] = await Promise.all([
+        Level.findOne({ guildId: interaction.guild.id, userId: user.id }),
+        interaction.guild.members.fetch(user.id).catch(() => null),
+        LevelConfig.findOne({ guildId: interaction.guild.id }).select("levelRankFormat levelRankImage levelRankColor levelRankBackgroundMode levelRankShowAvatar levelRankShowXPBar").lean()
+    ]);
+    if (!data) return interaction.editReply(await configuredPanel(interaction, "levelRankImage", "## ⭐ Bryvex Levels • Rank\\n❌ Ese usuario todavía no tiene datos de nivel.", 0xED4245));
     const needed = xpNeeded(data.level), pos = await positionOf(interaction.guild.id, data);
-    const config = await LevelConfig.findOne({ guildId: interaction.guild.id }).select("levelRankImage").lean();
-    const buffer = await renderLevelCard({ user, data, position: pos, needed, backgroundUrl: config?.levelRankImage });
-    return interaction.editReply({ files: [new AttachmentBuilder(buffer, { name: "bryvex-rank.png" })] });
+    return sendLevelResponse(interaction, { user, member, data, position: pos, needed, config: config || {} });
 }
 
 async function perfil(interaction) {
     await interaction.deferReply();
     const user = interaction.options.getUser("usuario") || interaction.user;
-    const [data, economy, member] = await Promise.all([
+    const [data, economy, member, config] = await Promise.all([
         Level.findOne({ guildId: interaction.guild.id, userId: user.id }),
         EconomyUser.findOne({ guildId: interaction.guild.id, userId: user.id }),
-        interaction.guild.members.fetch(user.id).catch(() => null)
+        interaction.guild.members.fetch(user.id).catch(() => null),
+        LevelConfig.findOne({ guildId: interaction.guild.id }).select("levelProfileFormat levelProfileImage levelProfileColor levelProfileBackgroundMode levelProfileShowAvatar levelProfileShowWallet levelProfileShowBank levelProfileShowRanking levelProfileShowBadges").lean()
     ]);
-    if (!data) return interaction.editReply(await configuredPanel(interaction, "levelProfileImage", "## 👤 Bryvex Levels • Perfil\n❌ Este usuario todavía no tiene datos de nivel.", 0xED4245));
+    if (!data) return interaction.editReply(await configuredPanel(interaction, "levelProfileImage", "## 👤 Bryvex Levels • Perfil\\n❌ Este usuario todavía no tiene datos de nivel.", 0xED4245));
     const pos = await positionOf(interaction.guild.id, data), needed = xpNeeded(data.level), badges = [];
     if (interaction.guild.ownerId === user.id) badges.push("👑 Owner");
     if (member?.permissions.has(PermissionFlagsBits.Administrator)) badges.push("🛠️ Admin");
@@ -144,9 +254,7 @@ async function perfil(interaction) {
     if (pos <= 3) badges.push(pos === 1 ? "🥇 Top 1" : pos === 2 ? "🥈 Top 2" : "🥉 Top 3");
     if ((economy?.wallet || 0) >= 100000) badges.push("💰 Magnate");
     if (data.level >= 25) badges.push("🔥 Nivel 25+");
-    const config = await LevelConfig.findOne({ guildId: interaction.guild.id }).select("levelProfileImage").lean();
-    const buffer = await renderLevelCard({ user, member, data, position: pos, needed, backgroundUrl: config?.levelProfileImage, profile: true, economy: economy || { wallet: 0, bank: 0 }, badges });
-    return interaction.editReply({ files: [new AttachmentBuilder(buffer, { name: "bryvex-perfil.png" })] });
+    return sendLevelResponse(interaction, { user, member, data, position: pos, needed, profile: true, economy: economy || { wallet: 0, bank: 0 }, badges, config: config || {} });
 }
 
 async function renderTop(interaction, page, ownerId, config) {
