@@ -50,7 +50,16 @@ module.exports = {
             .setDescription("Cierra la temporada y adjudica los logros del podio"))
         .addSubcommand(sub => sub
             .setName("info")
-            .setDescription("Consulta el estado de la temporada actual")),
+            .setDescription("Consulta el estado de la temporada actual"))
+        .addSubcommand(sub => sub
+            .setName("top")
+            .setDescription("Consulta los primeros puestos de la temporada activa"))
+        .addSubcommand(sub => sub
+            .setName("roles")
+            .setDescription("Configura los roles que recibirá el podio")
+            .addRoleOption(option => option.setName("primero").setDescription("Rol para el primer lugar"))
+            .addRoleOption(option => option.setName("segundo").setDescription("Rol para el segundo lugar"))
+            .addRoleOption(option => option.setName("tercero").setDescription("Rol para el tercer lugar))),
 
     async execute(interaction) {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -72,21 +81,84 @@ module.exports = {
                     0xFFD700
                 ));
             }
-            if (settings.lastSeasonKey === seasonKey || await TrophyScore.exists({ guildId: interaction.guild.id, seasonKey })) {
+            if (settings.usedSeasonKeys?.includes(seasonKey) || settings.lastSeasonKey === seasonKey || await TrophyScore.exists({ guildId: interaction.guild.id, seasonKey })) {
                 return interaction.editReply(seasonPanel(
                     "⚠️ Identificador ya utilizado",
                     "Cada temporada debe tener un identificador único para conservar el historial y evitar duplicar premios.",
                     0xFFD700
                 ));
             }
-            settings.seasonKey = seasonKey;
-            settings.seasonEnabled = true;
-            settings.seasonStartedAt = new Date();
-            await settings.save();
+            const started = await TrophySettings.findOneAndUpdate(
+                {
+                    guildId: interaction.guild.id,
+                    $or: [{ seasonEnabled: { $ne: true } }, { seasonKey: "" }],
+                    usedSeasonKeys: { $ne: seasonKey }
+                },
+                {
+                    $set: { seasonKey, seasonEnabled: true, seasonStartedAt: new Date() },
+                    $addToSet: { usedSeasonKeys: seasonKey }
+                },
+                { new: true }
+            );
+            if (!started) {
+                return interaction.editReply(seasonPanel(
+                    "⚠️ No se pudo iniciar",
+                    "Otra temporada pudo iniciarse al mismo tiempo. Consulta /trophy-season info e inténtalo de nuevo.",
+                    0xFFD700
+                ));
+            }
             return interaction.editReply(seasonPanel(
                 "🏆 Temporada iniciada",
                 `El ranking de trofeos ya registra puntos para **${seasonKey}**. Al cerrar la temporada se premiará al top 3.`,
                 0x00AA66
+            ));
+        }
+
+        if (subcommand === "roles") {
+            const roles = {
+                firstPlaceRoleId: interaction.options.getRole("primero")?.id,
+                secondPlaceRoleId: interaction.options.getRole("segundo")?.id,
+                thirdPlaceRoleId: interaction.options.getRole("tercero")?.id
+            };
+            const updates = Object.fromEntries(Object.entries(roles).filter(([, value]) => value));
+            if (!Object.keys(updates).length) {
+                return interaction.editReply(seasonPanel(
+                    "⚠️ Faltan roles",
+                    "Selecciona al menos un rol para el primero, segundo o tercer lugar."
+                ));
+            }
+            Object.assign(settings, updates);
+            await settings.save();
+            return interaction.editReply(seasonPanel(
+                "🎭 Roles del podio guardados",
+                [
+                    settings.firstPlaceRoleId ? "**1.º:** <@" + "&" + settings.firstPlaceRoleId + ">" : "**1.º:** Sin configurar",
+                    settings.secondPlaceRoleId ? "**2.º:** <@" + "&" + settings.secondPlaceRoleId + ">" : "**2.º:** Sin configurar",
+                    settings.thirdPlaceRoleId ? "**3.º:** <@" + "&" + settings.thirdPlaceRoleId + ">" : "**3.º:** Sin configurar"
+                ].join("\n"),
+                0x00AA66
+            ));
+        }
+
+        if (subcommand === "top") {
+            if (!settings.seasonEnabled || !settings.seasonKey) {
+                return interaction.editReply(seasonPanel(
+                    "ℹ️ No hay temporada activa",
+                    "Inicia una temporada antes de consultar el ranking.",
+                    0xFFD700
+                ));
+            }
+            const scores = await TrophyScore.find({
+                guildId: interaction.guild.id,
+                seasonKey: settings.seasonKey
+            }).lean();
+            const ranking = buildSeasonRanking(scores).slice(0, 10);
+            const lines = ranking.map(entry =>
+                "**#" + entry.rank + "** <@" + entry.userId + "> — " + entry.points.toLocaleString() + " puntos · " + entry.unlocks + " desbloqueos"
+            );
+            return interaction.editReply(seasonPanel(
+                "🏆 Ranking · " + settings.seasonKey,
+                lines.length ? lines.join("\n") : "Todavía no hay puntos registrados en esta temporada."
             ));
         }
 
