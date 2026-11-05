@@ -21,7 +21,33 @@ function buildMiniGameStatsPipeline(won) {
     }];
 }
 
-async function recordPlayerResult(guild, user, outcome) {
+function extractMiniGameGuessCount(result) {
+    if (!result || typeof result !== "object") return 0;
+    if (Array.isArray(result.guessed)) return result.guessed.length;
+    for (const key of ["turns", "tilesTurned", "blocksTurned"]) {
+        const value = Number(result[key]);
+        if (Number.isSafeInteger(value) && value > 0) return value;
+    }
+    if (result.selected !== undefined && result.selected !== null) return 1;
+    if (result.selectedEmoji !== undefined && result.selectedEmoji !== null) return 1;
+    return 0;
+}
+
+function isPerfectMiniGame(result, outcome) {
+    if (!result || outcome !== "win") return false;
+    if (Array.isArray(result.guessed)) {
+        if (Number.isFinite(result.damage)) return result.damage === 0;
+        return result.guessed.length === 1;
+    }
+    if (result.selectedEmoji !== undefined && result.correctEmoji !== undefined) {
+        return result.selectedEmoji === result.correctEmoji;
+    }
+    if (result.selected !== undefined && result.selected !== null) return true;
+    if (Number.isSafeInteger(result.blocksTurned) && result.blocksTurned > 0) return true;
+    return false;
+}
+
+async function recordPlayerResult(guild, user, outcome, gameMetrics = {}) {
     const MiniGameStats = require("../Models/MiniGameStats");
     const CasinoStats = require("../Models/CasinoStats");
     const { trackAchievementProgress } = require("./achievementTracker");
@@ -49,7 +75,10 @@ async function recordPlayerResult(guild, user, outcome) {
 async function recordSinglePlayerGame(guild, user, result) {
     const outcome = normalizeMiniGameResult(result);
     if (!outcome) return null;
-    return recordPlayerResult(guild, user, outcome);
+    return recordPlayerResult(guild, user, outcome, {
+        guesses: extractMiniGameGuessCount(result),
+        perfect: isPerfectMiniGame(result, outcome)
+    });
 }
 
 async function recordMultiplayerGame(result) {
