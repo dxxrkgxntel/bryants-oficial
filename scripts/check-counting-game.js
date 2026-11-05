@@ -1,0 +1,15 @@
+const assert = require("node:assert/strict");
+const { parseCountMessage, evaluateCountingMessage } = require("../Functions/countingGame");
+assert.equal(parseCountMessage("1"), 1);
+assert.equal(parseCountMessage(" 42 "), 42);
+assert.equal(parseCountMessage("0"), null);
+assert.equal(parseCountMessage("-1"), null);
+assert.equal(parseCountMessage("1.5"), null);
+assert.equal(parseCountMessage("hola"), null);
+assert.equal(parseCountMessage("9007199254740992"), null);
+assert.deepEqual(evaluateCountingMessage({ content: "1", currentNumber: 0, currentStreak: 0, lastUserId: null, authorId: "a" }), { type: "correct", number: 1, streak: 1 });
+assert.deepEqual(evaluateCountingMessage({ content: "3", currentNumber: 1, currentStreak: 1, lastUserId: "a", authorId: "b" }), { type: "reset", submitted: 3, expected: 2 });
+assert.deepEqual(evaluateCountingMessage({ content: "2", currentNumber: 1, currentStreak: 1, lastUserId: "a", authorId: "a" }), { type: "reset", submitted: 2, expected: 2 });
+assert.deepEqual(evaluateCountingMessage({ content: "2", currentNumber: 1, currentStreak: 1, lastUserId: "a", authorId: "b" }), { type: "correct", number: 2, streak: 2 });
+assert.deepEqual(evaluateCountingMessage({ content: "hola", currentNumber: 1, currentStreak: 1, lastUserId: "a", authorId: "b" }), { type: "ignore" });
+console.log("Counting game: 12 assertions passed.");
