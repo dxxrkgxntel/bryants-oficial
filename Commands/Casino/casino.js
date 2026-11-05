@@ -764,6 +764,7 @@ async function run_gamble(interaction) {
 
                 await freshUser.save();
                 await stats.save();
+                await recordEconomySpend({ guild: interaction.guild, user: interaction.user, amount, category: "casino_gamble", operationId: interaction.id }).catch(error => console.warn("[Economy] No se pudo registrar apuesta gamble:", error.message));
                 await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, freshUser);
                 await trackCasinoAchievementProgress(interaction.guild, interaction.user, stats);
 
@@ -994,6 +995,7 @@ async function run_slots(interaction) {
     }
 
     await Promise.all([freshUser.save(), stats.save()]);
+    await recordEconomySpend({ guild: interaction.guild, user: interaction.user, amount, category: "casino_bet", operationId: interaction.id }).catch(error => console.warn("[Economy] No se pudo registrar apuesta:", error.message));
     await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, freshUser);
                 await trackCasinoAchievementProgress(interaction.guild, interaction.user, stats);
 
