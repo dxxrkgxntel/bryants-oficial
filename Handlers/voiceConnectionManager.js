@@ -109,6 +109,16 @@ function watchConnection(connection, guild, channelId) {
 async function performVoiceConnect(guild, channelId) {
     voiceTargetsByGuild.set(guild.id, { guild, channelId });
 
+    try {
+        return await performVoiceConnectAttempt(guild, channelId);
+    } catch (error) {
+        // Also recover from synchronous adapter/join failures, not only emitted socket errors.
+        scheduleReconnect(guild.id);
+        throw error;
+    }
+}
+
+async function performVoiceConnectAttempt(guild, channelId) {
     let connection = getVoiceConnection(guild.id);
     if (connection && connection.state.status !== VoiceConnectionStatus.Destroyed) {
         watchConnection(connection, guild, channelId);
@@ -169,8 +179,7 @@ async function performVoiceConnect(guild, channelId) {
         clearReconnectState(guild.id);
         return connection;
     } catch (error) {
-        // Keep the configured destination and retry automatically after transient gateway errors.
-        scheduleReconnect(guild.id);
+        // The wrapper schedules recovery for both handshake and synchronous join failures.
         throw error;
     }
 }
