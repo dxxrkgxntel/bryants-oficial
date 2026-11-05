@@ -1107,7 +1107,20 @@ function renderPreviewMarkup(key, values) {
             const empty = !contentText && !banner && !thumbnail;
             return `<div class="level-preview-panel"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA · ${label}</span><small>Mensaje Componentes V2 que verá el miembro</small></div>${botAuthor}<article class="level-preview" style="--preview-accent:${color}"><div class="level-preview-background">${banner ? `<img data-preview-image src="${escapeHtml(banner)}" alt="Imagen configurada">` : ""}</div>${thumbnailBlock}<div class="level-preview-copy">${contentText || (empty ? '<span class="preview-empty">Configura título, descripción o imagen para mostrar una vista previa.</span>' : "")}</div></article></div>`;
         };
-        return `<section class="live-preview level-preview-list" data-preview="${key}">${renderCard("MENSAJES", values.messageTitle, values.messageDescription)}${renderCard("VOZ", values.voiceTitle, values.voiceDescription)}${renderCard("ROL POR NIVEL", values.roleTitle, values.roleDescription)}</section>`;
+        const renderCommandPreview = (label, format, accent, background, mode, avatar) => {
+            const image = safePreviewImage(background);
+            const style = `--preview-accent:${validPreviewColor(accent)};${image ? `background-image:linear-gradient(120deg,#100b18cc,#171025dd),url('${escapeHtml(image)}');background-size:cover;background-position:center;` : ""}`;
+            const content = `<div class="level-command-preview-user">${avatar ? '<span class="level-command-preview-avatar">B</span>' : ""}<div><strong>ElBryantDX</strong><small>@elbryantdx_</small></div><b>#12</b></div><div class="level-command-preview-stats"><strong>NIVEL 24</strong><span>2.450 / 3.000 XP</span></div><div class="level-command-preview-track"><i></i></div><small>82% completado · 550 XP para el siguiente nivel</small>`;
+            const body = format === "embed"
+                ? `<div class="level-command-preview-embed" style="${style}"><strong>${label}</strong>${content}</div>`
+                : format === "components"
+                    ? `<div class="level-command-preview-components" style="${style}"><strong>${label} · Components V2</strong>${content}</div>`
+                    : format === "text"
+                        ? `<div class="level-command-preview-text"><strong>${label}</strong><p>Usuario · Nivel 24 · Rango #12 · 2.450 XP</p></div>`
+                        : `<div class="level-command-preview-card" style="${style};background-size:${mode === "contain" ? "contain" : "cover"}"><strong>${label} · CARD PNG</strong>${content}</div>`;
+            return `<div class="level-command-preview-panel"><div class="live-preview-heading"><span class="eyebrow">VISTA PREVIA · ${label}</span><small>Formato: ${escapeHtml(format || "card")}</small></div>${body}</div>`;
+        };
+        return `<section class="live-preview level-preview-list" data-preview="${key}">${renderCard("MENSAJES", values.messageTitle, values.messageDescription)}${renderCard("VOZ", values.voiceTitle, values.voiceDescription)}${renderCard("ROL POR NIVEL", values.roleTitle, values.roleDescription)}<div class="level-command-preview-grid">${renderCommandPreview("/level rank", values.rankFormat, values.rankColor, values.rankBackground, values.rankBackgroundMode, values.rankShowAvatar)}${renderCommandPreview("/level perfil", values.profileFormat, values.profileColor, values.profileBackground, values.profileBackgroundMode, values.profileShowAvatar)}</div></section>`;
     }
     return "";
 }
@@ -1121,7 +1134,7 @@ function previewValues(key, form) {
     if (key === "birthday") return { title: read("birthdayTitle"), description: read("birthdayDescription"), color: read("birthdayColor"), banner: read("birthdayBanner"), reminder: read("birthdayReminder") };
     if (key === "boosts") return { title: read("boostTitle"), description: read("boostDescription"), color: read("boostColor"), banner: read("boostImage"), thumbnail: read("boostThumbnail"), buttons: form.querySelector('[data-button-list="boostButtons"]') ? readButtonRows(form.querySelector('[data-button-list="boostButtons"]')) : [] };
     if (key === "weeklyDrop") return { description: read("description"), banner: read("image") };
-    return { messageTitle: read("messageLevelTitle"), messageDescription: read("messageLevelDescription"), voiceTitle: read("voiceLevelTitle"), voiceDescription: read("voiceLevelDescription"), roleTitle: read("levelRoleTitle"), roleDescription: read("levelRoleDescription"), color: read("levelColor"), image: read("levelImage"), thumbnail: read("levelThumbnail") };
+    return { messageTitle: read("messageLevelTitle"), messageDescription: read("messageLevelDescription"), voiceTitle: read("voiceLevelTitle"), voiceDescription: read("voiceLevelDescription"), roleTitle: read("levelRoleTitle"), roleDescription: read("levelRoleDescription"), color: read("levelColor"), image: read("levelImage"), thumbnail: read("levelThumbnail"), rankFormat: read("levelRankFormat") || "card", rankColor: read("levelRankColor"), rankBackground: read("levelRankImage"), rankBackgroundMode: read("levelRankBackgroundMode"), rankShowAvatar: form.querySelector('[name="levelRankShowAvatar"]')?.dataset.enabled !== "false", profileFormat: read("levelProfileFormat") || "card", profileColor: read("levelProfileColor"), profileBackground: read("levelProfileImage"), profileBackgroundMode: read("levelProfileBackgroundMode"), profileShowAvatar: form.querySelector('[name="levelProfileShowAvatar"]')?.dataset.enabled !== "false" };
 }
 
 function renderPreview(key, data) {
@@ -1139,7 +1152,7 @@ function renderPreview(key, data) {
                 ? { title: data.boostTitle, description: data.boostDescription, color: data.boostColor, banner: data.boostImage, thumbnail: data.boostThumbnail, buttons: boostButtonsFor(data) }
                 : key === "weeklyDrop"
                     ? { description: data.description, banner: data.image }
-                    : { messageTitle: data.messageLevelTitle !== undefined ? data.messageLevelTitle : data.levelUpTitle, messageDescription: data.messageLevelDescription !== undefined ? data.messageLevelDescription : data.levelUpDescription, voiceTitle: data.voiceLevelTitle !== undefined ? data.voiceLevelTitle : data.levelUpTitle, voiceDescription: data.voiceLevelDescription !== undefined ? data.voiceLevelDescription : data.levelUpDescription, roleTitle: data.levelRoleTitle, roleDescription: data.levelRoleDescription, color: data.levelColor, image: data.levelImage, thumbnail: data.levelThumbnail };
+                    : { messageTitle: data.messageLevelTitle !== undefined ? data.messageLevelTitle : data.levelUpTitle, messageDescription: data.messageLevelDescription !== undefined ? data.messageLevelDescription : data.levelUpDescription, voiceTitle: data.voiceLevelTitle !== undefined ? data.voiceLevelTitle : data.levelUpTitle, voiceDescription: data.voiceLevelDescription !== undefined ? data.voiceLevelDescription : data.levelUpDescription, roleTitle: data.levelRoleTitle, roleDescription: data.levelRoleDescription, color: data.levelColor, image: data.levelImage, thumbnail: data.levelThumbnail, rankFormat: data.levelRankFormat || "card", rankColor: data.levelRankColor || "#8A2BE2", rankBackground: data.levelRankImage, rankBackgroundMode: data.levelRankBackgroundMode || "blur", rankShowAvatar: data.levelRankShowAvatar !== false, profileFormat: data.levelProfileFormat || "card", profileColor: data.levelProfileColor || "#8A2BE2", profileBackground: data.levelProfileImage, profileBackgroundMode: data.levelProfileBackgroundMode || "blur", profileShowAvatar: data.levelProfileShowAvatar !== false };
     return renderPreviewMarkup(key, values);
 }
 
