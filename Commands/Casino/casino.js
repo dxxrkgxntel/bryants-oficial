@@ -698,8 +698,8 @@ async function run_gamble(interaction) {
                 //////////////////////////////////////////////////
 
                 await freshUser.save();
-
                 await stats.save();
+                await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, freshUser);
 
                 //////////////////////////////////////////////////
                 // EMBED
@@ -745,8 +745,8 @@ async function run_gamble(interaction) {
                 //////////////////////////////////////////////////
 
                 await freshUser.save();
-
                 await stats.save();
+                await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, freshUser);
 
                 //////////////////////////////////////////////////
 
@@ -866,6 +866,7 @@ async function run_ruleta(interaction) {
     }
 
     await Promise.all([freshUser.save(), stats.save()]);
+    await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, freshUser);
     const colorEmoji = rolledColor === "rojo" ? "🔴" : rolledColor === "negro" ? "⚫" : "🟢";
 
     return interaction.editReply(panel(
@@ -970,6 +971,7 @@ async function run_slots(interaction) {
     }
 
     await Promise.all([freshUser.save(), stats.save()]);
+    await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, freshUser);
 
     return interaction.editReply(panel(
         `## 🎰 Resultado — Bryvex Slots\n${generateDisplay(grid)}\n\n🎯 Línea válida: **Fila central**\n${resultText}\n\n${multiplier > 0 ? `💰 Ganaste **${winnings.toLocaleString()} monedas**` : `💸 Perdiste **${amount.toLocaleString()} monedas**`}\n👛 Balance actual: **${freshUser.wallet.toLocaleString()} monedas**`,
