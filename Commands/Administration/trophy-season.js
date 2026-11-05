@@ -91,7 +91,7 @@ module.exports = {
             const started = await TrophySettings.findOneAndUpdate(
                 {
                     guildId: interaction.guild.id,
-                    $or: [{ seasonEnabled: { $ne: true } }, { seasonKey: "" }],
+                    $or: [{ seasonEnabled: { $ne: true } }, { seasonKey: { $in: ["", null] } }],
                     usedSeasonKeys: { $ne: seasonKey }
                 },
                 {
