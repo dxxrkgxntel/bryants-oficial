@@ -5,10 +5,10 @@
 ## Resumen
 
 - Catálogo: **397 logros / 106 métricas únicas**.
-- Conectadas: **21**.
+- Conectadas: **25**.
 - Parciales: **1**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **22**.
-- Pendientes de localizar/implementar o validar: **62**.
+- Pendientes de localizar/implementar o validar: **58**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
 ## Matriz
@@ -49,7 +49,7 @@
 | 32 | `custom_emojis_used` | 7 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Cuenta cada emoji personalizado del contenido. | Emoji User (50); Emoji Fan (500) |
 | 33 | `daily_streak` | 8 | **Conectada** | Models/PersonalActivity.js + Functions/personalActivity.js — Mejor racha de días activos, independiente de la racha de recompensas económicas. | On a Roll (3); Week Streak (7) |
 | 34 | `days_active` | 6 | **Conectada** | Models/PersonalActivity.js + Functions/personalActivity.js — Cuenta días UTC distintos con al menos un mensaje. | Regular (7); Committed (30) |
-| 35 | `early_bird_messages` | 2 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate + zona horaria configurable | Early Bird (100); Sunrise Soul (1000) |
+| 35 | `early_bird_messages` | 2 | **Conectada** | Functions/achievementMessageMetrics.js · 06:00–08:59 en America/Santo_Domingo | Early Bird (100); Sunrise Soul (1000) |
 | 36 | `economy_daily_streak` | 3 | **Dato existente; falta conexión** | Models/EconomyUser.js + Commands/Economy/economy.js — Existe dailyStreak en economía. | Daily Devotee (7); Daily Loyalist (30) |
 | 37 | `embeds_posted` | 2 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Suma embeds adjuntos al mensaje. | Embed Enjoyer (25); Rich Poster (250) |
 | 38 | `first_unlocks` | 4 | **Pendiente** | Functions/achievementTracker.js; falta detección atómica del primer desbloqueo | Pioneer (1); Trailblazer (5) |
@@ -73,7 +73,7 @@
 | 56 | `items_owned` | 3 | **Dato existente; falta conexión** | Models/EconomyUser.js + Utils/shopHandlers.js — Existe inventario; el evento heredado itemsPurchased no mide artículos actualmente poseídos. | Collector (25); Window Shopper (5) |
 | 57 | `level` | 11 | **Dato existente; falta conexión** | Models/Level.js + Events/Levels/messageCreate2.js — Nivel actual almacenado; conectar al alcanzar/cargar el nivel y cubrir subidas por voz. | Rookie (5); Apprentice (10) |
 | 58 | `links_sent` | 2 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · enlaces HTTP(S) escritos en el contenido | Link Dropper (50); Web Weaver (500) |
-| 59 | `long_messages` | 3 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate | Essayist (10); Wall of Text (100) |
+| 59 | `long_messages` | 3 | **Conectada** | Functions/achievementMessageMetrics.js · mensaje de 500 caracteres o más | Essayist (10); Wall of Text (100) |
 | 60 | `membership_days` | 9 | **Dato calculable; falta conexión** | Events/Guild/sistemaDeIngreso.js + member.joinedAt — Calcular antigüedad de membresía con joinedAt; necesita actualización periódica o cálculo al evaluar. | Fresh Face (7); Familiar Face (30) |
 | 61 | `mentions_made` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · menciones a usuarios distintos del autor | Name Dropper (100); Social Pinger (1000) |
 | 62 | `messages_sent` | 13 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Suma mensajes de usuarios. | Casual Typer (100); Chatterbox (500) |
@@ -81,7 +81,7 @@
 | 64 | `mining_trips` | 4 | **Pendiente** | sin sistema de minería identificado | First Dig (1); Miner (25) |
 | 65 | `mod_actions` | 4 | **Pendiente** | Commands/Administration/moderation.js; falta tracker por acción | Rookie Mod (1); Peacekeeper (25) |
 | 66 | `net_worth` | 6 | **Dato derivable; falta conexión** | Models/EconomyUser.js — Patrimonio = wallet + bank; no incluye deuda/activos hasta definir fórmula. | Getting Comfortable (10000); Well Off (100000) |
-| 67 | `night_owl_messages` | 3 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate + zona horaria configurable | Night Owl (100); Moon Dweller (1000) |
+| 67 | `night_owl_messages` | 3 | **Conectada** | Functions/achievementMessageMetrics.js · 00:00–05:59 en America/Santo_Domingo | Night Owl (100); Moon Dweller (1000) |
 | 68 | `polls_created` | 3 | **Conectada** | Commands/Utility/poll.js · creación de encuesta — Suma al crear encuesta. | Pollster (5); Poll Maker (50) |
 | 69 | `prestige_level` | 2 | **Dato existente; falta conexión** | Models/Prestige.js + Commands/Economy/prestige.js — El modelo guarda el nivel de prestigio. | Prestige (1); Prestige Master (5) |
 | 70 | `prestige_points` | 2 | **Pendiente** | Localizar evento/comando responsable y conectar en el punto de éxito. | Prestige Points (100); Prestige Grinder (1000) |
@@ -117,7 +117,7 @@
 | 100 | `voice_video_minutes` | 6 | **Pendiente** | Events/Logs/personalVoiceStats.js · voiceStateUpdate (cámara) | On Camera (30); Face Reveal (300) |
 | 101 | `votes` | 4 | **Pendiente** | sin integración de votos identificada | Voter (1); Loyal Voter (25) |
 | 102 | `warns_issued` | 2 | **Pendiente** | Commands/Administration/moderation.js; falta tracker por advertencia | Rule Enforcer (10); The Hammer (100) |
-| 103 | `weekend_messages` | 2 | **Pendiente** | Events/Levels/messageCreate2.js · messageCreate | Weekend Warrior (500); Weekend Legend (5000) |
+| 103 | `weekend_messages` | 2 | **Conectada** | Functions/achievementMessageMetrics.js · sábado y domingo según America/Santo_Domingo | Weekend Warrior (500); Weekend Legend (5000) |
 | 104 | `words_typed` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · palabras separadas por espacios | Word Novice (1000); Author (50000) |
 | 105 | `work_streak` | 2 | **Pendiente** | Commands/Economy/economy.js · runWork (el modelo no conserva racha histórica) | Workaholic (25); Never Off the Clock (100) |
 | 106 | `xp` | 4 | **Dato existente; falta conexión** | Models/Level.js + Events/Levels/messageCreate2.js + Events/Levels/voiceXp.js — El campo XP es saldo de progreso actual, no total histórico ganado. | XP Collector (10000); XP Hoarder (100000) |
@@ -138,7 +138,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 
 ## Orden recomendado de implementación
 
-1. **Mensajes y actividad:** ya conectados palabras, caracteres, imágenes, GIF, links, stickers, adjuntos, respuestas, menciones, spoilers y bloques de código; pendientes mensajes largos y franjas horarias. Días activos, racha y creación de hilos también conectados.
+1. **Mensajes y actividad:** ya conectados palabras, caracteres, imágenes, GIF, links, stickers, adjuntos, respuestas, menciones, spoilers y bloques de código; las cuatro métricas restantes ya están conectadas: mensajes de 500+ caracteres, madrugada (00:00–05:59), temprano (06:00–08:59) y fines de semana, todo en America/Santo_Domingo. Días activos, racha y creación de hilos también conectados.
 2. **Voz:** joins, streaming, cámara y persistencia de sesiones.
 3. **Economía y niveles:** conectar las transacciones confirmadas y decidir semántica de saldos vs acumulados; cubrir XP y niveles tanto por texto como por voz.
 4. **Comunidad:** invitaciones, boosts, cumpleaños, auto-roles, tickets y moderación.
@@ -146,6 +146,6 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 6. **Temporadas y meta-logros:** primer desbloqueo, podios, victorias y premios semanales/mensuales.
 7. **No aplicables:** clanes, negocios, propiedades, inversiones, pesca/minería, solicitudes y otras funciones que no existan en Bryvex; confirmar con el producto antes de eliminar del catálogo.
 
-## Criterio de cierre
+## Reglas de horario y mensajes largos\n\n- Zona horaria fija para las métricas de actividad: `America/Santo_Domingo`.\n- `night_owl_messages`: de 00:00 a 05:59, hora local.\n- `early_bird_messages`: de 06:00 a 08:59, hora local.\n- `weekend_messages`: sábado y domingo, según fecha local.\n- `long_messages`: un mensaje con al menos 500 caracteres Unicode. El umbral queda centralizado en `LONG_MESSAGE_MIN_CHARACTERS`.\n\n## Criterio de cierre
 
 Una métrica solo pasará a **Conectada** cuando: (a) se actualice en el punto de éxito correcto; (b) sobreviva reinicios si es acumulativa; (c) no se duplique en reintentos/eventos parciales; (d) respete comparadores, niveles, prerrequisitos y recompensas; y (e) tenga prueba automatizada.
