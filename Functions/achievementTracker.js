@@ -234,7 +234,7 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
             await UserAchievement.updateOne({ _id: current._id }, { $set: { progress: goals[goals.length - 1] } });
         }
     }
-    if (pointsAwarded && metric !== "total_points" && options?.skipTotalPointsSync !== true) {
+    if ((pointsAwarded || unlocked.some(achievement => Number(achievement.rewardXP) > 0)) && metric !== "total_points" && options?.skipTotalPointsSync !== true) {
         await syncTotalAchievementPoints(guild, user);
     }
     return unlocked;
