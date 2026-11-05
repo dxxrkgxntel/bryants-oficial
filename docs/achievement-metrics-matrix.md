@@ -6,8 +6,8 @@
 
 - Catálogo: **397 logros / 106 métricas únicas**.
 - Conectadas: **32**.
-- Parciales: **3**.
-- Fuente existente o dato calculable, sin conexión al catálogo: **22**.
+- Parciales: **4**.
+- Fuente existente o dato calculable, sin conexión al catálogo: **17**.
 - Pendientes de localizar/implementar o validar: **53**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
@@ -120,7 +120,7 @@
 | 103 | `weekend_messages` | 2 | **Conectada** | Functions/achievementMessageMetrics.js · sábado y domingo según America/Santo_Domingo | Weekend Warrior (500); Weekend Legend (5000) |
 | 104 | `words_typed` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · palabras separadas por espacios | Word Novice (1000); Author (50000) |
 | 105 | `work_streak` | 2 | **Pendiente** | Commands/Economy/economy.js · runWork (el modelo no conserva racha histórica) | Workaholic (25); Never Off the Clock (100) |
-| 106 | `xp` | 4 | **Dato existente; falta conexión** | Models/Level.js + Events/Levels/messageCreate2.js + Events/Levels/voiceXp.js — El campo XP es saldo de progreso actual, no total histórico ganado. | XP Collector (10000); XP Hoarder (100000) |
+| 106 | `xp` | 4 | **Parcial** | Events/Levels/messageCreate2.js + Events/Levels/voiceXp.js + Functions/achievementTracker.js · suma XP de texto, voz y recompensas de logros; falta auditar otras posibles fuentes de XP | XP Collector (10000); XP Hoarder (100000) |
 
 ## Diferencias entre el catálogo y el tracker heredado
 
@@ -129,7 +129,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 ## Riesgos detectados
 
 - Las sesiones de voz, transmisión y cámara se guardan en `PersonalVoiceActivity`; deben validarse en un servidor Discord real, especialmente tras reiniciar el proceso.
-- `level` representa el máximo nivel alcanzado; `achievementLevelReported` evita reportar de nuevo el mismo nivel incluso tras prestigio. `xp` en Level sigue siendo saldo de progreso actual, no XP histórico total.
+- `level` representa el máximo nivel alcanzado; `achievementLevelReported` evita reportar de nuevo el mismo nivel incluso tras prestigio. `xp` en Level sigue siendo saldo de progreso actual; la métrica acumulada suma las fuentes principales conocidas, pero requiere auditar otras posibles fuentes.
 - `coins`, `bank_balance`, `net_worth` son métricas de saldo: requieren evaluación de estado, no sumar el saldo en cada transacción.
 - `total_earned` y `total_spent` requieren historial transaccional; no deben inferirse del saldo actual.
 - `daily_streak` de actividad y `economy_daily_streak` son conceptos diferentes.
@@ -140,7 +140,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 
 1. **Mensajes y actividad:** ya conectados palabras, caracteres, imágenes, GIF, links, stickers, adjuntos, respuestas, menciones, spoilers y bloques de código; las cuatro métricas restantes ya están conectadas: mensajes de 500+ caracteres, madrugada (00:00–05:59), temprano (06:00–08:59) y fines de semana, todo en America/Santo_Domingo. Días activos, racha y creación de hilos también conectados.
 2. **Voz:** joins conectados; minutos de voz, transmisión y cámara ya tienen sesiones persistentes y quedan parciales hasta validación en Discord real.
-3. **Economía y niveles:** `level` y `prestige_level` conectados; pendientes XP histórico, transacciones y saldos vs acumulados.
+3. **Economía y niveles:** `level` y `prestige_level` conectados; XP parcialmente conectado desde texto, voz y recompensas de logros; pendientes otras fuentes y saldos/transacciones.
 4. **Comunidad:** invitaciones, registro y celebraciones de cumpleaños, y boosts conectados; pendientes meses de boost, auto-roles, tickets y moderación.
 5. **Juegos y eventos:** casino, minijuegos y sorteos con registros individuales.
 6. **Temporadas y meta-logros:** primer desbloqueo, podios, victorias y premios semanales/mensuales.
