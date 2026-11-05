@@ -34,6 +34,7 @@ const levelConfigSchema =
         levelRankShowAvatar: { type: Boolean, default: true },
         levelRankShowXPBar: { type: Boolean, default: true },
         levelProfileShowAvatar: { type: Boolean, default: true },
+        levelProfileShowXPBar: { type: Boolean, default: true },
         levelProfileShowWallet: { type: Boolean, default: true },
         levelProfileShowBank: { type: Boolean, default: true },
         levelProfileShowRanking: { type: Boolean, default: true },
