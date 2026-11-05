@@ -7,7 +7,8 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("achievements")
         .setDescription("Consulta tus logros y tu progreso")
-        .addUserOption(option => option.setName("usuario").setDescription("Miembro cuyos logros quieres consultar").setRequired(false)),
+        .addUserOption(option => option.setName("usuario").setDescription("Miembro cuyos logros quieres consultar").setRequired(false))
+        .addIntegerOption(option => option.setName("pagina").setDescription("Página del catálogo (10 logros por página)").setMinValue(1).setMaxValue(50).setRequired(false)),
     async execute(interaction) {
         await interaction.deferReply();
         const target = interaction.options.getUser("usuario") || interaction.user;
