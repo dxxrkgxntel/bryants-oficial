@@ -6,8 +6,8 @@
 
 - Catálogo: **397 logros / 106 métricas únicas**.
 - Conectadas: **37**.
-- Parciales: **14**.
-- Fuente existente o dato calculable, sin conexión al catálogo: **4**.
+- Parciales: **15**.
+- Fuente existente o dato calculable, sin conexión al catálogo: **3**.
 - Pendientes de localizar/implementar o validar: **51**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
@@ -70,7 +70,7 @@
 | 53 | `investment_profit` | 2 | **Pendiente** | sin sistema de inversiones identificado | In the Green (10000); Bull Market (1000000) |
 | 54 | `investments_made` | 3 | **Pendiente** | sin sistema de inversiones identificado | Investor (1); Portfolio Builder (10) |
 | 55 | `invites` | 7 | **Conectada** | Utils/inviteTracker.js · suma al invitador solo después de atribuir y guardar una invitación usada | Recruiter (1); Connector (10) |
-| 56 | `items_owned` | 3 | **Dato existente; falta conexión** | Models/EconomyUser.js + Utils/shopHandlers.js — Existe inventario; el evento heredado itemsPurchased no mide artículos actualmente poseídos. | Collector (25); Window Shopper (5) |
+| 56 | `items_owned` | 3 | **Parcial** | Models/EconomyUser.js + Utils/shopHandlers.js + Functions/inventoryAchievementMetrics.js · tras una compra exitosa calcula la suma de cantidades de artículos `type=item` en la mochila; excluye roles; reporta máximo alcanzado con progreso absoluto; pendiente integrar futuros consumos/ventas si se habilitan y validar MongoDB/Discord real | Collector (25); Window Shopper (5) |
 | 57 | `level` | 11 | **Conectada** | Models/Level.js + Events/Levels/messageCreate2.js + Events/Levels/voiceXp.js · reporta el máximo nivel alcanzado con actualización absoluta y evita repetir reportes | Rookie (5); Apprentice (10) |
 | 58 | `links_sent` | 2 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · enlaces HTTP(S) escritos en el contenido | Link Dropper (50); Web Weaver (500) |
 | 59 | `long_messages` | 3 | **Conectada** | Functions/achievementMessageMetrics.js · mensaje de 500 caracteres o más | Essayist (10); Wall of Text (100) |
@@ -134,7 +134,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 - `total_earned` y `total_spent` requieren historial transaccional; no deben inferirse del saldo actual.
 - `daily_streak` de actividad y `economy_daily_streak` son conceptos diferentes.
 - `games_played`, `games_won` y `games_streak` se actualizan desde casino y minijuegos Fun con fuentes separadas. Los minijuegos singleplayer y multiplayer persisten contadores y rachas en `MiniGameStats`; se requiere validación funcional en Discord para cerrar las tres métricas. Los timeouts multijugador no cuentan como partida finalizada; los empates cuentan como partida y reinician la racha.
-- `first_unlocks` adjudica una sola vez cada logro por servidor mediante un índice único; `achievements_unlocked` suma una vez cada transición a logro completado, sin contar tiers como logros separados. `account_age_days` y `membership_days` se actualizan al entrar y en la actividad del miembro; `roles_count` se actualiza al entrar, cambiar roles y enviar mensajes. La validación en Discord real sigue pendiente.
+- `first_unlocks` adjudica una sola vez cada logro por servidor mediante un índice único; `achievements_unlocked` suma una vez cada transición a logro completado, sin contar tiers como logros separados. `account_age_days` y `membership_days` se actualizan al entrar y en la actividad del miembro; `roles_count` se actualiza al entrar, cambiar roles y enviar mensajes; `items_owned` se calcula después de una compra confirmada sobre la mochila persistida. La validación en Discord real sigue pendiente.
 - Las métricas de clanes, negocios, propiedades, inversiones, pesca y minería no tienen modelos correspondientes en el árbol de modelos revisado; deben declararse no aplicables o implementar primero esos sistemas, nunca simular progreso.
 
 ## Orden recomendado de implementación
