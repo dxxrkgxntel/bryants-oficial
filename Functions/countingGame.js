@@ -1,6 +1,6 @@
 function parseCountMessage(content) {
   const value = String(content ?? "").trim();
-  if (!/^\d+$/.test(value)) return null;
+  if (!/^-?\d+$/.test(value)) return null;
   const number = Number(value);
   return Number.isSafeInteger(number) ? number : null;
 }
