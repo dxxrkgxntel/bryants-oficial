@@ -12,4 +12,8 @@ function achievementComparatorReached(value, goal, comparator = "gte") {
     }
 }
 
-module.exports = { achievementComparatorReached };
+function achievementProgressUpdate(amount, absolute = false) {
+    return absolute ? { $max: { progress: amount } } : { $inc: { progress: amount } };
+}
+
+module.exports = { achievementComparatorReached, achievementProgressUpdate };
