@@ -73,6 +73,12 @@ const casinoStatsSchema =
             default: 0
         },
 
+        bestStreak: {
+
+            type: Number,
+            default: 0
+        },
+
         //////////////////////////////////////////////////
         // GAME STATS
         //////////////////////////////////////////////////

@@ -3,6 +3,7 @@ const SpecialChannelsConfig = require("../../Models/SpecialChannelsConfig");
 const { PermissionsBitField } = require("discord.js");
 
 const cooldown = new Set();
+const { trackCommandUsage } = require("../../Functions/commandAchievementMetrics");
 
 const questHandler =
 require("../../Functions/questHandler");
@@ -130,11 +131,13 @@ module.exports = {
 
         try {
 
-            command.execute(
+            await command.execute(
                 client,
                 message,
                 args
             );
+            await trackCommandUsage(message.guild, message.author)
+                .catch(error => console.warn("[Achievements] No se pudo registrar commands_used:", error.message));
 
         } catch (err) {
 

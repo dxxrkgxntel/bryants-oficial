@@ -15,6 +15,7 @@ require("../../Models/PollConfig");
 
 const progressBar =
 require("../../Functions/progressBar");
+const { trackAchievementProgress } = require("../../Functions/achievementTracker");
 
 async function getConfiguredPollChannel(interaction) {
     const config = await PollConfig.findOne({ guildId: interaction.guild.id });
@@ -403,6 +404,9 @@ module.exports = {
                 endAt
 
             });
+
+            await trackAchievementProgress(interaction.guild, interaction.user, "polls_created", 1)
+                .catch(error => console.warn("[Achievements] No se pudo registrar polls_created:", error.message));
 
             return interaction.editReply(
                 `✅ Encuesta publicada en ${targetChannel}: ${msg.url}`

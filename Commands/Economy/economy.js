@@ -13,6 +13,8 @@ const RobCooldown = require("../../Models/RobCooldown");
 const { runGlobalBank, runDonate, runLoan, runPayDebt, runDistribute } = require("../../Utils/economyBankHandlers");
 const questHandler = require("../../Functions/questHandler");
 const { trackAchievementProgress } = require("../../Functions/achievementTracker");
+const { calculateCalendarStreak } = require("../../Functions/calendarStreak");
+const { trackEconomyAchievementSnapshot } = require("../../Functions/economyAchievementMetrics");
 
 const BALANCE_BANNER = "https://i.imgur.com/joAe57D.png";
 const WORK_BANNER = "https://i.imgur.com/joAe57D.png";
@@ -55,6 +57,7 @@ async function runBalance(interaction) {
  const bonus = await applyBankBonus(userData);
  await userData.save();
  const addedDebt = await updateDebt(userData);
+ await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, userData);
  const total = userData.wallet + userData.bank;
  const member = await interaction.guild.members.fetch(target.id).catch(() => null);
  const displayName = member?.displayName || target.username;
@@ -86,10 +89,9 @@ async function runDaily(interaction) {
    `Ya reclamaste tu recompensa diaria.\n\n🕒 Vuelve en **${hours} horas**.`, 0xFF0000, true, DAILY_BANNER);
  }
 
- const today = new Date().toDateString();
- const yesterday = new Date(Date.now() - 86400000).toDateString();
- if (user.lastDailyDate === yesterday) user.dailyStreak += 1;
- else if (user.lastDailyDate !== today) user.dailyStreak = 1;
+ const dailyStreak = calculateCalendarStreak(user.dailyStreak, user.lastDailyDate, new Date(now));
+ user.dailyStreak = dailyStreak.streak;
+ const today = dailyStreak.today;
 
  const streakBonus = user.dailyStreak * 100;
  const totalReward = config.dailyAmount + streakBonus;
@@ -97,6 +99,9 @@ async function runDaily(interaction) {
  user.lastDaily = now;
  user.lastDailyDate = today;
  await user.save();
+ await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, user);
+ await trackAchievementProgress(interaction.guild, interaction.user, "economy_daily_streak", user.dailyStreak, { absolute: true })
+  .catch(error => console.warn("[Achievements] No se pudo registrar economy_daily_streak:", error.message));
  await trackAchievementProgress(interaction.guild, interaction.user, "dailyClaims", 1)
   .catch(error => console.warn("[Achievements] No se pudo registrar daily:", error.message));
  await trackAchievementProgress(interaction.guild, interaction.user, "coinsEarned", totalReward)
@@ -126,9 +131,15 @@ async function runWork(interaction) {
 
  const amount = Math.floor(Math.random() * (config.workMax - config.workMin + 1)) + config.workMin;
  const randomJob = jobs[Math.floor(Math.random() * jobs.length)];
+ const workStreak = calculateCalendarStreak(user.workStreak, user.lastWorkDate, new Date(now));
+ user.workStreak = workStreak.streak;
+ user.lastWorkDate = workStreak.today;
  user.wallet += amount;
  user.lastWork = now;
  await user.save();
+ await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, user);
+ await trackAchievementProgress(interaction.guild, interaction.user, "work_streak", user.workStreak, { absolute: true })
+  .catch(error => console.warn("[Achievements] No se pudo registrar work_streak:", error.message));
  await trackAchievementProgress(interaction.guild, interaction.user, "workClaims", 1)
   .catch(error => console.warn("[Achievements] No se pudo registrar work:", error.message));
  await trackAchievementProgress(interaction.guild, interaction.user, "coinsEarned", amount)
@@ -189,6 +200,7 @@ async function runDeposit(interaction) {
    user.wallet -= amount;
    user.bank += amount;
    await user.save();
+   await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, user);
    collector.stop("confirmed");
    return i.update({ components: [transactionPanel("🏦 Depósito realizado",
     `💸 Has depositado **${amount.toLocaleString()} monedas** en tu banco.\n\n💵 **Wallet:** ${user.wallet.toLocaleString()}\n🏦 **Banco:** ${user.bank.toLocaleString()}`, null, 0x00FF99, DEPOSIT_BANNER)] });
@@ -242,6 +254,7 @@ async function runWithdraw(interaction) {
    globalBank.totalCollected += fee;
    await user.save();
    await globalBank.save();
+   await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, user);
    collector.stop("confirmed");
    return i.update({ components: [transactionPanel("💸 Retiro realizado",
     `🏦 Has retirado **${amount.toLocaleString()} monedas**.\n\n💸 **Comisión:** ${fee.toLocaleString()} monedas\n✅ **Recibido:** ${finalAmount.toLocaleString()} monedas\n\n💵 **Wallet:** ${user.wallet.toLocaleString()}\n🏦 **Banco:** ${user.bank.toLocaleString()}`, null, 0x00FF99, WITHDRAW_BANNER)] });
@@ -324,6 +337,8 @@ async function runTransfer(interaction) {
    await freshSender.save();
    await freshReceiver.save();
    await globalBank.save();
+   await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, freshSender);
+   await trackEconomyAchievementSnapshot(interaction.guild, target, freshReceiver);
    collector.stop("confirmed");
    return interaction.editReply({ components: [transactionPanel("🔁 Transferencia realizada",
     `💸 Has transferido **${amount.toLocaleString()} monedas** a ${target}.\n\n🏦 **Comisión:** ${tax.toLocaleString()} monedas\n📥 **Recibido por el usuario:** ${finalAmount.toLocaleString()} monedas\n\n💵 **Wallet:** ${freshSender.wallet.toLocaleString()}\n🏦 **Banco:** ${freshSender.bank.toLocaleString()}`, null, 0x00FF99, TRANSFER_BANNER)] });
@@ -365,6 +380,7 @@ async function runRob(interaction) {
   if (fine > robberData.wallet) fine = robberData.wallet;
   robberData.wallet = Math.max(0, robberData.wallet - fine);
   await robberData.save();
+  await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, robberData);
   await RobCooldown.findOneAndUpdate(
    { guildId: interaction.guild.id, userId: interaction.user.id },
    { expiresAt: new Date(Date.now() + 30 * 60 * 1000) }, { upsert: true }
@@ -382,6 +398,8 @@ async function runRob(interaction) {
  robberData.wallet += amount;
  await targetData.save();
  await robberData.save();
+ await trackEconomyAchievementSnapshot(interaction.guild, target, targetData);
+ await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, robberData);
  await RobCooldown.findOneAndUpdate(
   { guildId: interaction.guild.id, userId: interaction.user.id },
   { expiresAt: new Date(Date.now() + 30 * 60 * 1000) }, { upsert: true }
@@ -466,6 +484,7 @@ async function runAddMoney(interaction) {
    const fresh=await getUser(interaction.guild.id,target.id);
    fresh.wallet+=amount;
    await fresh.save();
+   await trackEconomyAchievementSnapshot(interaction.guild, target, fresh);
    collector.stop("confirmed");
    return interaction.editReply({components:[transactionPanel("💰 Dinero añadido",
     `✅ Se añadieron **${amount.toLocaleString()} monedas** a ${target}.\n\n💵 **Wallet actual:** ${fresh.wallet.toLocaleString()} monedas\n👮 **Acción realizada por:** ${interaction.user}`,
@@ -514,6 +533,7 @@ async function runRemoveMoney(interaction) {
    }
    fresh.wallet-=amount;
    await fresh.save();
+   await trackEconomyAchievementSnapshot(interaction.guild, target, fresh);
    collector.stop("confirmed");
    return interaction.editReply({components:[transactionPanel("💸 Dinero removido",
     `❌ Se quitaron **${amount.toLocaleString()} monedas** a ${target}.\n\n💵 **Wallet actual:** ${fresh.wallet.toLocaleString()} monedas\n👮 **Acción realizada por:** ${interaction.user}`,

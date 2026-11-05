@@ -72,6 +72,11 @@ module.exports =
                 type: Date,
 
                 default: Date.now
+            },
+
+            lastCelebratedYear: {
+                type: Number,
+                default: null
             }
         })
     );

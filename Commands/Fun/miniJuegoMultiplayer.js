@@ -4,6 +4,8 @@ const {
     SlashCommandBuilder,
     EmbedBuilder,
 } = require("discord.js");
+const questHandler = require("../../Functions/questHandler");
+const { recordMultiplayerGame } = require("../../Functions/minigameAchievementMetrics");
 const {
     Connect4,
     RockPaperScissors,
@@ -98,8 +100,15 @@ module.exports = {
                 });
 
                 Game.startGame();
-                Game.on('gameOver', result => {
-                    console.log(result);  // =>  { result... }
+                Game.on('gameOver', async result => {
+                    console.log(result);
+                    const recorded = await recordMultiplayerGame({ ...result, guild: interaction.guild });
+                    if (recorded) {
+                        const participants = [result.player, result.opponent].filter(player => player?.id && !player.bot);
+                        await Promise.all(participants.map(player =>
+                            questHandler(player.id, interaction.guild.id, "games", 1)
+                        ));
+                    }
                 });
             }
                 break;
@@ -134,8 +143,13 @@ module.exports = {
                 });
 
                 Game.startGame();
-                Game.on('gameOver', result => {
-                    console.log(result);  // =>  { result... }
+                Game.on('gameOver', async result => {
+                    console.log(result);
+                    await recordMultiplayerGame({ ...result, guild: interaction.guild });
+                    const participants = [result.player, result.opponent].filter(player => player?.id && !player.bot);
+                    await Promise.all(participants.map(player =>
+                        questHandler(player.id, interaction.guild.id, "games", 1)
+                    ));
                 });
             }
                 break;
@@ -167,8 +181,13 @@ module.exports = {
                 });
 
                 Game.startGame();
-                Game.on('gameOver', result => {
-                    console.log(result);  // =>  { result... }
+                Game.on('gameOver', async result => {
+                    console.log(result);
+                    await recordMultiplayerGame({ ...result, guild: interaction.guild });
+                    const participants = [result.player, result.opponent].filter(player => player?.id && !player.bot);
+                    await Promise.all(participants.map(player =>
+                        questHandler(player.id, interaction.guild.id, "games", 1)
+                    ));
                 })
             }
                 break;

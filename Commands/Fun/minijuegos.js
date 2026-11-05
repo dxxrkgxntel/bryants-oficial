@@ -9,6 +9,7 @@ const {
     ComponentType,
 } = require("discord.js");
 const questHandler = require("../../Functions/questHandler");
+const { recordSinglePlayerGame } = require("../../Functions/minigameAchievementMetrics");
 const {
     TwoZeroFourEight,
     FastType,
@@ -82,7 +83,8 @@ module.exports = {
                 Game.startGame();
                 Game.on('gameOver', async result => {
                     console.log(result);
-                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
+                    const recorded = await recordSinglePlayerGame(interaction.guild, interaction.user, result);
+                    if (recorded) await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
                 break;
@@ -104,7 +106,8 @@ module.exports = {
                 Game.startGame();
                 Game.on('gameOver', async result => {
                     console.log(result);
-                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
+                    const recorded = await recordSinglePlayerGame(interaction.guild, interaction.user, result);
+                    if (recorded) await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
                 break;
@@ -131,6 +134,7 @@ module.exports = {
                 Game.startGame();
                 Game.on('gameOver', async result => {
                     console.log(result);
+                    await recordSinglePlayerGame(interaction.guild, interaction.user, result);
                     await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
@@ -155,6 +159,7 @@ module.exports = {
                 Game.startGame();
                 Game.on('gameOver', async result => {
                     console.log(result);
+                    await recordSinglePlayerGame(interaction.guild, interaction.user, result);
                     await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
@@ -177,6 +182,7 @@ module.exports = {
                 Game.startGame();
                 Game.on('gameOver', async result => {
                     console.log(result);
+                    await recordSinglePlayerGame(interaction.guild, interaction.user, result);
                     await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
@@ -213,6 +219,7 @@ module.exports = {
                 Game.startGame();
                 Game.on('gameOver', async result => {
                     console.log(result);
+                    await recordSinglePlayerGame(interaction.guild, interaction.user, result);
                     await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
@@ -236,6 +243,7 @@ module.exports = {
                 Game.startGame();
                 Game.on('gameOver', async result => {
                     console.log(result);
+                    await recordSinglePlayerGame(interaction.guild, interaction.user, result);
                     await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
@@ -260,6 +268,7 @@ module.exports = {
                 Game.startGame();
                 Game.on('gameOver', async result => {
                     console.log(result);
+                    await recordSinglePlayerGame(interaction.guild, interaction.user, result);
                     await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
@@ -471,16 +480,25 @@ module.exports = {
                             break;
                     }
                 })
-                col.on("end", (collected) => {
+                col.on("end", async collected => {
+                    if (collected.size === 0) {
+                        await interaction.editReply({
+                            embeds: [
+                                Embed.setDescription(`:warning: | You did not choose your move.`).setColor("#8A2BE2")
+                            ],
+                            components: []
+                        });
+                        return;
+                    }
 
-                    if (collected.size > 0) return
-
-                    interaction.editReply({
-                        embeds: [
-                            Embed.setDescription(`:warning: | You did not choose your move.`).setColor("#8A2BE2")
-                        ],
-                        components: []
-                    })
+                    const selected = collected.first().customId;
+                    const playerWon = (selected === "rock" && botchoice === "scissor")
+                        || (selected === "paper" && botchoice === "rock")
+                        || (selected === "scissor" && botchoice === "paper");
+                    const tied = selected === botchoice;
+                    const result = { result: tied ? "tie" : playerWon ? "win" : "lose" };
+                    await recordSinglePlayerGame(interaction.guild, interaction.user, result);
+                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 })
             }
                 break;
@@ -498,6 +516,7 @@ module.exports = {
                 Game.startGame();
                 Game.on('gameOver', async result => {
                     console.log(result);
+                    await recordSinglePlayerGame(interaction.guild, interaction.user, result);
                     await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
@@ -529,6 +548,7 @@ module.exports = {
                 Game.startGame();
                 Game.on('gameOver', async result => {
                     console.log(result);
+                    await recordSinglePlayerGame(interaction.guild, interaction.user, result);
                     await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
@@ -557,6 +577,7 @@ module.exports = {
                 Game.startGame();
                 Game.on('gameOver', async result => {
                     console.log(result);
+                    await recordSinglePlayerGame(interaction.guild, interaction.user, result);
                     await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
@@ -579,6 +600,7 @@ module.exports = {
                 Game.startGame();
                 Game.on('gameOver', async result => {
                     console.log(result);
+                    await recordSinglePlayerGame(interaction.guild, interaction.user, result);
                     await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
@@ -601,6 +623,10 @@ module.exports = {
                 });
 
                 Game.startGame();
+                Game.on('gameOver', async result => {
+                    await recordSinglePlayerGame(interaction.guild, interaction.user, result);
+                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
+                });
             }
                 break;
         }

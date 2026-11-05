@@ -5,6 +5,7 @@ const EconomyUser = require("../../Models/EconomyUser");
 const { getLevelSettings } = require("../../Functions/levelSettings");
 const { sendLevelNotification } = require("../../Functions/levelNotification");
 const { trackAchievementProgress } = require("../../Functions/achievementTracker");
+const { extractMessageAchievementMetrics } = require("../../Functions/achievementMessageMetrics");
 
 function xpNeeded(level) {
     return 5 * (level ** 2) + 50 * level + 100;
@@ -36,6 +37,27 @@ module.exports = {
 
         await trackAchievementProgress(message.guild, message.author, "messages", 1)
             .catch(error => console.warn("[Achievements] No se pudo registrar el mensaje:", error.message));
+        await trackAchievementProgress(message.guild, message.author, "messages_sent", 1)
+            .catch(error => console.warn("[Achievements] No se pudo registrar messages_sent:", error.message));
+        if (message.mentions.users.has(message.client.user.id)) {
+            await trackAchievementProgress(message.guild, message.author, "bot_mentions", 1)
+                .catch(error => console.warn("[Achievements] No se pudo registrar bot_mentions:", error.message));
+        }
+        const customEmojiCount = (message.content.match(/<a?:[a-zA-Z0-9_]+:\d{17,20}>/g) || []).length;
+        if (customEmojiCount) {
+            await trackAchievementProgress(message.guild, message.author, "custom_emojis_used", customEmojiCount)
+                .catch(error => console.warn("[Achievements] No se pudo registrar custom_emojis_used:", error.message));
+        }
+        if (message.embeds?.length) {
+            await trackAchievementProgress(message.guild, message.author, "embeds_posted", message.embeds.length)
+                .catch(error => console.warn("[Achievements] No se pudo registrar embeds_posted:", error.message));
+        }
+
+        const messageMetrics = extractMessageAchievementMetrics(message);
+        for (const [metric, amount] of Object.entries(messageMetrics)) {
+            await trackAchievementProgress(message.guild, message.author, metric, amount)
+                .catch(error => console.warn(`[Achievements] No se pudo registrar ${metric}:`, error.message));
+        }
 
         ////////////////////////////////////////
         // COOLDOWN POR SERVER + USER
@@ -283,6 +305,17 @@ module.exports = {
         ////////////////////////////////////////
 
         await data.save();
+        await trackAchievementProgress(message.guild, message.author, "xp", xpRandom)
+            .catch(error => console.warn("[Achievements] No se pudo registrar xp:", error.message));
+        if (data.level > Number(data.achievementLevelReported || 0)) {
+            try {
+                await trackAchievementProgress(message.guild, message.author, "level", data.level, { absolute: true });
+                data.achievementLevelReported = data.level;
+                await data.save();
+            } catch (error) {
+                console.warn("[Achievements] No se pudo registrar level:", error.message);
+            }
+        }
 
         console.log(`XP añadido a ${message.author.username}`.green);
     }

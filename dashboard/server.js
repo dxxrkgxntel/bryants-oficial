@@ -16,6 +16,7 @@ const DashboardAuditLog = require("../Models/DashboardAuditLog");
 const EconomyUser = require("../Models/EconomyUser");
 const Achievement = require("../Models/Achievement");
 const UserAchievement = require("../Models/UserAchievement");
+const TrophySettings = require("../Models/TrophySettings");
 const { ensureDefaultAchievements } = require("../Functions/achievementTracker");
 const Level = require("../Models/Level");
 const SocialAlertState = require("../Models/SocialAlertState");
@@ -56,7 +57,7 @@ app.use(helmet({
     }
 }));
 app.use(express.json({
-    limit: "32kb",
+    limit: "1mb",
     verify: (req, _res, buffer) => {
         if (req.originalUrl === "/integrations/topgg/vote") req.rawBody = Buffer.from(buffer);
     }
@@ -1496,6 +1497,114 @@ app.post("/api/guilds/:guildId/assistant", requireLogin, requireCsrf, requireGui
     } catch (error) {
         console.warn("[Dashboard Assistant] OpenAI request failed:", error.status || error.request_id || "sin detalle");
         return res.json({ configured: true, unavailable: true });
+    }
+});
+
+app.post("/api/guilds/:guildId/achievements/import", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    try {
+        const backup = req.body?.backup && typeof req.body.backup === "object" ? req.body.backup : req.body;
+        const sourceItems = Array.isArray(backup?.achievements)
+            ? backup.achievements
+            : Array.isArray(backup?.data?.items) ? backup.data.items : [];
+        if (!sourceItems.length || sourceItems.length > 500) {
+            return res.status(400).json({ error: "El backup debe contener entre 1 y 500 logros." });
+        }
+
+        const mode = ["merge", "update", "replace"].includes(req.body?.mode) ? req.body.mode : "merge";
+        const normalized = sourceItems.map(item => {
+            const achievementId = String(item?.id || item?.achievementId || "").trim().toLowerCase();
+            const name = String(item?.name || "").trim();
+            const metric = String(item?.metric || "").trim().toLowerCase();
+            const goal = Number(item?.threshold ?? item?.goal);
+            if (!/^[a-z0-9_-]{1,80}$/.test(achievementId) || !name || !metric || !Number.isSafeInteger(goal) || goal < 1 || goal > 1_000_000_000) {
+                throw new Error("Hay un logro con ID, nombre, métrica o meta inválidos.");
+            }
+            const rarity = ["common", "uncommon", "rare", "epic", "legendary", "mythic"].includes(item.rarity) ? item.rarity : "common";
+            return {
+                guildId: req.params.guildId,
+                achievementId,
+                name: name.slice(0, 100),
+                description: String(item.description || item.raw_description || name).slice(0, 300),
+                emoji: String(item.icon || item.emoji || "🏆").slice(0, 100),
+                category: String(item.category || "activity").trim().toLowerCase().slice(0, 50),
+                metric: metric.slice(0, 80),
+                comparator: ["gte", "gt", "eq", "lte", "lt"].includes(item.comparator) ? item.comparator : "gte",
+                goal,
+                points: Math.max(0, Math.min(1_000_000, Number(item.points) || 0)),
+                rarity,
+                rewardCoins: Math.max(0, Math.min(99_999_999_999, Number(item.reward_coins ?? item.rewardCoins) || 0)),
+                rewardXP: Math.max(0, Math.min(1_000_000_000, Number(item.reward_xp ?? item.rewardXP) || 0)),
+                rewardRoleIds: Array.isArray(item.reward_role_ids ?? item.rewardRoleIds) ? (item.reward_role_ids ?? item.rewardRoleIds).map(String).slice(0, 20) : [],
+                rewardRemoveRoleIds: Array.isArray(item.reward_remove_role_ids ?? item.rewardRemoveRoleIds) ? (item.reward_remove_role_ids ?? item.rewardRemoveRoleIds).map(String).slice(0, 20) : [],
+                rewardTitle: item.reward_title || item.rewardTitle ? String(item.reward_title || item.rewardTitle).slice(0, 100) : null,
+                secret: Boolean(item.secret),
+                repeatable: Boolean(item.repeatable),
+                announce: item.announce !== false,
+                prerequisiteIds: Array.isArray(item.prerequisite_ids ?? item.prerequisiteIds) ? (item.prerequisite_ids ?? item.prerequisiteIds).map(String).slice(0, 100) : [],
+                icon: String(item.icon || "🏆").slice(0, 100),
+                iconType: String(item.icon_type || item.iconType || "emoji").slice(0, 30),
+                iconUrl: item.icon_url || item.iconUrl ? String(item.icon_url || item.iconUrl).slice(0, 500) : null,
+                symbol: item.symbol ? String(item.symbol).slice(0, 80) : null,
+                badgeFrame: item.badge_frame || item.badgeFrame ? String(item.badge_frame || item.badgeFrame).slice(0, 50) : null,
+                color: item.color ? String(item.color).slice(0, 20) : null,
+                source: String(item.source || backup.source || "notoq").trim().toLowerCase().slice(0, 40),
+                builtinKey: item.builtin_key || item.builtinKey || achievementId,
+                enabled: item.enabled !== false && item.self_enabled !== false
+            };
+        });
+        const ids = new Set();
+        for (const item of normalized) {
+            if (ids.has(item.achievementId)) return res.status(400).json({ error: "El backup contiene IDs de logros duplicados." });
+            ids.add(item.achievementId);
+        }
+
+        const operations = normalized.map(item => ({
+            updateOne: {
+                filter: { guildId: req.params.guildId, achievementId: item.achievementId },
+                update: mode === "merge" ? { $setOnInsert: item } : { $set: item },
+                upsert: true
+            }
+        }));
+        const result = await Achievement.bulkWrite(operations, { ordered: false });
+        if (String(backup.source || "").trim().toLowerCase() === "notoq" && (Number(backup.sourceTotal) >= 397 || Number(backup.count) >= 397)) {
+            await TrophySettings.updateOne(
+                { guildId: req.params.guildId },
+                { $set: { notoqPage2Seeded: true }, $setOnInsert: { guildId: req.params.guildId } },
+                { upsert: true }
+            );
+        }
+        if (mode === "replace") await Achievement.deleteMany({ guildId: req.params.guildId, source: "notoq", achievementId: { $nin: normalized.map(item => item.achievementId) } });
+        const items = await Achievement.find({ guildId: req.params.guildId }).sort({ category: 1, name: 1 }).lean();
+        await recordDashboardAudit(req, req.params.guildId, `Importación de logros: ${normalized.length} registros (${mode})`);
+        return res.json({
+            ok: true,
+            mode,
+            received: normalized.length,
+            inserted: result.upsertedCount || 0,
+            updated: mode === "merge" ? 0 : result.modifiedCount || 0,
+            total: items.length,
+            items: items.map(item => ({ ...item, _id: String(item._id) }))
+        });
+    } catch (error) {
+        console.error("[Dashboard Achievements] Error al importar backup:", error.message);
+        return res.status(400).json({ error: error.message || "No pude importar el backup de logros." });
+    }
+});
+
+app.get("/api/guilds/:guildId/achievements/export", requireGuildAdmin, async (req, res) => {
+    try {
+        const achievements = await Achievement.find({ guildId: req.params.guildId }).sort({ category: 1, name: 1 }).lean();
+        return res.json({
+            format: "bryvex-achievements-backup",
+            version: 1,
+            source: "Bryvex Bot",
+            exportedAt: new Date().toISOString(),
+            count: achievements.length,
+            achievements: achievements.map(({ _id, __v, guildId, createdAt, updatedAt, ...item }) => item)
+        });
+    } catch (error) {
+        console.error("[Dashboard Achievements] Error al exportar backup:", error.message);
+        return res.status(500).json({ error: "No pude exportar los logros de este servidor." });
     }
 });
 

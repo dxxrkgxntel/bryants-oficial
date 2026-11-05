@@ -314,6 +314,20 @@ module.exports = {
                     };
                 });
                 if (operations.length) await Economy.bulkWrite(operations, { ordered: false });
+                const rewardedUsers = await Economy.find({
+                    guildId: interaction.guild.id,
+                    userId: { $in: humans.map(member => member.id) }
+                });
+                const rewardedById = new Map(rewardedUsers.map(user => [user.userId, user]));
+                for (let index = 0; index < humans.length; index += 10) {
+                    const batch = humans.slice(index, index + 10);
+                    await Promise.all(batch.map(member => {
+                        const economyUser = rewardedById.get(member.id);
+                        return economyUser
+                            ? trackEconomyAchievementSnapshot(interaction.guild, member.user, economyUser)
+                            : Promise.resolve();
+                    }));
+                }
                 data.lastDrop = new Date();
                 data.nextDrop = new Date(Date.now() + 604800000);
                 await data.save();

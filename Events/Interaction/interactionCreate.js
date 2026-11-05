@@ -4,6 +4,7 @@ const SpecialChannelsConfig = require('../../Models/SpecialChannelsConfig');
 const { PermissionsBitField } = require('discord.js');
 
 const cooldown = new Set();
+const { trackCommandUsage } = require("../../Functions/commandAchievementMetrics");
 
 module.exports = {
     name: 'interactionCreate',
@@ -237,6 +238,8 @@ if (interaction.isStringSelectMenu()) {
                 interaction,
                 client
             );
+            await trackCommandUsage(interaction.guild, interaction.user)
+                .catch(error => console.warn("[Achievements] No se pudo registrar commands_used:", error.message));
 
         } catch (error) {
 

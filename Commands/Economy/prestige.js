@@ -6,6 +6,8 @@ const Prestige=require("../../Models/Prestige");
 const PrestigeConfig=require("../../Models/PrestigeConfig");
 const Level=require("../../Models/Level");
 const Economy=require("../../Models/EconomyUser");
+const { trackAchievementProgress } = require("../../Functions/achievementTracker");
+const { trackEconomyAchievementSnapshot } = require("../../Functions/economyAchievementMetrics");
 
 const PRESTIGE_INFO_BANNER="https://i.imgur.com/joAe57D.png";
 const PRESTIGE_CLAIM_BANNER="https://i.imgur.com/joAe57D.png";
@@ -103,6 +105,8 @@ module.exports={
     if(!economy)economy=await Economy.create({guildId,userId,wallet:0,bank:0});
     economy.wallet+=reward;prestige.prestige=next;level.level=1;level.xp=0;
     await economy.save();await prestige.save();await level.save();
+    await trackEconomyAchievementSnapshot(i.guild, i.user, economy);
+    await trackAchievementProgress(i.guild, i.user, "prestige_level", 1).catch(error => console.warn("[Achievements] No se pudo registrar prestige_level:", error.message));
    }catch(err){
     await i.member.roles.remove(roleId).catch(()=>{});
     console.error("Error aplicando Prestige:",err);

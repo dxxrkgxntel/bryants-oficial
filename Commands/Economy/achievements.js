@@ -7,7 +7,8 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("achievements")
         .setDescription("Consulta tus logros y tu progreso")
-        .addUserOption(option => option.setName("usuario").setDescription("Miembro cuyos logros quieres consultar").setRequired(false)),
+        .addUserOption(option => option.setName("usuario").setDescription("Miembro cuyos logros quieres consultar").setRequired(false))
+        .addIntegerOption(option => option.setName("pagina").setDescription("Página del catálogo (10 logros por página)").setMinValue(1).setMaxValue(50).setRequired(false)),
     async execute(interaction) {
         await interaction.deferReply();
         const target = interaction.options.getUser("usuario") || interaction.user;
@@ -22,17 +23,26 @@ module.exports = {
 
         const progressById = new Map(progress.map(entry => [entry.achievementId, entry]));
         const unlocked = definitions.filter(item => progressById.get(item.achievementId)?.unlockedAt);
-        const lines = definitions.slice(0, 20).map(item => {
+        const visibleDefinitions = definitions.filter(item => !item.secret || progressById.get(item.achievementId)?.unlockedAt);
+        const pageSize = 10;
+        const totalPages = Math.max(1, Math.ceil(visibleDefinitions.length / pageSize));
+        const page = Math.min(interaction.options.getInteger("pagina") || 1, totalPages);
+        const pageItems = visibleDefinitions.slice((page - 1) * pageSize, page * pageSize);
+        const lines = pageItems.map(item => {
             const entry = progressById.get(item.achievementId);
             const done = Boolean(entry?.unlockedAt);
             const current = Math.min(item.goal, entry?.progress || 0);
-            const reward = item.rewardCoins > 0 ? ` · 💰 ${item.rewardCoins.toLocaleString()}` : "";
+            const rewards = [
+                item.rewardCoins > 0 ? `💰 ${item.rewardCoins.toLocaleString()}` : "",
+                item.rewardXP > 0 ? `✨ ${item.rewardXP.toLocaleString()} XP` : ""
+            ].filter(Boolean);
+            const reward = rewards.length ? ` · ${rewards.join(" · ")}` : "";
             return `${done ? "🏆" : "🔒"} ${item.emoji || "🏆"} **${item.name}** — ${done ? "Desbloqueado" : `${current.toLocaleString()}/${item.goal.toLocaleString()}`}\n> ${item.description}${reward}`;
         });
         const container = new ContainerBuilder().setAccentColor(0x8A2BE2);
         container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## 🏆 Logros de ${target.username}`));
         container.addSeparatorComponents(new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small));
-        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`Desbloqueados: **${unlocked.length}/${definitions.length}**\n\n${lines.join("\n\n")}${definitions.length > 20 ? "\n\n_Muestra limitada a los primeros 20 logros. Configura categorías para organizar el catálogo._" : ""}`));
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`Desbloqueados: **${unlocked.length}/${definitions.length}** · Página **${page}/${totalPages}**\n\n${lines.join("\n\n")}${totalPages > 1 ? "\n\n_Usa la opción pagina para consultar el resto del catálogo._" : ""}`));
         return interaction.editReply({ flags: MessageFlags.IsComponentsV2, components: [container] });
     }
 };

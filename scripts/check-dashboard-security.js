@@ -40,7 +40,10 @@ requirePattern(/function secureStringEqual\([\s\S]*?crypto\.timingSafeEqual/, "L
 requirePattern(/!secureStringEqual\(state, expectedState\)/, "OAuth debe validar state con comparación segura");
 requirePattern(/app\.disable\("x-powered-by"\)/, "Express no debe revelar su cabecera de identificación");
 requirePattern(/app\.use\(helmet\(/, "Deben activarse cabeceras de seguridad HTTP");
-requirePattern(/express\.json\(\{\s*limit:\s*"32kb"/, "El cuerpo JSON debe tener un límite de tamaño");
+requirePattern(/express\.json\(\{\s*limit:\s*"(?:32kb|1mb)"/, "El cuerpo JSON debe tener un límite de tamaño");
+requirePattern(/sourceItems\.length > 500/, "La importación de logros debe limitar la cantidad de registros del backup");
+requireRoute("post", "/api/guilds/:guildId/achievements/import", ["requireLogin", "requireCsrf", "requireGuildAdmin"], "La importación de logros debe estar protegida");
+requireRoute("get", "/api/guilds/:guildId/achievements/export", ["requireGuildAdmin"], "La exportación de logros debe estar protegida");
 requirePattern(/req\.session\.regenerate\(/, "La sesión debe regenerarse al autenticar para mitigar session fixation");
 
 requirePattern(/app\.get\(["']\/api\/public\/status["']/, "Debe existir el endpoint público de estado de Bryvex Bot");
@@ -78,7 +81,9 @@ function requireClientPattern(pattern, message) {
 
 requireClientPattern(/function assistantReply\(question\)/, "Debe existir el asistente de dashboard");
 requireClientPattern(/const matched = findAssistantModule\(q\);[\s\S]*?const moduleQuestion = Boolean\(matched && matched\.score <= 2\);/, "Las consultas de módulos deben detectarse antes de responder con intenciones generales");
-requireClientPattern(/actionUrl: "\/support"/, "Las consultas no reconocidas deben ofrecer acceso a Support");
+requireClientPattern(/href: "\/support"/, "El asistente debe conservar el destino del Centro de soporte");
+requireClientPattern(/actionUrl:\s*assistantWebsitePageActions\.support\.href/, "Las consultas no reconocidas deben ofrecer acceso a Support");
+requireClientPattern(/actionLabel:\s*assistantWebsitePageActions\.support\.label/, "El acceso a Support debe tener una etiqueta visible");
 requireClientPattern(/actionKey === "__checks"/, "El asistente debe permitir abrir Comprobaciones");
 requireClientPattern(/Prioridad alta|Revisión recomendada|Advertencia/, "Los diagnósticos deben comunicar niveles de prioridad");
 requireClientPattern(/function getAssistantFindings\(/, "Deben existir comprobaciones automáticas de configuración");
