@@ -33,6 +33,14 @@ assert.equal(isPerfectMiniGame({ blocksTurned: 20 }, "win"), true);
 assert.equal(isPerfectMiniGame({ blocksTurned: 20 }, "lose"), false);
 assert.equal(isPerfectMiniGame({ turns: 2 }, "win"), false);
 
+const metricPipeline = buildMiniGameStatsPipeline(true, { guesses: 3, perfect: true });
+assert.deepEqual(metricPipeline[0].$set.totalGuesses, { $add: [{ $ifNull: ["$totalGuesses", 0] }, 3] });
+assert.deepEqual(metricPipeline[0].$set.perfectGames, { $add: [{ $ifNull: ["$perfectGames", 0] }, 1] });
+
+const noMetricPipeline = buildMiniGameStatsPipeline(false);
+assert.deepEqual(noMetricPipeline[0].$set.totalGuesses, { $add: [{ $ifNull: ["$totalGuesses", 0] }, 0] });
+assert.deepEqual(noMetricPipeline[0].$set.perfectGames, { $add: [{ $ifNull: ["$perfectGames", 0] }, 0] });
+
 const winPipeline = buildMiniGameStatsPipeline(true);
 assert.equal(winPipeline.length, 1);
 assert.deepEqual(winPipeline[0].$set.totalGames, { $add: [{ $ifNull: ["$totalGames", 0] }, 1] });
