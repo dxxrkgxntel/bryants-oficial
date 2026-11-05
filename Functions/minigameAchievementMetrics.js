@@ -1,6 +1,3 @@
-const MiniGameStats = require("../Models/MiniGameStats");
-const { trackAchievementProgress } = require("./achievementTracker");
-
 function normalizeMiniGameResult(result) {
     const status = typeof result?.result === "string" ? result.result.toLowerCase() : "";
     if (status === "win") return "win";
@@ -25,6 +22,8 @@ function buildMiniGameStatsPipeline(won) {
 }
 
 async function recordPlayerResult(guild, user, outcome) {
+    const MiniGameStats = require("../Models/MiniGameStats");
+    const { trackAchievementProgress } = require("./achievementTracker");
     if (!guild?.id || !user?.id || user.bot || !["win", "lose", "tie", "finish"].includes(outcome)) return null;
 
     const stats = await MiniGameStats.findOneAndUpdate(
