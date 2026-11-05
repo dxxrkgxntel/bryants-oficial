@@ -1,14 +1,14 @@
 # Matriz de auditoría de las 106 métricas de logros — Bryvex Bot
 
-> Rama: `feature/notoq-metrics-next`. Estado basado en evidencia localizada en código y modelos. «Pendiente» significa que no hay llamada confirmada al tracker, aunque pueda existir una fuente de datos aprovechable.
+> Rama: `feature/achievement-moderation-metrics`. Estado basado en evidencia localizada en código y modelos. «Pendiente» significa que no hay llamada confirmada al tracker, aunque pueda existir una fuente de datos aprovechable.
 
 ## Resumen
 
 - Catálogo: **397 logros / 106 métricas únicas**.
-- Conectadas: **37**.
-- Parciales: **16**.
+- Conectadas: **39**.
+- Parciales: **18**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **2**.
-- Pendientes de localizar/implementar o validar: **51**.
+- Pendientes de localizar/implementar o validar: **47**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
 ## Matriz
@@ -79,7 +79,7 @@
 | 62 | `messages_sent` | 13 | **Conectada** | Events/Levels/messageCreate2.js · messageCreate — Suma mensajes de usuarios. | Casual Typer (100); Chatterbox (500) |
 | 63 | `messages_starred` | 3 | **Pendiente** | sin sistema Starboard identificado | On the Board (1); Board Regular (10) |
 | 64 | `mining_trips` | 4 | **Pendiente** | sin sistema de minería identificado | First Dig (1); Miner (25) |
-| 65 | `mod_actions` | 4 | **Pendiente** | Commands/Administration/moderation.js; falta tracker por acción | Rookie Mod (1); Peacekeeper (25) |
+| 65 | `mod_actions` | 4 | **Conectada** | Commands/Administration/moderation.js + Functions/moderationAchievementMetrics.js + Models/ModerationAchievementAction.js · registra ban, unban, kick, mute, unmute y purge solo después del éxito de Discord; usa `interactionId` único y recalcula el total persistido con progreso absoluto para evitar duplicados | Rookie Mod (1); Peacekeeper (25) |
 | 66 | `net_worth` | 6 | **Conectada** | Functions/economyAchievementMetrics.js + Commands/Administration/weeklydrop.js + Functions/questHandler.js · patrimonio líquido neto = wallet + bank − deuda, con actualización tras las fuentes conocidas de recompensas y transacciones | Getting Comfortable (10000); Well Off (100000) |
 | 67 | `night_owl_messages` | 3 | **Conectada** | Functions/achievementMessageMetrics.js · 00:00–05:59 en America/Santo_Domingo | Night Owl (100); Moon Dweller (1000) |
 | 68 | `polls_created` | 3 | **Conectada** | Commands/Utility/poll.js · creación de encuesta — Suma al crear encuesta. | Pollster (5); Poll Maker (50) |
@@ -90,18 +90,18 @@
 | 73 | `questions_asked` | 6 | **Pendiente** | asistente IA/dashboard; falta definir pregunta válida | Curious (25); Inquirer (250) |
 | 74 | `reactions_added` | 9 | **Conectada** | Events/Logs/personalReactionStats.js · messageReactionAdd — Cuenta reacciones añadidas. | Give or Take (10); True Star (100) |
 | 75 | `reactions_received` | 6 | **Conectada** | Events/Logs/personalReactionStats.js · messageReactionAdd — Cuenta reacciones recibidas por el autor. | First Fan (10); Crowd Pleaser (100) |
-| 76 | `referrals` | 3 | **Pendiente** | Models/DashboardReferral.js; verificar si la referencia pertenece a un miembro/servidor | Referrer (1); Brand Ambassador (5) |
+| 76 | `referrals` | 3 | **Parcial** | Models/DashboardReferral.js + Functions/referralAchievementMetrics.js + Events/Client/ready.js · el bot agrupa referidos confirmados por servidor e invitador y sincroniza el total con progreso absoluto; el dashboard conserva su transacción de recompensa sin depender del cliente Discord; pendiente validación en Discord real | Referrer (1); Brand Ambassador (5) |
 | 77 | `replies_sent` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · mensajes con referencia a otro mensaje | Replier (100); Conversationalist (1000) |
 | 78 | `reviews_written` | 5 | **Pendiente** | sin sistema de reseñas identificado | Reviewer (1); Critic (10) |
 | 79 | `roles_count` | 2 | **Parcial** | Functions/memberAchievementMetrics.js + Events/Guild/achievementMemberUpdate.js + Events/Levels/messageCreate2.js · cuenta roles asignados, excluye `@everyone` y roles gestionados; guarda el máximo alcanzado mediante progreso absoluto; pendiente validación en Discord real | Role Collector (10); Role Hoarder (25) |
 | 80 | `season_podiums` | 2 | **Pendiente** | Models/TrophyScore.js + TrophySettings; falta cálculo de podio | Podium Finish (1); Podium Regular (5) |
 | 81 | `season_wins` | 3 | **Pendiente** | Models/TrophyScore.js + TrophySettings; falta cierre y adjudicación de temporadas | Season Champion (1); Title Defender (3) |
-| 82 | `self_roles_taken` | 3 | **Pendiente** | Utils/SetupHandlers/autoRoleUB.js + Events/Interaction/* | Self-Made (1); Role Picker (10) |
+| 82 | `self_roles_taken` | 3 | **Pendiente** | Utils/SetupHandlers/autoRoleUB.js + Events/Guild/sistemaDeAutoRoles.js · el único autorol asigna automáticamente un rol al entrar y lo configura un administrador; no existe elección voluntaria del miembro, por lo que no cuenta para esta métrica | Self-Made (1); Role Picker (10) |
 | 83 | `spoilers_sent` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · mensajes con sintaxis de spoiler Discord ||...|| | Spoiler Alert (10); Secret Keeper (100) |
 | 84 | `stars_given` | 3 | **Pendiente** | sin sistema de estrellas identificado | Star Giver (25); Generous Soul (250) |
 | 85 | `stars_received` | 5 | **Pendiente** | sin sistema de estrellas identificado | Star Struck (1); Shining (25) |
 | 86 | `stickers_sent` | 2 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · cuenta stickers del mensaje | Sticker Fan (50); Sticker Addict (500) |
-| 87 | `streaming_minutes` | 4 | **Parcial** | Models/PersonalVoiceActivity.js + Functions/voiceActivity.js · sesión persistente de transmisión; falta validación en Discord real | Go Live (30); Streamer (600) |
+| 87 | `streaming_minutes` | 4 | **Parcial** | Models/PersonalVoiceActivity.js + Functions/voiceActivity.js + Functions/voiceActivityMath.js · sesión persistente de transmisión; reporta minutos con snapshots absolutos idempotentes y conserva pendientes si falla el tracker; falta validación en Discord real | Go Live (30); Streamer (600) |
 | 88 | `threads_created` | 3 | **Conectada** | Events/Messages/threadCreateAchievement.js · threadCreate, atribuye el hilo a ownerId | Thread Starter (5); Thread Weaver (50) |
 | 89 | `tickets_claimed` | 3 | **Pendiente** | Models/SupportTicket.js; no existe campo claimant confirmado | Ticket Claimer (10); Support Specialist (100) |
 | 90 | `tickets_closed` | 3 | **Dato existente; falta conexión** | Models/SupportTicket.js + dashboard/server.js · existe cierre de tickets web y `closedAt`, pero el actor de cierre puede ser staff web y `guildId` apunta al servidor de soporte configurado, no necesariamente al servidor del usuario; no atribuir a logros de servidor hasta disponer de vínculo/actor Discord verificable | Support Hero (10); Support Champion (100) |
@@ -113,10 +113,10 @@
 | 96 | `total_spent` | 4 | **Pendiente** | Utils/shopHandlers.js + comandos de economía · requiere ledger histórico | Shopper (10000); Big Spender (100000) |
 | 97 | `verified` | 1 | **Pendiente** | flujo de verificación; no se identificó modelo/evento específico | Verified (1) |
 | 98 | `voice_joins` | 3 | **Conectada** | Events/Logs/personalVoiceStats.js + Functions/voiceAchievementMetrics.js · cuenta solo entrada real desde fuera de voz | Channel Hopper (25); Frequent Flyer (250) |
-| 99 | `voice_minutes` | 12 | **Parcial** | Models/PersonalVoiceActivity.js + Functions/voiceActivity.js · guarda inicio de sesión y segundos/minutos reportados; falta validar recuperación en Discord real. | New Here? (5); Warming Up (30) |
-| 100 | `voice_video_minutes` | 6 | **Parcial** | Models/PersonalVoiceActivity.js + Functions/voiceActivity.js · registra intervalos de cámara con persistencia; falta validación en Discord real | On Camera (30); Face Reveal (300) |
-| 101 | `votes` | 4 | **Pendiente** | sin integración de votos identificada | Voter (1); Loyal Voter (25) |
-| 102 | `warns_issued` | 2 | **Pendiente** | Commands/Administration/moderation.js; falta tracker por advertencia | Rule Enforcer (10); The Hammer (100) |
+| 99 | `voice_minutes` | 12 | **Parcial** | Models/PersonalVoiceActivity.js + Functions/voiceActivity.js + Functions/voiceActivityMath.js · guarda inicio de sesión y segundos/minutos reportados; snapshots absolutos permiten reintentar fallos sin duplicar minutos; falta validar recuperación en Discord real. | New Here? (5); Warming Up (30) |
+| 100 | `voice_video_minutes` | 6 | **Parcial** | Models/PersonalVoiceActivity.js + Functions/voiceActivity.js + Functions/voiceActivityMath.js · registra intervalos de cámara con persistencia y snapshots absolutos reintentables; falta validación en Discord real | On Camera (30); Face Reveal (300) |
+| 101 | `votes` | 4 | **Parcial** | Models/DashboardVote.js + dashboard/server.js + Functions/voteAchievementMetrics.js + Events/Client/ready.js · registra cada voto aceptado en la misma transacción que la recompensa, conserva el servidor de crédito y sincroniza el total por usuario/servidor con progreso absoluto; pendiente validación en Discord real | Voter (1); Loyal Voter (25) |
+| 102 | `warns_issued` | 2 | **Conectada** | Commands/Administration/moderation.js + Functions/warningAchievementMetrics.js + Models/ModerationWarning.js · guarda cada advertencia real con `interactionId` único, moderador, destinatario y motivo; cuenta advertencias persistidas por moderador/servidor y reporta progreso absoluto | Rule Enforcer (10); The Hammer (100) |
 | 103 | `weekend_messages` | 2 | **Conectada** | Functions/achievementMessageMetrics.js · sábado y domingo según America/Santo_Domingo | Weekend Warrior (500); Weekend Legend (5000) |
 | 104 | `words_typed` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · palabras separadas por espacios | Word Novice (1000); Author (50000) |
 | 105 | `work_streak` | 2 | **Conectada** | Models/EconomyUser.js + Commands/Economy/economy.js · racha de días de trabajo según America/Santo_Domingo; el progreso guarda el máximo alcanzado | Workaholic (25); Never Off the Clock (100) |
@@ -135,7 +135,11 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 - `daily_streak` de actividad y `economy_daily_streak` son conceptos diferentes.
 - `games_played`, `games_won` y `games_streak` se actualizan desde casino y minijuegos Fun con fuentes separadas. Los minijuegos singleplayer y multiplayer persisten contadores y rachas en `MiniGameStats`; se requiere validación funcional en Discord para cerrar las tres métricas. Los timeouts multijugador no cuentan como partida finalizada; los empates cuentan como partida y reinician la racha.
 - `first_unlocks` adjudica una sola vez cada logro por servidor mediante un índice único; `achievements_unlocked` suma una vez cada transición a logro completado, sin contar tiers como logros separados. `account_age_days` y `membership_days` se actualizan al entrar y en la actividad del miembro; `roles_count` se actualiza al entrar, cambiar roles y enviar mensajes; `items_owned` se calcula después de una compra confirmada sobre la mochila persistida; `boost_months` conserva el máximo de meses calendario completos de una racha continua de impulso. La validación en Discord real sigue pendiente.
+- Las acciones `mod_actions` incluyen ban, unban, kick, mute, unmute y purge confirmados por Discord. `warns_issued` registra advertencias persistidas con clave única por interacción; solo confirma la advertencia al usuario si la escritura en MongoDB termina correctamente. `referrals` se sincroniza desde `DashboardReferral` por servidor e invitador con snapshots absolutos; la transacción original de recompensa no se modifica y la sincronización puede repetirse sin incrementar dos veces el progreso.
 - Los tickets actuales son tickets del centro de soporte web, no tickets de soporte abiertos por miembros dentro de sus propios servidores; no se conectan a métricas de logros hasta resolver esa diferencia de alcance y atribución.
+- Top.gg mantiene `DashboardAccount.voteCount` como contador global de cuenta para mostrar estadísticas; el nuevo `DashboardVote` conserva cada voto aceptado con su `guildId` y se sincroniza por servidor. Los votos históricos anteriores a este ledger no pueden reconstruirse de forma fiable y no se importan como progreso.
+- El autorol existente es automático al entrar y asignado por configuración administrativa; no representa una acción voluntaria del miembro y no puede alimentar `self_roles_taken`.
+- La sincronización entre dashboard y bot requiere que `process.env.MONGODB_URI` del dashboard y `config.dataBaseURL` del bot apunten a la misma base de datos. No se modifica `config.json`; esta condición debe comprobarse en el despliegue.
 - Las métricas de clanes, negocios, propiedades, inversiones, pesca y minería no tienen modelos correspondientes en el árbol de modelos revisado; deben declararse no aplicables o implementar primero esos sistemas, nunca simular progreso.
 
 ## Orden recomendado de implementación

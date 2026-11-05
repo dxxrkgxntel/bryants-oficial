@@ -10,6 +10,9 @@ const {
     MediaGalleryItemBuilder,
     MessageFlags
 } = require("discord.js");
+const { recordModerationAchievementAction } = require("../../Functions/moderationAchievementMetrics");
+const { recordWarningAchievement } = require("../../Functions/warningAchievementMetrics");
+
 const moderationFeatureHandlers = {
     antiscam: require("../../Utils/ModerationHandlers/antiScam")
 };
@@ -436,6 +439,7 @@ module.exports = {
             if (!user.bannable) return moderationReply(interaction, "⛔ No puedo banearlo", "Revisa la jerarquía de roles y los permisos del bot.", 0xFF0000);
 
             await user.ban({ reason });
+            await recordModerationAchievementAction(interaction, "ban", user.user);
             return moderationReply(interaction, "🔨 Usuario baneado", "**Usuario:** " + user + "\n**Moderador:** " + interaction.user + "\n**Razón:** " + reason, 0x8A2BE2);
         }
 
@@ -448,6 +452,7 @@ module.exports = {
             if (!/^\\d{17,20}$/.test(userId)) return moderationReply(interaction, "❌ ID inválido", "Introduce un ID de usuario válido.", 0xFF0000);
             try {
                 await interaction.guild.members.unban(userId);
+                await recordModerationAchievementAction(interaction, "unban", { id: userId });
                 return moderationReply(interaction, "✅ Usuario desbaneado", "**ID:** " + userId + "\n**Moderador:** " + interaction.user, 0x00FF99);
             } catch {
                 return moderationReply(interaction, "❌ No se pudo desbanear", "El usuario no está baneado o el bot no tiene permisos suficientes.", 0xFF0000);
@@ -465,6 +470,7 @@ module.exports = {
             if (user.id === interaction.user.id) return moderationReply(interaction, "⚠️ Acción inválida", "No puedes expulsarte a ti mismo.", 0xFFD700);
             if (!user.kickable) return moderationReply(interaction, "⛔ No puedo expulsarlo", "Revisa la jerarquía de roles y los permisos del bot.", 0xFF0000);
             await user.kick(reason);
+            await recordModerationAchievementAction(interaction, "kick", user.user);
             return moderationReply(interaction, "👢 Usuario expulsado", "**Usuario:** " + user + "\n**Moderador:** " + interaction.user + "\n**Razón:** " + reason, 0x8A2BE2);
         }
 
@@ -475,7 +481,14 @@ module.exports = {
         if (subcommand === "warn") {
             const user = interaction.options.getUser("usuario");
             const reason = interaction.options.getString("razon") || "No especificada";
+            if (!user) return moderationReply(interaction, "❌ Usuario inválido", "No pude encontrar a ese usuario.", 0xFF0000);
             if (user.id === interaction.user.id) return moderationReply(interaction, "⚠️ Acción inválida", "No puedes advertirte a ti mismo.", 0xFFD700);
+            if (user.bot) return moderationReply(interaction, "⚠️ Acción inválida", "No se registran advertencias para bots.", 0xFFD700);
+
+            const warningSaved = await recordWarningAchievement(interaction, user, reason);
+            if (!warningSaved) {
+                return moderationReply(interaction, "❌ No se pudo guardar la advertencia", "No se registró la advertencia. Inténtalo de nuevo más tarde.", 0xFF0000);
+            }
             return moderationReply(interaction, "⚠️ Usuario advertido", "**Usuario:** " + user + "\n**Moderador:** " + interaction.user + "\n**Razón:** " + reason, 0xFFD700);
         }
 
@@ -493,6 +506,7 @@ module.exports = {
             if (user.id === interaction.user.id) return moderationReply(interaction, "⚠️ Acción inválida", "No puedes silenciarte a ti mismo.", 0xFFD700);
             if (!user.moderatable) return moderationReply(interaction, "⛔ No puedo silenciarlo", "Revisa la jerarquía de roles y los permisos del bot.", 0xFF0000);
             await user.timeout(time, reason);
+            await recordModerationAchievementAction(interaction, "mute", user.user);
             return moderationReply(interaction, "🔇 Usuario silenciado", "**Usuario:** " + user + "\n**Moderador:** " + interaction.user + "\n**Tiempo:** " + rawTime + "\n**Razón:** " + reason, 0x8A2BE2);
         }
 
@@ -524,6 +538,7 @@ module.exports = {
 
             try {
                 await user.timeout(null, "Timeout retirado por " + interaction.user.tag);
+                await recordModerationAchievementAction(interaction, "unmute", user.user);
             } catch (error) {
                 console.error("Error al retirar timeout:", error);
                 return moderationReply(
@@ -563,6 +578,7 @@ module.exports = {
                         if (result) deleted += result.size;
                         if (fetched.size < 100 || !result || result.size === 0) break;
                     }
+                    if (deleted > 0) await recordModerationAchievementAction(interaction, "purge");
                     return moderationReply(interaction, "🧹 Limpieza completada", "**" + deleted + " mensajes** eliminados.", 0x00FF99);
                 }
 
@@ -577,6 +593,7 @@ module.exports = {
                     throw error;
                 });
                 if (!deleted) return moderationReply(interaction, "⚠️ Mensajes modificados", "Algunos mensajes desaparecieron durante la limpieza. Ejecuta el comando nuevamente para continuar.", 0xFFD700);
+                if (deleted.size > 0) await recordModerationAchievementAction(interaction, "purge");
                 return moderationReply(interaction, "🧹 Limpieza completada", "**" + deleted.size + " mensajes** eliminados.", 0x00FF99);
             } catch (error) {
                 console.error("[Moderation Purge]", error);

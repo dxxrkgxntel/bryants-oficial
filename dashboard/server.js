@@ -12,6 +12,7 @@ const Poll = require("../Models/Poll");
 const PollConfig = require("../Models/PollConfig");
 const DashboardAccount = require("../Models/DashboardAccount");
 const DashboardReferral = require("../Models/DashboardReferral");
+const DashboardVote = require("../Models/DashboardVote");
 const DashboardAuditLog = require("../Models/DashboardAuditLog");
 const EconomyUser = require("../Models/EconomyUser");
 const Achievement = require("../Models/Achievement");
@@ -1155,6 +1156,13 @@ app.post("/integrations/topgg/vote", async (req, res) => {
                 { new: true, session: databaseSession }
             );
             if (!account) return;
+            await DashboardVote.create([{
+                voteId: crypto.randomBytes(16).toString("hex"),
+                userId,
+                guildId,
+                source: "topgg",
+                votedAt: now
+            }], { session: databaseSession });
             await EconomyUser.findOneAndUpdate(
                 { guildId, userId },
                 { $inc: { wallet: amount }, $setOnInsert: { guildId, userId } },

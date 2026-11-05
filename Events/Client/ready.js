@@ -18,6 +18,8 @@ const { renderWeeklyDropDescription } = require('../../Functions/weeklyDropDescr
 const { initializeInviteCache } = require('../../Utils/inviteTracker');
 const autoPollEnd = require("../../Functions/autoPollEnd");
 const startSocialAlerts = require("../../Handlers/socialAlerts");
+const { startReferralAchievementMetricSync } = require("../../Functions/referralAchievementMetrics");
+const { startVoteAchievementMetricSync } = require("../../Functions/voteAchievementMetrics");
 
 require('colors');
 
@@ -86,6 +88,8 @@ module.exports = {
             // Los procesos que consultan MongoDB solo se inician tras confirmar la conexión.
             autoPollEnd(client);
             startSocialAlerts(client);
+            startReferralAchievementMetricSync(client);
+            startVoteAchievementMetricSync(client);
         } else {
             console.error('[DAILY PURGE] No se pudo iniciar: MongoDB no está conectado.');
         }

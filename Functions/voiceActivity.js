@@ -1,8 +1,21 @@
 const PersonalVoiceActivity = require("../Models/PersonalVoiceActivity");
 const { addDuration } = require("./personalStats");
 const { trackAchievementProgress } = require("./achievementTracker");
-const { minutesProgress } = require("./voiceActivityMath");
+const { voiceMinutesSnapshot } = require("./voiceActivityMath");
 const { extractVoiceAchievementMetrics } = require("./voiceAchievementMetrics");
+
+async function syncVoiceMetric(activity, member, guild, totalField, reportedField, metric) {
+    const snapshot = voiceMinutesSnapshot(activity[totalField], activity[reportedField]);
+    if (!snapshot.shouldReport) return;
+    try {
+        // Los snapshots absolutos permiten reintentar sin sumar minutos duplicados.
+        await trackAchievementProgress(guild, member.user, metric, snapshot.totalMinutes, { absolute: true });
+        activity[reportedField] = snapshot.totalMinutes;
+    } catch (error) {
+        // El watermark no avanza: se reintentará en el próximo evento de voz.
+        console.warn(`[Achievements] No se pudo registrar ${metric}; queda pendiente el reintento:`, error.message);
+    }
+}
 
 async function closeDuration(activity, member, guild, startField, totalField, reportedField, metric, statsField, mapKey, now) {
     const startedAt = activity[startField];
@@ -11,17 +24,10 @@ async function closeDuration(activity, member, guild, startField, totalField, re
     activity[startField] = null;
     if (!seconds) return;
 
-    const previousTotal = Number(activity[totalField] || 0);
-    const previousReported = Number(activity[reportedField] || 0);
-    const nextTotal = previousTotal + seconds;
-    const delta = minutesProgress(nextTotal, previousReported);
-
+    const nextTotal = Number(activity[totalField] || 0) + seconds;
     await addDuration(member.id, guild.id, statsField, seconds, new Date(startedAt), now, mapKey);
     activity[totalField] = nextTotal;
-    if (delta > 0) {
-        activity[reportedField] = previousReported + delta;
-        await trackAchievementProgress(guild, member.user, metric, delta).catch(error => console.warn(`[Achievements] No se pudo registrar ${metric}:`, error.message));
-    }
+    await syncVoiceMetric(activity, member, guild, totalField, reportedField, metric);
 }
 
 async function processVoiceStateUpdateInternal(oldState, newState) {
@@ -34,6 +40,11 @@ async function processVoiceStateUpdateInternal(oldState, newState) {
     const newChannelId = newState.channelId || null;
     let activity = await PersonalVoiceActivity.findOne({ userId: member.id, guildId: guild.id });
     if (!activity) activity = new PersonalVoiceActivity({ userId: member.id, guildId: guild.id });
+
+    // Reintenta métricas pendientes de sesiones anteriores sin alterar los totales guardados.
+    await syncVoiceMetric(activity, member, guild, "totalVoiceSeconds", "voiceMinutesReported", "voice_minutes");
+    await syncVoiceMetric(activity, member, guild, "totalStreamingSeconds", "streamingMinutesReported", "streaming_minutes");
+    await syncVoiceMetric(activity, member, guild, "totalVideoSeconds", "videoMinutesReported", "voice_video_minutes");
 
     const wasInVoice = Boolean(oldChannelId);
     const isInVoice = Boolean(newChannelId);
