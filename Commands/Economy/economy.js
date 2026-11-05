@@ -57,6 +57,7 @@ async function runBalance(interaction) {
  const bonus = await applyBankBonus(userData);
  await userData.save();
  const addedDebt = await updateDebt(userData);
+ await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, userData);
  const total = userData.wallet + userData.bank;
  const member = await interaction.guild.members.fetch(target.id).catch(() => null);
  const displayName = member?.displayName || target.username;
