@@ -2,6 +2,22 @@ function countMatches(value, regex) {
     return (String(value || "").match(regex) || []).length;
 }
 
+const ACTIVITY_TIME_ZONE = "America/Santo_Domingo";
+const LONG_MESSAGE_MIN_CHARACTERS = 500;
+
+function getLocalActivityTime(date, timeZone = ACTIVITY_TIME_ZONE) {
+    const value = date instanceof Date ? date : new Date(date);
+    if (!Number.isFinite(value.getTime())) return null;
+    const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        weekday: "short",
+        hour: "2-digit",
+        hourCycle: "h23"
+    }).formatToParts(value);
+    const result = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return { weekday: result.weekday, hour: Number(result.hour) };
+}
+
 function extractMessageAchievementMetrics(message) {
     const content = String(message?.content || "");
     const attachments = [...(message?.attachments?.values?.() || [])];
@@ -12,6 +28,14 @@ function extractMessageAchievementMetrics(message) {
     if (words.length) metrics.words_typed = words.length;
 
     const characters = [...content].length;
+    if (characters >= LONG_MESSAGE_MIN_CHARACTERS) metrics.long_messages = 1;
+
+    const localTime = getLocalActivityTime(message?.createdAt);
+    if (localTime) {
+        if (localTime.hour >= 0 && localTime.hour < 6) metrics.night_owl_messages = 1;
+        if (localTime.hour >= 6 && localTime.hour < 9) metrics.early_bird_messages = 1;
+        if (localTime.weekday === "Sat" || localTime.weekday === "Sun") metrics.weekend_messages = 1;
+    }
     if (characters) metrics.characters_typed = characters;
 
     const imageAttachments = attachments.filter(file => {
@@ -54,4 +78,4 @@ function extractMessageAchievementMetrics(message) {
     return metrics;
 }
 
-module.exports = { extractMessageAchievementMetrics };
+module.exports = { extractMessageAchievementMetrics, getLocalActivityTime, ACTIVITY_TIME_ZONE, LONG_MESSAGE_MIN_CHARACTERS };
