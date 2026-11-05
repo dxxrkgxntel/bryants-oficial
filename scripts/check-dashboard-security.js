@@ -40,7 +40,10 @@ requirePattern(/function secureStringEqual\([\s\S]*?crypto\.timingSafeEqual/, "L
 requirePattern(/!secureStringEqual\(state, expectedState\)/, "OAuth debe validar state con comparación segura");
 requirePattern(/app\.disable\("x-powered-by"\)/, "Express no debe revelar su cabecera de identificación");
 requirePattern(/app\.use\(helmet\(/, "Deben activarse cabeceras de seguridad HTTP");
-requirePattern(/express\.json\(\{\s*limit:\s*"32kb"/, "El cuerpo JSON debe tener un límite de tamaño");
+requirePattern(/express\.json\(\{\s*limit:\s*"(?:32kb|1mb)"/, "El cuerpo JSON debe tener un límite de tamaño");
+requirePattern(/sourceItems\.length > 500/, "La importación de logros debe limitar la cantidad de registros del backup");
+requireRoute("post", "/api/guilds/:guildId/achievements/import", ["requireLogin", "requireCsrf", "requireGuildAdmin"], "La importación de logros debe estar protegida");
+requireRoute("get", "/api/guilds/:guildId/achievements/export", ["requireGuildAdmin"], "La exportación de logros debe estar protegida");
 requirePattern(/req\.session\.regenerate\(/, "La sesión debe regenerarse al autenticar para mitigar session fixation");
 
 requirePattern(/app\.get\(["']\/api\/public\/status["']/, "Debe existir el endpoint público de estado de Bryvex Bot");
