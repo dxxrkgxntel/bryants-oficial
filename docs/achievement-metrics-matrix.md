@@ -6,8 +6,8 @@
 
 - Catálogo: **397 logros / 106 métricas únicas**.
 - Conectadas: **37**.
-- Parciales: **4**.
-- Fuente existente o dato calculable, sin conexión al catálogo: **12**.
+- Parciales: **6**.
+- Fuente existente o dato calculable, sin conexión al catálogo: **10**.
 - Pendientes de localizar/implementar o validar: **53**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
@@ -57,9 +57,9 @@
 | 40 | `flags_collected` | 5 | **Pendiente** | sin juego de banderas identificado | Globetrotter (10); Cartographer (50) |
 | 41 | `game_guesses` | 3 | **Pendiente** | Commands/Fun/minijuegos.js; falta contar intentos | Guesser (100); Sharp Eye (1000) |
 | 42 | `games_perfect` | 3 | **Pendiente** | Commands/Fun/minijuegos.js; falta registrar resultado perfecto | Perfectionist (10); Flawless Master (100) |
-| 43 | `games_played` | 4 | **Dato existente; falta conexión** | Models/CasinoStats.js + Commands/Casino/casino.js — Existe totalGames para casino; comprobar si el catálogo quiere incluir solo casino o todos los minijuegos. | Casual Gamer (10); Regular Player (100) |
+| 43 | `games_played` | 4 | **Parcial** | Commands/Casino/casino.js + Models/CasinoStats.js · actualiza el máximo de partidas de casino; falta integrar los minijuegos de Commands/Fun | Casual Gamer (10); Regular Player (100) |
 | 44 | `games_streak` | 2 | **Dato existente; falta conexión** | Models/CasinoStats.js + Commands/Casino/casino.js — Existe currentStreak de victorias. | Hot Streak (10); On Fire (25) |
-| 45 | `games_won` | 4 | **Dato existente; falta conexión** | Models/CasinoStats.js + Commands/Casino/casino.js — Existe totalWins en estadísticas de casino. | Winner (10); Champion (100) |
+| 45 | `games_won` | 4 | **Parcial** | Commands/Casino/casino.js + Models/CasinoStats.js · actualiza el máximo de victorias de casino; faltan las victorias de minijuegos externos al casino | Winner (10); Champion (100) |
 | 46 | `gems` | 3 | **Pendiente** | sin sistema de gemas identificado | Gem Collector (50); Gem Baron (1000) |
 | 47 | `gifs_sent` | 4 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · GIF adjuntos y enlaces .gif | GIF Enjoyer (50); GIF Master (500) |
 | 48 | `giveaways_created` | 4 | **Pendiente** | Commands/Administration/weeklydrop.js; confirmar si equivale a sorteo creado por miembro | Giveaway Host (1); Generous Host (10) |
@@ -133,7 +133,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 - `coins` mide el máximo saldo de cartera; `bank_balance`, el máximo saldo bancario; `net_worth`, el máximo patrimonio líquido neto (cartera + banco − deuda). Se actualizan con progreso absoluto para conservar el máximo alcanzado, incluidas recompensas de WeeklyDrop y misiones.
 - `total_earned` y `total_spent` requieren historial transaccional; no deben inferirse del saldo actual.
 - `daily_streak` de actividad y `economy_daily_streak` son conceptos diferentes.
-- `games_played`/`games_won`/`games_streak` tienen fuente de datos en CasinoStats; no deben confundirse con los minijuegos de `Commands/Fun/minijuegos.js`.
+- `games_played` y `games_won` ya se actualizan desde las partidas del casino con progreso absoluto; siguen parciales hasta incluir los minijuegos de `Commands/Fun/minijuegos.js`. `games_streak` requiere auditar su definición y fuentes.
 - Las métricas de clanes, negocios, propiedades, inversiones, pesca y minería no tienen modelos correspondientes en el árbol de modelos revisado; deben declararse no aplicables o implementar primero esos sistemas, nunca simular progreso.
 
 ## Orden recomendado de implementación
