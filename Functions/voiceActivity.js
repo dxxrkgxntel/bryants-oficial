@@ -51,7 +51,7 @@ async function processVoiceStateUpdateInternal(oldState, newState) {
     if (isInVoice && !activity.voiceStartedAt) {
         activity.voiceStartedAt = now;
         activity.channelId = newChannelId;
-        if (voiceMetrics.voice_joins) await trackAchievementProgress(guild, member.user, "voice_joins", 1);
+        if (voiceMetrics.voice_joins) await trackAchievementProgress(guild, member.user, "voice_joins", 1).catch(error => console.warn("[Achievements] No se pudo registrar voice_joins:", error.message));
     } else if (isInVoice) {
         activity.channelId = newChannelId;
     } else if (!isInVoice && activity.voiceStartedAt) {
