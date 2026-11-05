@@ -1557,7 +1557,6 @@ app.post("/api/guilds/:guildId/achievements/import", requireLogin, requireCsrf, 
             ids.add(item.achievementId);
         }
 
-        if (mode === "replace") await Achievement.deleteMany({ guildId: req.params.guildId, source: "notoq" });
         const operations = normalized.map(item => ({
             updateOne: {
                 filter: { guildId: req.params.guildId, achievementId: item.achievementId },
@@ -1566,6 +1565,7 @@ app.post("/api/guilds/:guildId/achievements/import", requireLogin, requireCsrf, 
             }
         }));
         const result = await Achievement.bulkWrite(operations, { ordered: false });
+        if (mode === "replace") await Achievement.deleteMany({ guildId: req.params.guildId, source: "notoq", achievementId: { $nin: normalized.map(item => item.achievementId) } });
         const items = await Achievement.find({ guildId: req.params.guildId }).sort({ category: 1, name: 1 }).lean();
         await recordDashboardAudit(req, req.params.guildId, `Importación de logros: ${normalized.length} registros (${mode})`);
         return res.json({
