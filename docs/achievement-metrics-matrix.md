@@ -109,7 +109,7 @@
 | 92 | `tokens` | 5 | **Pendiente** | sin campo o sistema de tokens identificado | Token Starter (10); Token Collector (100) |
 | 93 | `top_star_post` | 2 | **Pendiente** | sin sistema Starboard identificado | Going Viral (25); Viral Sensation (100) |
 | 94 | `total_earned` | 6 | **Pendiente** | todos los puntos de pago/recompensa · requiere ledger histórico | Hard Worker (10000); Grinder (100000) |
-| 95 | `total_points` | 6 | **Dato existente; falta conexión** | Models/TrophyScore.js + Models/UserAchievement.js — Hay puntos de temporada y puntos ganados en logros; definir si global o por temporada. | Point Starter (100); Point Collector (500) |
+| 95 | `total_points` | 6 | **Parcial** | Functions/achievementTracker.js + Models/UserAchievement.js · suma `pointsEarned` de todos los logros del usuario dentro del servidor; excluye `TrophyScore.points` (puntuación de temporada); actualiza `total_points` con progreso absoluto y vuelve a evaluar umbrales si los propios logros meta conceden puntos; pendiente CI y validación con datos persistidos | Point Starter (100); Point Collector (500) |
 | 96 | `total_spent` | 4 | **Pendiente** | Utils/shopHandlers.js + comandos de economía · requiere ledger histórico | Shopper (10000); Big Spender (100000) |
 | 97 | `verified` | 1 | **Pendiente** | flujo de verificación; no se identificó modelo/evento específico | Verified (1) |
 | 98 | `voice_joins` | 3 | **Conectada** | Events/Logs/personalVoiceStats.js + Functions/voiceAchievementMetrics.js · cuenta solo entrada real desde fuera de voz | Channel Hopper (25); Frequent Flyer (250) |
