@@ -12,6 +12,7 @@ const CasinoStats = require("../../Models/CasinoStats");
 const getUser = require("../../Utils/getUser");
 const getConfig = require("../../Utils/getConfig");
 const { trackEconomyAchievementSnapshot } = require("../../Functions/economyAchievementMetrics");
+const { trackAchievementProgress } = require("../../Functions/achievementTracker");
 
 const activeBets = new Set();
 const activeGambles = new Set();
@@ -20,6 +21,15 @@ const cards = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
 const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
 const slots = ["🍒","🍋","🍉","💎","👑","⭐"];
 function drawCard() { return cards[Math.floor(Math.random() * cards.length)]; }
+async function trackCasinoAchievementProgress(guild, user, stats) {
+    await Promise.all([
+        trackAchievementProgress(guild, user, "games_played", Number(stats.totalGames) || 0, { absolute: true }),
+        trackAchievementProgress(guild, user, "games_won", Number(stats.totalWins) || 0, { absolute: true })
+    ].map(promise => promise.catch(error => {
+        console.warn("[Achievements] No se pudieron actualizar las métricas del casino:", error.message);
+    })));
+}
+
 function calculateHand(hand) {
     let total = 0, aces = 0;
     for (const card of hand) {
@@ -701,6 +711,7 @@ async function run_gamble(interaction) {
                 await freshUser.save();
                 await stats.save();
                 await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, freshUser);
+                await trackCasinoAchievementProgress(interaction.guild, interaction.user, stats);
 
                 //////////////////////////////////////////////////
                 // EMBED
@@ -748,6 +759,7 @@ async function run_gamble(interaction) {
                 await freshUser.save();
                 await stats.save();
                 await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, freshUser);
+                await trackCasinoAchievementProgress(interaction.guild, interaction.user, stats);
 
                 //////////////////////////////////////////////////
 
@@ -868,6 +880,7 @@ async function run_ruleta(interaction) {
 
     await Promise.all([freshUser.save(), stats.save()]);
     await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, freshUser);
+                await trackCasinoAchievementProgress(interaction.guild, interaction.user, stats);
     const colorEmoji = rolledColor === "rojo" ? "🔴" : rolledColor === "negro" ? "⚫" : "🟢";
 
     return interaction.editReply(panel(
@@ -973,6 +986,7 @@ async function run_slots(interaction) {
 
     await Promise.all([freshUser.save(), stats.save()]);
     await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, freshUser);
+                await trackCasinoAchievementProgress(interaction.guild, interaction.user, stats);
 
     return interaction.editReply(panel(
         `## 🎰 Resultado — Bryvex Slots\n${generateDisplay(grid)}\n\n🎯 Línea válida: **Fila central**\n${resultText}\n\n${multiplier > 0 ? `💰 Ganaste **${winnings.toLocaleString()} monedas**` : `💸 Perdiste **${amount.toLocaleString()} monedas**`}\n👛 Balance actual: **${freshUser.wallet.toLocaleString()} monedas**`,
