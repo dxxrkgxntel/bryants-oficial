@@ -9,6 +9,7 @@ const EconomyUser = require("../Models/EconomyUser");
 const { trackAchievementProgress } = require("../Functions/achievementTracker");
 const { trackEconomyAchievementSnapshot } = require("../Functions/economyAchievementMetrics");
 const { createInventoryAchievementMetricTracker } = require("../Functions/inventoryAchievementMetrics");
+const { recordEconomySpend } = require("../Functions/economySpendMetrics");
 const trackInventoryAchievementMetric = createInventoryAchievementMetricTracker({ trackProgress: trackAchievementProgress });
 
 const BANNER = "https://i.imgur.com/joAe57D.png";
@@ -155,6 +156,7 @@ async function runBuy(interaction) {
                 collector.stop("role-error");
                 return interaction.editReply({ components: [panel("❌ Compra revertida", "No se pudo entregar o registrar el rol. Tus monedas fueron devueltas.", null, 0xFF0000)] });
             }
+            await recordEconomySpend({ guild: interaction.guild, user: interaction.user, amount: item.price, category: "shop_role", operationId: interaction.id }).catch(error => console.warn("[Economy] No se pudo registrar gasto de rol:", error.message));
             await trackAchievementProgress(interaction.guild, interaction.user, "itemsPurchased", 1).catch(error => console.warn("[Achievements] No se pudo registrar compra:", error.message));
             await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, fresh);
             collector.stop("bought-role");
@@ -205,6 +207,7 @@ async function runBuy(interaction) {
                 const messageText = error.message === "OUT_OF_STOCK" ? "Se agotaron las existencias antes de confirmar la compra. No se te cobró." : "No se pudo registrar la compra. Tus monedas fueron devueltas.";
                 return interaction.editReply({ components: [panel("❌ Compra no completada", messageText, null, 0xFF0000)] });
             }
+            await recordEconomySpend({ guild: interaction.guild, user: interaction.user, amount: item.price, category: "shop_item", operationId: interaction.id }).catch(error => console.warn("[Economy] No se pudo registrar gasto de artículo:", error.message));
             const inventorySnapshot = await EconomyUser.findOne({
                 guildId: interaction.guild.id,
                 userId: interaction.user.id
