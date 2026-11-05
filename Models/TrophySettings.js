@@ -3,7 +3,7 @@ const { Schema, model } = require("mongoose");
 const trophySettingsSchema = new Schema({
     guildId: { type: String, required: true, unique: true, index: true },
     enabled: { type: Boolean, default: true },
-    notoqPage2Seeded: { type: Boolean, default: false },
+    notoqCatalogSeeded: { type: Boolean, default: false },
     announcementMode: { type: String, enum: ["card", "components", "embed", "text", "dm", "silent"], default: "embed" },
     announcementChannelId: { type: String, default: null },
     announcementTemplate: { type: String, default: "{user} desbloqueó {achievement} (+{points} puntos)", maxlength: 1500 },
