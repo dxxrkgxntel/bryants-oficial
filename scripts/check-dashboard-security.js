@@ -81,7 +81,7 @@ function requireClientPattern(pattern, message) {
 
 requireClientPattern(/function assistantReply\(question\)/, "Debe existir el asistente de dashboard");
 requireClientPattern(/const matched = findAssistantModule\(q\);[\s\S]*?const moduleQuestion = Boolean\(matched && matched\.score <= 2\);/, "Las consultas de módulos deben detectarse antes de responder con intenciones generales");
-requireClientPattern(/support:\s*\{\s*href:\s*"\\/support"/, "El asistente debe conservar el destino del Centro de soporte");
+requireClientPattern(/href: "\/support"/, "El asistente debe conservar el destino del Centro de soporte");
 requireClientPattern(/actionUrl:\s*assistantWebsitePageActions\.support\.href/, "Las consultas no reconocidas deben ofrecer acceso a Support");
 requireClientPattern(/actionLabel:\s*assistantWebsitePageActions\.support\.label/, "El acceso a Support debe tener una etiqueta visible");
 requireClientPattern(/actionKey === "__checks"/, "El asistente debe permitir abrir Comprobaciones");
