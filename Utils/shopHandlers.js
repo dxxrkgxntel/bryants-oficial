@@ -7,6 +7,7 @@ const ShopItem = require("../Models/ShopItem");
 const StoreItem = require("../Models/StoreItem");
 const EconomyUser = require("../Models/EconomyUser");
 const { trackAchievementProgress } = require("../Functions/achievementTracker");
+const { trackEconomyAchievementSnapshot } = require("../Functions/economyAchievementMetrics");
 
 const BANNER = "https://i.imgur.com/joAe57D.png";
 function panel(title, content, row = null, color = 0x8A2BE2) {
@@ -153,6 +154,7 @@ async function runBuy(interaction) {
                 return interaction.editReply({ components: [panel("❌ Compra revertida", "No se pudo entregar o registrar el rol. Tus monedas fueron devueltas.", null, 0xFF0000)] });
             }
             await trackAchievementProgress(interaction.guild, interaction.user, "itemsPurchased", 1).catch(error => console.warn("[Achievements] No se pudo registrar compra:", error.message));
+            await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, fresh);
             collector.stop("bought-role");
             return interaction.editReply({ components: [panel("✅ Compra completada", "Has comprado el rol " + role + ".\n\n💰 **Precio:** " + item.price.toLocaleString() + " monedas\n👛 **Cartera restante:** " + fresh.wallet.toLocaleString() + " monedas\n📦 El rol quedó registrado en tu mochila.", null, 0x00FF99)] });
         }
@@ -202,6 +204,7 @@ async function runBuy(interaction) {
                 return interaction.editReply({ components: [panel("❌ Compra no completada", messageText, null, 0xFF0000)] });
             }
             await trackAchievementProgress(interaction.guild, interaction.user, "itemsPurchased", 1).catch(error => console.warn("[Achievements] No se pudo registrar compra:", error.message));
+            await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, fresh);
             collector.stop("bought-item");
             return interaction.editReply({ components: [panel("✅ Compra completada", (item.emoji || "📦") + " Has comprado **" + item.name + "**.\n\n💰 **Precio:** " + item.price.toLocaleString() + " monedas\n👛 **Cartera restante:** " + fresh.wallet.toLocaleString() + " monedas\n📦 Añadido a tu mochila.", null, 0x00FF99)] });
         }
