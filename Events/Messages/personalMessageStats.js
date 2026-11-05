@@ -10,8 +10,8 @@ module.exports = {
             await increment(message.author.id, message.guild.id, "messages", 1);
             const activity = await recordDailyActivity(message.author.id, message.guild.id, message.createdAt || new Date());
             if (activity) {
-                await trackAchievementProgress(message.guild, message.author, "days_active", activity.daysActive, { absolute: true });
-                await trackAchievementProgress(message.guild, message.author, "daily_streak", activity.bestStreak, { absolute: true });
+                if (activity.daysActiveProgressDelta > 0) await trackAchievementProgress(message.guild, message.author, "days_active", activity.daysActiveProgressDelta);
+                if (activity.bestStreakProgressDelta > 0) await trackAchievementProgress(message.guild, message.author, "daily_streak", activity.bestStreakProgressDelta);
             }
             await increment(message.author.id, message.guild.id, "channelMessages", 1, message.channel?.name || message.channel.id);
         } catch (error) {
