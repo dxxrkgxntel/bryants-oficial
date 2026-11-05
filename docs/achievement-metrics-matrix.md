@@ -146,6 +146,14 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 6. **Temporadas y meta-logros:** primer desbloqueo, podios, victorias y premios semanales/mensuales.
 7. **No aplicables:** clanes, negocios, propiedades, inversiones, pesca/minería, solicitudes y otras funciones que no existan en Bryvex; confirmar con el producto antes de eliminar del catálogo.
 
-## Reglas de horario y mensajes largos\n\n- Zona horaria fija para las métricas de actividad: `America/Santo_Domingo`.\n- `night_owl_messages`: de 00:00 a 05:59, hora local.\n- `early_bird_messages`: de 06:00 a 08:59, hora local.\n- `weekend_messages`: sábado y domingo, según fecha local.\n- `long_messages`: un mensaje con al menos 500 caracteres Unicode. El umbral queda centralizado en `LONG_MESSAGE_MIN_CHARACTERS`.\n\n## Criterio de cierre
+## Reglas de horario y mensajes largos
+
+- Zona horaria fija para las métricas de actividad: `America/Santo_Domingo`.
+- `night_owl_messages`: de 00:00 a 05:59, hora local.
+- `early_bird_messages`: de 06:00 a 08:59, hora local.
+- `weekend_messages`: sábado y domingo, según fecha local.
+- `long_messages`: un mensaje con al menos 500 caracteres Unicode. El umbral queda centralizado en `LONG_MESSAGE_MIN_CHARACTERS`.
+
+## Criterio de cierre
 
 Una métrica solo pasará a **Conectada** cuando: (a) se actualice en el punto de éxito correcto; (b) sobreviva reinicios si es acumulativa; (c) no se duplique en reintentos/eventos parciales; (d) respete comparadores, niveles, prerrequisitos y recompensas; y (e) tenga prueba automatizada.
