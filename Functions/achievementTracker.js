@@ -17,7 +17,7 @@ const DEFAULT_ACHIEVEMENTS = [
     { achievementId: "coins_10000", name: "Pequeña fortuna", description: "Gana 10.000 monedas mediante recompensas compatibles.", emoji: "💰", category: "economy", metric: "coinsEarned", goal: 10000, rewardCoins: 1000, points: 20 }
 ];
 
-const NOTOQ_BACKUP = require("../data/backups/notoq-achievements-page-2.json");
+const NOTOQ_BACKUP = require("../data/backups/notoq-achievements.json");
 const NOTOQ_ACHIEVEMENTS = NOTOQ_BACKUP.achievements.map(item => ({
     achievementId: item.id,
     name: item.name,
@@ -58,8 +58,8 @@ async function ensureDefaultAchievements(guildId) {
             { $setOnInsert: { ...item, guildId, enabled: true } },
             { upsert: true }
         )));
-        const settings = await TrophySettings.findOne({ guildId }).select("notoqPage2Seeded").lean();
-        if (!settings?.notoqPage2Seeded) {
+        const settings = await TrophySettings.findOne({ guildId }).select("notoqCatalogSeeded").lean();
+        if (!settings?.notoqCatalogSeeded) {
             await Promise.all(NOTOQ_ACHIEVEMENTS.map(item => Achievement.updateOne(
                 { guildId, achievementId: item.achievementId },
                 { $setOnInsert: { ...item, guildId } },
@@ -67,7 +67,7 @@ async function ensureDefaultAchievements(guildId) {
             )));
             await TrophySettings.updateOne(
                 { guildId },
-                { $set: { notoqPage2Seeded: true }, $setOnInsert: { guildId } },
+                { $set: { notoqCatalogSeeded: true }, $setOnInsert: { guildId } },
                 { upsert: true }
             );
         }
