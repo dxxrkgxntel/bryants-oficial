@@ -13,6 +13,7 @@ const PollConfig = require("../Models/PollConfig");
 const DashboardAccount = require("../Models/DashboardAccount");
 const DashboardReferral = require("../Models/DashboardReferral");
 const DashboardVote = require("../Models/DashboardVote");
+const DashboardAssistantUsage = require("../Models/DashboardAssistantUsage");
 const DashboardAuditLog = require("../Models/DashboardAuditLog");
 const EconomyUser = require("../Models/EconomyUser");
 const Achievement = require("../Models/Achievement");
@@ -1501,6 +1502,18 @@ app.post("/api/guilds/:guildId/assistant", requireLogin, requireCsrf, requireGui
         });
         const answer = String(response.output_text || "").trim().slice(0, 1800);
         if (!answer) return res.json({ configured: true, unavailable: true });
+        try {
+            await DashboardAssistantUsage.create({
+                requestId: crypto.randomBytes(16).toString("hex"),
+                guildId: req.params.guildId,
+                userId: String(req.session.user.id),
+                conversationStarted: !history.some(message => message.role === "user"),
+                userMessages: 1,
+                assistantMessages: 1
+            });
+        } catch (usageError) {
+            console.warn("[Dashboard Assistant] No se pudo guardar el uso para logros:", usageError.message);
+        }
         return res.json({ configured: true, answer, moduleKey: relatedModule?.key || "", pageKey: websiteActionKey });
     } catch (error) {
         console.warn("[Dashboard Assistant] OpenAI request failed:", error.status || error.request_id || "sin detalle");
