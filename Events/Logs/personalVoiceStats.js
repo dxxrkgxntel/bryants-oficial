@@ -1,40 +1,12 @@
-const { addDuration } = require("../../Functions/personalStats");
-const { trackAchievementProgress } = require("../../Functions/achievementTracker");
-const { extractVoiceAchievementMetrics } = require("../../Functions/voiceAchievementMetrics");
-
-const voiceSessions = new Map();
+const { processVoiceStateUpdate } = require("../../Functions/voiceActivity");
 
 module.exports = {
     name: "voiceStateUpdate",
-    voiceSessions,
     async execute(oldState, newState) {
-        const member = newState.member || oldState.member;
-        const guild = newState.guild || oldState.guild;
-        if (!member || member.user?.bot || !guild) return;
-
-        const key = `${guild.id}:${member.id}`;
-        const oldChannelId = oldState.channelId;
-        const newChannelId = newState.channelId;
-        if (oldChannelId === newChannelId) return;
-
-        for (const [metric, amount] of Object.entries(extractVoiceAchievementMetrics(oldState, newState))) {
-            await trackAchievementProgress(guild, member.user, metric, amount)
-                .catch(error => console.warn(`[Achievements] No se pudo registrar ${metric}:`, error.message));
+        try {
+            await processVoiceStateUpdate(oldState, newState);
+        } catch (error) {
+            console.error("[Personal Stats] No se pudo registrar la actividad de voz:", error.message);
         }
-
-        const session = voiceSessions.get(key);
-        if (session && oldChannelId) {
-            const seconds = Math.floor((Date.now() - session.startedAt) / 1000);
-            if (seconds > 0) {
-                try {
-                    await addDuration(member.id, guild.id, "voiceSeconds", seconds, new Date(session.startedAt), new Date());
-                    const minutes = Math.floor(seconds / 60);
-                    if (minutes > 0) await trackAchievementProgress(guild, member.user, "voice_minutes", minutes);
-                } catch (error) { console.error("[Personal Stats] No se pudo registrar voz:", error.message); }
-            }
-        }
-
-        if (newChannelId) voiceSessions.set(key, { channelId: newChannelId, startedAt: Date.now() });
-        else voiceSessions.delete(key);
     }
 };
