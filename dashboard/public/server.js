@@ -2698,7 +2698,9 @@ function assistantReply(question) {
         return { text: "No he encontrado incidencias concretas de canales, roles o permisos en los datos disponibles. Puedes abrir Comprobaciones para consultar los resultados actuales; los permisos pueden cambiar directamente en Discord." , actionKey: "__checks", actionLabel: "Abrir Comprobaciones" };
     }
     return {
-        text: "No pude preparar una respuesta ahora. Cuando la conexión de IA esté disponible, puedo ayudarte con Bryvex Bot, toda la dashboard y preguntas generales."
+        text: "No he encontrado una respuesta específica para esa consulta. Puedes abrir el Centro de soporte para recibir ayuda del equipo de Bryvex.",
+        actionUrl: assistantWebsitePageActions.support.href,
+        actionLabel: assistantWebsitePageActions.support.label
     };
 }
 
@@ -2798,7 +2800,11 @@ function assistantLocalFallback(question) {
     const likelyBryvexQuestion = /\b(bryvex|bot|servidor|dashboard|modulo|modulos|alertas sociales|autoroles|bienvenidas|trofeos|niveles|tiktok|twitch|kick|youtube)\b/.test(q)
         || Boolean(findAssistantModule(q));
     if (likelyBryvexQuestion) return assistantReply(question);
-    return { text: "No pude conectar con la IA. Revisa que OPENAI_API_KEY esté configurada en bryvex-dashboard y que el servicio se haya reiniciado; cuando esté disponible, responderé tanto preguntas generales como consultas sobre Bryvex." };
+    return {
+        text: "No pude conectar con la IA para responder esa consulta. Puedes abrir el Centro de soporte para recibir ayuda del equipo de Bryvex.",
+        actionUrl: assistantWebsitePageActions.support.href,
+        actionLabel: assistantWebsitePageActions.support.label
+    };
 }
 
 function addAssistantMessage(text, role = "bot", actionKey = "", actionLabel = "", actionUrl = "") {
