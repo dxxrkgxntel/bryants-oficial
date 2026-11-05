@@ -2,12 +2,14 @@ const Quest = require("../Models/Quest");
 const UserQuest = require("../Models/UserQuest");
 
 const Economy = require("../Models/EconomyUser");
+const { trackEconomyAchievementSnapshot } = require("./economyAchievementMetrics");
 
 module.exports = async (
     userId,
     guildId,
     category,
-    amount = 1
+    amount = 1,
+    context = {}
 ) => {
 
     const quests = await Quest.find({
@@ -97,6 +99,9 @@ module.exports = async (
                         quest.reward.coins;
 
                     await economy.save();
+                    if (context.guild && context.user) {
+                        await trackEconomyAchievementSnapshot(context.guild, context.user, economy);
+                    }
 
                 }
 
