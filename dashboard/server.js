@@ -16,6 +16,7 @@ const DashboardAuditLog = require("../Models/DashboardAuditLog");
 const EconomyUser = require("../Models/EconomyUser");
 const Achievement = require("../Models/Achievement");
 const UserAchievement = require("../Models/UserAchievement");
+const TrophySettings = require("../Models/TrophySettings");
 const { ensureDefaultAchievements } = require("../Functions/achievementTracker");
 const Level = require("../Models/Level");
 const SocialAlertState = require("../Models/SocialAlertState");
@@ -1565,6 +1566,13 @@ app.post("/api/guilds/:guildId/achievements/import", requireLogin, requireCsrf, 
             }
         }));
         const result = await Achievement.bulkWrite(operations, { ordered: false });
+        if (String(backup.source || "").trim().toLowerCase() === "notoq" && Number(backup.sourcePage) === 2) {
+            await TrophySettings.updateOne(
+                { guildId: req.params.guildId },
+                { $set: { notoqPage2Seeded: true }, $setOnInsert: { guildId: req.params.guildId } },
+                { upsert: true }
+            );
+        }
         if (mode === "replace") await Achievement.deleteMany({ guildId: req.params.guildId, source: "notoq", achievementId: { $nin: normalized.map(item => item.achievementId) } });
         const items = await Achievement.find({ guildId: req.params.guildId }).sort({ category: 1, name: 1 }).lean();
         await recordDashboardAudit(req, req.params.guildId, `Importación de logros: ${normalized.length} registros (${mode})`);
