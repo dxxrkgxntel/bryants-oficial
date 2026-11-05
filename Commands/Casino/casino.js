@@ -13,6 +13,7 @@ const getUser = require("../../Utils/getUser");
 const getConfig = require("../../Utils/getConfig");
 const { trackEconomyAchievementSnapshot } = require("../../Functions/economyAchievementMetrics");
 const { trackAchievementProgress } = require("../../Functions/achievementTracker");
+const { getCasinoAchievementSnapshot } = require("../../Functions/casinoAchievementMetrics");
 
 const activeBets = new Set();
 const activeGambles = new Set();
@@ -22,10 +23,10 @@ const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
 const slots = ["🍒","🍋","🍉","💎","👑","⭐"];
 function drawCard() { return cards[Math.floor(Math.random() * cards.length)]; }
 async function trackCasinoAchievementProgress(guild, user, stats) {
-    await Promise.all([
-        trackAchievementProgress(guild, user, "games_played", Number(stats.totalGames) || 0, { absolute: true }),
-        trackAchievementProgress(guild, user, "games_won", Number(stats.totalWins) || 0, { absolute: true })
-    ].map(promise => promise.catch(error => {
+    const snapshot = getCasinoAchievementSnapshot(stats);
+    await Promise.all(Object.entries(snapshot).map(([metric, value]) =>
+        trackAchievementProgress(guild, user, metric, value, { absolute: true })
+    ).map(promise => promise.catch(error => {
         console.warn("[Achievements] No se pudieron actualizar las métricas del casino:", error.message);
     })));
 }
@@ -668,6 +669,7 @@ async function run_gamble(interaction) {
                 stats.moneyWon += winnings;
 
                 stats.currentStreak += 1;
+        stats.bestStreak = Math.max(Number(stats.bestStreak) || 0, stats.currentStreak);
 
                 stats.gambleWins += 1;
 
@@ -867,6 +869,7 @@ async function run_ruleta(interaction) {
         stats.totalWins += 1;
         stats.moneyWon += winnings;
         stats.currentStreak += 1;
+        stats.bestStreak = Math.max(Number(stats.bestStreak) || 0, stats.currentStreak);
         stats.rouletteWins += 1;
         if (winnings > stats.biggestWin) stats.biggestWin = winnings;
         if (multiplier >= 14) stats.jackpots += 1;
@@ -974,6 +977,7 @@ async function run_slots(interaction) {
         stats.totalWins += 1;
         stats.moneyWon += winnings;
         stats.currentStreak += 1;
+        stats.bestStreak = Math.max(Number(stats.bestStreak) || 0, stats.currentStreak);
         stats.slotsWins += 1;
         if (winnings > stats.biggestWin) stats.biggestWin = winnings;
     } else {
