@@ -6,9 +6,9 @@
 
 - Catálogo: **397 logros / 106 métricas únicas**.
 - Conectadas: **26**.
-- Parciales: **1**.
+- Parciales: **3**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **22**.
-- Pendientes de localizar/implementar o validar: **57**.
+- Pendientes de localizar/implementar o validar: **55**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
 ## Matriz
@@ -101,7 +101,7 @@
 | 84 | `stars_given` | 3 | **Pendiente** | sin sistema de estrellas identificado | Star Giver (25); Generous Soul (250) |
 | 85 | `stars_received` | 5 | **Pendiente** | sin sistema de estrellas identificado | Star Struck (1); Shining (25) |
 | 86 | `stickers_sent` | 2 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · cuenta stickers del mensaje | Sticker Fan (50); Sticker Addict (500) |
-| 87 | `streaming_minutes` | 4 | **Pendiente** | Events/Logs/personalVoiceStats.js · voiceStateUpdate (streaming) | Go Live (30); Streamer (600) |
+| 87 | `streaming_minutes` | 4 | **Parcial** | Models/PersonalVoiceActivity.js + Functions/voiceActivity.js · sesión persistente de transmisión; falta validación en Discord real | Go Live (30); Streamer (600) |
 | 88 | `threads_created` | 3 | **Conectada** | Events/Messages/threadCreateAchievement.js · threadCreate, atribuye el hilo a ownerId | Thread Starter (5); Thread Weaver (50) |
 | 89 | `tickets_claimed` | 3 | **Pendiente** | Models/SupportTicket.js; no existe campo claimant confirmado | Ticket Claimer (10); Support Specialist (100) |
 | 90 | `tickets_closed` | 3 | **Dato existente; falta conexión** | Models/SupportTicket.js + flujo de cierre de tickets — El modelo conserva closedAt. | Support Hero (10); Support Champion (100) |
@@ -113,8 +113,8 @@
 | 96 | `total_spent` | 4 | **Pendiente** | Utils/shopHandlers.js + comandos de economía · requiere ledger histórico | Shopper (10000); Big Spender (100000) |
 | 97 | `verified` | 1 | **Pendiente** | flujo de verificación; no se identificó modelo/evento específico | Verified (1) |
 | 98 | `voice_joins` | 3 | **Conectada** | Events/Logs/personalVoiceStats.js + Functions/voiceAchievementMetrics.js · cuenta solo entrada real desde fuera de voz | Channel Hopper (25); Frequent Flyer (250) |
-| 99 | `voice_minutes` | 12 | **Parcial** | Events/Logs/personalVoiceStats.js · voiceStateUpdate — Se suma al cerrar/cambiar sesión; reinicio del proceso puede perder sesiones abiertas. | New Here? (5); Warming Up (30) |
-| 100 | `voice_video_minutes` | 6 | **Pendiente** | Events/Logs/personalVoiceStats.js · voiceStateUpdate (cámara) | On Camera (30); Face Reveal (300) |
+| 99 | `voice_minutes` | 12 | **Parcial** | Models/PersonalVoiceActivity.js + Functions/voiceActivity.js · guarda inicio de sesión y segundos/minutos reportados; falta validar recuperación en Discord real. | New Here? (5); Warming Up (30) |
+| 100 | `voice_video_minutes` | 6 | **Parcial** | Models/PersonalVoiceActivity.js + Functions/voiceActivity.js · registra intervalos de cámara con persistencia; falta validación en Discord real | On Camera (30); Face Reveal (300) |
 | 101 | `votes` | 4 | **Pendiente** | sin integración de votos identificada | Voter (1); Loyal Voter (25) |
 | 102 | `warns_issued` | 2 | **Pendiente** | Commands/Administration/moderation.js; falta tracker por advertencia | Rule Enforcer (10); The Hammer (100) |
 | 103 | `weekend_messages` | 2 | **Conectada** | Functions/achievementMessageMetrics.js · sábado y domingo según America/Santo_Domingo | Weekend Warrior (500); Weekend Legend (5000) |
@@ -128,7 +128,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 
 ## Riesgos detectados
 
-- `voice_minutes` se incrementa al salir/cambiar de canal y mantiene sesiones en memoria; se pierden si el proceso se reinicia.
+- Las sesiones de voz, transmisión y cámara se guardan en `PersonalVoiceActivity`; deben validarse en un servidor Discord real, especialmente tras reiniciar el proceso.
 - `level` y `xp` tienen datos persistidos, pero el XP del modelo es progreso actual, no necesariamente XP histórico total.
 - `coins`, `bank_balance`, `net_worth` son métricas de saldo: requieren evaluación de estado, no sumar el saldo en cada transacción.
 - `total_earned` y `total_spent` requieren historial transaccional; no deben inferirse del saldo actual.
@@ -139,7 +139,7 @@ El motor heredado todavía registra métricas como `messages`, `levels`, `dailyC
 ## Orden recomendado de implementación
 
 1. **Mensajes y actividad:** ya conectados palabras, caracteres, imágenes, GIF, links, stickers, adjuntos, respuestas, menciones, spoilers y bloques de código; las cuatro métricas restantes ya están conectadas: mensajes de 500+ caracteres, madrugada (00:00–05:59), temprano (06:00–08:59) y fines de semana, todo en America/Santo_Domingo. Días activos, racha y creación de hilos también conectados.
-2. **Voz:** joins conectados; pendientes streaming, cámara y persistencia robusta de sesiones.
+2. **Voz:** joins conectados; minutos de voz, transmisión y cámara ya tienen sesiones persistentes y quedan parciales hasta validación en Discord real.
 3. **Economía y niveles:** conectar las transacciones confirmadas y decidir semántica de saldos vs acumulados; cubrir XP y niveles tanto por texto como por voz.
 4. **Comunidad:** invitaciones, boosts, cumpleaños, auto-roles, tickets y moderación.
 5. **Juegos y eventos:** casino, minijuegos y sorteos con registros individuales.
