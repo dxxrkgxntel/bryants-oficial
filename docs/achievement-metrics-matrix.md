@@ -5,10 +5,10 @@
 ## Resumen
 
 - Catálogo: **397 logros / 106 métricas únicas**.
-- Conectadas: **42**.
-- Parciales: **23**.
+- Conectadas: **44**.
+- Parciales: **24**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **2**.
-- Pendientes de localizar/implementar o validar: **39**.
+- Pendientes de localizar/implementar o validar: **36**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
 ## Matriz
@@ -94,8 +94,8 @@
 | 77 | `replies_sent` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · mensajes con referencia a otro mensaje | Replier (100); Conversationalist (1000) |
 | 78 | `reviews_written` | 5 | **Pendiente** | sin sistema de reseñas identificado | Reviewer (1); Critic (10) |
 | 79 | `roles_count` | 2 | **Parcial** | Functions/memberAchievementMetrics.js + Events/Guild/achievementMemberUpdate.js + Events/Levels/messageCreate2.js · cuenta roles asignados, excluye `@everyone` y roles gestionados; guarda el máximo alcanzado mediante progreso absoluto; pendiente validación en Discord real | Role Collector (10); Role Hoarder (25) |
-| 80 | `season_podiums` | 2 | **Pendiente** | Models/TrophyScore.js + TrophySettings; falta cálculo de podio | Podium Finish (1); Podium Regular (5) |
-| 81 | `season_wins` | 3 | **Pendiente** | Models/TrophyScore.js + TrophySettings; falta cierre y adjudicación de temporadas | Season Champion (1); Title Defender (3) |
+| 80 | `season_podiums` | 2 | **Conectada** | Functions/trophySeason.js + Commands/Administration/trophy-season.js + Functions/achievementTracker.js · puntos de temporada persistidos y al cerrar se registra el top 3 con clave idempotente por temporada | Podium Finish (1); Podium Regular (5) |
+| 81 | `season_wins` | 3 | **Conectada** | Commands/Administration/trophy-season.js + Functions/achievementTracker.js · al cerrar la temporada se registra al primer lugar con clave idempotente por temporada | Season Champion (1); Title Defender (3) |
 | 82 | `self_roles_taken` | 3 | **Pendiente** | Utils/SetupHandlers/autoRoleUB.js + Events/Guild/sistemaDeAutoRoles.js · el único autorol asigna automáticamente un rol al entrar y lo configura un administrador; no existe elección voluntaria del miembro, por lo que no cuenta para esta métrica | Self-Made (1); Role Picker (10) |
 | 83 | `spoilers_sent` | 3 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · mensajes con sintaxis de spoiler Discord ||...|| | Spoiler Alert (10); Secret Keeper (100) |
 | 84 | `stars_given` | 3 | **Pendiente** | sin sistema de estrellas identificado | Star Giver (25); Generous Soul (250) |
