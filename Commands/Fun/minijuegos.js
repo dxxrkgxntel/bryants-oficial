@@ -83,8 +83,8 @@ module.exports = {
                 Game.startGame();
                 Game.on('gameOver', async result => {
                     console.log(result);
-                    await recordSinglePlayerGame(interaction.guild, interaction.user, result);
-                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
+                    const recorded = await recordSinglePlayerGame(interaction.guild, interaction.user, result);
+                    if (recorded) await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
                 break;
@@ -106,8 +106,8 @@ module.exports = {
                 Game.startGame();
                 Game.on('gameOver', async result => {
                     console.log(result);
-                    await recordSinglePlayerGame(interaction.guild, interaction.user, result);
-                    await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
+                    const recorded = await recordSinglePlayerGame(interaction.guild, interaction.user, result);
+                    if (recorded) await questHandler(interaction.user.id, interaction.guild.id, "games", 1);
                 });
             }
                 break;
