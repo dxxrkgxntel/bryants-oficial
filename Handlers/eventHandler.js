@@ -24,9 +24,22 @@ function loadEvents(client) {
                     continue;
                 }
 
-                // 🔥 NUEVO: crear handler reutilizable
-                const handler = (...args) =>
-                    event.execute(...args, client);
+                // Los EventEmitter de Node no esperan promesas: capturamos los rechazos
+                // para evitar unhandledRejection y conservar el nombre del evento en el log.
+                const handler = (...args) => {
+                    try {
+                        const result = event.execute(...args, client);
+                        if (result && typeof result.then === "function") {
+                            result.catch(error => {
+                                console.error(`[EVENT ERROR] ${event.name} (${file}):`, error);
+                            });
+                        }
+                        return result;
+                    } catch (error) {
+                        console.error(`[EVENT ERROR] ${event.name} (${file}):`, error);
+                        return undefined;
+                    }
+                };
 
                 // 🔥 NUEVO: guardar referencia
                 client.events.set(file, {
@@ -98,9 +111,19 @@ function reloadEvent(client, filePath) {
             }
         }
 
-        // 🔁 crear nuevo handler
-        const handler = (...args) =>
-            event.execute(...args, client);
+        // Los EventEmitter no esperan promesas; capturar errores también al recargar.
+        const handler = (...args) => {
+            try {
+                const result = event.execute(...args, client);
+                if (result && typeof result.then === "function") {
+                    result.catch(error => console.error(`[EVENT ERROR] ${event.name} (${fileName}):`, error));
+                }
+                return result;
+            } catch (error) {
+                console.error(`[EVENT ERROR] ${event.name} (${fileName}):`, error);
+                return undefined;
+            }
+        };
 
         // 🔁 guardar referencia nueva
         client.events.set(fileName, {
