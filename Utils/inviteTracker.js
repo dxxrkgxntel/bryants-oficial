@@ -1,6 +1,7 @@
 const { PermissionFlagsBits } = require("discord.js");
 const logsSchema = require("../Models/logsSchema");
 const InviteTracker = require("../Models/InviteTracker");
+const { trackAchievementProgress } = require("../Functions/achievementTracker");
 
 const inviteCache = new Map();
 
@@ -100,6 +101,7 @@ async function handleMemberJoin(member) {
                 { upsert: true, new: true, setDefaultsOnInsert: true }
             );
             totalInvites = tracker.invites;
+            await trackAchievementProgress(guild, inviter, "invites", 1).catch(error => console.warn("[Achievements] No se pudo registrar invites:", error.message));
         } catch (error) {
             console.error(`[INVITE TRACKER] No se pudo guardar el contador de ${inviter.id} en ${guild.id}:`, error);
         }
