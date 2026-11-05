@@ -11,6 +11,7 @@ const {
     MessageFlags
 } = require("discord.js");
 const { recordModerationAchievementAction } = require("../../Functions/moderationAchievementMetrics");
+const { recordWarningAchievement } = require("../../Functions/warningAchievementMetrics");
 
 const moderationFeatureHandlers = {
     antiscam: require("../../Utils/ModerationHandlers/antiScam")
@@ -480,7 +481,14 @@ module.exports = {
         if (subcommand === "warn") {
             const user = interaction.options.getUser("usuario");
             const reason = interaction.options.getString("razon") || "No especificada";
+            if (!user) return moderationReply(interaction, "❌ Usuario inválido", "No pude encontrar a ese usuario.", 0xFF0000);
             if (user.id === interaction.user.id) return moderationReply(interaction, "⚠️ Acción inválida", "No puedes advertirte a ti mismo.", 0xFFD700);
+            if (user.bot) return moderationReply(interaction, "⚠️ Acción inválida", "No se registran advertencias para bots.", 0xFFD700);
+
+            const warningSaved = await recordWarningAchievement(interaction, user, reason);
+            if (!warningSaved) {
+                return moderationReply(interaction, "❌ No se pudo guardar la advertencia", "No se registró la advertencia. Inténtalo de nuevo más tarde.", 0xFF0000);
+            }
             return moderationReply(interaction, "⚠️ Usuario advertido", "**Usuario:** " + user + "\n**Moderador:** " + interaction.user + "\n**Razón:** " + reason, 0xFFD700);
         }
 
