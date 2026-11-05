@@ -23,7 +23,9 @@ function buildMiniGameStatsPipeline(won) {
 
 async function recordPlayerResult(guild, user, outcome) {
     const MiniGameStats = require("../Models/MiniGameStats");
+    const CasinoStats = require("../Models/CasinoStats");
     const { trackAchievementProgress } = require("./achievementTracker");
+    const { getCasinoAchievementSnapshot } = require("./casinoAchievementMetrics");
     if (!guild?.id || !user?.id || user.bot || !["win", "lose", "tie", "finish"].includes(outcome)) return null;
 
     const stats = await MiniGameStats.findOneAndUpdate(
@@ -32,11 +34,11 @@ async function recordPlayerResult(guild, user, outcome) {
         { upsert: true, new: true }
     );
 
-    const updates = [
-        trackAchievementProgress(guild, user, "games_played", 1),
-        trackAchievementProgress(guild, user, "games_streak", stats.bestStreak, { absolute: true })
-    ];
-    if (outcome === "win") updates.push(trackAchievementProgress(guild, user, "games_won", 1));
+    const casinoStats = await CasinoStats.findOne({ guildId: guild.id, userId: user.id }).lean();
+    const snapshot = getCasinoAchievementSnapshot(casinoStats, stats);
+    const updates = Object.entries(snapshot).map(([metric, value]) =>
+        trackAchievementProgress(guild, user, metric, value, { absolute: true })
+    );
 
     await Promise.all(updates.map(promise => promise.catch(error => {
         console.warn("[Achievements] No se pudieron actualizar las métricas de minijuegos:", error.message);
