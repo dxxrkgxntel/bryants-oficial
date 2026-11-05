@@ -3,6 +3,7 @@ const UserAchievement = require("../Models/UserAchievement");
 const EconomyUser = require("../Models/EconomyUser");
 const Level = require("../Models/Level");
 const TrophySettings = require("../Models/TrophySettings");
+const TrophyScore = require("../Models/TrophyScore");
 const { EmbedBuilder } = require("discord.js");
 const { sendTrophyCard, sendTrophyComponents } = require("./trophyCard");
 const { achievementComparatorReached, achievementProgressUpdate } = require("./achievementRules");
@@ -161,10 +162,35 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
         if (!goals.length || !goals.every(Number.isFinite)) continue;
         const pointsList = String(achievement.levelPoints || "").split(",").map(x => Number(x.trim()));
         const rarityList = String(achievement.levelRarities || "").split(",").map(x => x.trim().toLowerCase());
-        const current = await UserAchievement.findOneAndUpdate(
-            { guildId: guild.id, userId: user.id, achievementId: achievement.achievementId, unlockedAt: null },
-            achievementProgressUpdate(amount, options?.absolute === true), { new: true }
+        const progressFilter = {
+            guildId: guild.id,
+            userId: user.id,
+            achievementId: achievement.achievementId,
+            unlockedAt: null
+        };
+        const progressUpdate = achievementProgressUpdate(amount, options?.absolute === true);
+        if (options?.idempotencyKey) {
+            progressFilter.processedEventKeys = { $ne: String(options.idempotencyKey) };
+            progressUpdate.$addToSet = {
+                ...(progressUpdate.$addToSet || {}),
+                processedEventKeys: String(options.idempotencyKey)
+            };
+        }
+        let current = await UserAchievement.findOneAndUpdate(
+            progressFilter,
+            progressUpdate,
+            { new: true }
         );
+        if (!current && options?.idempotencyKey) {
+            current = await UserAchievement.findOne({
+                guildId: guild.id,
+                userId: user.id,
+                achievementId: achievement.achievementId,
+                unlockedAt: null,
+                processedEventKeys: String(options.idempotencyKey)
+            });
+            if (current) pointsAwarded = true;
+        }
         if (!current) continue;
         const comparator = achievement.comparator || "gte";
         // Los logros escalonados usan umbrales acumulativos; los comparadores alternativos
@@ -180,6 +206,31 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
                 { _id: current._id, unlockedLevels: { $ne: i + 1 } },
                 { $addToSet: { unlockedLevels: i + 1 }, $inc: { pointsEarned: points } }
             );
+            const levelAlreadyUnlocked = (current.unlockedLevels || []).includes(i + 1);
+            if (settings?.seasonEnabled === true && typeof settings.seasonKey === "string" && settings.seasonKey.trim() && (update.modifiedCount || levelAlreadyUnlocked)) {
+                const seasonKey = settings.seasonKey.trim().toLowerCase();
+                const scoreEventKey = `season:${seasonKey}:achievement:${achievement.achievementId}:level:${i + 1}`;
+                try {
+                    const scoreFilter = { guildId: guild.id, userId: user.id, seasonKey };
+                    const existingScore = await TrophyScore.findOne(scoreFilter).select("processedEventKeys").lean();
+                    if (!existingScore?.processedEventKeys?.includes(scoreEventKey)) {
+                        const scoreEventFilter = { ...scoreFilter, processedEventKeys: { $ne: scoreEventKey } };
+                        const scoreUpdate = {
+                            $inc: { points, unlocks: 1 },
+                            $addToSet: { processedEventKeys: scoreEventKey },
+                            $setOnInsert: { guildId: guild.id, userId: user.id, seasonKey }
+                        };
+                        try {
+                            await TrophyScore.updateOne(scoreEventFilter, scoreUpdate, { upsert: true });
+                        } catch (error) {
+                            if (error.code !== 11000) throw error;
+                            await TrophyScore.updateOne(scoreEventFilter, scoreUpdate);
+                        }
+                    }
+                } catch (error) {
+                    console.warn("[Trophy Season] No se pudo actualizar el ranking:", error.message);
+                }
+            }
             if (!update.modifiedCount) continue;
             if (points > 0) pointsAwarded = true;
             const rarity = ["common", "uncommon", "rare", "epic", "legendary", "mythic"].includes(rarityList[i]) ? rarityList[i] : (achievement.rarity || "common");
