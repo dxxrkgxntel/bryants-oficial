@@ -1,0 +1,1 @@
+Counting feature write test.
