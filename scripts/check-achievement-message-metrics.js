@@ -36,4 +36,34 @@ assert.deepEqual(extractMessageAchievementMetrics(message({ content: "" })), {})
 assert.equal(extractMessageAchievementMetrics(message({ content: "https://example.com/a.gif" })).gifs_sent, 1);
 assert.equal(extractMessageAchievementMetrics(message({ content: "https://example.com/a.png" })).links_sent, 1);
 
-console.log("Achievement message metric tests passed: 14 assertions.");
+const longMessage = "x".repeat(500);
+assert.equal(extractMessageAchievementMetrics(message({ content: longMessage })).long_messages, 1);
+assert.equal(extractMessageAchievementMetrics(message({ content: "x".repeat(499) })).long_messages, undefined);
+
+const nightMetrics = extractMessageAchievementMetrics(message({
+    content: "buenas",
+    createdAt: new Date("2026-11-06T04:00:00.000Z")
+}));
+assert.equal(nightMetrics.night_owl_messages, 1);
+assert.equal(nightMetrics.early_bird_messages, undefined);
+
+const earlyMetrics = extractMessageAchievementMetrics(message({
+    content: "buenos días",
+    createdAt: new Date("2026-11-06T11:00:00.000Z")
+}));
+assert.equal(earlyMetrics.early_bird_messages, 1);
+assert.equal(earlyMetrics.night_owl_messages, undefined);
+
+const weekendMetrics = extractMessageAchievementMetrics(message({
+    content: "sábado",
+    createdAt: new Date("2026-11-08T04:00:00.000Z")
+}));
+assert.equal(weekendMetrics.weekend_messages, 1);
+
+const weekdayMetrics = extractMessageAchievementMetrics(message({
+    content: "viernes",
+    createdAt: new Date("2026-11-07T04:00:00.000Z")
+}));
+assert.equal(weekdayMetrics.weekend_messages, undefined);
+
+console.log("Achievement message metric tests passed: 21+ assertions.");
