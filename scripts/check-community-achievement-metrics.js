@@ -3,7 +3,7 @@ const { createSelfRoleAchievementMetricTracker } = require("../Functions/selfRol
 const { createVerificationAchievementMetricTracker } = require("../Functions/verificationAchievementMetrics");
 const { achievementProgressUpdate } = require("../Functions/achievementRules");
 const { wholeDaysSince, DAY_MS } = require("../Functions/memberAchievementMetrics");
-const { completedCalendarMonths } = require("../Functions/boostAchievementMetrics");
+const { completedCalendarMonths, resolvePremiumSince } = require("../Functions/boostAchievementMetrics");
 
 async function run() {
     const roleRecords = new Map();
@@ -55,6 +55,8 @@ async function run() {
     assert.deepStrictEqual(achievementProgressUpdate(365, true), { $max: { progress: 365 } });
 
     const boostStart = new Date(Date.UTC(2026, 0, 31, 12));
+    assert.strictEqual(resolvePremiumSince({ premiumSince: boostStart }, { premiumSince: null }), boostStart);
+    assert.strictEqual(resolvePremiumSince({ premiumSince: boostStart }, { premiumSince: new Date(Date.UTC(2026, 1, 1)) }).getTime(), Date.UTC(2026, 1, 1));
     assert.strictEqual(completedCalendarMonths(boostStart, Date.UTC(2026, 1, 28, 12)), 1);
     assert.strictEqual(completedCalendarMonths(boostStart, Date.UTC(2026, 1, 28, 11, 59)), 0);
 
