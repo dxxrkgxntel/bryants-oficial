@@ -4,6 +4,8 @@ const { createVerificationAchievementMetricTracker } = require("../Functions/ver
 const { achievementProgressUpdate } = require("../Functions/achievementRules");
 const { wholeDaysSince, DAY_MS } = require("../Functions/memberAchievementMetrics");
 const { completedCalendarMonths, resolvePremiumSince } = require("../Functions/boostAchievementMetrics");
+const { buildCommunityPanelPayload } = require("../Functions/communityPanelMessage");
+const { MessageFlags } = require("discord.js");
 
 async function run() {
     const roleRecords = new Map();
@@ -53,6 +55,24 @@ async function run() {
     assert.strictEqual(wholeDaysSince(joinedAgain, now), 2);
     assert.deepStrictEqual(achievementProgressUpdate(2, true), { $max: { progress: 2 } });
     assert.deepStrictEqual(achievementProgressUpdate(365, true), { $max: { progress: 365 } });
+
+    const panelGuild = { id: "guild-123", roles: { cache: new Map([["22345678901234567", { id: "22345678901234567", managed: false }], ["32345678901234567", { id: "32345678901234567", managed: false }]]) } };
+    const rolePanel = { guildId: panelGuild.id, panelId: "roles-1", kind: "self_roles", messageType: "text", content: "Elige tus roles", controlType: "buttons", roles: [{ roleId: "22345678901234567", label: "Gaming" }, { roleId: "32345678901234567", label: "Música" }] };
+    const textPayload = buildCommunityPanelPayload(rolePanel, panelGuild);
+    assert.strictEqual(textPayload.content, "Elige tus roles");
+    assert.strictEqual(textPayload.components[0].components.length, 2);
+    assert.strictEqual(textPayload.components[0].components[0].custom_id, "community-panel:roles-1:role:22345678901234567");
+
+    const embedPayload = buildCommunityPanelPayload({ ...rolePanel, messageType: "embed", title: "Roles", description: "Escoge uno" }, panelGuild);
+    assert.strictEqual(embedPayload.embeds[0].title, "Roles");
+    const v2Payload = buildCommunityPanelPayload({ ...rolePanel, messageType: "components_v2", title: "Roles", description: "Escoge uno" }, panelGuild);
+    assert.strictEqual(v2Payload.flags, MessageFlags.IsComponentsV2);
+    assert.strictEqual(v2Payload.components[0].type, 17);
+    const selectPayload = buildCommunityPanelPayload({ ...rolePanel, controlType: "select", maxValues: 2 }, panelGuild);
+    assert.strictEqual(selectPayload.components[0].components[0].type, 3);
+    assert.strictEqual(selectPayload.components[0].components[0].options.length, 2);
+    const verifyPayload = buildCommunityPanelPayload({ panelId: "verify-1", kind: "verification", messageType: "text", content: "Verifica tu cuenta" }, panelGuild);
+    assert.strictEqual(verifyPayload.components[0].components[0].custom_id, "community-panel:verify-1:verify");
 
     const boostStart = new Date(Date.UTC(2026, 0, 31, 12));
     assert.strictEqual(resolvePremiumSince({ premiumSince: boostStart }, { premiumSince: null }), boostStart);
