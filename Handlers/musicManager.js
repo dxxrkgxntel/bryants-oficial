@@ -384,9 +384,14 @@ function createSession(guild, voiceChannel, textChannel, settings, player) {
     });
     player.on("exception", event => {
         console.error("[MUSIC] Error Lavalink en " + session.guildId + ": " + (event?.exception?.message || event?.error || "desconocido"));
-        if (session.currentTrack) { session.currentTrack = null; session.startedAt = null; void startNext(session); }
     });
-    player.on("stuck", event => console.warn("[MUSIC] Track atascado en " + session.guildId + " (" + (event?.thresholdMs || 0) + " ms)."));
+    player.on("stuck", event => {
+        console.warn("[MUSIC] Track atascado en " + session.guildId + " (" + (event?.thresholdMs || 0) + " ms).");
+        if (!session.currentTrack) return;
+        session.currentTrack = null;
+        session.startedAt = null;
+        void session.player.stopTrack().catch(() => {}).then(() => startNext(session));
+    });
     player.on("closed", event => console.warn("[MUSIC] WebSocket de voz cerrado en " + session.guildId + ": " + (event?.code || "") + " " + (event?.reason || "")));
     return session;
 }
@@ -441,7 +446,7 @@ async function resolveLavalinkTrack(session, track) {
     if (track.encoded) return track.encoded;
     const node = session.player.node;
     if (!node) throw new Error("El reproductor no está conectado a Lavalink.");
-    const isYouTubeUrl = /^https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)\//i.test(track.url || "");
+    const isYouTubeUrl = /^https?:\/\/(?:www\.)?(?:youtube\.com|m\.youtube\.com|music\.youtube\.com|youtube-nocookie\.com|youtu\.be)\//i.test(track.url || "");
     const identifier = track.source === "SoundCloud" || isYouTubeUrl
         ? track.url
         : ("ytsearch:" + track.title + " " + (track.artist || "")).trim();
