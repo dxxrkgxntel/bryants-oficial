@@ -9,6 +9,7 @@ const giveawaySchema = new mongoose.Schema({
     description: { type: String, default: "", trim: true, maxlength: 1000 },
     winnerCount: { type: Number, required: true, min: 1, max: 20, default: 1 },
     entrants: { type: [String], default: [] },
+    entryHistory: { type: [String], default: [] },
     winnerIds: { type: [String], default: [] },
     status: { type: String, enum: ["active", "ending", "ended", "cancelled"], default: "active", index: true },
     endAt: { type: Date, required: true, index: true },
