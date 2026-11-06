@@ -341,7 +341,7 @@ async function resolveGuildDashboardAccess(req, guildId) {
 function hasGuildModulePermission(access, moduleKey, action = "view") {
     if (access?.admin) return true;
     const actions = access?.permissions?.[moduleKey];
-    return Boolean(actions?.has(action) || actions?.has("manage"));
+    return Boolean(actions?.has(action) || actions?.has("manage") || (action === "view" && actions?.has("edit")));
 }
 
 function requireGuildDashboardAccess(req, res, next) {
