@@ -1,6 +1,7 @@
 const Achievement = require("../Models/Achievement");
 const UserAchievement = require("../Models/UserAchievement");
 const EconomyUser = require("../Models/EconomyUser");
+const EconomyEarningTransaction = require("../Models/EconomyEarningTransaction");
 const Level = require("../Models/Level");
 const TrophySettings = require("../Models/TrophySettings");
 const TrophyScore = require("../Models/TrophyScore");
@@ -242,9 +243,15 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
                     { $inc: { xp: achievement.rewardXP }, $setOnInsert: { guildId: guild.id, userId: user.id } },
                     { upsert: true, new: true, setDefaultsOnInsert: true }
                 );
-                if (metric !== "xp") {
-                    await trackAchievementProgress(guild, user, "xp", achievement.rewardXP, { skipTotalPointsSync: true });
-                }
+                const { recordExperience } = require("./experienceMetrics");
+                await recordExperience({
+                    guild,
+                    user,
+                    amount: achievement.rewardXP,
+                    category: "achievement_reward_xp",
+                    operationId: "achievement-xp:" + achievement.achievementId + ":" + tier.level,
+                    syncProgress: metric !== "xp"
+                }).catch(error => console.warn("[Achievements] No se pudo registrar XP de recompensa:", error.message));
             }
             if (achievement.rewardRoleIds?.length || achievement.rewardRemoveRoleIds?.length) {
                 const member = await guild.members.fetch(user.id).catch(() => null);
@@ -259,6 +266,21 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
                     { $inc: { wallet: achievement.rewardCoins }, $setOnInsert: { guildId: guild.id, userId: user.id } },
                     { upsert: true, new: true, setDefaultsOnInsert: true }
                 );
+                try {
+                    await EconomyEarningTransaction.updateOne(
+                        { guildId: guild.id, userId: user.id, operationId: "achievement-reward:" + achievement.achievementId + ":" + (i + 1) },
+                        { $setOnInsert: {
+                            guildId: guild.id,
+                            userId: user.id,
+                            operationId: "achievement-reward:" + achievement.achievementId + ":" + (i + 1),
+                            category: "achievement_reward",
+                            amount: achievement.rewardCoins
+                        } },
+                        { upsert: true }
+                    );
+                } catch (error) {
+                    console.warn("[Achievements] No se pudo guardar la recompensa en total_earned:", error.message);
+                }
                 const { trackEconomyAchievementSnapshot } = require("./economyAchievementMetrics");
                 await trackEconomyAchievementSnapshot(guild, user, rewardedEconomy);
             }

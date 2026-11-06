@@ -310,6 +310,14 @@ const configurations = {
         guildField: "guildId",
         fields: [{ name: "channelId", label: "Canal de encuestas", type: "channel", channelTypes: [0, 5] }]
     },
+    giveaways: {
+        title: "Giveaways",
+        category: "Comunidad",
+        description: "Crea sorteos, controla participantes y selecciona ganadores desde la dashboard o Discord.",
+        model: require("../Models/GiveawayConfig"),
+        guildField: "guildId",
+        fields: [{ name: "channelId", label: "Canal de giveaways", type: "channel", channelTypes: [0, 5] }]
+    },
     purge: {
         title: "Limpieza automática",
         category: "Moderación",
@@ -505,7 +513,7 @@ const lists = {
             { name: "description", label: "Descripción", type: "textarea", maxLength: 300 },
             { name: "emoji", label: "Emblema / emoji", type: "text", maxLength: 100, optional: true },
             { name: "category", label: "Categoría", type: "select", options: ["activity","ai","applications","birthdays","boosting","clan","counting","economy","events","games","invites","loyalty","messages","meta","moderation","reactions","reviews","roles","social","starboard","tickets","voice"] },
-            { name: "metric", label: "Métrica", type: "select", options: ["achievements_unlocked","activity_awards","activity_coins","ai_conversations","ai_messages","applications_accepted","applications_sent","birthday_celebrations","boost_months","bot_mentions","business_earnings","clan_level","clan_member","clan_raids_won","clan_recruits","clan_season_league","clan_wars_won","clan_xp_contributed","counting_highest","custom_emojis_used","daily_streak","embeds_posted","first_unlocks","fishing_trips","flags_collected","game_guesses","giveaways_created","investment_profit","investments_made","invites","long_messages","messages_sent","messages_starred","mining_trips","mod_actions","net_worth","night_owl_messages","polls_created","prestige_points","properties_owned","property_income","questions_asked","reactions_added","reactions_received","referrals","reviews_written","season_podiums","season_wins","self_roles_taken","tickets_claimed","tokens","top_star_post","total_points","total_spent","verified","voice_minutes","voice_video_minutes","warns_issued"] },
+            { name: "metric", label: "Métrica", type: "select", options: ["achievements_unlocked","activity_awards","activity_coins","ai_conversations","ai_messages","applications_accepted","applications_sent","birthday_celebrations","boost_months","bot_mentions","business_earnings","clan_level","clan_member","clan_raids_won","clan_recruits","clan_season_league","clan_wars_won","clan_xp_contributed","counting_highest","custom_emojis_used","daily_streak","embeds_posted","first_unlocks","fishing_trips","flags_collected","game_guesses","giveaways_created","giveaways_entered","giveaways_won","investment_profit","investments_made","invites","long_messages","messages_sent","messages_starred","mining_trips","mod_actions","net_worth","night_owl_messages","polls_created","prestige_points","properties_owned","property_income","questions_asked","reactions_added","reactions_received","referrals","reviews_written","season_podiums","season_wins","self_roles_taken","tickets_claimed","tokens","top_star_post","total_points","total_spent","verified","voice_minutes","voice_video_minutes","warns_issued"] },
             { name: "goal", label: "Meta final (una sola escala)", type: "number", min: 1 },
             { name: "levelGoals", label: "Metas por nivel (separadas por comas)", type: "text", maxLength: 500, optional: true, help: "Ejemplo: 10,100,1000. Déjalo vacío si el trofeo solo tiene un nivel." },
             { name: "levelPoints", label: "Puntos por nivel (separados por comas)", type: "text", maxLength: 500, optional: true, help: "Ejemplo: 5,10,20. Si se omite, se usa la puntuación del trofeo en cada nivel." },

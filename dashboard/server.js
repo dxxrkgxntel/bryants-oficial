@@ -10,12 +10,15 @@ const mongoose = require("mongoose");
 const { configurations, lists } = require("./modules");
 const Poll = require("../Models/Poll");
 const PollConfig = require("../Models/PollConfig");
+const Giveaway = require("../Models/Giveaway");
+const GiveawayConfig = require("../Models/GiveawayConfig");
 const DashboardAccount = require("../Models/DashboardAccount");
 const DashboardReferral = require("../Models/DashboardReferral");
 const DashboardVote = require("../Models/DashboardVote");
 const DashboardAssistantUsage = require("../Models/DashboardAssistantUsage");
 const DashboardAuditLog = require("../Models/DashboardAuditLog");
 const EconomyUser = require("../Models/EconomyUser");
+const EconomyEarningTransaction = require("../Models/EconomyEarningTransaction");
 const Achievement = require("../Models/Achievement");
 const UserAchievement = require("../Models/UserAchievement");
 const TrophySettings = require("../Models/TrophySettings");
@@ -478,6 +481,24 @@ async function fetchBotChannelPermissions(guildId, channels, roles) {
         return { id: channel.id, type: channel.type, ...effective };
     });
     return { channels: channelPermissions, roleManagement: { canManageRoles: manageRoles, botHighestRolePosition, unmanageableRoles } };
+}
+
+function validateGiveawayInput(input) {
+    const prize = typeof input?.prize === "string" ? input.prize.trim() : "";
+    const description = typeof input?.description === "string" ? input.description.trim() : "";
+    const duration = Number(input?.duration);
+    const winnerCount = Number(input?.winnerCount);
+    if (!prize || prize.length > 200) throw new Error("El premio debe tener entre 1 y 200 caracteres.");
+    if (description.length > 1000) throw new Error("La descripción no puede superar 1000 caracteres.");
+    if (!Number.isInteger(duration) || duration < 1 || duration > 43200) throw new Error("La duración debe estar entre 1 minuto y 30 días.");
+    if (!Number.isInteger(winnerCount) || winnerCount < 1 || winnerCount > 20) throw new Error("La cantidad de ganadores debe estar entre 1 y 20.");
+    return { prize, description, duration, winnerCount };
+}
+
+function makeGiveawayMessage(giveaway, ended = false) {
+    const winners = giveaway.winnerIds || [];
+    const description = [giveaway.description, "", `🎁 **Premio:** ${giveaway.prize}`, `🏆 **Ganadores:** ${giveaway.winnerCount}`, `👥 **Participantes:** ${(giveaway.entrants || []).length}`, ended ? (winners.length ? `🎉 **Ganador(es):** ${winners.map(id => `<@${id}>`).join(", ")}` : "No hubo participantes elegibles.") : `⏰ **Finaliza:** <t:${Math.floor(new Date(giveaway.endAt).getTime() / 1000)}:R>`].filter(Boolean);
+    return { embeds: [{ color: 0x8A2BE2, title: ended ? "🎉 Giveaway finalizado" : "🎁 GIVEAWAY", description: description.join("\n"), footer: { text: ended ? "Bryvex Bot · Sorteo finalizado" : "Pulsa Participar para entrar" } }], components: ended ? [] : [{ type: 1, components: [{ type: 2, style: 3, custom_id: `giveaway_enter:${giveaway._id}`, label: "Participar", emoji: { name: "🎉" } }, { type: 2, style: 2, custom_id: `giveaway_leave:${giveaway._id}`, label: "Salir", emoji: { name: "↩️" } }] }], allowed_mentions: { parse: [], users: winners } };
 }
 
 function validatePollInput(input) {
@@ -1099,6 +1120,16 @@ app.get("/referral/callback", async (req, res) => {
                     { $inc: { wallet: REFERRAL_REWARD }, $setOnInsert: { guildId, userId: referrer.userId } },
                     { upsert: true, new: true, session: databaseSession }
                 );
+                await EconomyEarningTransaction.updateOne(
+                    { guildId, userId: referrer.userId, operationId: "referral:" + installer.id },
+                    { $setOnInsert: {
+                        guildId, userId: referrer.userId,
+                        operationId: "referral:" + installer.id,
+                        category: "referral_reward",
+                        amount: REFERRAL_REWARD
+                    } },
+                    { upsert: true, session: databaseSession }
+                );
                 await DashboardAccount.updateOne(
                     { userId: referrer.userId },
                     { $inc: { referralCount: 1 } },
@@ -1157,8 +1188,9 @@ app.post("/integrations/topgg/vote", async (req, res) => {
                 { new: true, session: databaseSession }
             );
             if (!account) return;
+            const voteId = crypto.randomBytes(16).toString("hex");
             await DashboardVote.create([{
-                voteId: crypto.randomBytes(16).toString("hex"),
+                voteId,
                 userId,
                 guildId,
                 source: "topgg",
@@ -1168,6 +1200,16 @@ app.post("/integrations/topgg/vote", async (req, res) => {
                 { guildId, userId },
                 { $inc: { wallet: amount }, $setOnInsert: { guildId, userId } },
                 { upsert: true, new: true, session: databaseSession }
+            );
+            await EconomyEarningTransaction.updateOne(
+                { guildId, userId, operationId: "topgg-vote:" + voteId },
+                { $setOnInsert: {
+                    guildId, userId,
+                    operationId: "topgg-vote:" + voteId,
+                    category: "topgg_vote_reward",
+                    amount
+                } },
+                { upsert: true, session: databaseSession }
             );
             credited = true;
         });
@@ -1445,7 +1487,7 @@ app.post("/api/guilds/:guildId/assistant", requireLogin, requireCsrf, requireGui
     const relatedModule = explicitModule || (!websiteHelpRequested && followUp ? historyModule : null);
     const websiteActionKey = getAssistantWebsiteActionKey(normalizedRecentContext, websiteHelpRequested);
     const hasBryvexContext = Boolean(explicitModule)
-        || /\b(bryvex|discord|bot|servidor|modulo|modulos|comando|comandos|alertas? sociales?|bienvenidas?|despedidas?|autoroles?|trofeos?|niveles?|economia|monedas?|coins|misiones|prestigios?|encuestas?|confesiones?|sugerencias?|cumpleanos|boosts?|tempvoice|tiktok|twitch|youtube|kick)\b/.test(normalizedRecentContext)
+        || /\b(bryvex|discord|bot|servidor|modulo|modulos|comando|comandos|alertas? sociales?|bienvenidas?|despedidas?|autoroles?|trofeos?|niveles?|economia|monedas?|coins|misiones|prestigios?|encuestas?|sorteos?|giveaways?|confesiones?|sugerencias?|cumpleanos|boosts?|tempvoice|tiktok|twitch|youtube|kick)\b/.test(normalizedRecentContext)
         || Boolean(relatedModule && followUp);
     if (!takeAssistantRateLimit(String(req.session.user.id))) {
         return res.status(429).json({ error: "Espera un minuto antes de volver a consultar al asistente." });
@@ -2178,6 +2220,144 @@ app.delete("/api/guilds/:guildId/polls/:pollId", requireLogin, requireCsrf, requ
         console.error("[Dashboard Polls] Error al eliminar encuesta:", error.message);
         const status = error.status === 429 ? 429 : error.status ? 502 : 500;
         return res.status(status).json({ error: error.message || "No pude eliminar la encuesta." });
+    }
+});
+
+
+app.get("/api/guilds/:guildId/giveaways", requireGuildAdmin, async (req, res) => {
+    try {
+        const [config, giveaways] = await Promise.all([
+            GiveawayConfig.findOne({ guildId: req.params.guildId }).lean(),
+            Giveaway.find({ guildId: req.params.guildId }).sort({ createdAt: -1 }).limit(100).lean()
+        ]);
+        return res.json({
+            configuredChannelId: config?.channelId || null,
+            giveaways: giveaways.map(item => ({
+                _id: String(item._id), channelId: item.channelId, messageId: item.messageId,
+                prize: item.prize, description: item.description, winnerCount: item.winnerCount,
+                entrantCount: (item.entrants || []).length, winnerIds: item.winnerIds || [],
+                status: item.status, endAt: item.endAt || null, createdAt: item.createdAt || null,
+                url: item.channelId && item.messageId ? `https://discord.com/channels/${req.params.guildId}/${item.channelId}/${item.messageId}` : null
+            }))
+        });
+    } catch (error) {
+        console.error("[Dashboard Giveaways] Error al cargar sorteos:", error.message);
+        return res.status(500).json({ error: "No pude cargar los giveaways del servidor." });
+    }
+});
+
+app.post("/api/guilds/:guildId/giveaways", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    let sentMessage;
+    let giveaway;
+    try {
+        const config = await GiveawayConfig.findOne({ guildId: req.params.guildId }).lean();
+        if (!config?.channelId) return res.status(400).json({ error: "Primero guarda el canal de giveaways." });
+        const input = validateGiveawayInput(req.body);
+        giveaway = new Giveaway({
+            guildId: req.params.guildId, channelId: config.channelId,
+            creatorId: String(req.session.user.id), prize: input.prize,
+            description: input.description, winnerCount: input.winnerCount,
+            endAt: new Date(Date.now() + input.duration * 60_000)
+        });
+        await giveaway.save();
+        sentMessage = await discordBotRequest(`https://discord.com/api/v10/channels/${config.channelId}/messages`, {
+            method: "POST", body: makeGiveawayMessage(giveaway)
+        });
+        giveaway.messageId = sentMessage.id;
+        await giveaway.save();
+        await recordDashboardAudit(req, req.params.guildId, "Giveaway creado");
+        return res.status(201).json({
+            giveaway: { _id: String(giveaway._id), prize: giveaway.prize, status: giveaway.status },
+            url: `https://discord.com/channels/${req.params.guildId}/${config.channelId}/${sentMessage.id}`
+        });
+    } catch (error) {
+        if (giveaway?._id) await Giveaway.deleteOne({ _id: giveaway._id }).catch(() => {});
+        if (sentMessage?.id) await discordBotRequest(`https://discord.com/api/v10/channels/${sentMessage.channel_id || ""}/messages/${sentMessage.id}`, { method: "DELETE" }).catch(() => {});
+        const status = error.message?.startsWith("El ") || error.message?.startsWith("La ") ? 400 : error.status === 429 ? 429 : 502;
+        return res.status(status).json({ error: error.message || "No pude publicar el giveaway." });
+    }
+});
+
+
+app.post("/api/guilds/:guildId/giveaways/:giveawayId/end", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    try {
+        const current = await Giveaway.findOne({ _id: req.params.giveawayId, guildId: req.params.guildId, status: "active" });
+        if (!current) return res.status(409).json({ error: "El giveaway ya terminó o está finalizándose." });
+        const pool = [...new Set(current.entrants || [])];
+        for (let i = pool.length - 1; i > 0; i -= 1) {
+            const j = crypto.randomInt(i + 1);
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        const winnerIds = pool.slice(0, Math.min(current.winnerCount, pool.length));
+        const giveaway = await Giveaway.findOneAndUpdate(
+            { _id: current._id, guildId: req.params.guildId, status: "active" },
+            { $set: { status: "ended", winnerIds, endedAt: new Date(), endedBy: String(req.session.user.id) } },
+            { new: true }
+        );
+        if (!giveaway) return res.status(409).json({ error: "Otro proceso ya finalizó este giveaway." });
+        try {
+            await discordBotRequest(`https://discord.com/api/v10/channels/${giveaway.channelId}/messages/${giveaway.messageId}`, { method: "PATCH", body: makeGiveawayMessage(giveaway, true) });
+        } catch (error) {
+            if (error.status !== 404) console.warn("[Dashboard Giveaways] No se pudo actualizar el mensaje final:", error.message);
+        }
+        if (giveaway.winnerIds.length) {
+            await discordBotRequest(`https://discord.com/api/v10/channels/${giveaway.channelId}/messages`, {
+                method: "POST",
+                body: { content: `🎉 ¡Felicidades ${giveaway.winnerIds.map(id => `<@${id}>`).join(", ")}! Ganaste **${giveaway.prize}**.`, allowed_mentions: { parse: [], users: giveaway.winnerIds } }
+            }).catch(error => console.warn("[Dashboard Giveaways] No se pudo anunciar el ganador:", error.message));
+        }
+        await recordDashboardAudit(req, req.params.guildId, "Giveaway finalizado");
+        return res.json({ ok: true, winnerIds: giveaway.winnerIds });
+    } catch (error) {
+        console.error("[Dashboard Giveaways] Error al finalizar:", error.message);
+        return res.status(error.status === 429 ? 429 : 502).json({ error: error.message || "No pude finalizar el giveaway." });
+    }
+});
+
+
+app.post("/api/guilds/:guildId/giveaways/:giveawayId/reroll", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    try {
+        const giveaway = await Giveaway.findOne({ _id: req.params.giveawayId, guildId: req.params.guildId, status: "ended" });
+        if (!giveaway) return res.status(409).json({ error: "Solo puedes volver a sortear un giveaway finalizado." });
+        const previous = new Set(giveaway.winnerIds || []);
+        const pool = [...new Set(giveaway.entrants || [])].filter(id => !previous.has(id));
+        if (!pool.length) return res.status(409).json({ error: "No quedan participantes que no hayan ganado antes." });
+        for (let i = pool.length - 1; i > 0; i -= 1) {
+            const j = crypto.randomInt(i + 1);
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        const selected = pool.slice(0, Math.min(giveaway.winnerCount, pool.length));
+        await Giveaway.updateOne({ _id: giveaway._id, status: "ended" }, { $addToSet: { winnerIds: { $each: selected } } });
+        const updated = await Giveaway.findById(giveaway._id);
+        await discordBotRequest(`https://discord.com/api/v10/channels/${updated.channelId}/messages/${updated.messageId}`, { method: "PATCH", body: makeGiveawayMessage(updated, true) });
+        await discordBotRequest(`https://discord.com/api/v10/channels/${updated.channelId}/messages`, {
+            method: "POST",
+            body: { content: `🔁 Nuevo sorteo de **${updated.prize}**: ${selected.map(id => `<@${id}>`).join(", ")}`, allowed_mentions: { parse: [], users: selected } }
+        });
+        await recordDashboardAudit(req, req.params.guildId, "Ganadores de giveaway sorteados nuevamente");
+        return res.json({ ok: true, winnerIds: selected });
+    } catch (error) {
+        return res.status(error.status === 429 ? 429 : 502).json({ error: error.message || "No pude volver a sortear los ganadores." });
+    }
+});
+
+app.delete("/api/guilds/:guildId/giveaways/:giveawayId", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    try {
+        const giveaway = await Giveaway.findOne({ _id: req.params.giveawayId, guildId: req.params.guildId });
+        if (!giveaway) return res.status(404).json({ error: "No encontré ese giveaway." });
+        if (giveaway.messageId) {
+            try {
+                await discordBotRequest(`https://discord.com/api/v10/channels/${giveaway.channelId}/messages/${giveaway.messageId}`, { method: "DELETE" });
+            } catch (error) { if (error.status !== 404) throw error; }
+        }
+        await Giveaway.updateOne(
+            { _id: giveaway._id, guildId: req.params.guildId },
+            { $set: { status: "cancelled" } }
+        );
+        await recordDashboardAudit(req, req.params.guildId, "Giveaway cancelado y ocultado del canal");
+        return res.json({ ok: true });
+    } catch (error) {
+        return res.status(error.status === 429 ? 429 : 502).json({ error: error.message || "No pude eliminar el giveaway." });
     }
 });
 

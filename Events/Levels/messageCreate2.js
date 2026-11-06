@@ -5,6 +5,8 @@ const EconomyUser = require("../../Models/EconomyUser");
 const { getLevelSettings } = require("../../Functions/levelSettings");
 const { sendLevelNotification } = require("../../Functions/levelNotification");
 const { trackAchievementProgress } = require("../../Functions/achievementTracker");
+const { recordEconomyEarning } = require("../../Functions/economyEarningMetrics");
+const { recordExperience } = require("../../Functions/experienceMetrics");
 const { extractMessageAchievementMetrics } = require("../../Functions/achievementMessageMetrics");
 const { createMemberAchievementMetricTracker } = require("../../Functions/memberAchievementMetrics");
 const { trackBoostAchievementMetric } = require("../../Functions/boostAchievementMetrics");
@@ -180,6 +182,10 @@ module.exports = {
             const reward = data.level * (Number.isFinite(levelConfig?.levelCoinReward) ? levelConfig.levelCoinReward : 0);
             economy.wallet += reward;
             await economy.save();
+            if (reward > 0) await recordEconomyEarning({
+                guild: message.guild, user: message.author, amount: reward,
+                category: "level_reward", operationId: "level:" + message.id + ":" + data.level
+            }).catch(error => console.warn("[Economy] No se pudo registrar recompensa de nivel:", error.message));
             if (reward > 0) await trackAchievementProgress(message.guild, message.author, "coinsEarned", reward)
                 .catch(error => console.warn("[Achievements] No se pudo registrar la recompensa de nivel:", error.message));
 
@@ -315,8 +321,10 @@ module.exports = {
         ////////////////////////////////////////
 
         await data.save();
-        await trackAchievementProgress(message.guild, message.author, "xp", xpRandom)
-            .catch(error => console.warn("[Achievements] No se pudo registrar xp:", error.message));
+        await recordExperience({
+            guild: message.guild, user: message.author, amount: xpRandom,
+            category: "message_xp", operationId: "message:" + message.id
+        }).catch(error => console.warn("[Achievements] No se pudo registrar XP de mensaje:", error.message));
         if (data.level > Number(data.achievementLevelReported || 0)) {
             try {
                 await trackAchievementProgress(message.guild, message.author, "level", data.level, { absolute: true });

@@ -1705,7 +1705,7 @@ function renderModule(key, modules, options = {}) {
     const moduleLayout = key === "levelSettings" ? " levels-settings-grid" : key === "economy" ? " economy-settings-grid" : key === "weeklyDrop" ? " weekly-drop-grid" : key === "tempvoice" ? " tempvoice-settings-grid" : "";
     const livePreview = renderPreview(key, data);
     const previewLayout = livePreview ? " settings-card-with-preview" : "";
-    content.innerHTML = `<article class="settings-card${previewLayout}"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div><span class="status-pill ${data.configured ? "configured" : "unconfigured"}">${data.configured ? "Configurado" : "Sin configurar"}</span></div><p class="card-description">${escapeHtml(description)}</p>${livePreview}<form id="settings-form" class="fields-grid${key === "prestige" ? " prestige-settings-grid" : ""}${communityLayout}${alignedToggleLayout}${moduleLayout}">${formFields}<div class="form-actions"><button class="primary-button" type="submit">Guardar cambios</button><span class="unsaved-indicator" hidden>● Cambios sin guardar</span><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>${key === "polls" ? '<div id="poll-admin"><div class="loading-card">Cargando encuestas…</div></div>' : ""}`;
+    content.innerHTML = `<article class="settings-card${previewLayout}"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div><span class="status-pill ${data.configured ? "configured" : "unconfigured"}">${data.configured ? "Configurado" : "Sin configurar"}</span></div><p class="card-description">${escapeHtml(description)}</p>${livePreview}<form id="settings-form" class="fields-grid${key === "prestige" ? " prestige-settings-grid" : ""}${communityLayout}${alignedToggleLayout}${moduleLayout}">${formFields}<div class="form-actions"><button class="primary-button" type="submit">Guardar cambios</button><span class="unsaved-indicator" hidden>● Cambios sin guardar</span><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>${key === "polls" ? '<div id="poll-admin"><div class="loading-card">Cargando encuestas…</div></div>' : key === "giveaways" ? '<div id="giveaway-admin"><div class="loading-card">Cargando giveaways…</div></div>' : ""}`;
     const setupsEditor = content.querySelector("[data-setups-editor]");
     if (setupsEditor) {
         const updateSetupRows = setups => {
@@ -1768,6 +1768,7 @@ function renderModule(key, modules, options = {}) {
         }
     });
     if (key === "polls") renderPollAdmin();
+    if (key === "giveaways") renderGiveawayAdmin();
 }
 
 async function renderPollAdmin(editingPoll = null) {
@@ -1876,6 +1877,94 @@ async function renderPollAdmin(editingPoll = null) {
     } catch (error) {
         if (container.isConnected) container.innerHTML = `<article class="settings-card"><p class="error">${escapeHtml(error.message)}</p><button class="quiet-button" type="button" data-poll-retry>Reintentar</button></article>`;
         container.querySelector("[data-poll-retry]")?.addEventListener("click", () => renderPollAdmin(editingPoll));
+    }
+}
+
+
+async function renderGiveawayAdmin() {
+    const container = content.querySelector("#giveaway-admin");
+    if (!container) return;
+    try {
+        const result = await api(`/api/guilds/${encodeURIComponent(guildId)}/giveaways`);
+        if (!container.isConnected) return;
+        const giveaways = result.giveaways || [];
+        const channelName = id => resources.channels.find(channel => channel.id === id)?.name || "Canal no disponible";
+        const active = giveaways.filter(item => item.status === "active").length;
+        const ended = giveaways.filter(item => item.status === "ended").length;
+        const totalEntries = giveaways.reduce((sum, item) => sum + Number(item.entrantCount || 0), 0);
+        const form = `<article class="settings-card poll-create-card"><div class="card-heading"><div><div class="eyebrow">PUBLICACIÓN EN DISCORD</div><h2>Crear giveaway</h2></div></div><p class="card-description">Se publicará en el canal configurado arriba: #<span>${escapeHtml(channelName(result.configuredChannelId || ""))}</span>. Los miembros podrán participar desde el botón del mensaje.</p><form id="giveaway-form" class="fields-grid"><label class="field poll-full-field"><span>Premio</span><input name="prize" type="text" maxlength="200" required placeholder="Ej. Nitro, tarjeta regalo…"></label><label class="field poll-full-field"><span>Descripción <small>(opcional)</small></span><textarea name="description" rows="3" maxlength="1000" placeholder="Reglas o detalles del sorteo…"></textarea></label><label class="field"><span>Duración en minutos <small>(máximo 30 días)</small></span><input name="duration" type="number" min="1" max="43200" required value="1440"></label><label class="field"><span>Cantidad de ganadores</span><input name="winnerCount" type="number" min="1" max="20" required value="1"></label><div class="form-actions poll-full-field"><button class="primary-button" type="submit">Publicar giveaway</button><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>`;
+        const rows = giveaways.map(item => {
+            const isActive = item.status === "active";
+            const status = isActive ? "Activo" : item.status === "ended" ? "Finalizado" : item.status === "ending" ? "Finalizando" : "Cancelado";
+            const winners = (item.winnerIds || []).map(id => `<code>${escapeHtml(id)}</code>`).join(" · ") || "Sin ganadores todavía";
+            return `<article class="poll-row"><div class="poll-row-main"><div class="poll-row-top"><span class="status-pill ${isActive ? "configured" : "unconfigured"}">${status}</span><span class="poll-channel">#<span>${escapeHtml(channelName(item.channelId))}</span></span><span class="poll-votes">${Number(item.entrantCount || 0)} participantes</span></div><h3>🎁 ${escapeHtml(item.prize)}</h3><p>${escapeHtml(item.description || "")}</p><small>${item.endAt ? `${isActive ? "Finaliza" : "Finalizó"} ${new Date(item.endAt).toLocaleString("es", { dateStyle: "medium", timeStyle: "short" })}` : "Sin fecha"} · ${item.winnerCount} ganador(es)</small><small>Ganador(es): ${winners}</small></div><div class="record-actions">${item.url ? `<a class="quiet-button" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">Ver en Discord ↗</a>` : ""}${isActive ? `<button class="quiet-button" type="button" data-giveaway-end="${escapeHtml(item._id)}">Finalizar</button>` : item.status === "ended" ? `<button class="quiet-button" type="button" data-giveaway-reroll="${escapeHtml(item._id)}">Volver a sortear</button>` : ""}<button class="quiet-button danger-text" type="button" data-giveaway-delete="${escapeHtml(item._id)}">Eliminar</button></div></article>`;
+        }).join("");
+        container.innerHTML = `${form}<article class="settings-card poll-list-card"><div class="card-heading"><div><div class="eyebrow">GESTIÓN</div><h2>Giveaways registrados</h2></div><button class="quiet-button" type="button" data-giveaway-refresh>Actualizar</button></div><div class="poll-stats"><div><span>Activos</span><strong>${active}</strong></div><div><span>Finalizados</span><strong>${ended}</strong></div><div><span>Participaciones acumuladas</span><strong>${totalEntries}</strong></div></div><div class="poll-list">${rows || '<p class="empty-state">Todavía no hay giveaways registrados.</p>'}</div></article>`;
+        container.querySelector("[data-giveaway-refresh]").addEventListener("click", renderGiveawayAdmin);
+        container.querySelector("#giveaway-form").addEventListener("submit", async event => {
+            event.preventDefault();
+            const formElement = event.currentTarget;
+            const button = formElement.querySelector("button[type=submit]");
+            const feedback = formElement.querySelector(".save-feedback");
+            const selectedChannelId = content.querySelector("#field-channelId")?.value || "";
+            if (!result.configuredChannelId || selectedChannelId !== result.configuredChannelId) {
+                showNotice("Guarda primero el canal de giveaways arriba.", true);
+                return;
+            }
+            button.disabled = true;
+            button.textContent = "Publicando…";
+            feedback.textContent = "Publicando el sorteo en Discord…";
+            try {
+                const response = await api(`/api/guilds/${encodeURIComponent(guildId)}/giveaways`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        prize: formElement.elements.prize.value,
+                        description: formElement.elements.description.value,
+                        duration: formElement.elements.duration.value,
+                        winnerCount: formElement.elements.winnerCount.value
+                    })
+                });
+                showNotice("Giveaway publicado correctamente.");
+                await renderGiveawayAdmin();
+                const refreshed = container.querySelector("#giveaway-form .save-feedback");
+                if (refreshed) refreshed.innerHTML = response.url ? `Publicado: <a href="${escapeHtml(response.url)}" target="_blank" rel="noopener noreferrer">Abrir en Discord</a>` : "Publicado en Discord.";
+            } catch (error) {
+                feedback.textContent = error.message;
+                showNotice(error.message, true);
+                button.disabled = false;
+                button.textContent = "Publicar giveaway";
+            }
+        });
+        container.querySelectorAll("[data-giveaway-end]").forEach(button => button.addEventListener("click", async () => {
+            if (!window.confirm("¿Finalizar este giveaway y seleccionar los ganadores ahora?")) return;
+            button.disabled = true;
+            try {
+                const result = await api(`/api/guilds/${encodeURIComponent(guildId)}/giveaways/${encodeURIComponent(button.dataset.giveawayEnd)}/end`, { method: "POST", body: "{}" });
+                showNotice(result.winnerIds?.length ? "Giveaway finalizado y ganadores anunciados." : "Giveaway finalizado sin participantes.");
+                renderGiveawayAdmin();
+            } catch (error) { showNotice(error.message, true); button.disabled = false; }
+        }));
+        container.querySelectorAll("[data-giveaway-reroll]").forEach(button => button.addEventListener("click", async () => {
+            if (!window.confirm("¿Seleccionar nuevos ganadores excluyendo a los anteriores?")) return;
+            button.disabled = true;
+            try {
+                await api(`/api/guilds/${encodeURIComponent(guildId)}/giveaways/${encodeURIComponent(button.dataset.giveawayReroll)}/reroll`, { method: "POST", body: "{}" });
+                showNotice("Nuevos ganadores seleccionados y anunciados.");
+                renderGiveawayAdmin();
+            } catch (error) { showNotice(error.message, true); button.disabled = false; }
+        }));
+        container.querySelectorAll("[data-giveaway-delete]").forEach(button => button.addEventListener("click", async () => {
+            if (!window.confirm("¿Eliminar el giveaway y su mensaje de Discord?")) return;
+            button.disabled = true;
+            try {
+                await api(`/api/guilds/${encodeURIComponent(guildId)}/giveaways/${encodeURIComponent(button.dataset.giveawayDelete)}`, { method: "DELETE" });
+                showNotice("Giveaway eliminado.");
+                renderGiveawayAdmin();
+            } catch (error) { showNotice(error.message, true); button.disabled = false; }
+        }));
+    } catch (error) {
+        if (container.isConnected) container.innerHTML = `<article class="settings-card"><p class="error">${escapeHtml(error.message)}</p><button class="quiet-button" type="button" data-giveaway-retry>Reintentar</button></article>`;
+        container.querySelector("[data-giveaway-retry]")?.addEventListener("click", renderGiveawayAdmin);
     }
 }
 

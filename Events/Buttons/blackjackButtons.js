@@ -7,9 +7,11 @@ const {
 
 const EconomyUser = require("../../Models/EconomyUser");
 const CasinoStats = require("../../Models/CasinoStats");
-const { recordEconomySpend } = require("../../Functions/economySpendMetrics");
+const { releaseBlackjackBet, settleBlackjackBet } = require("../../Functions/blackjackEconomy");
+const { recordEconomyEarning } = require("../../Functions/economyEarningMetrics");
 
 const BANNER = "https://i.imgur.com/joAe57D.png";
+const activeGames = new Set();
 const cards = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
 function drawCard() { return cards[Math.floor(Math.random() * cards.length)]; }
 function calculateHand(hand) {
@@ -31,6 +33,15 @@ function panel(text, row = null, accent = 0x8A2BE2) {
     if (row) components.push({ type: 14, divider: true, spacing: 1 }, row.toJSON());
     return { flags: MessageFlags.IsComponentsV2, components: [{ type: 17, accent_color: accent, components }] };
 }
+function blackjackRow(userId, amount, playerHand, dealerHand) {
+    return new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId(`blackjack_hit_${userId}_${amount}_${playerHand.join("-")}_${dealerHand.join("-")}`)
+            .setLabel("Pedir").setEmoji("➕").setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+            .setCustomId(`blackjack_stand_${userId}_${amount}_${playerHand.join("-")}_${dealerHand.join("-")}`)
+            .setLabel("Plantarse").setEmoji("🛑").setStyle(ButtonStyle.Secondary)    );
+}
 
 module.exports = {
     name: "interactionCreate",
@@ -40,86 +51,104 @@ module.exports = {
         const parts = interaction.customId.split("_");
         const action = parts[1];
         const userId = parts[2];
-        const amount = parseInt(parts[3]);
-        let playerHand = parts[4].split("-");
-        let dealerHand = parts[5].split("-");
+        const amount = Number(parts[3]);
+        const playerHand = parts[4]?.split("-") || [];
+        const dealerHand = parts[5]?.split("-") || [];
 
         if (interaction.user.id !== userId) {
             return interaction.reply({ content: "❌ Esta partida no es tuya.", flags: MessageFlags.Ephemeral });
         }
+        if (!Number.isSafeInteger(amount) || amount <= 0 || !playerHand.length || !dealerHand.length) {
+            return interaction.reply({ content: "❌ Esta partida tiene datos inválidos.", flags: MessageFlags.Ephemeral });
+        }
 
-        await interaction.deferUpdate();
+        const gameKey = `${interaction.guild.id}:${interaction.message.id}`;
+        if (activeGames.has(gameKey)) {
+            return interaction.reply({ content: "⏳ Esta partida ya se está procesando.", flags: MessageFlags.Ephemeral });
+        }
+        activeGames.add(gameKey);
 
-        const userData = await EconomyUser.findOne({ guildId: interaction.guild.id, userId });
-        if (!userData) return interaction.editReply(panel("## ❌ Blackjack\nNo se encontraron tus datos económicos."));
+        try {
+            await interaction.deferUpdate();
+            const userData = await EconomyUser.findOne({ guildId: interaction.guild.id, userId });
+            if (!userData) return interaction.editReply(panel("## ❌ Blackjack\nNo se encontraron tus datos económicos."));
 
-        let stats = await CasinoStats.findOne({ guildId: interaction.guild.id, userId });
-        if (!stats) stats = new CasinoStats({ guildId: interaction.guild.id, userId });
+            let stats = await CasinoStats.findOne({ guildId: interaction.guild.id, userId });
+            if (!stats) stats = new CasinoStats({ guildId: interaction.guild.id, userId });
 
-        if (action === "hit") {
-            playerHand.push(drawCard());
-            const total = calculateHand(playerHand);
+            if (action === "hit") {
+                playerHand.push(drawCard());
+                const total = calculateHand(playerHand);
 
-            if (total > 21) {
-                userData.wallet -= amount;
-                stats.totalGames += 1;
-                stats.totalLosses += 1;
-                stats.moneyLost += amount;
-                stats.currentStreak = 0;
-                await Promise.all([userData.save(), stats.save()]);
-                await recordEconomySpend({ guild: interaction.guild, user: interaction.user, amount, category: "casino_blackjack", operationId: `blackjack:${interaction.message.id}:${userId}` }).catch(error => console.warn("[Economy] No se pudo registrar apuesta blackjack:", error.message));
+                if (total > 21) {
+                    stats.totalGames += 1;
+                    stats.totalLosses += 1;
+                    stats.moneyLost += amount;
+                    stats.currentStreak = 0;
+                    await stats.save();
+                    return interaction.editReply(panel(
+                        `## 🃏 Blackjack — ❌ Te pasaste\n### 🎴 Dealer\n**${dealerHand.join("  •  ")}**\n💯 Total: **${calculateHand(dealerHand)}**\n\n### 👤 ${interaction.user.username}\n**${playerHand.join("  •  ")}**\n💯 Total: **${total}**\n\n💸 Perdiste **${amount.toLocaleString()} monedas**\n👛 Balance: **${userData.wallet.toLocaleString()} monedas**`,
+                        null, 0xED4245
+                    ));
+                }
+
                 return interaction.editReply(panel(
-                    `## 🃏 Blackjack — ❌ Te pasaste\n### 🎴 Dealer\n**${dealerHand.join("  •  ")}**\n💯 Total: **${calculateHand(dealerHand)}**\n\n### 👤 ${interaction.user.username}\n**${playerHand.join("  •  ")}**\n💯 Total: **${total}**\n\n💸 Perdiste **${amount.toLocaleString()} monedas**\n👛 Balance: **${userData.wallet.toLocaleString()} monedas**`,
-                    null, 0xED4245
+                    `## 🃏 Blackjack\n### 🎴 Dealer\n❓  **${dealerHand[1]}**\n\n### 👤 ${interaction.user.username}\n**${playerHand.join("  •  ")}**\n💯 Total: **${total}**\n💰 Apuesta reservada: **${amount.toLocaleString()} monedas**\n👛 Wallet: **${userData.wallet.toLocaleString()} monedas**`,
+                    blackjackRow(userId, amount, playerHand, dealerHand)
                 ));
             }
 
-            const row = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId(`blackjack_hit_${userId}_${amount}_${playerHand.join("-")}_${dealerHand.join("-")}`).setLabel("Pedir").setEmoji("➕").setStyle(ButtonStyle.Secondary),
-                new ButtonBuilder().setCustomId(`blackjack_stand_${userId}_${amount}_${playerHand.join("-")}_${dealerHand.join("-")}`).setLabel("Plantarse").setEmoji("🛑").setStyle(ButtonStyle.Secondary)
-            );
-            return interaction.editReply(panel(
-                `## 🃏 Blackjack\n### 🎴 Dealer\n❓  **${dealerHand[1]}**\n\n### 👤 ${interaction.user.username}\n**${playerHand.join("  •  ")}**\n💯 Total: **${total}**\n💰 Apuesta: **${amount.toLocaleString()} monedas**`,
-                row
-            ));
-        }
+            if (action === "stand") {
+                while (calculateHand(dealerHand) < 17) dealerHand.push(drawCard());
+                const playerTotal = calculateHand(playerHand);
+                const dealerTotal = calculateHand(dealerHand);
+                let result, accent = 0x8A2BE2, outcome;
 
-        if (action === "stand") {
-            while (calculateHand(dealerHand) < 17) dealerHand.push(drawCard());
-            const playerTotal = calculateHand(playerHand);
-            const dealerTotal = calculateHand(dealerHand);
-            let result, accent = 0x8A2BE2;
+                if (playerTotal === dealerTotal) {
+                    outcome = "draw";
+                    result = "🤝 **Empate**";
+                    stats.totalGames += 1;
+                } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
+                    outcome = "win";
+                    const winnings = amount * 2;
+                    stats.totalGames += 1;
+                    stats.totalWins += 1;
+                    stats.moneyWon += winnings;
+                    stats.currentStreak += 1;
+                    stats.blackjackWins += 1;
+                    if (winnings > stats.biggestWin) stats.biggestWin = winnings;
+                    result = `🎉 Ganaste **${winnings.toLocaleString()} monedas**`;
+                    accent = 0x57F287;
+                } else {
+                    outcome = "loss";
+                    stats.totalGames += 1;
+                    stats.totalLosses += 1;
+                    stats.moneyLost += amount;
+                    stats.currentStreak = 0;
+                    result = `💸 Perdiste **${amount.toLocaleString()} monedas**`;
+                    accent = 0xED4245;
+                }
 
-            if (playerTotal === dealerTotal) {
-                result = "🤝 **Empate**";
-                stats.totalGames += 1;
-            } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
-                const winnings = amount * 2;
-                userData.wallet += amount;
-                stats.totalGames += 1;
-                stats.totalWins += 1;
-                stats.moneyWon += winnings;
-                stats.currentStreak += 1;
-                stats.blackjackWins += 1;
-                if (winnings > stats.biggestWin) stats.biggestWin = winnings;
-                result = `🎉 Ganaste **${winnings.toLocaleString()} monedas**`;
-                accent = 0x57F287;
-            } else {
-                userData.wallet -= amount;
-                stats.totalGames += 1;
-                stats.totalLosses += 1;
-                stats.moneyLost += amount;
-                stats.currentStreak = 0;
-                result = `💸 Perdiste **${amount.toLocaleString()} monedas**`;
-                accent = 0xED4245;
+                const settledUser = await settleBlackjackBet({
+                    guildId: interaction.guild.id, userId, amount, result: outcome
+                });
+                if (outcome === "win") await recordEconomyEarning({
+                    guild: interaction.guild, user: interaction.user, amount,
+                    category: "blackjack_net_win", operationId: "blackjack-win:" + interaction.message.id
+                }).catch(error => console.warn("[Economy] No se pudo registrar ganancia blackjack:", error.message));
+                await stats.save();
+                return interaction.editReply(panel(
+                    `## 🃏 Blackjack — Resultado\n### 🎴 Dealer\n**${dealerHand.join("  •  ")}**\n💯 Total: **${dealerTotal}**\n\n### 👤 ${interaction.user.username}\n**${playerHand.join("  •  ")}**\n💯 Total: **${playerTotal}**\n\n${result}\n👛 Balance: **${(settledUser?.wallet ?? userData.wallet).toLocaleString()} monedas**`,
+                    null, accent
+                ));
             }
-
-            await Promise.all([userData.save(), stats.save()]);
-            await recordEconomySpend({ guild: interaction.guild, user: interaction.user, amount, category: "casino_blackjack", operationId: `blackjack:${interaction.message.id}:${userId}` }).catch(error => console.warn("[Economy] No se pudo registrar apuesta blackjack:", error.message));
-            return interaction.editReply(panel(
-                `## 🃏 Blackjack — Resultado\n### 🎴 Dealer\n**${dealerHand.join("  •  ")}**\n💯 Total: **${dealerTotal}**\n\n### 👤 ${interaction.user.username}\n**${playerHand.join("  •  ")}**\n💯 Total: **${playerTotal}**\n\n${result}\n👛 Balance: **${userData.wallet.toLocaleString()} monedas**`,
-                null, accent
-            ));
+        } catch (error) {
+            console.error("[Blackjack] Error procesando partida:", error);
+            if (interaction.deferred || interaction.replied) {
+                await interaction.editReply(panel("## ❌ Blackjack\nOcurrió un error al procesar la partida. La apuesta permanece reservada; vuelve a intentarlo.")).catch(() => null);
+            }
+        } finally {
+            activeGames.delete(gameKey);
         }
     }
 };

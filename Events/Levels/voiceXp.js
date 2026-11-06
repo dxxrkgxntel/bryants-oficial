@@ -15,6 +15,7 @@ const questHandler =
 const { getLevelSettings } = require("../../Functions/levelSettings");
 const { sendLevelNotification } = require("../../Functions/levelNotification");
 const { trackAchievementProgress } = require("../../Functions/achievementTracker");
+const { recordExperience } = require("../../Functions/experienceMetrics");
 
 //////////////////////////////////////////////////
 // CACHE
@@ -383,8 +384,11 @@ module.exports = {
                             //////////////////////////////////////////////////
 
                             await data.save();
-                            await trackAchievementProgress(guild, member.user, "xp", levelSettings.voiceXpAmount)
-                                .catch(error => console.warn("[Achievements] No se pudo registrar xp de voz:", error.message));
+                            await recordExperience({
+                                guild, user: member.user, amount: levelSettings.voiceXpAmount,
+                                category: "voice_xp",
+                                operationId: "voice:" + guild.id + ":" + member.id + ":" + Math.floor(Date.now() / 60000)
+                            }).catch(error => console.warn("[Achievements] No se pudo registrar XP de voz:", error.message));
                             if (data.level > Number(data.achievementLevelReported || 0)) {
                                 try {
                                     await trackAchievementProgress(guild, member.user, "level", data.level, { absolute: true });

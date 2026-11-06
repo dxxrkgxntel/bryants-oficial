@@ -1,6 +1,7 @@
 const { MessageFlags } = require("discord.js");
 const getUser = require("../../Utils/getUser");
 const { recordEconomySpend } = require("../../Functions/economySpendMetrics");
+const { recordEconomyEarning } = require("../../Functions/economyEarningMetrics");
 const BANNER = "https://i.imgur.com/joAe57D.png";
 
 function panel(text, accent = 0x8A2BE2) {
@@ -57,6 +58,10 @@ module.exports = {
         }
 
         await userData.save();
+        if (userDice > botDice) await recordEconomyEarning({
+            guild: interaction.guild, user: interaction.user, amount: bet,
+            category: "dice_net_win", operationId: "dice-win:" + interaction.message.id
+        }).catch(error => console.warn("[Economy] No se pudo registrar ganancia de dados:", error.message));
         await recordEconomySpend({ guild: interaction.guild, user: interaction.user, amount: bet, category: "casino_dice", operationId: interaction.id }).catch(error => console.warn("[Economy] No se pudo registrar apuesta de dados:", error.message));
 
         return interaction.editReply(panel(
