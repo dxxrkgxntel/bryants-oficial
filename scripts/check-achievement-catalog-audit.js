@@ -35,7 +35,9 @@ assert.ok(auditRouteSource.includes("Achievement.find("), "La auditoría debe co
 assert.ok(auditRouteSource.includes("Achievement.aggregate("), "La auditoría debe detectar duplicados.");
 assert.ok(auditRouteSource.includes("UserAchievement.aggregate("), "La auditoría debe calcular el progreso guardado.");
 assert.ok(auditRouteSource.includes("TrophySettings.findOne("), "La auditoría debe consultar el estado de la migración.");
-assert.doesNotMatch(auditRouteSource, /\\.(?:create|insertMany|updateOne|updateMany|findOneAndUpdate|bulkWrite|deleteOne|deleteMany|save)\\s*\\(/, "La ruta de auditoría no debe escribir en MongoDB.");
+for (const writeMethod of [".create(", ".insertMany(", ".updateOne(", ".updateMany(", ".findOneAndUpdate(", ".bulkWrite(", ".deleteOne(", ".deleteMany(", ".save("]) {
+    assert.ok(!auditRouteSource.includes(writeMethod), "La ruta de auditoría no debe ejecutar " + writeMethod);
+}
 assert.match(dashboardClientSource, /achievement-spanish-audit-trigger/, "Trofeos debe mostrar la acción de auditoría.");
 assert.ok(dashboardClientSource.includes("/achievements/audit-spanish"), "La dashboard debe consultar el endpoint de auditoría.");
 assert.match(dashboardClientSource, /AUDITORÍA DE SOLO LECTURA/, "El panel debe identificar la auditoría como solo lectura.");
