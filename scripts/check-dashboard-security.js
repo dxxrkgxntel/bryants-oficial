@@ -101,7 +101,7 @@ assert.match(moduleSource, /title: "Artículos de tienda"/, "La dashboard debe p
 assert.match(moduleSource, /title: "Trofeos - Logros"/, "La dashboard debe conservar el nombre personalizado del módulo de logros");
 assert.match(moduleSource, /category: "Economía"/, "La categoría personalizada Economía debe existir");
 assert.match(moduleSource, /category: "Alertas Sociales"/, "La categoría personalizada Alertas Sociales debe existir");
-assert.match(serverSource, /const categoriesOrder = \["Administración", "Comunidad", "Alertas Sociales", "Moderación", "Servidor", "Economía", "Trofeos", "Estadisticas"\]/, "La dashboard debe respetar el orden personalizado de categorías");
+assert.match(clientSource, /const categoriesOrder = \["Administración", "Comunidad", "Alertas Sociales", "Moderación", "Servidor", "Economía", "Trofeos", "Estadisticas"\]/, "La dashboard debe respetar el orden personalizado de categorías");
 assert.match(clientSource, /member-backpack-item/, "La ficha de miembro debe mostrar los artículos comprados");
 assert.match(clientSource, /member-achievement-item/, "La ficha de miembro debe mostrar el progreso de logros");
 for (const file of ["hub.css", "hub.js", "status.html", "docs.html", "updates.html", "updates.js", "stats.html", "stats.js", "leaderboard.html", "leaderboard.js", "templates.html", "templates.js"]) {
