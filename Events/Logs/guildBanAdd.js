@@ -2,12 +2,14 @@ const isLogIgnored = require("../../Utils/logsIgnored");
 const { EmbedBuilder, AuditLogEvent } = require("discord.js");
 const logsSchema = require("../../Models/logsSchema");
 const { publishDashboardNotification } = require("../../Utils/dashboardNotifications");
+const { recordMemberTimelineEvent } = require("../../Functions/memberTimeline");
 
 module.exports = {
     name: "guildBanAdd",
     async execute(ban) {
         try {
             let log = null;
+            await recordMemberTimelineEvent({ guildId: ban.guild.id, userId: ban.user.id, type: "ban" });
             try {
                 const fetchedLogs = await ban.guild.fetchAuditLogs({
                     limit: 1,

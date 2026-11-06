@@ -1,5 +1,5 @@
 const guildId = decodeURIComponent(window.location.pathname.split("/").filter(Boolean).at(-1) || "");
-const categoriesOrder = ["Administración", "Comunidad", "Alertas sociales", "Moderación", "Servidor", "Economía y XP", "Trofeos"];
+const categoriesOrder = ["Administración", "Comunidad", "Alertas sociales", "Moderación", "Servidor", "Economía y XP", "Trofeos", "Estadísticas"];
 const nav = document.querySelector("#module-nav");
 const content = document.querySelector("#module-content");
 const notice = document.querySelector("#notice");
@@ -1656,6 +1656,127 @@ function renderMemberEconomy(definition, initialMemberId = null) {
 }
 
 
+
+async function renderMemberProfiles(definition, initialMemberId = null) {
+    currentModule = "memberProfiles";
+    content.innerHTML = '<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">CENTRO DE MIEMBROS</div><h2>Perfiles avanzados</h2></div></div><p class="card-description">Busca a un miembro para consultar sus roles, progreso, trofeos, actividad e historial administrativo.</p><section class="member-search-panel"><label class="member-picker-search"><span aria-hidden="true">⌕</span><input id="profile-member-search" type="search" autocomplete="off" placeholder="Buscar por nombre, apodo o usuario…" aria-label="Buscar miembro"></label><div id="profile-member-results" class="member-search-results" role="listbox"></div></section><section id="member-profile-detail" class="member-profile-detail"><div class="empty-state">Selecciona un miembro para abrir su perfil.</div></section></article>';
+    const search = content.querySelector("#profile-member-search");
+    const results = content.querySelector("#profile-member-results");
+    const detail = content.querySelector("#member-profile-detail");
+    let timer = null;
+    let sequence = 0;
+    let selectedId = null;
+    const base = "/api/guilds/" + encodeURIComponent(guildId) + "/modules/memberProfiles";
+    const displayName = member => member.nick || member.globalName || member.username || "Miembro";
+    async function loadProfile(userId) {
+        selectedId = String(userId);
+        detail.innerHTML = '<div class="loading-card">Cargando perfil…</div>';
+        try {
+            const data = await api(base + "/members/" + encodeURIComponent(selectedId) + "/profile");
+            if (!detail.isConnected || selectedId !== String(userId)) return;
+            const member = data.member || {};
+            const name = member.nick || member.globalName || member.username || "Miembro";
+            const avatar = member.avatar ? "https://cdn.discordapp.com/avatars/" + member.id + "/" + member.avatar + ".png?size=256" : "";
+            const date = value => value ? new Date(value).toLocaleString("es-ES") : "No disponible";
+            const number = value => Math.max(0, Number(value) || 0).toLocaleString("es-ES");
+            const roles = (member.roles || []).map(role => '<span class="member-profile-role">' + escapeHtml(role.name) + '</span>').join("") || '<span class="empty-state">Sin roles adicionales</span>';
+            const activity = data.activity || {};
+            const achievements = (data.achievements || []);
+            const unlocked = achievements.filter(item => item.unlockedAt);
+            const achievementMarkup = achievements.length ? achievements.map(item => '<div class="member-achievement-item"><span>' + escapeHtml(item.emoji || "🏆") + '</span><div><strong>' + escapeHtml(item.name) + '</strong><small>' + escapeHtml(item.categoryLabel || item.category || "") + '</small><small>' + escapeHtml(item.description || "") + '</small></div><b>' + (item.unlockedAt ? "Desbloqueado" : number(item.progress) + "/" + number(item.goal)) + '</b></div>').join("") : '<p class="empty-state">Todavía no hay logros registrados.</p>';
+            const warnings = (data.warnings || []).map(item => '<article class="community-panel-row"><div class="community-panel-row-main"><strong>Advertencia</strong><p>' + escapeHtml(item.reason || "Sin motivo") + '</p><small>' + escapeHtml(date(item.createdAt)) + ' · Moderador: ' + escapeHtml(item.moderatorId || "Desconocido") + '</small></div></article>').join("") || '<p class="empty-state">No hay advertencias registradas.</p>';
+            const eventLabels = { joined: "Entró al servidor", left: "Salió del servidor", kick: "Fue expulsado", ban: "Fue baneado", timeout_added: "Recibió un timeout", timeout_removed: "Se retiró un timeout" };
+            const timeline = (data.timeline || []).map(item => '<article class="community-panel-row"><div class="community-panel-row-main"><strong>' + escapeHtml(eventLabels[item.type] || item.type) + '</strong><small>' + escapeHtml(date(item.createdAt)) + (item.actorId ? " · Responsable: " + escapeHtml(item.actorId) : "") + '</small>' + (item.reason ? '<p>' + escapeHtml(item.reason) + '</p>' : '') + '</div></article>').join("") || '<p class="empty-state">Aún no hay eventos de historial registrados.</p>';
+            const notes = (data.notes || []).map(item => '<article class="community-panel-row"><div class="community-panel-row-main"><p>' + escapeHtml(item.content) + '</p><small>' + escapeHtml(item.authorUsername || item.authorId) + ' · ' + escapeHtml(date(item.createdAt)) + '</small></div><button class="quiet-button danger-button" type="button" data-note-delete="' + escapeHtml(item._id) + '">Eliminar</button></article>').join("") || '<p class="empty-state">No hay notas administrativas.</p>';
+            const inventory = (data.economy?.inventory || []).map(item => '<div class="member-backpack-item"><span class="member-backpack-emoji">' + escapeHtml(item.emoji || "📦") + '</span><div class="member-backpack-copy"><strong>' + escapeHtml(item.name || item.itemId) + '</strong><small>' + number(item.quantity) + ' unidad(es)</small></div></div>').join("") || '<p class="empty-state">Mochila vacía.</p>';
+            detail.innerHTML = '<header class="member-profile-hero">' + (avatar ? '<img src="' + escapeHtml(avatar) + '" alt="" class="member-profile-avatar">' : '<div class="member-profile-avatar member-profile-avatar-fallback">' + escapeHtml(name.slice(0, 1).toUpperCase()) + '</div>') + '<div class="member-profile-identity"><span class="eyebrow">PERFIL DEL SERVIDOR</span><h2>' + escapeHtml(name) + '</h2><p>@' + escapeHtml(member.username || "") + ' · ' + escapeHtml(member.id || "") + '</p><small>' + (member.isAdministrator ? "Administrador de Discord" : "Miembro") + '</small></div></header>' +
+            '<div class="member-profile-facts"><div><span>Cuenta creada</span><strong>' + escapeHtml(date(member.createdAt)) + '</strong></div><div><span>Ingreso al servidor</span><strong>' + escapeHtml(date(member.joinedAt)) + '</strong></div><div><span>Boost</span><strong>' + (member.premiumSince ? escapeHtml(date(member.premiumSince)) : "No") + '</strong></div></div>' +
+            '<section class="member-profile-section"><h3>Roles del miembro</h3><div class="member-profile-roles">' + roles + '</div></section>' +
+            '<section class="member-profile-section"><h3>Progreso y trofeos</h3><div class="member-economy-stats"><div class="member-economy-stat"><span>Nivel</span><strong>' + number(data.level?.level) + '</strong></div><div class="member-economy-stat"><span>XP</span><strong>' + number(data.level?.xp) + '</strong></div><div class="member-economy-stat"><span>Prestigio</span><strong>' + number(data.level?.prestige) + '</strong></div><div class="member-economy-stat"><span>Puntos de trofeos</span><strong>' + number(data.trophy?.points) + '</strong></div><div class="member-economy-stat"><span>Posición</span><strong>' + (data.trophy?.rank ? "#" + number(data.trophy.rank) : "Sin puesto") + '</strong></div><div class="member-economy-stat"><span>Logros desbloqueados</span><strong>' + unlocked.length + "/" + achievements.length + '</strong></div></div><div class="member-achievement-list">' + achievementMarkup + '</div></section>' +
+            '<section class="member-profile-section"><h3>Actividad · últimos 90 días</h3><div class="member-economy-stats"><div class="member-economy-stat"><span>Mensajes</span><strong>' + number(activity.messages) + '</strong></div><div class="member-economy-stat"><span>Días activos</span><strong>' + number(activity.daysActive) + '</strong></div><div class="member-economy-stat"><span>Racha actual</span><strong>' + number(activity.currentStreak) + '</strong></div><div class="member-economy-stat"><span>Mejor racha</span><strong>' + number(activity.bestStreak) + '</strong></div><div class="member-economy-stat"><span>Tiempo en voz</span><strong>' + (Math.floor((activity.voiceTotalSeconds || activity.voiceSeconds || 0) / 3600)).toLocaleString("es-ES") + " h</strong></div><div class="member-economy-stat"><span>Reacciones enviadas</span><strong>' + number(activity.reactionsGiven) + '</strong></div></div></section>' +
+            '<section class="member-profile-section"><h3>Economía y mochila</h3><div class="member-economy-stats"><div class="member-economy-stat"><span>Cartera</span><strong>' + number(data.economy?.wallet) + '</strong></div><div class="member-economy-stat"><span>Banco</span><strong>' + number(data.economy?.bank) + '</strong></div></div><div class="member-backpack">' + inventory + '</div></section>' +
+            '<section class="member-profile-section"><h3>Historial de moderación</h3><div class="community-panel-list">' + warnings + '</div></section>' +
+            '<section class="member-profile-section"><h3>Historial del servidor</h3><div class="community-panel-list">' + timeline + '</div></section>' +
+            '<section class="member-profile-section"><h3>Notas administrativas privadas</h3><form id="member-note-form" class="fields-grid"><label class="field field-full"><span>Nueva nota (solo visible a personal autorizado)</span><textarea name="content" maxlength="1000" rows="3" required placeholder="Añade contexto interno sobre este miembro…"></textarea></label><div class="form-actions"><button class="primary-button" type="submit">Guardar nota</button></div></form><div class="community-panel-list" id="member-profile-notes">' + notes + '</div></section>';
+            detail.querySelector("#member-note-form").addEventListener("submit", async event => {
+                event.preventDefault();
+                const form = event.currentTarget;
+                const button = form.querySelector("button[type=submit]");
+                button.disabled = true;
+                try {
+                    await api(base + "/members/" + encodeURIComponent(selectedId) + "/notes", { method: "POST", body: JSON.stringify({ content: form.elements.content.value }) });
+                    showNotice("Nota administrativa guardada.");
+                    await loadProfile(selectedId);
+                } catch (error) { showNotice(error.message, true); button.disabled = false; }
+            });
+            detail.querySelectorAll("[data-note-delete]").forEach(button => button.addEventListener("click", async () => {
+                if (!window.confirm("¿Eliminar esta nota administrativa?")) return;
+                try {
+                    await api(base + "/members/" + encodeURIComponent(selectedId) + "/notes/" + encodeURIComponent(button.dataset.noteDelete), { method: "DELETE" });
+                    showNotice("Nota eliminada.");
+                    await loadProfile(selectedId);
+                } catch (error) { showNotice(error.message, true); }
+            }));
+        } catch (error) {
+            detail.innerHTML = '<div class="empty-state">' + escapeHtml(error.message || "No pude cargar el perfil.") + '</div>';
+        }
+    }
+    search.addEventListener("input", () => {
+        if (timer) clearTimeout(timer);
+        const query = search.value.trim();
+        const current = ++sequence;
+        if (query.length < 2) { results.replaceChildren(); return; }
+        timer = setTimeout(async () => {
+            try {
+                const response = await api(base + "/members/search?q=" + encodeURIComponent(query));
+                if (current !== sequence || !results.isConnected) return;
+                const members = response.members || [];
+                results.innerHTML = members.length ? members.map(member => '<button class="member-search-result" type="button" role="option" data-member-id="' + escapeHtml(member.id) + '" data-member-name="' + escapeHtml(displayName(member)) + '"><strong>' + escapeHtml(displayName(member)) + '</strong><small>@' + escapeHtml(member.username) + '</small></button>').join("") : '<p class="empty-state">No se encontraron miembros.</p>';
+            } catch (error) { if (current === sequence) results.innerHTML = '<p class="empty-state">' + escapeHtml(error.message) + '</p>'; }
+        }, 250);
+    });
+    results.addEventListener("click", event => {
+        const button = event.target.closest("[data-member-id]");
+        if (!button) return;
+        search.value = button.dataset.memberName || "";
+        results.replaceChildren();
+        loadProfile(button.dataset.memberId);
+    });
+    if (/^\d{17,20}$/.test(String(initialMemberId || ""))) loadProfile(initialMemberId);
+}
+
+async function renderActivityAnalytics(definition) {
+    currentModule = "activityAnalytics";
+    let days = 30;
+    content.innerHTML = '<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">ANÁLISIS DEL SERVIDOR</div><h2>Actividad de la comunidad</h2></div><button id="activity-export" class="quiet-button" type="button">Exportar CSV</button></div><p class="card-description">Consulta la evolución de mensajes, voz, reacciones, miembros activos y actividad de los canales.</p><div class="activity-period-controls"><button type="button" data-days="7">7 días</button><button type="button" data-days="30" class="active">30 días</button><button type="button" data-days="90">90 días</button></div><div id="activity-analytics-content"><div class="loading-card">Cargando estadísticas…</div></div></article>';
+    const panel = content.querySelector("#activity-analytics-content");
+    const exportButton = content.querySelector("#activity-export");
+    async function load() {
+        panel.innerHTML = '<div class="loading-card">Actualizando estadísticas…</div>';
+        try {
+            const result = await api("/api/guilds/" + encodeURIComponent(guildId) + "/modules/activityAnalytics/overview?days=" + days);
+            if (!panel.isConnected) return;
+            const summary = result.summary || {};
+            const n = value => Math.max(0, Number(value) || 0).toLocaleString("es-ES");
+            const maxMessages = Math.max(1, ...(result.daily || []).map(item => Number(item.messages) || 0));
+            const bars = (result.daily || []).map(item => '<div class="activity-day-row"><span>' + escapeHtml(item.day.slice(5)) + '</span><div class="activity-bar-track"><i style="width:' + Math.max(0, Math.min(100, (Number(item.messages) || 0) / maxMessages * 100)) + '%"></i></div><strong>' + n(item.messages) + '</strong></div>').join("");
+            const top = (result.topMembers || []).slice(0, 10).map(item => '<button type="button" class="community-panel-row activity-top-member" data-profile-member="' + escapeHtml(item.userId) + '"><span class="activity-rank">#' + item.rank + '</span><span class="community-panel-row-main"><strong>' + escapeHtml(item.userId) + '</strong><small>' + n(item.messages) + ' mensajes · ' + n(item.activeDays) + ' días activos</small></span><span>' + n(Math.floor((item.voiceSeconds || 0) / 60)) + ' min voz</span></button>').join("") || '<p class="empty-state">Todavía no hay actividad registrada.</p>';
+            const channels = (result.topChannels || []).map(item => '<div class="community-panel-row"><span class="community-panel-row-main"><strong>#' + escapeHtml(item.channel) + '</strong></span><strong>' + n(item.messages) + ' mensajes</strong></div>').join("") || '<p class="empty-state">No hay datos por canal.</p>';
+            panel.innerHTML = '<div class="member-economy-stats activity-summary-grid"><div class="member-economy-stat"><span>Mensajes</span><strong>' + n(summary.messages) + '</strong></div><div class="member-economy-stat"><span>Tiempo en voz</span><strong>' + n(Math.floor((summary.voiceSeconds || 0) / 3600)) + ' h</strong></div><div class="member-economy-stat"><span>Miembros activos</span><strong>' + n(summary.activeMembers) + '</strong></div><div class="member-economy-stat"><span>Reacciones enviadas</span><strong>' + n(summary.reactionsGiven) + '</strong></div><div class="member-economy-stat"><span>Entradas</span><strong>' + n(summary.joins) + '</strong></div><div class="member-economy-stat"><span>Salidas</span><strong>' + n(summary.leaves) + '</strong></div><div class="member-economy-stat"><span>Acciones de moderación</span><strong>' + n(summary.moderation) + '</strong></div><div class="member-economy-stat"><span>XP total</span><strong>' + n(result.levels?.totalXp) + '</strong></div></div><section class="member-profile-section"><h3>Mensajes por día</h3><div class="activity-daily-chart">' + bars + '</div></section><section class="member-profile-section"><h3>Miembros más activos</h3><div class="community-panel-list">' + top + '</div></section><section class="member-profile-section"><h3>Canales más utilizados</h3><div class="community-panel-list">' + channels + '</div></section><p class="card-description">Periodo: ' + escapeHtml(result.period.start) + ' — ' + escapeHtml(result.period.end) + '. La actividad se calcula a partir de los registros disponibles; los datos anteriores a la instalación del seguimiento no se reconstruyen automáticamente.</p>';
+            panel.querySelectorAll("[data-profile-member]").forEach(button => button.addEventListener("click", () => navigateToModule("memberProfiles", currentModules, { memberId: button.dataset.profileMember })));
+        } catch (error) { panel.innerHTML = '<div class="empty-state">' + escapeHtml(error.message) + '</div>'; }
+    }
+    content.querySelectorAll("[data-days]").forEach(button => button.addEventListener("click", () => {
+        days = Number(button.dataset.days);
+        content.querySelectorAll("[data-days]").forEach(item => item.classList.toggle("active", item === button));
+        load();
+    }));
+    exportButton.addEventListener("click", () => {
+        window.location.assign("/api/guilds/" + encodeURIComponent(guildId) + "/modules/activityAnalytics/export.csv?days=" + days);
+    });
+    await load();
+}
+
 async function renderAutomations(definition) {
     currentModule = "automations";
     document.querySelector("#page-title").textContent = definition.title;
@@ -2087,6 +2208,8 @@ function renderModule(key, modules, options = {}) {
     if (key === "communityPanels") return renderCommunityPanels(definition);
     if (key === "automations") return renderAutomations(definition);
     if (key === "customForms") return renderCustomForms(definition);
+    if (key === "memberProfiles") return renderMemberProfiles(definition, options.memberId);
+    if (key === "activityAnalytics") return renderActivityAnalytics(definition);
     if (key === "permissionsCenter") return renderPermissionsCenter(definition);
     if (key === "notificationCenter") return renderNotificationCenter(definition);
     if (isList) return renderList(key, definition);
