@@ -7,9 +7,9 @@
 - Catálogo importado: **397 logros / 106 métricas únicas**.
 - Matriz auditada: **103 métricas**; las tres métricas de tickets quedan fuera de este alcance, sin eliminar los trofeos existentes.
 - Conectadas: **44**.
-- Parciales: **25**.
+- Parciales: **28**.
 - Fuente existente o dato calculable, sin conexión al catálogo: **2**.
-- Pendientes de localizar/implementar o validar: **32**.
+- Pendientes de localizar/implementar o validar: **29**.
 - Ninguna fila pendiente se considera funcional hasta que exista llamada explícita, persistencia correcta y prueba.
 
 ## Matriz
@@ -63,9 +63,9 @@
 | 45 | `games_won` | 4 | **Parcial** | Commands/Casino/casino.js + Commands/Fun/minijuegos.js + Commands/Fun/miniJuegoMultiplayer.js + Functions/minigameAchievementMetrics.js · cuenta solo resultados `win`; en multiplayer atribuye la victoria mediante `winner`; empates y timeouts no generan victorias; pendiente validación en Discord | Winner (10); Champion (100) |
 | 46 | `gems` | 3 | **Pendiente** | sin sistema de gemas identificado | Gem Collector (50); Gem Baron (1000) |
 | 47 | `gifs_sent` | 4 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · GIF adjuntos y enlaces .gif | GIF Enjoyer (50); GIF Master (500) |
-| 48 | `giveaways_created` | 4 | **Pendiente** | No se localizó sistema de giveaways individuales. `Commands/Administration/weeklydrop.js` + `Models/WeeklyDrop.js` implementan una distribución semanal/forzada de monedas a todos los miembros humanos; no hay creador de sorteo por usuario ni entidad de giveaway | Giveaway Host (1); Generous Host (10) |
-| 49 | `giveaways_entered` | 3 | **Pendiente** | No existe registro individual de entradas/participaciones. WeeklyDrop recompensa en lote a todos los miembros humanos y no requiere inscripción | Hopeful (1); Lucky Participant (25) |
-| 50 | `giveaways_won` | 3 | **Pendiente** | No existe selección ni persistencia de ganadores individuales. WeeklyDrop distribuye importes aleatorios a todos los miembros humanos, por lo que no representa una victoria de giveaway | Lucky Winner (1); Fortune's Favorite (5) |
+| 48 | `giveaways_created` | 4 | **Parcial** | `Models/Giveaway.js` + `Commands/Utility/giveaway.js` + `dashboard/server.js` + `Functions/giveawayAchievementMetrics.js` · persiste el creador, registra la creación desde Discord y sincroniza las creadas desde la dashboard; pendiente validación funcional en Discord/web | Giveaway Host (1); Generous Host (10) |
+| 49 | `giveaways_entered` | 3 | **Parcial** | `Models/Giveaway.js` + `Interactions/Buttons/giveawayButtons.js` + `Functions/giveawayAchievementMetrics.js` · una entrada por usuario y sorteo; `entryHistory` conserva la participación aunque el usuario se retire; sincronización absoluta idempotente; pendiente validación en Discord | Hopeful (1); Lucky Participant (25) |
+| 50 | `giveaways_won` | 3 | **Parcial** | `Models/Giveaway.js` + `Functions/giveawayDraw.js` + `dashboard/server.js` + `Functions/giveawayAchievementMetrics.js` · persiste ganadores seleccionados al finalizar o repetir sorteo y sincroniza el total; pendiente validación funcional en Discord/web | Lucky Winner (1); Fortune's Favorite (5) |
 | 51 | `hall_of_fame` | 2 | **Pendiente** | sin sistema Hall of Fame identificado | Hall of Famer (1); Immortalized (10) |
 | 52 | `images_sent` | 4 | **Conectada** | Functions/achievementMessageMetrics.js + Events/Levels/messageCreate2.js · adjuntos con MIME de imagen, excluye GIF | Shutterbug (50); Gallery Owner (500) |
 | 53 | `investment_profit` | 2 | **Pendiente** | sin sistema de inversiones identificado | In the Green (10000); Bull Market (1000000) |
