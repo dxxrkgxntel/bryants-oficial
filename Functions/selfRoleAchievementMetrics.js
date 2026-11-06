@@ -5,15 +5,26 @@ function createSelfRoleAchievementMetricTracker({ model, trackProgress } = {}) {
 
     return async function recordSelfRoleSelection(guild, user, roleId) {
         if (!guild?.id || !user?.id || user.bot || !/^\d{17,20}$/.test(String(roleId || ""))) return 0;
-        const update = model.findOneAndUpdate(
-            { guildId: guild.id, userId: user.id },
-            {
-                $addToSet: { roleIds: String(roleId) },
-                $setOnInsert: { guildId: guild.id, userId: user.id }
-            },
-            { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
-        const record = update && typeof update.lean === "function" ? await update.lean() : await update;
+        const filter = { guildId: guild.id, userId: user.id };
+        const update = {
+            $addToSet: { roleIds: String(roleId) },
+            $setOnInsert: { guildId: guild.id, userId: user.id }
+        };
+        let query;
+        try {
+            query = model.findOneAndUpdate(filter, update, { upsert: true, new: true, setDefaultsOnInsert: true });
+        } catch (error) {
+            if (error.code !== 11000) throw error;
+            query = model.findOneAndUpdate(filter, update, { new: true });
+        }
+        let record;
+        try {
+            record = query && typeof query.lean === "function" ? await query.lean() : await query;
+        } catch (error) {
+            if (error.code !== 11000) throw error;
+            const retry = model.findOneAndUpdate(filter, update, { new: true });
+            record = retry && typeof retry.lean === "function" ? await retry.lean() : await retry;
+        }
         const count = new Set((record?.roleIds || []).map(String)).size;
         if (count > 0) await trackProgress(guild, user, "self_roles_taken", count, { absolute: true });
         return count;
