@@ -87,6 +87,13 @@ async function handleVerificationButton(interaction, panel, method) {
         } else {
             expected = panel.verificationAnswerHash;
         }
+        const recentChallenge = await VerificationRequest.findOne({
+            guildId: interaction.guild.id, panelId: panel.panelId, userId: interaction.user.id, method,
+            createdAt: { $gt: new Date(Date.now() - 20_000) }
+        }).select("_id");
+        if (recentChallenge) {
+            return interaction.reply({ content: "Espera 20 segundos antes de solicitar otra comprobación.", flags: MessageFlags.Ephemeral });
+        }
         await VerificationRequest.deleteMany({ guildId: interaction.guild.id, panelId: panel.panelId, userId: interaction.user.id, method, status: "challenge" });
         await VerificationRequest.create({
             guildId: interaction.guild.id, panelId: panel.panelId, userId: interaction.user.id, method,
