@@ -8,6 +8,7 @@ const {
 const EconomyUser = require("../../Models/EconomyUser");
 const CasinoStats = require("../../Models/CasinoStats");
 const { releaseBlackjackBet, settleBlackjackBet } = require("../../Functions/blackjackEconomy");
+const { recordEconomyEarning } = require("../../Functions/economyEarningMetrics");
 
 const BANNER = "https://i.imgur.com/joAe57D.png";
 const activeGames = new Set();
@@ -131,6 +132,10 @@ module.exports = {
                 const settledUser = await settleBlackjackBet({
                     guildId: interaction.guild.id, userId, amount, result: outcome
                 });
+                if (outcome === "win") await recordEconomyEarning({
+                    guild: interaction.guild, user: interaction.user, amount,
+                    category: "blackjack_net_win", operationId: "blackjack-win:" + interaction.message.id
+                }).catch(error => console.warn("[Economy] No se pudo registrar ganancia blackjack:", error.message));
                 await stats.save();
                 return interaction.editReply(panel(
                     `## 🃏 Blackjack — Resultado\n### 🎴 Dealer\n**${dealerHand.join("  •  ")}**\n💯 Total: **${dealerTotal}**\n\n### 👤 ${interaction.user.username}\n**${playerHand.join("  •  ")}**\n💯 Total: **${playerTotal}**\n\n${result}\n👛 Balance: **${(settledUser?.wallet ?? userData.wallet).toLocaleString()} monedas**`,
