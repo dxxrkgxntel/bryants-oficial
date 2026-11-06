@@ -3,6 +3,7 @@ const {
     ButtonBuilder,
     ButtonStyle,
     EmbedBuilder,
+    AttachmentBuilder,
     MessageFlags,
     PermissionFlagsBits,
     StringSelectMenuBuilder,
@@ -16,6 +17,7 @@ const {
     createAudioResource
 } = require("@discordjs/voice");
 const { spawn } = require("node:child_process");
+const { createCanvas } = require("@napi-rs/canvas");
 const { randomBytes } = require("node:crypto");
 const ffmpegPath = require("ffmpeg-static");
 const play = require("play-dl");
@@ -540,6 +542,66 @@ async function enqueueTracks(interaction, tracks) {
     return `${accepted.length === 1 ? "Añadida" : `Añadidas ${accepted.length} canciones`}${accepted.length === 1 ? ` a la cola: [**${clip(first.title, 100)}**](${first.url})` : ` desde **${clip(tracks[0].title, 80)}**`}${suffix}.`;
 }
 
+
+let musicGuideBuffer = null;
+
+function createMusicGuideImage() {
+    if (musicGuideBuffer) return musicGuideBuffer;
+    const width = 1600, height = 1080;
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext("2d");
+    const bg = ctx.createLinearGradient(0, 0, width, height);
+    bg.addColorStop(0, "#090711"); bg.addColorStop(0.55, "#17102b"); bg.addColorStop(1, "#08070e");
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = "rgba(139,92,246,0.10)"; ctx.beginPath(); ctx.arc(1420, 120, 260, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#c4b5fd"; ctx.font = "700 26px sans-serif"; ctx.fillText("REPRODUCTOR INTERACTIVO", 82, 76);
+    ctx.fillStyle = "#ffffff"; ctx.font = "800 66px sans-serif"; ctx.fillText("BRYVEX MUSIC", 78, 150);
+    ctx.fillStyle = "#b7a9d6"; ctx.font = "400 25px sans-serif"; ctx.fillText("Guía rápida: cada icono tiene una función", 82, 198);
+
+    const items = [
+        ["|◀", "ANTERIOR", "Vuelve a la canción anterior. Si llevas más de 5 segundos, reinicia la actual."],
+        ["Ⅱ / ▶", "PAUSAR / CONTINUAR", "Pausa la reproducción o continúa desde donde se quedó."],
+        ["▶|", "SALTAR", "Termina la canción actual y reproduce la siguiente de la cola."],
+        ["↝", "ALEATORIO", "Mezcla el orden de las canciones que esperan en la cola."],
+        ["■", "DETENER", "Detiene la música, limpia la cola y libera el canal de voz."],
+        ["↻", "REPETIR", "Cambia entre sin repetición, repetir canción y repetir toda la cola."],
+        ["✦", "AUTOPLAY", "Activa o desactiva recomendaciones automáticas al terminar la cola."],
+        ["≡", "VER COLA", "Muestra las canciones que están esperando para reproducirse."],
+        ["−", "BAJAR VOLUMEN", "Reduce el volumen en intervalos de 10 puntos."],
+        ["+", "SUBIR VOLUMEN", "Aumenta el volumen en intervalos de 10 puntos, hasta 150%."],
+        ["⌕", "BUSCAR CANCIÓN", "Abre una ventana para buscar por título, artista o pegar un enlace."],
+        ["♫", "BUSCAR LETRA", "Abre una búsqueda web de la letra de la canción actual."]
+    ];
+    const cardW = 468, cardH = 174, gapX = 22, gapY = 18, startX = 82, startY = 250;
+    items.forEach((item, index) => {
+        const col = index % 3, row = Math.floor(index / 3);
+        const x = startX + col * (cardW + gapX), y = startY + row * (cardH + gapY);
+        const card = ctx.createLinearGradient(x, y, x + cardW, y + cardH);
+        card.addColorStop(0, "rgba(39,28,62,0.98)"); card.addColorStop(1, "rgba(20,16,33,0.98)");
+        ctx.fillStyle = card; ctx.beginPath(); ctx.roundRect(x, y, cardW, cardH, 22); ctx.fill();
+        ctx.strokeStyle = "rgba(167,139,250,0.30)"; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = "rgba(139,92,246,0.22)"; ctx.beginPath(); ctx.roundRect(x+22,y+27,92,92,20); ctx.fill();
+        ctx.fillStyle = "#e9ddff"; ctx.font = "700 38px sans-serif"; ctx.textAlign = "center"; ctx.fillText(item[0],x+68,y+84,82); ctx.textAlign = "left";
+        ctx.fillStyle = "#ffffff"; ctx.font = "800 22px sans-serif"; ctx.fillText(item[1],x+136,y+56,cardW-158);
+        ctx.fillStyle = "#c7bddb"; ctx.font = "400 18px sans-serif";
+        let line = "", lineY = y+91; const maxWidth = cardW-164;
+        for (const word of item[2].split(" ")) {
+            const test = line ? line+" "+word : word;
+            if (ctx.measureText(test).width > maxWidth && line) { ctx.fillText(line,x+136,lineY); line=word; lineY+=27; }
+            else line=test;
+        }
+        if(line) ctx.fillText(line,x+136,lineY);
+    });
+    ctx.fillStyle="#9585b8"; ctx.font="400 18px sans-serif";
+    ctx.fillText("Bryvex Bot  •  Los controles aparecen como iconos debajo del reproductor",82,1045);
+    musicGuideBuffer=canvas.toBuffer("image/png");
+    return musicGuideBuffer;
+}
+
+function musicGuideAttachment() {
+    return new AttachmentBuilder(createMusicGuideImage(), { name: "bryvex-music-guide.png" });
+}
+
 function buildPanelEmbed(session) {
     const track = session.currentTrack;
     const color = 0x8A2BE2;
@@ -547,7 +609,8 @@ function buildPanelEmbed(session) {
         return new EmbedBuilder()
             .setColor(color)
             .setTitle("🎵 Bryvex Music")
-            .setDescription("No hay una canción reproduciéndose. Pulsa **Buscar canción** para empezar.")
+            .setDescription("No hay una canción reproduciéndose. Pulsa el icono de búsqueda para empezar.")
+            .setImage("attachment://bryvex-music-guide.png")
             .addFields(
                 { name: "Cola", value: `${session.queue.length} canción(es)`, inline: true },
                 { name: "Repetición", value: session.loopMode === "off" ? "Desactivada" : session.loopMode === "track" ? "Canción" : "Cola", inline: true },
@@ -570,7 +633,8 @@ function buildPanelEmbed(session) {
             { name: "Modo", value: session.loopMode === "off" ? "Normal" : session.loopMode === "track" ? "Repetir canción" : "Repetir cola", inline: true },
             { name: "Filtro", value: session.filter, inline: true }
         )
-        .setFooter({ text: `Volumen ${session.volume}% · Autoplay ${session.autoplay ? "activo" : "inactivo"}` });
+        .setFooter({ text: `Volumen ${session.volume}% · Autoplay ${session.autoplay ? "activo" : "inactivo"}` })
+        .setImage("attachment://bryvex-music-guide.png");
     if (track.thumbnail) embed.setThumbnail(track.thumbnail);
     return embed;
 }
@@ -578,7 +642,6 @@ function buildPanelEmbed(session) {
 function button(action, guildId, label, emoji, style = ButtonStyle.Secondary, disabled = false) {
     return new ButtonBuilder()
         .setCustomId(`music:${action}:${guildId}`)
-        .setLabel(label)
         .setEmoji(emoji)
         .setStyle(style)
         .setDisabled(disabled);
@@ -614,7 +677,8 @@ async function updatePanel(session) {
     if (!session.textChannel?.isTextBased?.() || !session.textChannel.send) return;
     const payload = {
         embeds: [buildPanelEmbed(session)],
-        components: buildPanelComponents(session)
+        components: buildPanelComponents(session),
+        files: [musicGuideAttachment()]
     };
     try {
         if (session.panelMessage) {
@@ -964,7 +1028,11 @@ async function ensureConfiguredPanels(client) {
             guildId: guild.id, currentTrack: null, queue: [], loopMode: "off", autoplay: false,
             player: { state: { status: AudioPlayerStatus.Idle } }
         };
-        const payload = { embeds: [buildPanelEmbed(idleSession)], components: buildPanelComponents(idleSession) };
+        const payload = {
+            embeds: [buildPanelEmbed(idleSession)],
+            components: buildPanelComponents(idleSession),
+            files: [musicGuideAttachment()]
+        };
         try {
             const message = existing ? await existing.edit(payload).then(() => existing) : await channel.send(payload);
             if (message.id !== settings.panelMessageId) {
