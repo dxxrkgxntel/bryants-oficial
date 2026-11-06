@@ -2,7 +2,7 @@
   "locale": "es",
   "version": 1,
   "status": "in_progress",
-  "translatedCount": 100,
+  "translatedCount": 200,
   "total": 397,
   "source": "data/backups/notoq-achievements.json",
   "note": "Traducciones por bloques. No activar la migración hasta completar los 397 registros y auditar descripciones/categorías.",
@@ -406,6 +406,406 @@
     {
       "id": "xp_1m",
       "name": "Millonario de XP"
+    },
+    {
+      "id": "first_coins",
+      "name": "Primera alcancía"
+    },
+    {
+      "id": "coin_stacker",
+      "name": "Acumulador de monedas"
+    },
+    {
+      "id": "wealthy",
+      "name": "Acomodado"
+    },
+    {
+      "id": "rich",
+      "name": "Rico"
+    },
+    {
+      "id": "millionaire",
+      "name": "Millonario"
+    },
+    {
+      "id": "tycoon",
+      "name": "Magnate"
+    },
+    {
+      "id": "earner_10k",
+      "name": "Trabajador incansable"
+    },
+    {
+      "id": "earner_100k",
+      "name": "Generador de ingresos"
+    },
+    {
+      "id": "earner_1m",
+      "name": "Creador de riqueza"
+    },
+    {
+      "id": "earner_10m",
+      "name": "Gran magnate"
+    },
+    {
+      "id": "spender_10k",
+      "name": "Comprador"
+    },
+    {
+      "id": "spender_100k",
+      "name": "Gran derrochador"
+    },
+    {
+      "id": "spender_1m",
+      "name": "Ballena"
+    },
+    {
+      "id": "banker",
+      "name": "Banquero"
+    },
+    {
+      "id": "vault_keeper",
+      "name": "Guardián de la bóveda"
+    },
+    {
+      "id": "gem_collector",
+      "name": "Coleccionista de gemas"
+    },
+    {
+      "id": "gem_baron",
+      "name": "Barón de las gemas"
+    },
+    {
+      "id": "daily_devotee",
+      "name": "Devoto diario"
+    },
+    {
+      "id": "daily_loyalist",
+      "name": "Fiel a diario"
+    },
+    {
+      "id": "daily_forever",
+      "name": "Nunca falta un día"
+    },
+    {
+      "id": "workaholic",
+      "name": "Adicto al trabajo"
+    },
+    {
+      "id": "prestige_1",
+      "name": "Prestigio"
+    },
+    {
+      "id": "prestige_5",
+      "name": "Maestro del prestigio"
+    },
+    {
+      "id": "collector_items",
+      "name": "Coleccionista"
+    },
+    {
+      "id": "entrepreneur",
+      "name": "Emprendedor"
+    },
+    {
+      "id": "business_empire",
+      "name": "Imperio empresarial"
+    },
+    {
+      "id": "counter_novice",
+      "name": "Contador novato"
+    },
+    {
+      "id": "counter_pro",
+      "name": "Calculador experto"
+    },
+    {
+      "id": "counter_expert",
+      "name": "Calculadora humana"
+    },
+    {
+      "id": "counter_master",
+      "name": "Máquina de contar"
+    },
+    {
+      "id": "counter_legend",
+      "name": "Leyenda de los números"
+    },
+    {
+      "id": "count_streak_25",
+      "name": "Contador constante"
+    },
+    {
+      "id": "count_streak_100",
+      "name": "Contador concentrado"
+    },
+    {
+      "id": "count_streak_500",
+      "name": "Contador impecable"
+    },
+    {
+      "id": "count_high_100",
+      "name": "Club de los cien"
+    },
+    {
+      "id": "count_high_1000",
+      "name": "Alcance milenario"
+    },
+    {
+      "id": "count_high_10000",
+      "name": "Cima de los diez mil"
+    },
+    {
+      "id": "gamer_novice",
+      "name": "Jugador casual"
+    },
+    {
+      "id": "gamer_regular",
+      "name": "Jugador habitual"
+    },
+    {
+      "id": "gamer_addict",
+      "name": "Adicto a los juegos"
+    },
+    {
+      "id": "gamer_legend",
+      "name": "Leyenda de los videojuegos"
+    },
+    {
+      "id": "winner_10",
+      "name": "Ganador"
+    },
+    {
+      "id": "winner_100",
+      "name": "Campeón"
+    },
+    {
+      "id": "winner_1000",
+      "name": "Invicto"
+    },
+    {
+      "id": "game_streak_10",
+      "name": "Racha ganadora"
+    },
+    {
+      "id": "game_streak_25",
+      "name": "En llamas"
+    },
+    {
+      "id": "perfectionist",
+      "name": "Perfeccionista"
+    },
+    {
+      "id": "flawless_master",
+      "name": "Maestro impecable"
+    },
+    {
+      "id": "recruiter",
+      "name": "Reclutador"
+    },
+    {
+      "id": "connector",
+      "name": "Conector"
+    },
+    {
+      "id": "community_builder",
+      "name": "Constructor de comunidad"
+    },
+    {
+      "id": "growth_hacker",
+      "name": "Impulsor del crecimiento"
+    },
+    {
+      "id": "server_magnet",
+      "name": "Imán del servidor"
+    },
+    {
+      "id": "supporter_boost",
+      "name": "Colaborador"
+    },
+    {
+      "id": "boost_3mo",
+      "name": "Impulsor fiel"
+    },
+    {
+      "id": "boost_12mo",
+      "name": "Leyenda de los impulsos"
+    },
+    {
+      "id": "first_review",
+      "name": "Crítico principiante"
+    },
+    {
+      "id": "critic",
+      "name": "Crítico"
+    },
+    {
+      "id": "birthday_party",
+      "name": "Listo para la fiesta"
+    },
+    {
+      "id": "role_collector",
+      "name": "Coleccionista de roles"
+    },
+    {
+      "id": "role_hoarder",
+      "name": "Acumulador de roles"
+    },
+    {
+      "id": "voter",
+      "name": "Votante"
+    },
+    {
+      "id": "loyal_voter",
+      "name": "Votante fiel"
+    },
+    {
+      "id": "democracy",
+      "name": "Voz de la democracia"
+    },
+    {
+      "id": "first_star",
+      "name": "Deslumbrado por las estrellas"
+    },
+    {
+      "id": "shining",
+      "name": "Brillante"
+    },
+    {
+      "id": "superstar",
+      "name": "Superestrella"
+    },
+    {
+      "id": "supernova",
+      "name": "Supernova"
+    },
+    {
+      "id": "star_giver",
+      "name": "Dador de estrellas"
+    },
+    {
+      "id": "generous_star",
+      "name": "Alma generosa"
+    },
+    {
+      "id": "hall_of_famer",
+      "name": "Miembro del salón de la fama"
+    },
+    {
+      "id": "legend_hof",
+      "name": "Inmortalizado"
+    },
+    {
+      "id": "giveaway_hopeful",
+      "name": "Esperanza del sorteo"
+    },
+    {
+      "id": "giveaway_regular",
+      "name": "Participante afortunado"
+    },
+    {
+      "id": "giveaway_fanatic",
+      "name": "Fanático de los sorteos"
+    },
+    {
+      "id": "first_win_ga",
+      "name": "Ganador afortunado"
+    },
+    {
+      "id": "lucky_streak_ga",
+      "name": "Favorito de la fortuna"
+    },
+    {
+      "id": "jackpot_legend",
+      "name": "Leyenda del premio mayor"
+    },
+    {
+      "id": "first_ticket",
+      "name": "¿Necesitas ayuda?"
+    },
+    {
+      "id": "ticket_regular",
+      "name": "Visitante frecuente"
+    },
+    {
+      "id": "support_hero",
+      "name": "Héroe del soporte"
+    },
+    {
+      "id": "support_champion",
+      "name": "Campeón del soporte"
+    },
+    {
+      "id": "support_legend",
+      "name": "Leyenda del soporte"
+    },
+    {
+      "id": "collector_5",
+      "name": "Coleccionista de logros"
+    },
+    {
+      "id": "collector_10",
+      "name": "Triunfador"
+    },
+    {
+      "id": "collector_25",
+      "name": "Cazador de trofeos"
+    },
+    {
+      "id": "collector_50",
+      "name": "Completista"
+    },
+    {
+      "id": "collector_100",
+      "name": "Cazador de logros"
+    },
+    {
+      "id": "collector_all",
+      "name": "La leyenda"
+    },
+    {
+      "id": "points_100",
+      "name": "Primeros puntos"
+    },
+    {
+      "id": "points_500",
+      "name": "Coleccionista de puntos"
+    },
+    {
+      "id": "points_2500",
+      "name": "Maestro de puntos"
+    },
+    {
+      "id": "points_10000",
+      "name": "Dios de los puntos"
+    },
+    {
+      "id": "first_words",
+      "name": "Primeras palabras"
+    },
+    {
+      "id": "chat_deity",
+      "name": "Deidad del chat"
+    },
+    {
+      "id": "reaction_regular",
+      "name": "Habitual de las reacciones"
+    },
+    {
+      "id": "reaction_god",
+      "name": "Dios de las reacciones"
+    },
+    {
+      "id": "two_hour_club",
+      "name": "Club de las dos horas"
+    },
+    {
+      "id": "voice_sage",
+      "name": "Sabio de la voz"
+    },
+    {
+      "id": "first_savings",
+      "name": "Primeros ahorros"
     }
   ]
 }
