@@ -5,6 +5,7 @@ const EconomyEarningTransaction = require("../Models/EconomyEarningTransaction")
 const Level = require("../Models/Level");
 const TrophySettings = require("../Models/TrophySettings");
 const TrophyScore = require("../Models/TrophyScore");
+const { migrateAchievementCatalog } = require("./achievementCatalogMigration");
 const { EmbedBuilder } = require("discord.js");
 const { sendTrophyCard, sendTrophyComponents } = require("./trophyCard");
 const { achievementComparatorReached, achievementProgressUpdate } = require("./achievementRules");
@@ -41,7 +42,7 @@ const DEFAULT_ACHIEVEMENTS = [
     { achievementId: "coins_10000", name: "Pequeña fortuna", description: "Gana 10.000 monedas mediante recompensas compatibles.", emoji: "💰", category: "economy", metric: "coinsEarned", goal: 10000, rewardCoins: 1000, points: 20 }
 ];
 
-const NOTOQ_BACKUP = require("../data/backups/notoq-achievements.json");
+const NOTOQ_BACKUP = require("../data/locales/notoq-achievements.es.json");
 const NOTOQ_ACHIEVEMENTS = NOTOQ_BACKUP.achievements.map(item => ({
     achievementId: item.id,
     name: item.name,
@@ -94,6 +95,9 @@ async function ensureDefaultAchievements(guildId) {
                 { $set: { notoqCatalogSeeded: true }, $setOnInsert: { guildId } },
                 { upsert: true }
             );
+        }
+        if (NOTOQ_BACKUP.locale === "es") {
+            await migrateAchievementCatalog(guildId, NOTOQ_BACKUP);
         }
     })().catch(error => {
         seededGuilds.delete(guildId);

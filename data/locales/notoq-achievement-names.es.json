@@ -1,0 +1,1599 @@
+{
+  "locale": "es",
+  "version": 1,
+  "status": "complete",
+  "translatedCount": 397,
+  "total": 397,
+  "source": "data/backups/notoq-achievements.json",
+  "note": "Los 397 nombres están traducidos. Las descripciones se revisaron y se ajustaron los términos de producto que permanecían en inglés; las categorías están cubiertas por achievement-categories.es.json.",
+  "achievements": [
+    {
+      "id": "casual_typer",
+      "name": "Escritor casual"
+    },
+    {
+      "id": "chatterbox",
+      "name": "Charlatán"
+    },
+    {
+      "id": "pro_typer",
+      "name": "Escritor experto"
+    },
+    {
+      "id": "wordsmith",
+      "name": "Maestro de las palabras"
+    },
+    {
+      "id": "king_of_spam",
+      "name": "Rey del spam"
+    },
+    {
+      "id": "keyboard_warrior",
+      "name": "Guerrero del teclado"
+    },
+    {
+      "id": "message_machine",
+      "name": "Máquina de mensajes"
+    },
+    {
+      "id": "og_spammer",
+      "name": "Spammer original"
+    },
+    {
+      "id": "legendary_scribe",
+      "name": "Escriba legendario"
+    },
+    {
+      "id": "word_novice",
+      "name": "Aprendiz de escritura"
+    },
+    {
+      "id": "word_author",
+      "name": "Autor"
+    },
+    {
+      "id": "word_novelist",
+      "name": "Novelista"
+    },
+    {
+      "id": "shutterbug",
+      "name": "Fotógrafo"
+    },
+    {
+      "id": "gallery_owner",
+      "name": "Dueño de galería"
+    },
+    {
+      "id": "picasso",
+      "name": "Picasso"
+    },
+    {
+      "id": "gif_enjoyer",
+      "name": "Amante de los GIF"
+    },
+    {
+      "id": "gif_master",
+      "name": "Maestro de los GIF"
+    },
+    {
+      "id": "gif_lord",
+      "name": "Señor de los GIF"
+    },
+    {
+      "id": "link_dropper",
+      "name": "Compartidor de enlaces"
+    },
+    {
+      "id": "web_weaver",
+      "name": "Tejedor de la web"
+    },
+    {
+      "id": "sticker_fan",
+      "name": "Fan de las pegatinas"
+    },
+    {
+      "id": "sticker_addict",
+      "name": "Adicto a las pegatinas"
+    },
+    {
+      "id": "file_sharer",
+      "name": "Compartidor de archivos"
+    },
+    {
+      "id": "data_hoarder",
+      "name": "Acumulador de datos"
+    },
+    {
+      "id": "replier",
+      "name": "Respondedor"
+    },
+    {
+      "id": "conversationalist",
+      "name": "Conversador"
+    },
+    {
+      "id": "thread_master_r",
+      "name": "Rey de las respuestas"
+    },
+    {
+      "id": "name_dropper",
+      "name": "Mencionador"
+    },
+    {
+      "id": "social_pinger",
+      "name": "Notificador social"
+    },
+    {
+      "id": "thread_starter",
+      "name": "Iniciador de hilos"
+    },
+    {
+      "id": "thread_weaver",
+      "name": "Creador de hilos"
+    },
+    {
+      "id": "command_curious",
+      "name": "Curioso de los comandos"
+    },
+    {
+      "id": "power_user",
+      "name": "Usuario avanzado"
+    },
+    {
+      "id": "bot_whisperer",
+      "name": "Domador de bots"
+    },
+    {
+      "id": "character_1k",
+      "name": "Primeros pasos"
+    },
+    {
+      "id": "character_100k",
+      "name": "Escritor incansable"
+    },
+    {
+      "id": "character_1m",
+      "name": "Millón de teclas"
+    },
+    {
+      "id": "give_or_take",
+      "name": "Dar y recibir"
+    },
+    {
+      "id": "true_star",
+      "name": "Estrella auténtica"
+    },
+    {
+      "id": "mmm_lovin_it",
+      "name": "¡Me encanta!"
+    },
+    {
+      "id": "girl_on_fire",
+      "name": "En llamas"
+    },
+    {
+      "id": "reaction_overlord",
+      "name": "Señor de las reacciones"
+    },
+    {
+      "id": "emoji_deity",
+      "name": "Deidad de los emojis"
+    },
+    {
+      "id": "first_fan",
+      "name": "Primer admirador"
+    },
+    {
+      "id": "crowd_pleaser",
+      "name": "Favorito del público"
+    },
+    {
+      "id": "beloved",
+      "name": "Muy querido"
+    },
+    {
+      "id": "icon_status",
+      "name": "Todo un icono"
+    },
+    {
+      "id": "legend_reacts",
+      "name": "Leyenda de las reacciones"
+    },
+    {
+      "id": "voice_newbie",
+      "name": "¿Eres nuevo?"
+    },
+    {
+      "id": "warming_up",
+      "name": "Calentando motores"
+    },
+    {
+      "id": "chatter_voice",
+      "name": "Hablador"
+    },
+    {
+      "id": "voice_regular",
+      "name": "Habitual de voz"
+    },
+    {
+      "id": "voice_enthusiast",
+      "name": "Entusiasta de la voz"
+    },
+    {
+      "id": "voice_addict",
+      "name": "Adicto a la voz"
+    },
+    {
+      "id": "voice_veteran",
+      "name": "Veterano de voz"
+    },
+    {
+      "id": "voice_legend",
+      "name": "Leyenda de voz"
+    },
+    {
+      "id": "voice_immortal",
+      "name": "Inmortal de voz"
+    },
+    {
+      "id": "hopper",
+      "name": "Saltador de canales"
+    },
+    {
+      "id": "frequent_flyer",
+      "name": "Viajero frecuente"
+    },
+    {
+      "id": "voice_nomad",
+      "name": "Nómada de voz"
+    },
+    {
+      "id": "go_live",
+      "name": "En directo"
+    },
+    {
+      "id": "streamer",
+      "name": "Streamer"
+    },
+    {
+      "id": "broadcast_legend",
+      "name": "Leyenda de las transmisiones"
+    },
+    {
+      "id": "regular",
+      "name": "Habitual"
+    },
+    {
+      "id": "committed",
+      "name": "Comprometido"
+    },
+    {
+      "id": "dedicated",
+      "name": "Dedicado"
+    },
+    {
+      "id": "ever_present",
+      "name": "Siempre presente"
+    },
+    {
+      "id": "streak_3",
+      "name": "En racha"
+    },
+    {
+      "id": "streak_7",
+      "name": "Una semana imparable"
+    },
+    {
+      "id": "streak_14",
+      "name": "Dos semanas de constancia"
+    },
+    {
+      "id": "streak_30",
+      "name": "Imparable"
+    },
+    {
+      "id": "streak_100",
+      "name": "Racha centenaria"
+    },
+    {
+      "id": "streak_365",
+      "name": "Año perfecto"
+    },
+    {
+      "id": "night_owl",
+      "name": "Búho nocturno"
+    },
+    {
+      "id": "moon_dweller",
+      "name": "Habitante de la luna"
+    },
+    {
+      "id": "early_bird",
+      "name": "Madrugador"
+    },
+    {
+      "id": "sunrise_soul",
+      "name": "Alma del amanecer"
+    },
+    {
+      "id": "weekend_warrior",
+      "name": "Guerrero de fin de semana"
+    },
+    {
+      "id": "weekend_legend",
+      "name": "Leyenda de fin de semana"
+    },
+    {
+      "id": "fresh_face",
+      "name": "Cara nueva"
+    },
+    {
+      "id": "familiar_face",
+      "name": "Rostro conocido"
+    },
+    {
+      "id": "seasoned_member",
+      "name": "Miembro experimentado"
+    },
+    {
+      "id": "veteran_member",
+      "name": "Veterano"
+    },
+    {
+      "id": "one_year_club",
+      "name": "Club del primer año"
+    },
+    {
+      "id": "two_year_club",
+      "name": "Club de los dos años"
+    },
+    {
+      "id": "ancient_one",
+      "name": "El ancestral"
+    },
+    {
+      "id": "veteran_discord",
+      "name": "Veterano de Discord"
+    },
+    {
+      "id": "discord_ancient",
+      "name": "Antiguo de Discord"
+    },
+    {
+      "id": "level_5",
+      "name": "Novato"
+    },
+    {
+      "id": "level_10",
+      "name": "Aprendiz"
+    },
+    {
+      "id": "level_20",
+      "name": "Habilidoso"
+    },
+    {
+      "id": "level_30",
+      "name": "Experto"
+    },
+    {
+      "id": "level_40",
+      "name": "Maestro"
+    },
+    {
+      "id": "level_50",
+      "name": "Gran maestro"
+    },
+    {
+      "id": "level_75",
+      "name": "Élite"
+    },
+    {
+      "id": "level_100",
+      "name": "Centurión"
+    },
+    {
+      "id": "level_150",
+      "name": "Ascendido"
+    },
+    {
+      "id": "xp_10k",
+      "name": "Coleccionista de XP"
+    },
+    {
+      "id": "xp_100k",
+      "name": "Acumulador de XP"
+    },
+    {
+      "id": "xp_1m",
+      "name": "Millonario de XP"
+    },
+    {
+      "id": "first_coins",
+      "name": "Primera alcancía"
+    },
+    {
+      "id": "coin_stacker",
+      "name": "Acumulador de monedas"
+    },
+    {
+      "id": "wealthy",
+      "name": "Acomodado"
+    },
+    {
+      "id": "rich",
+      "name": "Rico"
+    },
+    {
+      "id": "millionaire",
+      "name": "Millonario"
+    },
+    {
+      "id": "tycoon",
+      "name": "Magnate"
+    },
+    {
+      "id": "earner_10k",
+      "name": "Trabajador incansable"
+    },
+    {
+      "id": "earner_100k",
+      "name": "Generador de ingresos"
+    },
+    {
+      "id": "earner_1m",
+      "name": "Creador de riqueza"
+    },
+    {
+      "id": "earner_10m",
+      "name": "Gran magnate"
+    },
+    {
+      "id": "spender_10k",
+      "name": "Comprador"
+    },
+    {
+      "id": "spender_100k",
+      "name": "Gran derrochador"
+    },
+    {
+      "id": "spender_1m",
+      "name": "Ballena"
+    },
+    {
+      "id": "banker",
+      "name": "Banquero"
+    },
+    {
+      "id": "vault_keeper",
+      "name": "Guardián de la bóveda"
+    },
+    {
+      "id": "gem_collector",
+      "name": "Coleccionista de gemas"
+    },
+    {
+      "id": "gem_baron",
+      "name": "Barón de las gemas"
+    },
+    {
+      "id": "daily_devotee",
+      "name": "Devoto diario"
+    },
+    {
+      "id": "daily_loyalist",
+      "name": "Fiel a diario"
+    },
+    {
+      "id": "daily_forever",
+      "name": "Nunca falta un día"
+    },
+    {
+      "id": "workaholic",
+      "name": "Adicto al trabajo"
+    },
+    {
+      "id": "prestige_1",
+      "name": "Prestigio"
+    },
+    {
+      "id": "prestige_5",
+      "name": "Maestro del prestigio"
+    },
+    {
+      "id": "collector_items",
+      "name": "Coleccionista"
+    },
+    {
+      "id": "entrepreneur",
+      "name": "Emprendedor"
+    },
+    {
+      "id": "business_empire",
+      "name": "Imperio empresarial"
+    },
+    {
+      "id": "counter_novice",
+      "name": "Contador novato"
+    },
+    {
+      "id": "counter_pro",
+      "name": "Calculador experto"
+    },
+    {
+      "id": "counter_expert",
+      "name": "Calculadora humana"
+    },
+    {
+      "id": "counter_master",
+      "name": "Máquina de contar"
+    },
+    {
+      "id": "counter_legend",
+      "name": "Leyenda de los números"
+    },
+    {
+      "id": "count_streak_25",
+      "name": "Contador constante"
+    },
+    {
+      "id": "count_streak_100",
+      "name": "Contador concentrado"
+    },
+    {
+      "id": "count_streak_500",
+      "name": "Contador impecable"
+    },
+    {
+      "id": "count_high_100",
+      "name": "Club de los cien"
+    },
+    {
+      "id": "count_high_1000",
+      "name": "Alcance milenario"
+    },
+    {
+      "id": "count_high_10000",
+      "name": "Cima de los diez mil"
+    },
+    {
+      "id": "gamer_novice",
+      "name": "Jugador casual"
+    },
+    {
+      "id": "gamer_regular",
+      "name": "Jugador habitual"
+    },
+    {
+      "id": "gamer_addict",
+      "name": "Adicto a los juegos"
+    },
+    {
+      "id": "gamer_legend",
+      "name": "Leyenda de los videojuegos"
+    },
+    {
+      "id": "winner_10",
+      "name": "Ganador"
+    },
+    {
+      "id": "winner_100",
+      "name": "Campeón"
+    },
+    {
+      "id": "winner_1000",
+      "name": "Invicto"
+    },
+    {
+      "id": "game_streak_10",
+      "name": "Racha ganadora"
+    },
+    {
+      "id": "game_streak_25",
+      "name": "En llamas"
+    },
+    {
+      "id": "perfectionist",
+      "name": "Perfeccionista"
+    },
+    {
+      "id": "flawless_master",
+      "name": "Maestro impecable"
+    },
+    {
+      "id": "recruiter",
+      "name": "Reclutador"
+    },
+    {
+      "id": "connector",
+      "name": "Conector"
+    },
+    {
+      "id": "community_builder",
+      "name": "Constructor de comunidad"
+    },
+    {
+      "id": "growth_hacker",
+      "name": "Impulsor del crecimiento"
+    },
+    {
+      "id": "server_magnet",
+      "name": "Imán del servidor"
+    },
+    {
+      "id": "supporter_boost",
+      "name": "Colaborador"
+    },
+    {
+      "id": "boost_3mo",
+      "name": "Impulsor fiel"
+    },
+    {
+      "id": "boost_12mo",
+      "name": "Leyenda de los impulsos"
+    },
+    {
+      "id": "first_review",
+      "name": "Crítico principiante"
+    },
+    {
+      "id": "critic",
+      "name": "Crítico"
+    },
+    {
+      "id": "birthday_party",
+      "name": "Listo para la fiesta"
+    },
+    {
+      "id": "role_collector",
+      "name": "Coleccionista de roles"
+    },
+    {
+      "id": "role_hoarder",
+      "name": "Acumulador de roles"
+    },
+    {
+      "id": "voter",
+      "name": "Votante"
+    },
+    {
+      "id": "loyal_voter",
+      "name": "Votante fiel"
+    },
+    {
+      "id": "democracy",
+      "name": "Voz de la democracia"
+    },
+    {
+      "id": "first_star",
+      "name": "Deslumbrado por las estrellas"
+    },
+    {
+      "id": "shining",
+      "name": "Brillante"
+    },
+    {
+      "id": "superstar",
+      "name": "Superestrella"
+    },
+    {
+      "id": "supernova",
+      "name": "Supernova"
+    },
+    {
+      "id": "star_giver",
+      "name": "Dador de estrellas"
+    },
+    {
+      "id": "generous_star",
+      "name": "Alma generosa"
+    },
+    {
+      "id": "hall_of_famer",
+      "name": "Miembro del salón de la fama"
+    },
+    {
+      "id": "legend_hof",
+      "name": "Inmortalizado"
+    },
+    {
+      "id": "giveaway_hopeful",
+      "name": "Esperanza del sorteo"
+    },
+    {
+      "id": "giveaway_regular",
+      "name": "Participante afortunado"
+    },
+    {
+      "id": "giveaway_fanatic",
+      "name": "Fanático de los sorteos"
+    },
+    {
+      "id": "first_win_ga",
+      "name": "Ganador afortunado"
+    },
+    {
+      "id": "lucky_streak_ga",
+      "name": "Favorito de la fortuna"
+    },
+    {
+      "id": "jackpot_legend",
+      "name": "Leyenda del premio mayor"
+    },
+    {
+      "id": "first_ticket",
+      "name": "¿Necesitas ayuda?"
+    },
+    {
+      "id": "ticket_regular",
+      "name": "Visitante frecuente"
+    },
+    {
+      "id": "support_hero",
+      "name": "Héroe del soporte"
+    },
+    {
+      "id": "support_champion",
+      "name": "Campeón del soporte"
+    },
+    {
+      "id": "support_legend",
+      "name": "Leyenda del soporte"
+    },
+    {
+      "id": "collector_5",
+      "name": "Coleccionista de logros"
+    },
+    {
+      "id": "collector_10",
+      "name": "Triunfador"
+    },
+    {
+      "id": "collector_25",
+      "name": "Cazador de trofeos"
+    },
+    {
+      "id": "collector_50",
+      "name": "Completista"
+    },
+    {
+      "id": "collector_100",
+      "name": "Cazador de logros"
+    },
+    {
+      "id": "collector_all",
+      "name": "La leyenda"
+    },
+    {
+      "id": "points_100",
+      "name": "Primeros puntos"
+    },
+    {
+      "id": "points_500",
+      "name": "Coleccionista de puntos"
+    },
+    {
+      "id": "points_2500",
+      "name": "Maestro de puntos"
+    },
+    {
+      "id": "points_10000",
+      "name": "Dios de los puntos"
+    },
+    {
+      "id": "first_words",
+      "name": "Primeras palabras"
+    },
+    {
+      "id": "chat_deity",
+      "name": "Deidad del chat"
+    },
+    {
+      "id": "reaction_regular",
+      "name": "Habitual de las reacciones"
+    },
+    {
+      "id": "reaction_god",
+      "name": "Dios de las reacciones"
+    },
+    {
+      "id": "two_hour_club",
+      "name": "Club de las dos horas"
+    },
+    {
+      "id": "voice_sage",
+      "name": "Sabio de la voz"
+    },
+    {
+      "id": "first_savings",
+      "name": "Primeros ahorros"
+    },
+    {
+      "id": "billionaire_path",
+      "name": "Camino al billón"
+    },
+    {
+      "id": "first_gem",
+      "name": "Primera gema"
+    },
+    {
+      "id": "window_shopper",
+      "name": "Mirón de escaparates"
+    },
+    {
+      "id": "item_hoarder",
+      "name": "Acumulador de objetos"
+    },
+    {
+      "id": "count_getting",
+      "name": "Tomándole el ritmo"
+    },
+    {
+      "id": "count_perfect",
+      "name": "Contador perfecto"
+    },
+    {
+      "id": "game_dominator",
+      "name": "Dominador"
+    },
+    {
+      "id": "game_precise",
+      "name": "Precisión absoluta"
+    },
+    {
+      "id": "ambassador",
+      "name": "Embajador"
+    },
+    {
+      "id": "top_critic",
+      "name": "Crítico destacado"
+    },
+    {
+      "id": "review_legend",
+      "name": "Leyenda de las reseñas"
+    },
+    {
+      "id": "vote_champion",
+      "name": "Campeón de los votos"
+    },
+    {
+      "id": "just_arrived",
+      "name": "Recién llegado"
+    },
+    {
+      "id": "three_year_club",
+      "name": "Club de los tres años"
+    },
+    {
+      "id": "getting_comfy",
+      "name": "Entrando en confianza"
+    },
+    {
+      "id": "pillar",
+      "name": "Pilar de la comunidad"
+    },
+    {
+      "id": "iron_will",
+      "name": "Voluntad de hierro"
+    },
+    {
+      "id": "level_25",
+      "name": "Veterano"
+    },
+    {
+      "id": "level_60",
+      "name": "Prodigio"
+    },
+    {
+      "id": "xp_500k",
+      "name": "Magnate de XP"
+    },
+    {
+      "id": "star_icon",
+      "name": "Icono estelar"
+    },
+    {
+      "id": "star_machine",
+      "name": "Máquina de estrellas"
+    },
+    {
+      "id": "thread_lord",
+      "name": "Señor de los hilos"
+    },
+    {
+      "id": "mention_master",
+      "name": "Maestro de las menciones"
+    },
+    {
+      "id": "command_overlord",
+      "name": "Señor de los comandos"
+    },
+    {
+      "id": "almost_there",
+      "name": "Casi lo logras"
+    },
+    {
+      "id": "point_sage",
+      "name": "Sabio de los puntos"
+    },
+    {
+      "id": "first_stream",
+      "name": "Primera transmisión"
+    },
+    {
+      "id": "gif_novice",
+      "name": "Novato de los GIF"
+    },
+    {
+      "id": "image_deity",
+      "name": "Deidad de las imágenes"
+    },
+    {
+      "id": "banker_legend",
+      "name": "Fort Knox"
+    },
+    {
+      "id": "workaholic_pro",
+      "name": "Nunca desconecta"
+    },
+    {
+      "id": "earner_100m",
+      "name": "Constructor de imperios"
+    },
+    {
+      "id": "emoji_user",
+      "name": "Usuario de emojis"
+    },
+    {
+      "id": "emoji_fan",
+      "name": "Fan de los emojis"
+    },
+    {
+      "id": "emoji_lover",
+      "name": "Amante de los emojis"
+    },
+    {
+      "id": "emoji_addict",
+      "name": "Adicto a los emojis"
+    },
+    {
+      "id": "emoji_overlord",
+      "name": "Señor de los emojis"
+    },
+    {
+      "id": "emoji_deity_msg",
+      "name": "Deidad de los emojis"
+    },
+    {
+      "id": "curious_mind",
+      "name": "Mente curiosa"
+    },
+    {
+      "id": "inquirer",
+      "name": "Interrogador"
+    },
+    {
+      "id": "the_questioner",
+      "name": "El preguntón"
+    },
+    {
+      "id": "philosopher",
+      "name": "Filósofo"
+    },
+    {
+      "id": "socrates",
+      "name": "Sócrates"
+    },
+    {
+      "id": "spoiler_alert",
+      "name": "Alerta de spoiler"
+    },
+    {
+      "id": "secret_keeper",
+      "name": "Guardián de secretos"
+    },
+    {
+      "id": "spoiler_master",
+      "name": "Maestro de los spoilers"
+    },
+    {
+      "id": "coder",
+      "name": "Programador"
+    },
+    {
+      "id": "developer",
+      "name": "Desarrollador"
+    },
+    {
+      "id": "code_wizard",
+      "name": "Mago del código"
+    },
+    {
+      "id": "hello_bot",
+      "name": "Hola, bot"
+    },
+    {
+      "id": "bot_buddy",
+      "name": "Compañero del bot"
+    },
+    {
+      "id": "bot_bestie",
+      "name": "Mejor amigo del bot"
+    },
+    {
+      "id": "essayist",
+      "name": "Ensayista"
+    },
+    {
+      "id": "wall_of_text",
+      "name": "Muro de texto"
+    },
+    {
+      "id": "lore_master",
+      "name": "Maestro de la historia"
+    },
+    {
+      "id": "pollster",
+      "name": "Encuestador"
+    },
+    {
+      "id": "poll_maker",
+      "name": "Creador de encuestas"
+    },
+    {
+      "id": "poll_authority",
+      "name": "Autoridad en encuestas"
+    },
+    {
+      "id": "embed_enjoyer",
+      "name": "Fan de los embeds"
+    },
+    {
+      "id": "rich_poster",
+      "name": "Publicador enriquecido"
+    },
+    {
+      "id": "cam_on",
+      "name": "Cámara encendida"
+    },
+    {
+      "id": "face_reveal",
+      "name": "Revelación facial"
+    },
+    {
+      "id": "camera_star",
+      "name": "Estrella de la cámara"
+    },
+    {
+      "id": "always_on_cam",
+      "name": "Siempre ante la cámara"
+    },
+    {
+      "id": "cam_legend",
+      "name": "Leyenda de la cámara"
+    },
+    {
+      "id": "worth_10k",
+      "name": "Comodidad económica"
+    },
+    {
+      "id": "worth_100k",
+      "name": "Buena posición"
+    },
+    {
+      "id": "worth_1m",
+      "name": "Millonario en patrimonio"
+    },
+    {
+      "id": "worth_10m",
+      "name": "Alto patrimonio"
+    },
+    {
+      "id": "worth_100m",
+      "name": "Ultrarrico"
+    },
+    {
+      "id": "worth_1b",
+      "name": "El uno por ciento"
+    },
+    {
+      "id": "token_starter",
+      "name": "Primeras fichas"
+    },
+    {
+      "id": "token_collector",
+      "name": "Coleccionista de fichas"
+    },
+    {
+      "id": "token_hoarder",
+      "name": "Acumulador de fichas"
+    },
+    {
+      "id": "token_baron",
+      "name": "Barón de las fichas"
+    },
+    {
+      "id": "prestige_pts_100",
+      "name": "Puntos de prestigio"
+    },
+    {
+      "id": "prestige_pts_1000",
+      "name": "Experto en prestigio"
+    },
+    {
+      "id": "biz_earn_100k",
+      "name": "Pequeña empresa"
+    },
+    {
+      "id": "biz_earn_1m",
+      "name": "Dueño de negocios"
+    },
+    {
+      "id": "biz_earn_10m",
+      "name": "Titán corporativo"
+    },
+    {
+      "id": "biz_earn_100m",
+      "name": "Magnate empresarial"
+    },
+    {
+      "id": "homeowner",
+      "name": "Propietario"
+    },
+    {
+      "id": "landlord",
+      "name": "Casero"
+    },
+    {
+      "id": "real_estate_tycoon",
+      "name": "Magnate inmobiliario"
+    },
+    {
+      "id": "first_rent",
+      "name": "Primer alquiler"
+    },
+    {
+      "id": "rent_collector",
+      "name": "Cobrador de alquileres"
+    },
+    {
+      "id": "property_empire",
+      "name": "Imperio inmobiliario"
+    },
+    {
+      "id": "investor_first",
+      "name": "Inversor"
+    },
+    {
+      "id": "portfolio_builder",
+      "name": "Constructor de cartera"
+    },
+    {
+      "id": "wall_street",
+      "name": "Wall Street"
+    },
+    {
+      "id": "in_the_green",
+      "name": "En positivo"
+    },
+    {
+      "id": "bull_market",
+      "name": "Mercado alcista"
+    },
+    {
+      "id": "first_catch",
+      "name": "Primera captura"
+    },
+    {
+      "id": "angler",
+      "name": "Pescador aficionado"
+    },
+    {
+      "id": "fisherman",
+      "name": "Pescador"
+    },
+    {
+      "id": "master_angler",
+      "name": "Maestro pescador"
+    },
+    {
+      "id": "first_dig",
+      "name": "Primera excavación"
+    },
+    {
+      "id": "miner",
+      "name": "Minero"
+    },
+    {
+      "id": "prospector",
+      "name": "Buscador de minerales"
+    },
+    {
+      "id": "master_miner",
+      "name": "Maestro minero"
+    },
+    {
+      "id": "gatherer",
+      "name": "Recolector"
+    },
+    {
+      "id": "resource_baron",
+      "name": "Barón de los recursos"
+    },
+    {
+      "id": "guesser_100",
+      "name": "Adivino"
+    },
+    {
+      "id": "sharp_eye",
+      "name": "Ojo agudo"
+    },
+    {
+      "id": "guessing_machine",
+      "name": "Máquina de adivinar"
+    },
+    {
+      "id": "globetrotter",
+      "name": "Trotamundos"
+    },
+    {
+      "id": "cartographer",
+      "name": "Cartógrafo"
+    },
+    {
+      "id": "flag_expert",
+      "name": "Experto en banderas"
+    },
+    {
+      "id": "world_atlas",
+      "name": "Atlas mundial"
+    },
+    {
+      "id": "on_the_board",
+      "name": "En el Starboard"
+    },
+    {
+      "id": "board_regular",
+      "name": "Habitual del Starboard"
+    },
+    {
+      "id": "board_legend",
+      "name": "Leyenda del Starboard"
+    },
+    {
+      "id": "going_viral",
+      "name": "Volviéndose viral"
+    },
+    {
+      "id": "viral_sensation",
+      "name": "Sensación viral"
+    },
+    {
+      "id": "giveaway_host",
+      "name": "Anfitrión de sorteos"
+    },
+    {
+      "id": "generous_host",
+      "name": "Anfitrión generoso"
+    },
+    {
+      "id": "event_organizer",
+      "name": "Organizador de eventos"
+    },
+    {
+      "id": "giveaway_legend",
+      "name": "Leyenda de los sorteos"
+    },
+    {
+      "id": "referrer_first",
+      "name": "Primer referente"
+    },
+    {
+      "id": "brand_ambassador",
+      "name": "Embajador de marca"
+    },
+    {
+      "id": "super_referrer",
+      "name": "Súper referente"
+    },
+    {
+      "id": "verified_member",
+      "name": "Miembro verificado"
+    },
+    {
+      "id": "legendary_recruiter",
+      "name": "Reclutador legendario"
+    },
+    {
+      "id": "boost_6mo",
+      "name": "Impulsor semestral"
+    },
+    {
+      "id": "boost_24mo",
+      "name": "Impulsor eterno"
+    },
+    {
+      "id": "review_master",
+      "name": "Maestro de las reseñas"
+    },
+    {
+      "id": "bday_first",
+      "name": "Primer cumpleaños"
+    },
+    {
+      "id": "bday_regular",
+      "name": "Cumpleañero habitual"
+    },
+    {
+      "id": "bday_veteran",
+      "name": "Veterano de cumpleaños"
+    },
+    {
+      "id": "self_made",
+      "name": "Hecho por ti"
+    },
+    {
+      "id": "role_picker",
+      "name": "Selector de roles"
+    },
+    {
+      "id": "role_enthusiast",
+      "name": "Entusiasta de los roles"
+    },
+    {
+      "id": "ticket_claimer",
+      "name": "Reclamador de tickets"
+    },
+    {
+      "id": "support_specialist",
+      "name": "Especialista de soporte"
+    },
+    {
+      "id": "support_overlord",
+      "name": "Señor del soporte"
+    },
+    {
+      "id": "rookie_mod",
+      "name": "Moderador novato"
+    },
+    {
+      "id": "peacekeeper",
+      "name": "Pacificador"
+    },
+    {
+      "id": "warden",
+      "name": "Guardián"
+    },
+    {
+      "id": "guardian_of_order",
+      "name": "Guardián del orden"
+    },
+    {
+      "id": "rule_enforcer",
+      "name": "Aplicador de las reglas"
+    },
+    {
+      "id": "the_hammer",
+      "name": "El martillo"
+    },
+    {
+      "id": "applicant_first",
+      "name": "Solicitante"
+    },
+    {
+      "id": "persistent_apply",
+      "name": "Solicitante persistente"
+    },
+    {
+      "id": "welcome_aboard",
+      "name": "Bienvenido a bordo"
+    },
+    {
+      "id": "team_player",
+      "name": "Jugador de equipo"
+    },
+    {
+      "id": "ai_curious",
+      "name": "Curioso de la IA"
+    },
+    {
+      "id": "ai_chatter",
+      "name": "Conversador de IA"
+    },
+    {
+      "id": "ai_power_user",
+      "name": "Usuario avanzado de IA"
+    },
+    {
+      "id": "ai_companion",
+      "name": "Compañero de IA"
+    },
+    {
+      "id": "ai_singularity",
+      "name": "Singularidad"
+    },
+    {
+      "id": "ai_convo_10",
+      "name": "Conversador"
+    },
+    {
+      "id": "ai_convo_100",
+      "name": "Conversador profundo"
+    },
+    {
+      "id": "top_member",
+      "name": "Miembro destacado"
+    },
+    {
+      "id": "community_champion",
+      "name": "Campeón de la comunidad"
+    },
+    {
+      "id": "server_mvp",
+      "name": "MVP del servidor"
+    },
+    {
+      "id": "the_answer",
+      "name": "La respuesta"
+    },
+    {
+      "id": "leet",
+      "name": "1337"
+    },
+    {
+      "id": "nice",
+      "name": "Qué buena"
+    },
+    {
+      "id": "blaze",
+      "name": "En llamas"
+    },
+    {
+      "id": "insomniac",
+      "name": "Insomne"
+    },
+    {
+      "id": "marathon",
+      "name": "Hablador de maratón"
+    },
+    {
+      "id": "dedication_secret",
+      "name": "Dedicación verdadera"
+    },
+    {
+      "id": "lucky_number",
+      "name": "Siete de la suerte"
+    },
+    {
+      "id": "high_roller",
+      "name": "Gran apostador"
+    },
+    {
+      "id": "completion_secret",
+      "name": "Más que completo"
+    },
+    {
+      "id": "gone_fishing",
+      "name": "De pesca"
+    },
+    {
+      "id": "say_cheese",
+      "name": "¡Di patata!"
+    },
+    {
+      "id": "robot_uprising",
+      "name": "Rebelión de los robots"
+    },
+    {
+      "id": "around_the_world",
+      "name": "La vuelta al mundo"
+    },
+    {
+      "id": "token_of_luck",
+      "name": "Ficha de la suerte"
+    },
+    {
+      "id": "emoji_singularity",
+      "name": "Singularidad de emojis"
+    },
+    {
+      "id": "night_philosopher",
+      "name": "Reflexiones de medianoche"
+    },
+    {
+      "id": "the_collector",
+      "name": "¡Hazte con todos!"
+    },
+    {
+      "id": "season_podium",
+      "name": "En el podio"
+    },
+    {
+      "id": "season_champion",
+      "name": "Campeón de temporada"
+    },
+    {
+      "id": "season_regular",
+      "name": "Habitual del podio"
+    },
+    {
+      "id": "season_defender",
+      "name": "Defensor del título"
+    },
+    {
+      "id": "season_dynasty",
+      "name": "Dinastía"
+    },
+    {
+      "id": "pioneer_1",
+      "name": "Pionero"
+    },
+    {
+      "id": "pioneer_5",
+      "name": "Pionero del camino"
+    },
+    {
+      "id": "pioneer_25",
+      "name": "Explorador"
+    },
+    {
+      "id": "pioneer_100",
+      "name": "Primera conquista"
+    },
+    {
+      "id": "clan_joined",
+      "name": "Juramentado"
+    },
+    {
+      "id": "clan_contributor",
+      "name": "Colaborador"
+    },
+    {
+      "id": "clan_pillar",
+      "name": "Pilar del clan"
+    },
+    {
+      "id": "clan_legend",
+      "name": "Leyenda del clan"
+    },
+    {
+      "id": "clan_recruiter",
+      "name": "Reclutador"
+    },
+    {
+      "id": "clan_headhunter",
+      "name": "Cazatalentos"
+    },
+    {
+      "id": "clan_legion_builder",
+      "name": "Constructor de legiones"
+    },
+    {
+      "id": "clan_war_hero",
+      "name": "Héroe de guerra"
+    },
+    {
+      "id": "clan_warlord",
+      "name": "Señor de la guerra"
+    },
+    {
+      "id": "clan_raid_hunter",
+      "name": "Cazador de incursiones"
+    },
+    {
+      "id": "clan_boss_slayer",
+      "name": "Matador de jefes"
+    },
+    {
+      "id": "clan_stronghold",
+      "name": "Fortaleza"
+    },
+    {
+      "id": "clan_diamond_season",
+      "name": "Temporada de diamante"
+    },
+    {
+      "id": "clan_champion_season",
+      "name": "Campeón de temporada"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "locale": "es",
+  "version": 1,
+  "categories": {
+    "activity": "Actividad",
+    "ai": "Inteligencia artificial",
+    "applications": "Solicitudes",
+    "birthdays": "Cumpleaños",
+    "boosting": "Impulsos del servidor",
+    "clan": "Clan",
+    "counting": "Conteo",
+    "economy": "Economía",
+    "events": "Eventos",
+    "games": "Juegos",
+    "invites": "Invitaciones",
+    "leveling": "Niveles y experiencia",
+    "loyalty": "Fidelidad",
+    "messages": "Mensajes",
+    "meta": "Logros y temporadas",
+    "moderation": "Moderación",
+    "reactions": "Reacciones",
+    "reviews": "Reseñas",
+    "roles": "Roles",
+    "social": "Comunidad",
+    "starboard": "Muro de estrellas",
+    "tickets": "Tickets de soporte",
+    "voice": "Canales de voz"
+  }
+}
