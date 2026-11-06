@@ -293,6 +293,82 @@ function requireGuildAdmin(req, res, next) {
         });
 }
 
+async function resolveGuildDashboardAccess(req, guildId) {
+    if (await isAuthorizedGuild(req, guildId)) return { admin: true, permissions: null };
+    if (!await refreshOAuthToken(req)) return null;
+    const guilds = await discordRequest("https://discord.com/api/v10/users/@me/guilds", req.session.oauth.accessToken);
+    if (!guilds.some(guild => guild.id === guildId)) return null;
+    const [botGuild, memberResponse] = await Promise.all([
+        fetch(`https://discord.com/api/v10/guilds/${guildId}`, {
+            headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
+            signal: AbortSignal.timeout(8000)
+        }),
+        fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${req.session.user.id}`, {
+            headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
+            signal: AbortSignal.timeout(8000)
+        })
+    ]);
+    if (!botGuild.ok || !memberResponse.ok) return null;
+    const member = await memberResponse.json();
+    const permission = await DashboardGuildPermission.findOne({ guildId }).lean();
+    if (!permission) return null;
+    const grants = [...(permission.userRules || []).filter(rule => rule.userId === req.session.user.id)];
+    const roleIds = new Set(member.roles || []);
+    grants.push(...(permission.roleRules || []).filter(rule => roleIds.has(rule.roleId)));
+    const permissions = {};
+    for (const rule of grants) {
+        for (const moduleKey of rule.modules || []) {
+            permissions[moduleKey] ||= new Set();
+            for (const action of rule.actions || []) permissions[moduleKey].add(action);
+        }
+    }
+    return { admin: false, permissions };
+}
+
+function hasGuildModulePermission(access, moduleKey, action = "view") {
+    if (access?.admin) return true;
+    const actions = access?.permissions?.[moduleKey];
+    return Boolean(actions?.has(action) || actions?.has("manage"));
+}
+
+function requireGuildDashboardAccess(req, res, next) {
+    if (!req.session.user || !req.session.oauth) {
+        return res.status(401).json({ error: "Inicia sesión con Discord para continuar." });
+    }
+    resolveGuildDashboardAccess(req, req.params.guildId)
+        .then(access => {
+            if (!access) return res.status(403).json({ error: "No tienes permisos para acceder al panel de este servidor." });
+            req.dashboardAccess = access;
+            return next();
+        })
+        .catch(error => {
+            console.error("[Dashboard Permissions] Error al validar acceso:", error.message);
+            return res.status(502).json({ error: "No pude validar tus permisos en este servidor." });
+        });
+}
+
+function requireGuildModulePermission(action = "view") {
+    return (req, res, next) => {
+        if (!req.session.user || !req.session.oauth) {
+            return res.status(401).json({ error: "Inicia sesión con Discord para continuar." });
+        }
+        resolveGuildDashboardAccess(req, req.params.guildId)
+            .then(access => {
+                const moduleKey = req.params.module;
+                if (!access || !configurations[moduleKey] || ["permissionsCenter", "notificationCenter"].includes(moduleKey) ||
+                    !hasGuildModulePermission(access, moduleKey, action)) {
+                    return res.status(403).json({ error: "No tienes permiso para realizar esta acción en ese módulo." });
+                }
+                req.dashboardAccess = access;
+                return next();
+            })
+            .catch(error => {
+                console.error("[Dashboard Permissions] Error al validar módulo:", error.message);
+                return res.status(502).json({ error: "No pude validar tus permisos para este módulo." });
+            });
+    };
+}
+
 function setNested(target, key, value) {
     const parts = key.split(".");
     let cursor = target;
@@ -1273,7 +1349,7 @@ app.get("/api/guilds", requireLogin, async (req, res) => {
     }
 });
 
-app.get("/api/guilds/:guildId/resources", requireGuildAdmin, async (req, res) => {
+app.get("/api/guilds/:guildId/resources", requireGuildDashboardAccess, async (req, res) => {
     res.set("Cache-Control", "private, no-store");
     try {
         const guildId = req.params.guildId;
@@ -1386,7 +1462,7 @@ app.put("/api/guilds/:guildId/permissions", requireLogin, requireCsrf, requireGu
     }
 });
 
-app.get("/api/guilds/:guildId/notifications", requireGuildAdmin, async (req, res) => {
+app.get("/api/guilds/:guildId/notifications", requireGuildDashboardAccess, async (req, res) => {
     res.set("Cache-Control", "private, no-store");
     try {
         const guildId = req.params.guildId;
@@ -1424,7 +1500,7 @@ app.get("/api/guilds/:guildId/notifications", requireGuildAdmin, async (req, res
     }
 });
 
-app.put("/api/guilds/:guildId/notifications/preferences", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+app.put("/api/guilds/:guildId/notifications/preferences", requireLogin, requireCsrf, requireGuildDashboardAccess, async (req, res) => {
     const categories = req.body?.categories;
     if (typeof req.body?.enabled !== "boolean" || !categories || typeof categories !== "object" || Array.isArray(categories)) {
         return res.status(400).json({ error: "Las preferencias enviadas no son válidas." });
@@ -1471,7 +1547,7 @@ app.post("/api/guilds/:guildId/notifications", requireLogin, requireCsrf, requir
     }
 });
 
-app.post("/api/guilds/:guildId/notifications/:notificationId/read", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+app.post("/api/guilds/:guildId/notifications/:notificationId/read", requireLogin, requireCsrf, requireGuildDashboardAccess, async (req, res) => {
     try {
         const result = await DashboardNotification.updateOne(
             { _id: req.params.notificationId, guildId: req.params.guildId, $or: [{ targetUserIds: { $size: 0 } }, { targetUserIds: req.session.user.id }] },
@@ -1957,18 +2033,25 @@ app.get("/api/guilds/:guildId/achievements/export", requireGuildAdmin, async (re
     }
 });
 
-app.get("/api/guilds/:guildId/config", requireGuildAdmin, async (req, res) => {
+app.get("/api/guilds/:guildId/config", requireGuildDashboardAccess, async (req, res) => {
     res.set("Cache-Control", "private, no-store");
     try {
         await ensureDefaultAchievements(req.params.guildId);
-        const configResults = await Promise.all(Object.entries(configurations).map(async ([key, definition]) => {
+        const visibleConfigurations = Object.entries(configurations).filter(([key]) =>
+            req.dashboardAccess.admin || hasGuildModulePermission(req.dashboardAccess, key, "view") ||
+            ["permissionsCenter", "notificationCenter"].includes(key)
+        );
+        const visibleLists = Object.entries(lists).filter(([key]) =>
+            req.dashboardAccess.admin || hasGuildModulePermission(req.dashboardAccess, key, "view")
+        );
+        const configResults = await Promise.all(visibleConfigurations.map(async ([key, definition]) => {
             if (definition.custom) return [key, { configured: true }];
             if (key === "memberEconomy") return [key, { configured: true }];
             const document = await definition.model.findOne({ [definition.guildField]: req.params.guildId });
             const data = document?.toObject();
             return [key, data ? { ...data, _id: String(data._id), configured: true } : { configured: false }];
         }));
-        const listResults = await Promise.all(Object.entries(lists).map(async ([key, definition]) => {
+        const listResults = await Promise.all(visibleLists.map(async ([key, definition]) => {
             const data = await definition.model.find({ guildId: req.params.guildId }).lean();
             return [key, data.map(item => ({ ...item, _id: String(item._id) }))];
         }));
@@ -1976,8 +2059,8 @@ app.get("/api/guilds/:guildId/config", requireGuildAdmin, async (req, res) => {
             configurations: Object.fromEntries(configResults),
             lists: Object.fromEntries(listResults),
             modules: {
-                configurations: Object.fromEntries(Object.entries(configurations).map(([key, value]) => [key, { title: value.title, category: value.category, description: value.description, fields: value.fields }])),
-                lists: Object.fromEntries(Object.entries(lists).map(([key, value]) => [key, { title: value.title, category: value.category, description: value.description, fields: value.fields }]))
+                configurations: Object.fromEntries(visibleConfigurations.map(([key, value]) => [key, { title: value.title, category: value.category, description: value.description, fields: value.fields }])),
+                lists: Object.fromEntries(visibleLists.map(([key, value]) => [key, { title: value.title, category: value.category, description: value.description, fields: value.fields }]))
             }
         });
     } catch (error) {
@@ -2306,7 +2389,7 @@ app.put("/api/guilds/:guildId/members/:userId/economy", requireLogin, requireCsr
     }
 });
 
-app.put("/api/guilds/:guildId/config/:module", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+app.put("/api/guilds/:guildId/config/:module", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
     const definition = configurations[req.params.module];
     if (!definition) return res.status(404).json({ error: "No encontré ese sistema." });
     try {
