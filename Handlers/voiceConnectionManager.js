@@ -124,10 +124,14 @@ async function performVoiceConnect(guild, channelId, options = {}) {
 async function performVoiceConnectAttempt(guild, channelId, options = {}) {
     let connection = getVoiceConnection(guild.id);
     if (connection && connection.state.status !== VoiceConnectionStatus.Destroyed) {
-        watchConnection(connection, guild, channelId);
+        watchConnection(connection, guild, channelId, options);
 
         const sameChannel = connection.joinConfig.channelId === channelId;
-        if (sameChannel && connection.state.status === VoiceConnectionStatus.Ready) {
+        const desiredSelfMute = options.selfMute ?? true;
+        const desiredSelfDeaf = options.selfDeaf ?? false;
+        const sameVoiceState = connection.joinConfig.selfMute === desiredSelfMute
+            && connection.joinConfig.selfDeaf === desiredSelfDeaf;
+        if (sameChannel && connection.state.status === VoiceConnectionStatus.Ready && sameVoiceState) {
             clearReconnectState(guild.id);
             return connection;
         }
@@ -147,8 +151,8 @@ async function performVoiceConnectAttempt(guild, channelId, options = {}) {
         } else {
             const rejoined = connection.rejoin({
                 channelId,
-                selfMute: options.selfMute ?? true,
-                selfDeaf: options.selfDeaf ?? false
+                selfMute: desiredSelfMute,
+                selfDeaf: desiredSelfDeaf
             });
 
             if (rejoined) {
