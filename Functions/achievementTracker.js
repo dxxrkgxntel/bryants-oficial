@@ -8,7 +8,7 @@ const TrophyScore = require("../Models/TrophyScore");
 const { EmbedBuilder } = require("discord.js");
 const { sendTrophyCard, sendTrophyComponents } = require("./trophyCard");
 const { achievementComparatorReached, achievementProgressUpdate } = require("./achievementRules");
-const { buildTotalAchievementPointsPipeline, normalizeTotalAchievementPoints } = require("./achievementPoints");
+const { buildTotalAchievementPointsPipeline, normalizeTotalAchievementPoints, parseAchievementLevelValues, resolveAchievementLevelPoints } = require("./achievementPoints");
 const { recordFirstAchievementUnlock } = require("./firstUnlockAchievementMetric");
 const { createAchievementCompletionRecorder } = require("./achievementCompletionMetrics");
 
@@ -161,7 +161,7 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
         const parsedGoals = String(achievement.levelGoals || "").split(",").map(x => Number(x.trim())).filter(x => Number.isSafeInteger(x) && x > 0);
         const goals = parsedGoals.length ? [...new Set(parsedGoals)].sort((x, y) => x - y) : [Number(achievement.goal)];
         if (!goals.length || !goals.every(Number.isFinite)) continue;
-        const pointsList = String(achievement.levelPoints || "").split(",").map(x => Number(x.trim()));
+        const pointsList = parseAchievementLevelValues(achievement.levelPoints);
         const rarityList = String(achievement.levelRarities || "").split(",").map(x => x.trim().toLowerCase());
         const progressFilter = {
             guildId: guild.id,
@@ -202,7 +202,7 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
                 ? achievementComparatorReached(progress, goals[i], "gte")
                 : goals.length === 1 && achievementComparatorReached(progress, goals[i], comparator);
             if (!reached) continue;
-            const points = Math.max(0, Math.round((Number.isFinite(pointsList[i]) && pointsList[i] >= 0 ? pointsList[i] : Number(achievement.points ?? 10)) * multiplier));
+            const points = resolveAchievementLevelPoints({ levelPoints: achievement.levelPoints, levelIndex: i, achievementPoints: achievement.points, multiplier });
             const update = await UserAchievement.updateOne(
                 { _id: current._id, unlockedLevels: { $ne: i + 1 } },
                 { $addToSet: { unlockedLevels: i + 1 }, $inc: { pointsEarned: points } }
