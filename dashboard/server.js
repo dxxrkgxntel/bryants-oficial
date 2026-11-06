@@ -2893,7 +2893,7 @@ app.delete("/api/guilds/:guildId/giveaways/:giveawayId", requireLogin, requireCs
     }
 });
 
-app.post("/api/guilds/:guildId/lists/:list", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+app.post("/api/guilds/:guildId/lists/:list", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
     const definition = lists[req.params.list];
     if (!definition) return res.status(404).json({ error: "No encontré esa lista." });
     try {
@@ -2913,7 +2913,7 @@ app.post("/api/guilds/:guildId/lists/:list", requireLogin, requireCsrf, requireG
     }
 });
 
-app.put("/api/guilds/:guildId/lists/:list/:recordId", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+app.put("/api/guilds/:guildId/lists/:list/:recordId", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
     const definition = lists[req.params.list];
     if (!definition) return res.status(404).json({ error: "No encontré esa lista." });
     try {
@@ -2937,7 +2937,7 @@ app.put("/api/guilds/:guildId/lists/:list/:recordId", requireLogin, requireCsrf,
     }
 });
 
-app.delete("/api/guilds/:guildId/lists/:list/:recordId", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+app.delete("/api/guilds/:guildId/lists/:list/:recordId", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
     const definition = lists[req.params.list];
     if (!definition) return res.status(404).json({ error: "No encontré esa lista." });
     const removed = await definition.model.findOneAndDelete({ _id: req.params.recordId, guildId: req.params.guildId });
