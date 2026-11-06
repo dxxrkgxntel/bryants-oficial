@@ -44,10 +44,11 @@ module.exports = {
                 if (member.roles.cache.has(role.id)) {
                     return interaction.reply({ content: "Tu cuenta ya tiene el rol de verificación.", flags: MessageFlags.Ephemeral });
                 }
-                const removeRoles = (panel.removeRoleIds || []).map(id => interaction.guild.roles.cache.get(id)).filter(item => canAssignRole(interaction.guild, item));
+                const removeRoles = (panel.removeRoleIds || []).filter(id => id !== role.id).map(id => interaction.guild.roles.cache.get(id)).filter(item => canAssignRole(interaction.guild, item));
                 await member.roles.add(role, "Verificación completada desde el panel configurado");
                 if (removeRoles.length) await member.roles.remove(removeRoles, "Retirar roles previos tras verificar");
-                await recordVerifiedMember(interaction.guild, interaction.user, panel.panelId);
+                await recordVerifiedMember(interaction.guild, interaction.user, panel.panelId)
+                    .catch(error => console.warn("[Community Panels] No se pudo sincronizar verified:", error.message));
                 return interaction.reply({ content: "✅ Verificación completada correctamente.", flags: MessageFlags.Ephemeral });
             }
 
@@ -71,7 +72,8 @@ module.exports = {
 
             await member.roles.add(missingRoles, "Rol voluntario reclamado desde un panel de Bryvex Bot");
             for (const role of missingRoles) {
-                await recordSelfRoleSelection(interaction.guild, interaction.user, role.id);
+                await recordSelfRoleSelection(interaction.guild, interaction.user, role.id)
+                    .catch(error => console.warn("[Community Panels] No se pudo sincronizar self_roles_taken:", error.message));
             }
             return interaction.reply({
                 content: `✅ Roles reclamados: ${missingRoles.map(role => role.name).join(", ")}.`,
