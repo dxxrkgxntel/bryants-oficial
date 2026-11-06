@@ -24,6 +24,8 @@ const EconomyEarningTransaction = require("../Models/EconomyEarningTransaction")
 const Achievement = require("../Models/Achievement");
 const UserAchievement = require("../Models/UserAchievement");
 const TrophySettings = require("../Models/TrophySettings");
+const spanishAchievementCatalog = require("../data/locales/notoq-achievements.es.json");
+const { CATALOG_LOCALE_VERSION } = require("../Functions/achievementCatalogMigration");
 const { ensureDefaultAchievements } = require("../Functions/achievementTracker");
 const achievementCategoryLabels = require("../data/locales/achievement-categories.es.json").categories;
 const Level = require("../Models/Level");
@@ -1654,6 +1656,119 @@ app.post("/api/guilds/:guildId/achievements/import", requireLogin, requireCsrf, 
     } catch (error) {
         console.error("[Dashboard Achievements] Error al importar backup:", error.message);
         return res.status(400).json({ error: error.message || "No pude importar el backup de logros." });
+    }
+});
+
+app.get("/api/guilds/:guildId/achievements/audit-spanish", requireGuildAdmin, async (req, res) => {
+    res.set("Cache-Control", "private, no-store");
+    try {
+        const guildId = req.params.guildId;
+        const catalog = spanishAchievementCatalog?.achievements;
+        if (spanishAchievementCatalog?.locale !== "es" || !Array.isArray(catalog) || catalog.length !== 397) {
+            return res.status(500).json({ error: "El catálogo español local no contiene los 397 logros esperados." });
+        }
+
+        const expectedById = new Map(catalog.map(item => [item.id, item]));
+        if (expectedById.size !== catalog.length || catalog.some(item => !item?.id)) {
+            return res.status(500).json({ error: "El catálogo español contiene identificadores vacíos o duplicados." });
+        }
+
+        // Consultas exclusivamente de lectura: no se crean, actualizan ni eliminan documentos.
+        const [settings, definitions, duplicateGroups, progressRows] = await Promise.all([
+            TrophySettings.findOne({ guildId }).select("notoqCatalogLocaleVersion notoqCatalogSeeded").lean(),
+            Achievement.find({ guildId, source: "notoq" }).select("achievementId name description category").lean(),
+            Achievement.aggregate([
+                { $match: { guildId, source: "notoq" } },
+                { $group: { _id: "$achievementId", count: { $sum: 1 } } },
+                { $match: { count: { $gt: 1 } } },
+                { $sort: { _id: 1 } }
+            ]),
+            UserAchievement.aggregate([
+                { $match: { guildId } },
+                { $group: {
+                    _id: null,
+                    records: { $sum: 1 },
+                    unlockedRecords: { $sum: { $cond: [{ $ne: ["$unlockedAt", null] }, 1, 0] } },
+                    pointsEarned: { $sum: { $ifNull: ["$pointsEarned", 0] } },
+                    progressTotal: { $sum: { $ifNull: ["$progress", 0] } },
+                    unlockedLevels: { $sum: { $size: { $cond: [{ $isArray: "$unlockedLevels" }, "$unlockedLevels", []] } } }
+                } }
+            ])
+        ]);
+
+        const actualCounts = new Map();
+        for (const item of definitions) {
+            const id = String(item.achievementId || "");
+            actualCounts.set(id, (actualCounts.get(id) || 0) + 1);
+        }
+        const missingIds = [...expectedById.keys()].filter(id => !actualCounts.has(id));
+        const unexpectedIds = [...actualCounts.keys()].filter(id => !expectedById.has(id));
+        const duplicateIds = duplicateGroups.map(item => ({ achievementId: String(item._id), count: Number(item.count) }));
+        const metadataDifferences = [];
+        let correctDefinitions = 0;
+
+        for (const definition of definitions) {
+            const id = String(definition.achievementId || "");
+            const expected = expectedById.get(id);
+            if (!expected) continue;
+            const fields = ["name", "description", "category"].filter(field =>
+                String(definition[field] ?? "") !== String(expected[field] ?? "")
+            );
+            if (fields.length) {
+                metadataDifferences.push({
+                    achievementId: id,
+                    fields,
+                    expected: Object.fromEntries(fields.map(field => [field, expected[field]])),
+                    actual: Object.fromEntries(fields.map(field => [field, definition[field]]))
+                });
+            } else if (actualCounts.get(id) === 1) {
+                correctDefinitions += 1;
+            }
+        }
+
+        const progress = progressRows[0] || {};
+        const localeVersion = Number(settings?.notoqCatalogLocaleVersion || 0);
+        const seeded = Boolean(settings?.notoqCatalogSeeded);
+        const duplicateCount = duplicateIds.reduce((total, item) => total + item.count - 1, 0);
+        const summary = {
+            expected: catalog.length,
+            actual: definitions.length,
+            correct: correctDefinitions,
+            missing: missingIds.length,
+            duplicates: duplicateCount,
+            unexpected: unexpectedIds.length,
+            differences: metadataDifferences.length,
+            categories: new Set(catalog.map(item => item.category)).size,
+            localeVersion,
+            expectedLocaleVersion: CATALOG_LOCALE_VERSION,
+            seeded,
+            ready: definitions.length === catalog.length && correctDefinitions === catalog.length &&
+                missingIds.length === 0 && duplicateCount === 0 && unexpectedIds.length === 0 &&
+                metadataDifferences.length === 0 && localeVersion >= CATALOG_LOCALE_VERSION && seeded
+        };
+
+        return res.json({
+            audit: "achievement-catalog-es",
+            mode: "READ_ONLY",
+            generatedAt: new Date().toISOString(),
+            summary,
+            progress: {
+                records: Number(progress.records || 0),
+                unlockedRecords: Number(progress.unlockedRecords || 0),
+                pointsEarned: Number(progress.pointsEarned || 0),
+                progressTotal: Number(progress.progressTotal || 0),
+                unlockedLevels: Number(progress.unlockedLevels || 0)
+            },
+            details: {
+                missingIds: missingIds.slice(0, 100),
+                duplicateIds: duplicateIds.slice(0, 100),
+                unexpectedIds: unexpectedIds.slice(0, 100),
+                metadataDifferences: metadataDifferences.slice(0, 100)
+            }
+        });
+    } catch (error) {
+        console.error("[Dashboard Achievement Audit] Error al auditar el catálogo español:", error.message);
+        return res.status(500).json({ error: "No pude completar la auditoría del catálogo español." });
     }
 });
 

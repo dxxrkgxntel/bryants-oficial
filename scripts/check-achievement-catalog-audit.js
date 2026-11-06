@@ -23,4 +23,23 @@ assert.match(source, /checks\.seeded/);
 assert.match(source, /mongoose\.disconnect/);
 assert.match(source, /require\.main\s*===\s*module/);
 
+
+const dashboardSource = fs.readFileSync(path.join(__dirname, "..", "dashboard", "server.js"), "utf8");
+const dashboardClientSource = fs.readFileSync(path.join(__dirname, "..", "dashboard", "public", "server.js"), "utf8");
+assert.ok(dashboardSource.includes('app.get("/api/guilds/:guildId/achievements/audit-spanish", requireGuildAdmin'), "La dashboard debe exponer la auditoría protegida por permisos de administrador.");
+const routeStart = dashboardSource.indexOf('app.get("/api/guilds/:guildId/achievements/audit-spanish"');
+const routeEnd = dashboardSource.indexOf('app.get("/api/guilds/:guildId/achievements/export"', routeStart);
+assert.ok(routeStart >= 0 && routeEnd > routeStart, "La ruta de auditoría debe estar delimitada.");
+const auditRouteSource = dashboardSource.slice(routeStart, routeEnd);
+assert.ok(auditRouteSource.includes("Achievement.find("), "La auditoría debe consultar las definiciones.");
+assert.ok(auditRouteSource.includes("Achievement.aggregate("), "La auditoría debe detectar duplicados.");
+assert.ok(auditRouteSource.includes("UserAchievement.aggregate("), "La auditoría debe calcular el progreso guardado.");
+assert.ok(auditRouteSource.includes("TrophySettings.findOne("), "La auditoría debe consultar el estado de la migración.");
+for (const writeMethod of [".create(", ".insertMany(", ".updateOne(", ".updateMany(", ".findOneAndUpdate(", ".bulkWrite(", ".deleteOne(", ".deleteMany(", ".save("]) {
+    assert.ok(!auditRouteSource.includes(writeMethod), "La ruta de auditoría no debe ejecutar " + writeMethod);
+}
+assert.match(dashboardClientSource, /achievement-spanish-audit-trigger/, "Trofeos debe mostrar la acción de auditoría.");
+assert.ok(dashboardClientSource.includes("/achievements/audit-spanish"), "La dashboard debe consultar el endpoint de auditoría.");
+assert.match(dashboardClientSource, /AUDITORÍA DE SOLO LECTURA/, "El panel debe identificar la auditoría como solo lectura.");
+
 console.log("Read-only achievement catalog audit checks passed.");

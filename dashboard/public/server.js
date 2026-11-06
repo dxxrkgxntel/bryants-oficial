@@ -2506,7 +2506,7 @@ function renderList(key, definition, editItem = null) {
         return `<div class="record-row" data-record-id="${escapeHtml(record._id)}" data-search="${escapeHtml(getRecordSearchText(key, record, definition))}"><div class="record-title">${escapeHtml(label)}</div><div class="record-actions"><button type="button" class="quiet-button" data-edit="${escapeHtml(record._id)}">Editar</button><button type="button" class="quiet-button danger-text" data-delete="${escapeHtml(record._id)}">Eliminar</button></div></div>`;
     }).join("");
     const search = records.length > 3 ? `<div class="list-toolbar"><span>${records.length} elementos</span><label class="record-search"><span class="sr-only">Buscar en ${escapeHtml(definition.title)}</span><input type="search" id="record-search" placeholder="Buscar en la lista…" autocomplete="off"></label></div>` : "";
-    const backupToolbar = key === "achievements" ? `<div class="list-toolbar achievements-backup-toolbar"><div><strong>Backup de logros</strong><span>Importa un catálogo JSON o descarga una copia del servidor.</span></div><label class="record-search"><span class="sr-only">Modo de importación</span><select id="achievement-import-mode"><option value="merge">Añadir sin sobrescribir</option><option value="update">Actualizar existentes</option><option value="replace">Reemplazar logros importados de Notoq</option></select></label><input id="achievement-backup-file" type="file" accept=".json,application/json" hidden><button type="button" class="quiet-button" id="achievement-import-trigger">Importar JSON</button><button type="button" class="quiet-button" id="achievement-export-trigger">Exportar JSON</button></div>` : "";
+    const backupToolbar = key === "achievements" ? `<div class="list-toolbar achievements-backup-toolbar"><div><strong>Backup de logros</strong><span>Importa un catálogo JSON o descarga una copia del servidor.</span></div><label class="record-search"><span class="sr-only">Modo de importación</span><select id="achievement-import-mode"><option value="merge">Añadir sin sobrescribir</option><option value="update">Actualizar existentes</option><option value="replace">Reemplazar logros importados de Notoq</option></select></label><input id="achievement-backup-file" type="file" accept=".json,application/json" hidden><button type="button" class="quiet-button" id="achievement-import-trigger">Importar JSON</button><button type="button" class="quiet-button" id="achievement-export-trigger">Exportar JSON</button><button type="button" class="quiet-button" id="achievement-spanish-audit-trigger">Auditar catálogo español</button></div>` : "";
     const alertPreview = key === "socialAlerts" ? renderPreviewMarkup(key, {
         title: editItem?.title || definition.fields.find(field => field.name === "title")?.default || "",
         description: editItem?.messageTemplate || definition.fields.find(field => field.name === "messageTemplate")?.default || "",
@@ -2517,9 +2517,66 @@ function renderList(key, definition, editItem = null) {
         platform: editItem?.platform || "Kick"
     }) : "";
     const socialDiagnostics = key === "socialAlerts" ? '<section class="social-diagnostics" data-social-diagnostics aria-live="polite"><div class="social-diagnostics-heading"><div><span class="eyebrow">ESTADO DEL BOT</span><h3>Diagnóstico de alertas</h3><p>El bot revisa cada alerta aproximadamente una vez por minuto. Actualizar vuelve a cargar el último diagnóstico guardado.</p></div><button class="quiet-button" type="button" data-social-diagnostics-refresh>Actualizar</button></div><div class="social-diagnostics-grid" data-social-diagnostics-list><p class="social-diagnostics-empty">Consultando el estado del bot…</p></div></section>' : "";
-    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div>${definition.description ? `<p class="card-description">${escapeHtml(definition.description)}</p>` : ""}${backupToolbar}${socialDiagnostics}${alertPreview}${search}<div class="records-list">${rows || '<p class="empty-state">Todavía no hay elementos configurados.</p>'}<p id="list-no-results" class="empty-state" hidden>No hay elementos que coincidan con la búsqueda.</p></div><div class="form-divider"></div><h3>${editing ? "Editar elemento" : "Añadir elemento"}</h3>${form}</article>`;
+    content.innerHTML = `<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">${escapeHtml(definition.category)}</div><h2>${escapeHtml(definition.title)}</h2></div></div>${definition.description ? `<p class="card-description">${escapeHtml(definition.description)}</p>` : ""}${backupToolbar}${key === "achievements" ? '<section class="achievement-audit-panel" id="achievement-spanish-audit" hidden aria-live="polite"></section>' : ""}${socialDiagnostics}${alertPreview}${search}<div class="records-list">${rows || '<p class="empty-state">Todavía no hay elementos configurados.</p>'}<p id="list-no-results" class="empty-state" hidden>No hay elementos que coincidan con la búsqueda.</p></div><div class="form-divider"></div><h3>${editing ? "Editar elemento" : "Añadir elemento"}</h3>${form}</article>`;
 
     if (key === "achievements") {
+        const auditButton = content.querySelector("#achievement-spanish-audit-trigger");
+        const auditPanel = content.querySelector("#achievement-spanish-audit");
+        auditButton?.addEventListener("click", async () => {
+            if (auditButton.disabled) return;
+            auditButton.disabled = true;
+            auditButton.textContent = "Auditando…";
+            auditPanel.hidden = false;
+            auditPanel.innerHTML = '<p class="achievement-audit-loading">Consultando el catálogo y el progreso guardado…</p>';
+            try {
+                const report = await api(`/api/guilds/${encodeURIComponent(guildId)}/achievements/audit-spanish`);
+                const summary = report.summary || {};
+                const progress = report.progress || {};
+                const details = report.details || {};
+                const renderItems = (items, renderItem) => Array.isArray(items) && items.length
+                    ? `<ul>${items.map(renderItem).join("")}</ul>`
+                    : '<p class="achievement-audit-empty">Ninguno.</p>';
+                const stat = (label, value) => `<div class="achievement-audit-stat"><span>${label}</span><strong>${Number(value || 0).toLocaleString("es-ES")}</strong></div>`;
+                const detailSection = (title, items, renderItem) => `<section class="achievement-audit-detail"><h4>${title} <span>${items.length}</span></h4>${renderItems(items, renderItem)}</section>`;
+                auditPanel.innerHTML = `
+                    <div class="achievement-audit-heading">
+                        <div><span class="eyebrow">AUDITORÍA DE SOLO LECTURA</span><h3>Catálogo español ${summary.ready ? "correcto" : "requiere revisión"}</h3><p>Generada: ${escapeHtml(new Date(report.generatedAt).toLocaleString("es-ES"))} · ${summary.categories || 0} categorías</p></div>
+                        <span class="status-pill ${summary.ready ? "configured" : "unconfigured"}">${summary.ready ? "Correcto" : "Revisión necesaria"}</span>
+                    </div>
+                    <div class="achievement-audit-grid">
+                        ${stat("Correctos", summary.correct)}
+                        ${stat("Esperados", summary.expected)}
+                        ${stat("Faltantes", summary.missing)}
+                        ${stat("Duplicados", summary.duplicates)}
+                        ${stat("Diferencias", summary.differences)}
+                        ${stat("No esperados", summary.unexpected)}
+                    </div>
+                    <div class="achievement-audit-progress">
+                        <h4>Progreso almacenado (sin modificaciones)</h4>
+                        <div class="achievement-audit-grid">
+                            ${stat("Registros", progress.records)}
+                            ${stat("Desbloqueados", progress.unlockedRecords)}
+                            ${stat("Puntos acumulados", progress.pointsEarned)}
+                            ${stat("Progreso total", progress.progressTotal)}
+                            ${stat("Niveles desbloqueados", progress.unlockedLevels)}
+                            ${stat("Versión de idioma", `${summary.localeVersion || 0}/${summary.expectedLocaleVersion || 0}`)}
+                        </div>
+                        <p>Catálogo importado: ${summary.seeded ? "Sí" : "No"} · Modo: SOLO LECTURA</p>
+                    </div>
+                    <div class="achievement-audit-details">
+                        ${detailSection("Logros faltantes", details.missingIds || [], id => `<li><code>${escapeHtml(id)}</code></li>`)}
+                        ${detailSection("IDs duplicados", details.duplicateIds || [], item => `<li><code>${escapeHtml(item.achievementId)}</code> · ${Number(item.count || 0)} registros</li>`)}
+                        ${detailSection("Logros no esperados", details.unexpectedIds || [], id => `<li><code>${escapeHtml(id)}</code></li>`)}
+                        ${detailSection("Diferencias de traducción", details.metadataDifferences || [], item => `<li><strong>${escapeHtml(item.achievementId)}</strong><span>Campos: ${escapeHtml((item.fields || []).join(", "))}</span><small>Esperado: ${escapeHtml(JSON.stringify(item.expected || {}))}</small><small>Actual: ${escapeHtml(JSON.stringify(item.actual || {}))}</small></li>`)}
+                    </div>
+                    <p class="achievement-audit-footnote">Esta consulta no escribe ni altera documentos de MongoDB. Los detalles muestran hasta 100 elementos por tipo.</p>`;
+            } catch (error) {
+                auditPanel.innerHTML = `<p class="achievement-audit-error">${escapeHtml(error.message || "No pude completar la auditoría.")}</p>`;
+            } finally {
+                auditButton.disabled = false;
+                auditButton.textContent = "Volver a auditar";
+            }
+        });
         const fileInput = content.querySelector("#achievement-backup-file");
         content.querySelector("#achievement-import-trigger")?.addEventListener("click", () => fileInput?.click());
         fileInput?.addEventListener("change", async event => {
