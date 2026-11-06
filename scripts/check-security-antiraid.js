@@ -1,0 +1,12 @@
+const assert = require("node:assert/strict");
+const raid = require("../Events/Moderation/raidDetection");
+const { normalizeSettings, DEFAULTS } = raid._test;
+assert.deepEqual(normalizeSettings(null), DEFAULTS);
+assert.equal(normalizeSettings({ enabled: false }).enabled, false);
+assert.equal(normalizeSettings({ joinThreshold: 1000 }).joinThreshold, 50);
+assert.equal(normalizeSettings({ joinThreshold: 1 }).joinThreshold, 3);
+assert.equal(normalizeSettings({ joinWindowSeconds: 1 }).joinWindowSeconds, 5);
+assert.equal(normalizeSettings({ alertCooldownMinutes: 90 }).alertCooldownMinutes, 60);
+assert.equal(normalizeSettings({ alertChannelId: "invalid" }).alertChannelId, null);
+assert.equal(normalizeSettings({ alertChannelId: "12345678901234567" }).alertChannelId, "12345678901234567");
+console.log("Security Anti-Raid settings checks passed.");

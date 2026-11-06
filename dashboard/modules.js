@@ -90,6 +90,28 @@ const configurations = {
         custom: true,
         fields: []
     },
+    moderationCenter: {
+        title: "Centro de moderación",
+        category: "Moderación",
+        description: "Gestiona advertencias, sanciones y expedientes de miembros desde un único lugar.",
+        custom: true,
+        fields: []
+    },
+    securityCenter: {
+        title: "Seguridad y Anti-Raid",
+        category: "Moderación",
+        description: "Configura la detección de entradas masivas, alertas y medidas preventivas contra raids.",
+        model: require("../Models/SecuritySettings"),
+        guildField: "guildId",
+        fields: [
+            { name: "enabled", label: "Detección Anti-Raid activa", type: "boolean", default: true },
+            { name: "joinThreshold", label: "Entradas para activar alerta", type: "number", min: 3, max: 50, default: 7 },
+            { name: "joinWindowSeconds", label: "Ventana de detección (segundos)", type: "number", min: 5, max: 120, default: 10 },
+            { name: "alertCooldownMinutes", label: "Enfriamiento entre alertas (minutos)", type: "number", min: 1, max: 60, default: 5 },
+            { name: "alertChannelId", label: "Canal de alertas (opcional)", type: "channel", channelTypes: [0, 5], optional: true },
+            { name: "notifyDashboard", label: "Enviar alertas al centro de notificaciones", type: "boolean", default: true }
+        ]
+    },
     automations: {
         title: "Automatizaciones",
         category: "Administración",
