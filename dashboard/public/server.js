@@ -1,5 +1,5 @@
 const guildId = decodeURIComponent(window.location.pathname.split("/").filter(Boolean).at(-1) || "");
-const categoriesOrder = ["Administración", "Comunidad", "Alertas sociales", "Moderación", "Servidor", "Economía y XP", "Trofeos", "Estadísticas"];
+const categoriesOrder = ["Administración", "Comunidad", "Alertas Sociales", "Moderación", "Servidor", "Economía", "Trofeos", "Estadisticas"];
 const nav = document.querySelector("#module-nav");
 const content = document.querySelector("#module-content");
 const notice = document.querySelector("#notice");
@@ -1332,7 +1332,22 @@ function makeNav(modules) {
     }
     for (const category of categoriesOrder) {
         const group = all.filter(([key, definition]) => definition.category === category && !favoriteModules.has(key));
-        if (category === "Economía y XP") {
+        const preferredOrder = {
+            "Administración": ["automations", "permissionsCenter", "reportReviewCenter", "notificationCenter"],
+            "Comunidad": ["autoroles", "welcome", "leaves", "boosts", "birthday", "confessions", "suggestions", "polls", "giveaways", "counting", "memberProfiles", "communityPanels", "birthdayMembers", "customForms"],
+            "Alertas Sociales": ["socialAlerts"],
+            "Moderación": ["logs", "inviteTracker", "reports", "antiScam", "specialChannels", "antiInvites", "moderationCenter", "purge", "securityCenter"],
+            "Servidor": ["tempvoice", "stats", "voiceConnection"],
+            "Economía": ["economy", "memberEconomy", "prestige", "quests", "weeklyDrop", "levelSettings", "shopItems", "storeItems", "levelRewards", "bankDonorRoles"],
+            "Trofeos": ["achievements", "trophyMembers", "trophyMilestones", "trophySettings"],
+            "Estadisticas": ["activityAnalytics"]
+        }[category] || [];
+        group.sort((a, b) => {
+            const ai = preferredOrder.indexOf(a[0]);
+            const bi = preferredOrder.indexOf(b[0]);
+            return (ai < 0 ? Number.MAX_SAFE_INTEGER : ai) - (bi < 0 ? Number.MAX_SAFE_INTEGER : bi);
+        });
+        if (category === "Economía") {
             const memberIndex = group.findIndex(([key]) => key === "memberEconomy");
             const economyIndex = group.findIndex(([key]) => key === "economy");
             if (memberIndex !== -1 && economyIndex !== -1) {
@@ -2323,7 +2338,7 @@ function renderModule(key, modules, options = {}) {
     const isMemberEconomy = key === "memberEconomy";
     const isList = !isMemberEconomy && Boolean(modules.lists[key]);
     const definition = isMemberEconomy
-        ? (modules.configurations[key] || { title: "Miembros", category: "Economía y XP", description: "Busca a un miembro por su nombre visible o usuario para consultar su economía." })
+        ? (modules.configurations[key] || { title: "Miembros", category: "Economía", description: "Busca a un miembro por su nombre visible o usuario para consultar su economía." })
         : isList ? modules.lists[key] : modules.configurations[key];
     document.querySelector("#page-title").textContent = definition.title;
     if (key === "communityPanels") return renderCommunityPanels(definition);
