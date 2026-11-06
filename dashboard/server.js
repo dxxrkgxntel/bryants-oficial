@@ -354,8 +354,8 @@ function requireGuildModulePermission(action = "view") {
         }
         resolveGuildDashboardAccess(req, req.params.guildId)
             .then(access => {
-                const moduleKey = req.params.module;
-                if (!access || !configurations[moduleKey] || ["permissionsCenter", "notificationCenter"].includes(moduleKey) ||
+                const moduleKey = req.params.module || req.params.list;
+                if (!access || !(configurations[moduleKey] || lists[moduleKey]) || moduleKey === "permissionsCenter" ||
                     !hasGuildModulePermission(access, moduleKey, action)) {
                     return res.status(403).json({ error: "No tienes permiso para realizar esta acción en ese módulo." });
                 }
@@ -1418,7 +1418,7 @@ app.put("/api/guilds/:guildId/permissions", requireLogin, requireCsrf, requireGu
             return res.status(400).json({ error: "Envía listas válidas de hasta 50 reglas por tipo." });
         }
         const validModules = new Set([
-            ...Object.keys(configurations).filter(key => !["permissionsCenter", "notificationCenter"].includes(key)),
+            ...Object.keys(configurations).filter(key => key !== "permissionsCenter"),
             ...Object.keys(lists)
         ]);
         const validActions = new Set(["view", "edit"]);
@@ -1471,11 +1471,13 @@ app.get("/api/guilds/:guildId/notifications", requireGuildDashboardAccess, async
             DashboardNotification.find({
                 guildId,
                 $or: [{ targetUserIds: { $size: 0 } }, { targetUserIds: userId }]
-            }).sort({ createdAt: -1 }).limit(50).lean(),
+            }).sort({ createdAt: -1 }).limit(100).lean(),
             DashboardNotificationPreference.findOne({ guildId, userId }).lean()
         ]);
+        const notificationsEnabled = preference?.enabled !== false;
+        const visibleItems = items.filter(item => notificationsEnabled && preference?.categories?.[item.category] !== false).slice(0, 50);
         return res.json({
-            notifications: items.map(item => ({
+            notifications: visibleItems.map(item => ({
                 id: String(item._id),
                 title: item.title,
                 message: item.message,
@@ -2038,8 +2040,7 @@ app.get("/api/guilds/:guildId/config", requireGuildDashboardAccess, async (req, 
     try {
         await ensureDefaultAchievements(req.params.guildId);
         const visibleConfigurations = Object.entries(configurations).filter(([key]) =>
-            req.dashboardAccess.admin || hasGuildModulePermission(req.dashboardAccess, key, "view") ||
-            ["permissionsCenter", "notificationCenter"].includes(key)
+            req.dashboardAccess.admin || hasGuildModulePermission(req.dashboardAccess, key, "view")
         );
         const visibleLists = Object.entries(lists).filter(([key]) =>
             req.dashboardAccess.admin || hasGuildModulePermission(req.dashboardAccess, key, "view")
