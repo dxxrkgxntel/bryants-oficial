@@ -47,7 +47,13 @@ async function migrateAchievementCatalog(guildId, catalog) {
     }));
 
     if (operations.length) {
-        await Achievement.bulkWrite(operations, { ordered: false });
+        const writeResult = await Achievement.bulkWrite(operations, { ordered: false });
+        const matchedCount = Number(writeResult?.matchedCount ?? writeResult?.nMatched ?? 0);
+        if (matchedCount !== achievements.length) {
+            throw new Error(
+                `Migración incompleta del catálogo Notoq: se encontraron ${matchedCount} de ${achievements.length} definiciones.`
+            );
+        }
     }
 
     await TrophySettings.updateOne(
@@ -59,7 +65,7 @@ async function migrateAchievementCatalog(guildId, catalog) {
         { upsert: true }
     );
 
-    return { migrated: true, updatedDefinitions: operations.length, localeVersion: CATALOG_LOCALE_VERSION };
+    return { migrated: true, updatedDefinitions: achievements.length, localeVersion: CATALOG_LOCALE_VERSION };
 }
 
 module.exports = { migrateAchievementCatalog, validateLocalizedCatalog, CATALOG_LOCALE_VERSION };
