@@ -20,6 +20,7 @@ const autoPollEnd = require("../../Functions/autoPollEnd");
 const startSocialAlerts = require("../../Handlers/socialAlerts");
 const { startReferralAchievementMetricSync } = require("../../Functions/referralAchievementMetrics");
 const { startVoteAchievementMetricSync } = require("../../Functions/voteAchievementMetrics");
+const { startTotalEarnedMetricSync } = require("../../Functions/economyEarningMetrics");
 const { startAssistantAchievementMetricSync } = require("../../Functions/assistantAchievementMetrics");
 
 require('colors');
@@ -91,6 +92,7 @@ module.exports = {
             startSocialAlerts(client);
             startReferralAchievementMetricSync(client);
             startVoteAchievementMetricSync(client);
+            startTotalEarnedMetricSync(client);
             startAssistantAchievementMetricSync(client);
         } else {
             console.error('[DAILY PURGE] No se pudo iniciar: MongoDB no está conectado.');
