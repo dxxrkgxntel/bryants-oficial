@@ -1,5 +1,5 @@
 const guildId = decodeURIComponent(window.location.pathname.split("/").filter(Boolean).at(-1) || "");
-const categoriesOrder = ["Administración", "Comunidad", "Alertas Sociales", "Moderación", "Servidor", "Economía", "Trofeos", "Estadisticas"];
+const categoriesOrder = ["Administración", "Comunidad", "Alertas Sociales", "Moderación", "Servidor", "Economía", "Trofeos", "Estadisticas", "Música"];
 const nav = document.querySelector("#module-nav");
 const content = document.querySelector("#module-content");
 const notice = document.querySelector("#notice");

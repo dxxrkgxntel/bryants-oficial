@@ -13,6 +13,7 @@ const Economy = require('../../Models/EconomyUser');
 const Welcome = require('../../Models/welcomeSchema');
 const startDailyPurgeScheduler = require('../../Handlers/dailyPurgeScheduler');
 const { restoreVoiceConnections, startVoiceConnectionSync } = require('../../Handlers/voiceConnectionManager');
+const { ensureConfiguredPanels, startMusicPanelSync } = require('../../Handlers/musicManager');
 const { restoreServerStats } = require('../../Functions/serverStats');
 const { renderWeeklyDropDescription } = require('../../Functions/weeklyDropDescription');
 const { initializeInviteCache } = require('../../Utils/inviteTracker');
@@ -89,6 +90,12 @@ module.exports = {
             startDailyPurgeScheduler(client);
             await restoreVoiceConnections(client);
             startVoiceConnectionSync(client);
+            try {
+                await ensureConfiguredPanels(client);
+                startMusicPanelSync(client);
+            } catch (error) {
+                console.error('[MUSIC] No pude inicializar los paneles musicales:', error.message);
+            }
             await restoreServerStats(client);
             // Los procesos que consultan MongoDB solo se inician tras confirmar la conexión.
             autoPollEnd(client);
