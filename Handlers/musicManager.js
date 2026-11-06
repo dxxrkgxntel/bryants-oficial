@@ -468,18 +468,70 @@ function getPosition(session) {
 }
 
 function killCurrentProcess(session) {
+    if (session.currentSourceStream) {
+        try { session.currentSourceStream.destroy(); } catch {}
+        session.currentSourceStream = null;
+    }
     if (!session.currentProcess) return;
     try { session.currentProcess.stdin?.destroy(); } catch {}
     try { session.currentProcess.kill("SIGKILL"); } catch {}
     session.currentProcess = null;
 }
 
+function getYouTubeVideoId(value) {
+    try {
+        const url = new URL(String(value || ""));
+        const host = url.hostname.replace(/^www\./i, "").toLowerCase();
+        if (host === "youtu.be") return url.pathname.split("/").filter(Boolean)[0] || null;
+        if (!["youtube.com", "m.youtube.com", "music.youtube.com", "youtube-nocookie.com"].includes(host)) return null;
+        const direct = url.searchParams.get("v");
+        if (direct) return direct;
+        const match = url.pathname.match(/^\/(?:shorts|embed|live|v)\/([^/?]+)/i);
+        return match?.[1] || null;
+    } catch {
+        return null;
+    }
+}
+
+async function getYouTubeAudioStream(session, track) {
+    const baseUrl = String(process.env.LAVALINK_HTTP_URL || "").trim().replace(/\/+$/, "");
+    const password = String(process.env.LAVALINK_PASSWORD || "").trim();
+    if (!baseUrl || !password) {
+        throw new Error("El servicio Lavalink no está configurado. Configura LAVALINK_HTTP_URL y LAVALINK_PASSWORD en el alojamiento.");
+    }
+
+    const videoId = getYouTubeVideoId(track.url);
+    if (!videoId) throw new Error("No pude extraer el ID del vídeo de YouTube.");
+
+    const response = await axios.get(
+        `${baseUrl}/youtube/stream/${encodeURIComponent(videoId)}`,
+        {
+            headers: { Authorization: password },
+            responseType: "stream",
+            timeout: 30000,
+            maxRedirects: 5,
+            validateStatus: status => status === 200
+        }
+    );
+    session.currentSourceStream = response.data;
+    return response.data;
+}
+
 async function createAudio(session, track, seek = 0) {
     if (!ffmpegPath) throw new Error("FFmpeg no está disponible en el host.");
-    const source = await play.stream(track.url, {
-        ...(seek > 0 && track.source === "YouTube" ? { seek: Math.floor(seek) } : {}),
-        discordPlayerCompatibility: true
-    });
+
+    let sourceStream;
+    if (track.source === "YouTube") {
+        sourceStream = await getYouTubeAudioStream(session, track);
+    } else {
+        const source = await play.stream(track.url, {
+            ...(seek > 0 ? { seek: Math.floor(seek) } : {}),
+            discordPlayerCompatibility: true
+        });
+        sourceStream = source.stream;
+        session.currentSourceStream = sourceStream;
+    }
+
     const filter = FILTERS[session.filter];
     const args = ["-hide_banner", "-loglevel", "error", "-i", "pipe:0", "-vn"];
     if (filter) args.push("-af", filter);
@@ -487,7 +539,7 @@ async function createAudio(session, track, seek = 0) {
 
     const transcoder = spawn(ffmpegPath, args, { stdio: ["pipe", "pipe", "ignore"] });
     session.currentProcess = transcoder;
-    source.stream.on("error", error => {
+    sourceStream.on("error", error => {
         console.error(`[MUSIC] Error leyendo ${track.source}:`, error.message);
         transcoder.stdin.destroy(error);
     });
@@ -495,7 +547,7 @@ async function createAudio(session, track, seek = 0) {
         console.error("[MUSIC] FFmpeg no pudo iniciar:", error.message);
     });
     transcoder.stdin.on("error", () => {});
-    source.stream.pipe(transcoder.stdin);
+    sourceStream.pipe(transcoder.stdin);
 
     const resource = createAudioResource(transcoder.stdout, {
         inputType: StreamType.Raw,
