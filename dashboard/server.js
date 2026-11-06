@@ -19,6 +19,9 @@ const DashboardReferral = require("../Models/DashboardReferral");
 const DashboardVote = require("../Models/DashboardVote");
 const DashboardAssistantUsage = require("../Models/DashboardAssistantUsage");
 const DashboardAuditLog = require("../Models/DashboardAuditLog");
+const DashboardGuildPermission = require("../Models/DashboardGuildPermission");
+const DashboardNotification = require("../Models/DashboardNotification");
+const DashboardNotificationPreference = require("../Models/DashboardNotificationPreference");
 const EconomyUser = require("../Models/EconomyUser");
 const EconomyEarningTransaction = require("../Models/EconomyEarningTransaction");
 const Achievement = require("../Models/Achievement");
@@ -1313,6 +1316,171 @@ app.get("/api/guilds/:guildId/resources", requireGuildAdmin, async (req, res) =>
     } catch (error) {
         console.error("[Dashboard Resources] Error al cargar canales y roles:", error.message);
         return res.status(502).json({ error: "No pude cargar los canales y roles del servidor." });
+    }
+});
+
+app.get("/api/guilds/:guildId/permissions", requireGuildAdmin, async (req, res) => {
+    res.set("Cache-Control", "private, no-store");
+    try {
+        const permission = await DashboardGuildPermission.findOne({ guildId: req.params.guildId }).lean();
+        return res.json({
+            roleRules: permission?.roleRules || [],
+            userRules: permission?.userRules || [],
+            updatedAt: permission?.updatedAt || null
+        });
+    } catch (error) {
+        console.error("[Dashboard Permissions] No pude cargar permisos:", error.message);
+        return res.status(500).json({ error: "No pude cargar los permisos del servidor." });
+    }
+});
+
+app.put("/api/guilds/:guildId/permissions", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    try {
+        const roleRules = req.body?.roleRules;
+        const userRules = req.body?.userRules;
+        if (!Array.isArray(roleRules) || !Array.isArray(userRules) || roleRules.length > 50 || userRules.length > 50) {
+            return res.status(400).json({ error: "Envía listas válidas de hasta 50 reglas por tipo." });
+        }
+        const validModules = new Set([
+            ...Object.keys(configurations).filter(key => !["permissionsCenter", "notificationCenter"].includes(key)),
+            ...Object.keys(lists)
+        ]);
+        const validActions = new Set(["view", "edit"]);
+        const { roles } = await fetchGuildResources(req.params.guildId);
+        const validRoleIds = new Set(roles.filter(role => !role.managed && role.name !== "@everyone").map(role => role.id));
+        const cleanRules = (rules, identityKey, validIds) => {
+            const seen = new Set();
+            return rules.map(rule => {
+                const identity = String(rule?.[identityKey] || "");
+                if (!/^\d{17,20}$/.test(identity) || !validIds.has(identity) || seen.has(identity)) {
+                    throw new Error(identityKey === "roleId" ? "Hay un rol inválido o repetido." : "Hay un miembro inválido o repetido.");
+                }
+                seen.add(identity);
+                if (!Array.isArray(rule.modules) || !Array.isArray(rule.actions)) throw new Error("Cada regla debe incluir módulos y acciones.");
+                const modules = [...new Set(rule.modules.map(String))];
+                const actions = [...new Set(rule.actions.map(String))];
+                if (modules.some(key => !validModules.has(key)) || actions.some(action => !validActions.has(action))) {
+                    throw new Error("Una regla contiene módulos o acciones no permitidos.");
+                }
+                return { [identityKey]: identity, modules, actions };
+            });
+        };
+        const cleanRoleRules = cleanRules(roleRules, "roleId", validRoleIds);
+        const cleanUserRules = cleanRules(userRules, "userId", new Set(userRules.map(rule => String(rule?.userId || "")).filter(id => /^\d{17,20}$/.test(id))));
+        for (const rule of cleanUserRules) {
+            const response = await fetch(`https://discord.com/api/v10/guilds/${req.params.guildId}/members/${rule.userId}`, {
+                headers: { Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}` },
+                signal: AbortSignal.timeout(8000)
+            });
+            if (!response.ok) throw new Error("Uno de los miembros seleccionados ya no pertenece al servidor.");
+        }
+        const saved = await DashboardGuildPermission.findOneAndUpdate(
+            { guildId: req.params.guildId },
+            { $set: { roleRules: cleanRoleRules, userRules: cleanUserRules, updatedBy: req.session.user.id }, $setOnInsert: { guildId: req.params.guildId } },
+            { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+        ).lean();
+        await recordDashboardAudit(req, req.params.guildId, "Permisos avanzados actualizados");
+        return res.json({ ok: true, roleRules: saved.roleRules, userRules: saved.userRules, updatedAt: saved.updatedAt });
+    } catch (error) {
+        return res.status(400).json({ error: error.message || "No pude guardar los permisos." });
+    }
+});
+
+app.get("/api/guilds/:guildId/notifications", requireGuildAdmin, async (req, res) => {
+    res.set("Cache-Control", "private, no-store");
+    try {
+        const guildId = req.params.guildId;
+        const userId = req.session.user.id;
+        const [items, preference] = await Promise.all([
+            DashboardNotification.find({
+                guildId,
+                $or: [{ targetUserIds: { $size: 0 } }, { targetUserIds: userId }]
+            }).sort({ createdAt: -1 }).limit(50).lean(),
+            DashboardNotificationPreference.findOne({ guildId, userId }).lean()
+        ]);
+        return res.json({
+            notifications: items.map(item => ({
+                id: String(item._id),
+                title: item.title,
+                message: item.message,
+                category: item.category,
+                severity: item.severity,
+                read: (item.readBy || []).includes(userId),
+                createdAt: item.createdAt
+            })),
+            preferences: {
+                enabled: preference?.enabled !== false,
+                categories: {
+                    configuration: preference?.categories?.configuration !== false,
+                    security: preference?.categories?.security !== false,
+                    community: preference?.categories?.community !== false,
+                    system: preference?.categories?.system !== false
+                }
+            }
+        });
+    } catch (error) {
+        console.error("[Dashboard Notifications] No pude cargar avisos:", error.message);
+        return res.status(500).json({ error: "No pude cargar las notificaciones." });
+    }
+});
+
+app.put("/api/guilds/:guildId/notifications/preferences", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    const categories = req.body?.categories;
+    if (typeof req.body?.enabled !== "boolean" || !categories || typeof categories !== "object" || Array.isArray(categories)) {
+        return res.status(400).json({ error: "Las preferencias enviadas no son válidas." });
+    }
+    const cleanCategories = {};
+    for (const key of ["configuration", "security", "community", "system"]) {
+        if (typeof categories[key] !== "boolean") return res.status(400).json({ error: "Selecciona sí o no para cada categoría." });
+        cleanCategories[key] = categories[key];
+    }
+    try {
+        await DashboardNotificationPreference.findOneAndUpdate(
+            { guildId: req.params.guildId, userId: req.session.user.id },
+            { $set: { enabled: req.body.enabled, categories: cleanCategories }, $setOnInsert: { guildId: req.params.guildId, userId: req.session.user.id } },
+            { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+        );
+        return res.json({ ok: true, enabled: req.body.enabled, categories: cleanCategories });
+    } catch (error) {
+        return res.status(500).json({ error: "No pude guardar tus preferencias." });
+    }
+});
+
+app.post("/api/guilds/:guildId/notifications", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    const { title, message, category = "system", severity = "info" } = req.body || {};
+    if (typeof title !== "string" || !title.trim() || title.length > 120 || typeof message !== "string" || !message.trim() || message.length > 1000) {
+        return res.status(400).json({ error: "El título y el mensaje son obligatorios y deben respetar sus límites." });
+    }
+    if (!["configuration", "security", "community", "system"].includes(category) || !["info", "success", "warning", "critical"].includes(severity)) {
+        return res.status(400).json({ error: "La categoría o prioridad seleccionada no es válida." });
+    }
+    try {
+        const item = await DashboardNotification.create({
+            guildId: req.params.guildId,
+            title: title.trim(),
+            message: message.trim(),
+            category,
+            severity,
+            createdBy: req.session.user.id
+        });
+        await recordDashboardAudit(req, req.params.guildId, "Notificación publicada en el centro");
+        return res.status(201).json({ ok: true, notification: { id: String(item._id), title: item.title, message: item.message, category: item.category, severity: item.severity, read: false, createdAt: item.createdAt } });
+    } catch (error) {
+        console.error("[Dashboard Notifications] No pude publicar aviso:", error.message);
+        return res.status(500).json({ error: "No pude publicar la notificación." });
+    }
+});
+
+app.post("/api/guilds/:guildId/notifications/:notificationId/read", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    try {
+        const result = await DashboardNotification.updateOne(
+            { _id: req.params.notificationId, guildId: req.params.guildId, $or: [{ targetUserIds: { $size: 0 } }, { targetUserIds: req.session.user.id }] },
+            { $addToSet: { readBy: req.session.user.id } }
+        );
+        if (!result.matchedCount) return res.status(404).json({ error: "No encontré esa notificación." });
+        return res.json({ ok: true });
+    } catch {
+        return res.status(400).json({ error: "No pude marcar la notificación como leída." });
     }
 });
 
