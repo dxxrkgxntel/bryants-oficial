@@ -21,6 +21,7 @@ const { createCanvas } = require("@napi-rs/canvas");
 const { randomBytes } = require("node:crypto");
 const ffmpegPath = require("ffmpeg-static");
 const play = require("play-dl");
+const axios = require("axios");
 const MusicHistory = require("../Models/MusicHistory");
 const MusicSettings = require("../Models/MusicSettings");
 const {
@@ -76,6 +77,121 @@ function getVideoThumbnail(video) {
         || null;
 }
 
+function extractYouTubeInitialData(html) {
+    const marker = html.indexOf("ytInitialData");
+    if (marker < 0) throw new Error("YouTube no incluyó los datos iniciales de búsqueda.");
+
+    const start = html.indexOf("{", marker);
+    if (start < 0) throw new Error("La respuesta de YouTube no contiene JSON válido.");
+
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    for (let index = start; index < html.length; index++) {
+        const character = html[index];
+        if (inString) {
+            if (escaped) escaped = false;
+            else if (character === "\\") escaped = true;
+            else if (character === '"') inString = false;
+            continue;
+        }
+        if (character === '"') {
+            inString = true;
+        } else if (character === "{") {
+            depth++;
+        } else if (character === "}") {
+            depth--;
+            if (depth === 0) return JSON.parse(html.slice(start, index + 1));
+        }
+    }
+    throw new Error("El JSON de resultados de YouTube llegó incompleto.");
+}
+
+function readYouTubeText(value) {
+    if (!value) return "";
+    if (typeof value.simpleText === "string") return value.simpleText;
+    if (Array.isArray(value.runs)) return value.runs.map(run => run.text || "").join("");
+    return "";
+}
+
+function parseYouTubeDuration(value) {
+    const match = String(value || "").match(/^(?:(\d+):)?(\d{1,2}):(\d{2})$/);
+    if (!match) return 0;
+    return (Number(match[1] || 0) * 3600) + (Number(match[2]) * 60) + Number(match[3]);
+}
+
+function collectYouTubeVideos(data, limit) {
+    const stack = [data];
+    const visited = new Set();
+    const videos = [];
+    while (stack.length && videos.length < limit) {
+        const current = stack.pop();
+        if (!current || typeof current !== "object" || visited.has(current)) continue;
+        visited.add(current);
+
+        if (current.videoRenderer?.videoId) {
+            const video = current.videoRenderer;
+            const title = readYouTubeText(video.title);
+            const videoId = video.videoId;
+            const thumbnails = video.thumbnail?.thumbnails || [];
+            const owner = readYouTubeText(video.ownerText) || readYouTubeText(video.longBylineText);
+            videos.push({
+                title,
+                url: \`https://www.youtube.com/watch?v=\${videoId}\`,
+                durationInSec: parseYouTubeDuration(readYouTubeText(video.lengthText)),
+                channel: { name: owner },
+                thumbnails: thumbnails.map(item => ({ url: item.url }))
+            });
+            continue;
+        }
+
+        for (const value of Object.values(current)) {
+            if (value && typeof value === "object") stack.push(value);
+        }
+    }
+    return videos.filter(video => video.title && video.url);
+}
+
+async function searchYouTubeVideos(query, limit = 8) {
+    const searchTerm = String(query || "").trim();
+    if (!searchTerm) return [];
+
+    let htmlError = null;
+    try {
+        const response = await axios.get("https://www.youtube.com/results", {
+            params: { search_query: searchTerm },
+            timeout: 15000,
+            maxContentLength: 8 * 1024 * 1024,
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+                "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"
+            },
+            responseType: "text"
+        });
+        const initialData = extractYouTubeInitialData(String(response.data || ""));
+        const videos = collectYouTubeVideos(initialData, limit);
+        if (videos.length) return videos;
+        htmlError = new Error("YouTube no devolvió vídeos para esa búsqueda.");
+    } catch (error) {
+        htmlError = error;
+        console.warn("[MUSIC] La búsqueda web de YouTube falló; intentando el proveedor alternativo:", error.message);
+    }
+
+    try {
+        const fallback = await play.search(searchTerm, {
+            limit,
+            source: { youtube: "video" }
+        });
+        return Array.isArray(fallback) ? fallback : [];
+    } catch (error) {
+        console.error("[MUSIC] Fallaron ambos métodos de búsqueda de YouTube:", {
+            html: htmlError?.message,
+            playDl: error.message
+        });
+        throw new Error("YouTube no permitió completar la búsqueda en este momento. Inténtalo de nuevo más tarde.");
+    }
+}
+
 function normalizeYouTubeVideo(video, requestedBy = null) {
     if (!video?.url || !video?.title) return null;
     return {
@@ -116,10 +232,7 @@ function youtubeQueryFor(item) {
 async function findYouTubeMatch(item, requestedBy = null) {
     const search = youtubeQueryFor(item);
     if (!search.query) return null;
-    const results = await play.search(search.query, {
-        limit: 1,
-        source: { youtube: "video" }
-    });
+    const results = await searchYouTubeVideos(search.query, 1);
     const track = normalizeYouTubeVideo(results?.[0], requestedBy);
     if (!track) return null;
     if (search.artist) track.artist = clip(search.artist, 200);
@@ -210,17 +323,14 @@ async function resolveQuery(query, requestedBy = null) {
 
     if (type) throw new Error("Ese tipo de enlace todavía no se puede reproducir.");
 
-    const results = await play.search(value, { limit: 1, source: { youtube: "video" } });
+    const results = await searchYouTubeVideos(value, 1);
     const track = normalizeYouTubeVideo(results?.[0], requestedBy);
     if (!track) throw new Error("No encontré una canción con ese nombre.");
     return { tracks: [track], playlistName: null };
 }
 
 async function searchTracks(query, requestedBy = null) {
-    const results = await play.search(String(query || "").trim(), {
-        limit: 8,
-        source: { youtube: "video" }
-    });
+    const results = await searchYouTubeVideos(String(query || "").trim(), 8);
     return (results || []).map(video => normalizeYouTubeVideo(video, requestedBy)).filter(Boolean);
 }
 
@@ -424,7 +534,7 @@ async function recommendTrack(session) {
     const current = session.currentTrack || session.autoplaySeed;
     if (!current) return null;
     const terms = `${current.title} ${current.artist || ""}`.trim();
-    const results = await play.search(terms, { limit: 8, source: { youtube: "video" } });
+    const results = await searchYouTubeVideos(terms, 8);
     const used = new Set([
         current.url,
         ...session.queue.map(track => track.url),
