@@ -4,6 +4,7 @@ const path = require("node:path");
 
 const migrationPath = path.join(__dirname, "../Functions/achievementCatalogMigration.js");
 const trackerPath = path.join(__dirname, "../Functions/achievementTracker.js");
+const dashboardClientPath = path.join(__dirname, "../dashboard/public/server.js");
 const categoryPath = path.join(__dirname, "../data/locales/achievement-categories.es.json");
 const sourcePath = path.join(__dirname, "../data/backups/notoq-achievements.json");
 const catalogPath = path.join(__dirname, "../data/locales/notoq-achievements.es.json");
@@ -12,6 +13,7 @@ const sourceCatalog = JSON.parse(fs.readFileSync(sourcePath, "utf8"));
 const catalog = JSON.parse(fs.readFileSync(catalogPath, "utf8"));
 const migration = fs.readFileSync(migrationPath, "utf8");
 const tracker = fs.readFileSync(trackerPath, "utf8");
+const dashboardClient = fs.readFileSync(dashboardClientPath, "utf8");
 
 assert.match(migration, /filter:\s*\{\s*guildId,\s*achievementId:\s*item\.id,\s*source:\s*"notoq"/);
 assert.match(migration, /\$set:\s*\{\s*name:\s*item\.name,\s*description:\s*item\.description,\s*category:\s*item\.category\s*\}/);
