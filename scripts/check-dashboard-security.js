@@ -97,7 +97,7 @@ assert.match(economyUserSource, /inventory:/, "La economía debe guardar el inve
 assert.match(shopSource, /StoreItem/, "La tienda debe permitir comprar artículos además de roles");
 assert.match(shopSource, /recordInventoryPurchase/, "Las compras deben guardarse en la mochila");
 assert.match(achievementSource, /findOneAndUpdate[\s\S]*?unlockedAt/, "Los logros deben guardar el progreso y evitar desbloqueos duplicados");
-assert.match(moduleSource, /title: "Artículos de tienda"/, "La dashboard debe permitir configurar artículos de venta");
+assert.match(moduleSource, /title: "Articulos de Tienda"/, "La dashboard debe permitir configurar artículos de venta");
 assert.match(moduleSource, /title: "Trofeos - Logros"/, "La dashboard debe conservar el nombre personalizado del módulo de logros");
 assert.match(moduleSource, /category: "Economía"/, "La categoría personalizada Economía debe existir");
 assert.match(moduleSource, /category: "Alertas Sociales"/, "La categoría personalizada Alertas Sociales debe existir");
