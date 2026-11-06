@@ -13,7 +13,8 @@ module.exports = {
                     limit: 1,
                     type: AuditLogEvent.MemberBanAdd
                 });
-                log = fetchedLogs.entries.first() || null;
+                const candidate = fetchedLogs.entries.first() || null;
+                log = candidate?.target?.id === ban.user.id ? candidate : null;
             } catch (auditError) {
                 console.warn("[Dashboard Notifications] No se pudo consultar el autor del baneo:", auditError.message);
             }
