@@ -143,6 +143,15 @@ async function performVoiceConnectAttempt(guild, channelId, options = {}) {
         )) {
             try {
                 await entersState(connection, VoiceConnectionStatus.Ready, READY_TIMEOUT_MS);
+                if (connection.joinConfig.selfMute !== desiredSelfMute
+                    || connection.joinConfig.selfDeaf !== desiredSelfDeaf) {
+                    const rejoined = connection.rejoin({
+                        channelId,
+                        selfMute: desiredSelfMute,
+                        selfDeaf: desiredSelfDeaf
+                    });
+                    if (rejoined) await entersState(connection, VoiceConnectionStatus.Ready, READY_TIMEOUT_MS);
+                }
                 clearReconnectState(guild.id);
                 return connection;
             } catch {
