@@ -594,7 +594,7 @@ function buildPanelComponents(session) {
             button("toggle", guildId, paused ? "Continuar" : "Pausar", paused ? "▶️" : "⏸️", ButtonStyle.Primary, disabled),
             button("skip", guildId, "Saltar", "⏭️", ButtonStyle.Secondary, disabled),
             button("shuffle", guildId, "Aleatorio", "🔀", ButtonStyle.Secondary, session.queue.length < 2),
-            button("stop", guildId, "Detener", "⏹️", ButtonStyle.Danger)
+            button("stop", guildId, "Detener", "⏹️", ButtonStyle.Danger, disabled)
         ),
         new ActionRowBuilder().addComponents(
             button("repeat", guildId, `Repetir: ${session.loopMode}`, "🔁"),
@@ -605,7 +605,7 @@ function buildPanelComponents(session) {
         ),
         new ActionRowBuilder().addComponents(
             button("search", guildId, "Buscar canción", "🔎", ButtonStyle.Success),
-            button("lyrics", guildId, "Buscar letra", "📖")
+            button("lyrics", guildId, "Buscar letra", "📖", ButtonStyle.Secondary, disabled)
         )
     ];
 }
