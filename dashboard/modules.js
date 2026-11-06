@@ -76,6 +76,20 @@ const messageVariables = {
 };
 
 const configurations = {
+    permissionsCenter: {
+        title: "Permisos avanzados",
+        category: "Administración",
+        description: "Asigna acceso a módulos y acciones a roles y miembros concretos. La administración principal del servidor siempre conserva el control.",
+        custom: true,
+        fields: []
+    },
+    notificationCenter: {
+        title: "Centro de notificaciones",
+        category: "Administración",
+        description: "Consulta avisos del servidor y configura qué notificaciones quieres recibir.",
+        custom: true,
+        fields: []
+    },
     communityPanels: {
         title: "Paneles de comunidad",
         category: "Comunidad",
