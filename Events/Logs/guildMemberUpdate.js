@@ -22,7 +22,8 @@ module.exports = {
                     console.warn("[Dashboard Notifications] No se pudo consultar el autor del timeout:", auditError.message);
                 }
 
-                if (!(timeoutAdded && log?.reason === "Scam detectado")) {
+                const antiScamTimeout = timeoutAdded && log?.target?.id === newMember.id && log?.reason === "Scam detectado";
+                if (!antiScamTimeout) {
                     const moderator = log?.executor
                         ? " Moderador: " + (log.executor.tag || log.executor.username) + "."
                         : "";
