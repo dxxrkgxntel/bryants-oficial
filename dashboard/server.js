@@ -16,6 +16,7 @@ const DashboardVote = require("../Models/DashboardVote");
 const DashboardAssistantUsage = require("../Models/DashboardAssistantUsage");
 const DashboardAuditLog = require("../Models/DashboardAuditLog");
 const EconomyUser = require("../Models/EconomyUser");
+const EconomyEarningTransaction = require("../Models/EconomyEarningTransaction");
 const Achievement = require("../Models/Achievement");
 const UserAchievement = require("../Models/UserAchievement");
 const TrophySettings = require("../Models/TrophySettings");
@@ -1099,6 +1100,16 @@ app.get("/referral/callback", async (req, res) => {
                     { $inc: { wallet: REFERRAL_REWARD }, $setOnInsert: { guildId, userId: referrer.userId } },
                     { upsert: true, new: true, session: databaseSession }
                 );
+                await EconomyEarningTransaction.updateOne(
+                    { guildId, userId: referrer.userId, operationId: "referral:" + installer.id },
+                    { $setOnInsert: {
+                        guildId, userId: referrer.userId,
+                        operationId: "referral:" + installer.id,
+                        category: "referral_reward",
+                        amount: REFERRAL_REWARD
+                    } },
+                    { upsert: true, session: databaseSession }
+                );
                 await DashboardAccount.updateOne(
                     { userId: referrer.userId },
                     { $inc: { referralCount: 1 } },
@@ -1157,8 +1168,9 @@ app.post("/integrations/topgg/vote", async (req, res) => {
                 { new: true, session: databaseSession }
             );
             if (!account) return;
+            const voteId = crypto.randomBytes(16).toString("hex");
             await DashboardVote.create([{
-                voteId: crypto.randomBytes(16).toString("hex"),
+                voteId,
                 userId,
                 guildId,
                 source: "topgg",
@@ -1168,6 +1180,16 @@ app.post("/integrations/topgg/vote", async (req, res) => {
                 { guildId, userId },
                 { $inc: { wallet: amount }, $setOnInsert: { guildId, userId } },
                 { upsert: true, new: true, session: databaseSession }
+            );
+            await EconomyEarningTransaction.updateOne(
+                { guildId, userId, operationId: "topgg-vote:" + voteId },
+                { $setOnInsert: {
+                    guildId, userId,
+                    operationId: "topgg-vote:" + voteId,
+                    category: "topgg_vote_reward",
+                    amount
+                } },
+                { upsert: true, session: databaseSession }
             );
             credited = true;
         });
