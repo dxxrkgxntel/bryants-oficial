@@ -1,0 +1,411 @@
+{
+  "locale": "es",
+  "version": 1,
+  "status": "in_progress",
+  "translatedCount": 100,
+  "total": 397,
+  "source": "data/backups/notoq-achievements.json",
+  "note": "Traducciones por bloques. No activar la migración hasta completar los 397 registros y auditar descripciones/categorías.",
+  "achievements": [
+    {
+      "id": "casual_typer",
+      "name": "Escritor casual"
+    },
+    {
+      "id": "chatterbox",
+      "name": "Charlatán"
+    },
+    {
+      "id": "pro_typer",
+      "name": "Escritor experto"
+    },
+    {
+      "id": "wordsmith",
+      "name": "Maestro de las palabras"
+    },
+    {
+      "id": "king_of_spam",
+      "name": "Rey del spam"
+    },
+    {
+      "id": "keyboard_warrior",
+      "name": "Guerrero del teclado"
+    },
+    {
+      "id": "message_machine",
+      "name": "Máquina de mensajes"
+    },
+    {
+      "id": "og_spammer",
+      "name": "Spammer original"
+    },
+    {
+      "id": "legendary_scribe",
+      "name": "Escriba legendario"
+    },
+    {
+      "id": "word_novice",
+      "name": "Aprendiz de escritura"
+    },
+    {
+      "id": "word_author",
+      "name": "Autor"
+    },
+    {
+      "id": "word_novelist",
+      "name": "Novelista"
+    },
+    {
+      "id": "shutterbug",
+      "name": "Fotógrafo"
+    },
+    {
+      "id": "gallery_owner",
+      "name": "Dueño de galería"
+    },
+    {
+      "id": "picasso",
+      "name": "Picasso"
+    },
+    {
+      "id": "gif_enjoyer",
+      "name": "Amante de los GIF"
+    },
+    {
+      "id": "gif_master",
+      "name": "Maestro de los GIF"
+    },
+    {
+      "id": "gif_lord",
+      "name": "Señor de los GIF"
+    },
+    {
+      "id": "link_dropper",
+      "name": "Compartidor de enlaces"
+    },
+    {
+      "id": "web_weaver",
+      "name": "Tejedor de la web"
+    },
+    {
+      "id": "sticker_fan",
+      "name": "Fan de las pegatinas"
+    },
+    {
+      "id": "sticker_addict",
+      "name": "Adicto a las pegatinas"
+    },
+    {
+      "id": "file_sharer",
+      "name": "Compartidor de archivos"
+    },
+    {
+      "id": "data_hoarder",
+      "name": "Acumulador de datos"
+    },
+    {
+      "id": "replier",
+      "name": "Respondedor"
+    },
+    {
+      "id": "conversationalist",
+      "name": "Conversador"
+    },
+    {
+      "id": "thread_master_r",
+      "name": "Rey de las respuestas"
+    },
+    {
+      "id": "name_dropper",
+      "name": "Mencionador"
+    },
+    {
+      "id": "social_pinger",
+      "name": "Notificador social"
+    },
+    {
+      "id": "thread_starter",
+      "name": "Iniciador de hilos"
+    },
+    {
+      "id": "thread_weaver",
+      "name": "Creador de hilos"
+    },
+    {
+      "id": "command_curious",
+      "name": "Curioso de los comandos"
+    },
+    {
+      "id": "power_user",
+      "name": "Usuario avanzado"
+    },
+    {
+      "id": "bot_whisperer",
+      "name": "Domador de bots"
+    },
+    {
+      "id": "character_1k",
+      "name": "Primeros pasos"
+    },
+    {
+      "id": "character_100k",
+      "name": "Escritor incansable"
+    },
+    {
+      "id": "character_1m",
+      "name": "Millón de teclas"
+    },
+    {
+      "id": "give_or_take",
+      "name": "Dar y recibir"
+    },
+    {
+      "id": "true_star",
+      "name": "Estrella auténtica"
+    },
+    {
+      "id": "mmm_lovin_it",
+      "name": "¡Me encanta!"
+    },
+    {
+      "id": "girl_on_fire",
+      "name": "En llamas"
+    },
+    {
+      "id": "reaction_overlord",
+      "name": "Señor de las reacciones"
+    },
+    {
+      "id": "emoji_deity",
+      "name": "Deidad de los emojis"
+    },
+    {
+      "id": "first_fan",
+      "name": "Primer admirador"
+    },
+    {
+      "id": "crowd_pleaser",
+      "name": "Favorito del público"
+    },
+    {
+      "id": "beloved",
+      "name": "Muy querido"
+    },
+    {
+      "id": "icon_status",
+      "name": "Todo un icono"
+    },
+    {
+      "id": "legend_reacts",
+      "name": "Leyenda de las reacciones"
+    },
+    {
+      "id": "voice_newbie",
+      "name": "¿Eres nuevo?"
+    },
+    {
+      "id": "warming_up",
+      "name": "Calentando motores"
+    },
+    {
+      "id": "chatter_voice",
+      "name": "Hablador"
+    },
+    {
+      "id": "voice_regular",
+      "name": "Habitual de voz"
+    },
+    {
+      "id": "voice_enthusiast",
+      "name": "Entusiasta de la voz"
+    },
+    {
+      "id": "voice_addict",
+      "name": "Adicto a la voz"
+    },
+    {
+      "id": "voice_veteran",
+      "name": "Veterano de voz"
+    },
+    {
+      "id": "voice_legend",
+      "name": "Leyenda de voz"
+    },
+    {
+      "id": "voice_immortal",
+      "name": "Inmortal de voz"
+    },
+    {
+      "id": "hopper",
+      "name": "Saltador de canales"
+    },
+    {
+      "id": "frequent_flyer",
+      "name": "Viajero frecuente"
+    },
+    {
+      "id": "voice_nomad",
+      "name": "Nómada de voz"
+    },
+    {
+      "id": "go_live",
+      "name": "En directo"
+    },
+    {
+      "id": "streamer",
+      "name": "Streamer"
+    },
+    {
+      "id": "broadcast_legend",
+      "name": "Leyenda de las transmisiones"
+    },
+    {
+      "id": "regular",
+      "name": "Habitual"
+    },
+    {
+      "id": "committed",
+      "name": "Comprometido"
+    },
+    {
+      "id": "dedicated",
+      "name": "Dedicado"
+    },
+    {
+      "id": "ever_present",
+      "name": "Siempre presente"
+    },
+    {
+      "id": "streak_3",
+      "name": "En racha"
+    },
+    {
+      "id": "streak_7",
+      "name": "Una semana imparable"
+    },
+    {
+      "id": "streak_14",
+      "name": "Dos semanas de constancia"
+    },
+    {
+      "id": "streak_30",
+      "name": "Imparable"
+    },
+    {
+      "id": "streak_100",
+      "name": "Racha centenaria"
+    },
+    {
+      "id": "streak_365",
+      "name": "Año perfecto"
+    },
+    {
+      "id": "night_owl",
+      "name": "Búho nocturno"
+    },
+    {
+      "id": "moon_dweller",
+      "name": "Habitante de la luna"
+    },
+    {
+      "id": "early_bird",
+      "name": "Madrugador"
+    },
+    {
+      "id": "sunrise_soul",
+      "name": "Alma del amanecer"
+    },
+    {
+      "id": "weekend_warrior",
+      "name": "Guerrero de fin de semana"
+    },
+    {
+      "id": "weekend_legend",
+      "name": "Leyenda de fin de semana"
+    },
+    {
+      "id": "fresh_face",
+      "name": "Cara nueva"
+    },
+    {
+      "id": "familiar_face",
+      "name": "Rostro conocido"
+    },
+    {
+      "id": "seasoned_member",
+      "name": "Miembro experimentado"
+    },
+    {
+      "id": "veteran_member",
+      "name": "Veterano"
+    },
+    {
+      "id": "one_year_club",
+      "name": "Club del primer año"
+    },
+    {
+      "id": "two_year_club",
+      "name": "Club de los dos años"
+    },
+    {
+      "id": "ancient_one",
+      "name": "El ancestral"
+    },
+    {
+      "id": "veteran_discord",
+      "name": "Veterano de Discord"
+    },
+    {
+      "id": "discord_ancient",
+      "name": "Antiguo de Discord"
+    },
+    {
+      "id": "level_5",
+      "name": "Novato"
+    },
+    {
+      "id": "level_10",
+      "name": "Aprendiz"
+    },
+    {
+      "id": "level_20",
+      "name": "Habilidoso"
+    },
+    {
+      "id": "level_30",
+      "name": "Experto"
+    },
+    {
+      "id": "level_40",
+      "name": "Maestro"
+    },
+    {
+      "id": "level_50",
+      "name": "Gran maestro"
+    },
+    {
+      "id": "level_75",
+      "name": "Élite"
+    },
+    {
+      "id": "level_100",
+      "name": "Centurión"
+    },
+    {
+      "id": "level_150",
+      "name": "Ascendido"
+    },
+    {
+      "id": "xp_10k",
+      "name": "Coleccionista de XP"
+    },
+    {
+      "id": "xp_100k",
+      "name": "Acumulador de XP"
+    },
+    {
+      "id": "xp_1m",
+      "name": "Millonario de XP"
+    }
+  ]
+}
