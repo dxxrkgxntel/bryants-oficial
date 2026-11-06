@@ -1,6 +1,7 @@
 const Achievement = require("../Models/Achievement");
 const UserAchievement = require("../Models/UserAchievement");
 const EconomyUser = require("../Models/EconomyUser");
+const EconomyEarningTransaction = require("../Models/EconomyEarningTransaction");
 const Level = require("../Models/Level");
 const TrophySettings = require("../Models/TrophySettings");
 const TrophyScore = require("../Models/TrophyScore");
@@ -258,6 +259,17 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
                     { guildId: guild.id, userId: user.id },
                     { $inc: { wallet: achievement.rewardCoins }, $setOnInsert: { guildId: guild.id, userId: user.id } },
                     { upsert: true, new: true, setDefaultsOnInsert: true }
+                );
+                await EconomyEarningTransaction.updateOne(
+                    { guildId: guild.id, userId: user.id, operationId: "achievement-reward:" + achievement.achievementId + ":" + (i + 1) },
+                    { $setOnInsert: {
+                        guildId: guild.id,
+                        userId: user.id,
+                        operationId: "achievement-reward:" + achievement.achievementId + ":" + (i + 1),
+                        category: "achievement_reward",
+                        amount: achievement.rewardCoins
+                    } },
+                    { upsert: true }
                 );
                 const { trackEconomyAchievementSnapshot } = require("./economyAchievementMetrics");
                 await trackEconomyAchievementSnapshot(guild, user, rewardedEconomy);
