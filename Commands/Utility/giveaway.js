@@ -3,6 +3,7 @@ const Giveaway = require("../../Models/Giveaway");
 const GiveawayConfig = require("../../Models/GiveawayConfig");
 const { buildGiveawayMessage } = require("../../Functions/giveawayMessage");
 const { finishGiveaway, editGiveawayMessage } = require("../../Functions/giveawayDraw");
+const { trackAchievementProgress } = require("../../Functions/achievementTracker");
 
 async function getChannel(guild, channelId) {
     return guild.channels.cache.get(channelId) || guild.channels.fetch(channelId).catch(() => null);
@@ -54,6 +55,8 @@ module.exports = {
                 const message = await channel.send(buildGiveawayMessage(giveaway));
                 giveaway.messageId = message.id;
                 await giveaway.save();
+                await trackAchievementProgress(interaction.guild, interaction.user, "giveaways_created", 1)
+                    .catch(error => console.warn("[Achievements] No se pudo registrar giveaways_created:", error.message));
                 return interaction.editReply(`Giveaway publicado: ${message.url}\nID: \`${giveaway.id}\``);
             } catch (error) {
                 console.error("[Giveaway] Error creando sorteo:", error);
