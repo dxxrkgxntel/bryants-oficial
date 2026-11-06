@@ -24,6 +24,12 @@ assert.match(source, /mongoose\.disconnect/);
 assert.match(source, /require\.main\s*===\s*module/);
 
 
+const trackerSource = fs.readFileSync(path.join(__dirname, "..", "Functions", "achievementTracker.js"), "utf8");
+assert.match(trackerSource, /legacyNotoqCollisions/, "Los IDs heredados que colisionan deben reconciliarse con el catálogo Notoq.");
+assert.match(trackerSource, /source:\s*\{\s*\$ne:\s*"notoq"\s*\}/, "La reconciliación solo debe actualizar definiciones que aún no sean Notoq.");
+assert.match(trackerSource, /\$set:\s*\{\s*\.\.\.item,\s*guildId\s*\}/, "La reconciliación debe convertir el documento existente sin crear duplicados.");
+assert.match(trackerSource, /await Promise\.all\(legacyNotoqCollisions\.map\(/, "La reconciliación debe ejecutarse durante la inicialización del catálogo.");
+
 const dashboardSource = fs.readFileSync(path.join(__dirname, "..", "dashboard", "server.js"), "utf8");
 const dashboardClientSource = fs.readFileSync(path.join(__dirname, "..", "dashboard", "public", "server.js"), "utf8");
 assert.ok(dashboardSource.includes('app.get("/api/guilds/:guildId/achievements/audit-spanish", requireGuildAdmin'), "La dashboard debe exponer la auditoría protegida por permisos de administrador.");

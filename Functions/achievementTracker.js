@@ -96,6 +96,17 @@ async function ensureDefaultAchievements(guildId) {
                 { upsert: true }
             );
         }
+        // Algunos logros heredados comparten ID con el catálogo Notoq. Como el índice
+        // único es { guildId, achievementId }, reconciliamos esas definiciones en el
+        // mismo documento para conservar el historial de UserAchievement.
+        const legacyIds = new Set(DEFAULT_ACHIEVEMENTS.map(item => item.achievementId));
+        const legacyNotoqCollisions = NOTOQ_ACHIEVEMENTS.filter(item => legacyIds.has(item.achievementId));
+        await Promise.all(legacyNotoqCollisions.map(item => Achievement.updateOne(
+            { guildId, achievementId: item.achievementId, source: { $ne: "notoq" } },
+            { $set: { ...item, guildId } },
+            { upsert: false }
+        )));
+
         if (NOTOQ_BACKUP.locale === "es") {
             await migrateAchievementCatalog(guildId, NOTOQ_BACKUP);
         }
