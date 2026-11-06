@@ -314,6 +314,12 @@ function setVoiceConnectionOverride(guildId, channelId) {
     if (!guildId || !channelId) throw new Error("Servidor y canal de voz son obligatorios para reservar la conexión.");
     clearReconnectState(guildId);
     voiceConnectionOverrides.set(guildId, channelId);
+
+    // Lavalink owns the active voice transport while music is playing.
+    const connection = getVoiceConnection(guildId);
+    if (connection && connection.state.status !== VoiceConnectionStatus.Destroyed) {
+        connection.destroy();
+    }
 }
 
 async function releaseVoiceConnectionOverride(client, guildId) {

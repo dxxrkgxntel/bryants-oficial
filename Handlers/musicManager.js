@@ -9,26 +9,13 @@ const {
     StringSelectMenuBuilder,
     ChannelType
 } = require("discord.js");
-const {
-    AudioPlayerStatus,
-    NoSubscriberBehavior,
-    StreamType,
-    createAudioPlayer,
-    createAudioResource
-} = require("@discordjs/voice");
-const { spawn } = require("node:child_process");
 const { createCanvas } = require("@napi-rs/canvas");
 const { randomBytes } = require("node:crypto");
-const ffmpegPath = require("ffmpeg-static");
 const play = require("play-dl");
 const axios = require("axios");
 const MusicHistory = require("../Models/MusicHistory");
 const MusicSettings = require("../Models/MusicSettings");
-const {
-    connectToVoiceChannel,
-    releaseVoiceConnectionOverride,
-    setVoiceConnectionOverride
-} = require("./voiceConnectionManager");
+const { setVoiceConnectionOverride, releaseVoiceConnectionOverride } = require("./voiceConnectionManager");
 
 const sessions = new Map();
 const pendingSessions = new Map();
@@ -42,16 +29,17 @@ const EMPTY_CHANNEL_DISCONNECT_MS = 45_000;
 
 const FILTERS = {
     off: null,
-    bassboost: "bass=g=9:d=2",
-    "8d": "apulsator=hz=0.08",
-    nightcore: "asetrate=48000*1.12,aresample=48000,atempo=1.12",
-    vaporwave: "asetrate=48000*0.88,aresample=48000,atempo=0.88",
-    karaoke: "stereotools=mlev=0.03",
-    treble: "treble=g=5",
-    vibrato: "vibrato=f=6.5:d=0.65",
-    tremolo: "tremolo=f=6.5:d=0.65",
-    phaser: "aphaser=in_gain=0.4",
-    surround: "extrastereo=m=2.2"
+    bassboost: { equalizer: [{ band: 0, gain: 0.18 }, { band: 1, gain: 0.16 }, { band: 2, gain: 0.12 }] },
+    "8d": { rotation: { rotationHz: 0.15 } },
+    nightcore: { timescale: { speed: 1.12, pitch: 1.12, rate: 1 } },
+    vaporwave: { timescale: { speed: 0.88, pitch: 0.88, rate: 1 } },
+    karaoke: { karaoke: { level: 1, monoLevel: 1, filterBand: 220, filterWidth: 100 } },
+    treble: { equalizer: [{ band: 10, gain: 0.12 }, { band: 11, gain: 0.16 }, { band: 12, gain: 0.18 }, { band: 13, gain: 0.2 }] },
+    vibrato: { vibrato: { frequency: 6.5, depth: 0.65 } },
+    tremolo: { tremolo: { frequency: 6.5, depth: 0.65 } },
+    phaser: { rotation: { rotationHz: 0.08 } },
+    surround: { channelMix: { leftToLeft: 1, leftToRight: 0.35, rightToLeft: 0.35, rightToRight: 1 } }
+
 };
 
 function clip(value, max = 200) {
@@ -156,7 +144,6 @@ async function searchYouTubeVideos(query, limit = 8) {
     const searchTerm = String(query || "").trim();
     if (!searchTerm) return [];
 
-    let htmlError = null;
     try {
         const response = await axios.get("https://www.youtube.com/results", {
             params: { search_query: searchTerm },
@@ -171,23 +158,9 @@ async function searchYouTubeVideos(query, limit = 8) {
         const initialData = extractYouTubeInitialData(String(response.data || ""));
         const videos = collectYouTubeVideos(initialData, limit);
         if (videos.length) return videos;
-        htmlError = new Error("YouTube no devolvió vídeos para esa búsqueda.");
+        throw new Error("YouTube no devolvió vídeos para esa búsqueda.");
     } catch (error) {
-        htmlError = error;
-        console.warn("[MUSIC] La búsqueda web de YouTube falló; intentando el proveedor alternativo:", error.message);
-    }
-
-    try {
-        const fallback = await play.search(searchTerm, {
-            limit,
-            source: { youtube: "video" }
-        });
-        return Array.isArray(fallback) ? fallback : [];
-    } catch (error) {
-        console.error("[MUSIC] Fallaron ambos métodos de búsqueda de YouTube:", {
-            html: htmlError?.message,
-            playDl: error.message
-        });
+        console.error("[MUSIC] Falló la búsqueda de YouTube:", error.message);
         throw new Error("YouTube no permitió completar la búsqueda en este momento. Inténtalo de nuevo más tarde.");
     }
 }
@@ -262,6 +235,29 @@ async function resolveQuery(query, requestedBy = null) {
 
     let type = false;
     if (/^https?:\/\//i.test(value)) {
+        try {
+            const parsed = new URL(value);
+            const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+            const videoId = host === "youtu.be"
+                ? parsed.pathname.split("/").filter(Boolean)[0]
+                : ["youtube.com", "m.youtube.com", "music.youtube.com", "youtube-nocookie.com"].includes(host)
+                    ? (parsed.searchParams.get("v") || parsed.pathname.match(/^\/(?:shorts|embed|live|v)\/([^/?]+)/i)?.[1])
+                    : null;
+            if (videoId) {
+                return {
+                    tracks: [{
+                        title: "YouTube " + videoId,
+                        artist: "",
+                        url: value,
+                        durationSeconds: 0,
+                        thumbnail: "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg",
+                        source: "YouTube",
+                        requestedBy
+                    }],
+                    playlistName: null
+                };
+            }
+        } catch {}
         type = await play.validate(value).catch(() => false);
         if (!type) throw new Error("No pude reconocer ese enlace. Prueba YouTube, SoundCloud, Spotify o Deezer.");
     }
@@ -371,191 +367,104 @@ async function validateRequest(interaction) {
     return { settings, voiceChannel, textChannel: interaction.channel };
 }
 
-function createSession(guild, voiceChannel, textChannel, settings, connection) {
-    const player = createAudioPlayer({
-        behaviors: { noSubscriber: NoSubscriberBehavior.Pause }
-    });
+function createSession(guild, voiceChannel, textChannel, settings, player) {
     const session = {
-        guildId: guild.id,
-        guild,
-        voiceChannelId: voiceChannel.id,
-        textChannelId: textChannel?.id || null,
-        textChannel,
-        connection,
-        player,
-        currentTrack: null,
-        autoplaySeed: null,
-        queue: [],
-        recentTracks: [],
-        djUserId: null,
-        loopMode: "off",
-        autoplay: false,
+        guildId: guild.id, guild, voiceChannelId: voiceChannel.id,
+        textChannelId: textChannel?.id || null, textChannel, player,
+        currentTrack: null, autoplaySeed: null, queue: [], recentTracks: [],
+        djUserId: null, loopMode: "off", autoplay: false,
         volume: Math.max(0, Math.min(150, Number.isFinite(Number(settings.defaultVolume)) ? Number(settings.defaultVolume) : 70)),
-        filter: "off",
-        seekOffset: 0,
-        startedAt: null,
-        currentProcess: null,
-        panelMessage: null,
-        advancing: false,
-        suppressIdle: false,
-        idleTimer: null,
-        emptyTimer: null
+        filter: "off", seekOffset: 0, startedAt: null, panelMessage: null,
+        advancing: false, idleTimer: null, emptyTimer: null
     };
-
-    player.on(AudioPlayerStatus.Idle, () => {
-        if (session.suppressIdle || !session.currentTrack) return;
+    player.on("start", () => { session.startedAt = Date.now(); void updatePanel(session); });
+    player.on("end", event => {
+        if (!session.currentTrack || !["FINISHED", "LOAD_FAILED"].includes(event?.reason)) return;
         void handleTrackEnd(session);
     });
-    player.on("error", error => {
-        console.error(`[MUSIC] Error de audio en ${session.guildId}:`, error.message);
+    player.on("exception", event => {
+        console.error("[MUSIC] Error Lavalink en " + session.guildId + ": " + (event?.exception?.message || event?.error || "desconocido"));
     });
-    player.on(AudioPlayerStatus.Playing, () => {
-        void updatePanel(session);
+    player.on("stuck", event => {
+        console.warn("[MUSIC] Track atascado en " + session.guildId + " (" + (event?.thresholdMs || 0) + " ms).");
+        if (!session.currentTrack) return;
+        session.currentTrack = null;
+        session.startedAt = null;
+        void session.player.stopTrack().catch(() => {}).then(() => startNext(session));
     });
-
+    player.on("closed", event => console.warn("[MUSIC] WebSocket de voz cerrado en " + session.guildId + ": " + (event?.code || "") + " " + (event?.reason || "")));
     return session;
 }
 
 async function ensureSession(interaction, request) {
     const { settings, voiceChannel, textChannel } = request;
     let session = sessions.get(interaction.guildId);
-    if (session && session.voiceChannelId !== voiceChannel.id) {
-        throw new Error(`Ya estoy reproduciendo en <#${session.voiceChannelId}>.`);
-    }
+    if (session && session.voiceChannelId !== voiceChannel.id) throw new Error("Ya estoy reproduciendo en <#" + session.voiceChannelId + ">.");
     if (session) {
         session.textChannel = textChannel || session.textChannel;
         session.textChannelId = session.textChannel?.id || session.textChannelId;
         return session;
     }
-
     let pending = pendingSessions.get(interaction.guildId);
     if (pending) {
         session = await pending;
-        if (session.voiceChannelId !== voiceChannel.id) throw new Error(`Ya estoy conectándome a <#${session.voiceChannelId}>.`);
+        if (session.voiceChannelId !== voiceChannel.id) throw new Error("Ya estoy conectándome a <#" + session.voiceChannelId + ">.");
         return session;
     }
-
     pending = (async () => {
+        const shoukaku = interaction.client.shoukaku;
+        if (!shoukaku) throw new Error("Lavalink no está configurado. Revisa LAVALINK_HTTP_URL y LAVALINK_PASSWORD en las variables de entorno.");
+        if (!shoukaku.nodes.size) throw new Error("Todavía no hay ningún nodo Lavalink conectado. Espera a que el servicio esté listo e inténtalo otra vez.");
         setVoiceConnectionOverride(interaction.guildId, voiceChannel.id);
+        let player;
         try {
-            const connection = await connectToVoiceChannel(interaction.guild, voiceChannel.id, {
-                selfMute: false,
-                selfDeaf: true
+            player = await shoukaku.joinVoiceChannel({
+                guildId: interaction.guildId, channelId: voiceChannel.id,
+                shardId: interaction.guild.shardId || 0, deaf: true, mute: false
             });
-            const created = createSession(interaction.guild, voiceChannel, textChannel, settings, connection);
-            if (settings.panelMessageId && textChannel?.messages) {
-                created.panelMessage = await textChannel.messages.fetch(settings.panelMessageId).catch(() => null);
-            }
-            connection.subscribe(created.player);
+            const created = createSession(interaction.guild, voiceChannel, textChannel, settings, player);
+            await player.setFilterVolume(created.volume / 100);
+            if (settings.panelMessageId && textChannel?.messages) created.panelMessage = await textChannel.messages.fetch(settings.panelMessageId).catch(() => null);
             sessions.set(interaction.guildId, created);
             return created;
         } catch (error) {
+            if (player) await shoukaku.leaveVoiceChannel(interaction.guildId).catch(() => {});
             await releaseVoiceConnectionOverride(interaction.client, interaction.guildId).catch(() => {});
             throw error;
         }
     })();
     pendingSessions.set(interaction.guildId, pending);
-    try {
-        return await pending;
-    } finally {
-        pendingSessions.delete(interaction.guildId);
-    }
+    try { return await pending; } finally { pendingSessions.delete(interaction.guildId); }
 }
 
 function getPosition(session) {
     if (!session.currentTrack) return 0;
-    return Math.max(0, session.seekOffset + (session.startedAt ? (Date.now() - session.startedAt) / 1000 : 0));
+    const position = Number(session.player?.position);
+    return Number.isFinite(position) && position >= 0 ? position / 1000 : (session.seekOffset || 0);
 }
-
-function killCurrentProcess(session) {
-    if (session.currentSourceStream) {
-        try { session.currentSourceStream.destroy(); } catch {}
-        session.currentSourceStream = null;
+async function resolveLavalinkTrack(session, track) {
+    if (track.encoded) return track.encoded;
+    const node = session.player.node;
+    if (!node) throw new Error("El reproductor no está conectado a Lavalink.");
+    const isYouTubeUrl = /^https?:\/\/(?:www\.)?(?:youtube\.com|m\.youtube\.com|music\.youtube\.com|youtube-nocookie\.com|youtu\.be)\//i.test(track.url || "");
+    const identifier = track.source === "SoundCloud" || isYouTubeUrl
+        ? track.url
+        : ("ytsearch:" + track.title + " " + (track.artist || "")).trim();
+    const result = await node.rest.resolve(identifier);
+    const metadata = result?.tracks?.[0];
+    if (!metadata?.encoded) throw new Error('Lavalink no encontró una fuente reproducible para "' + track.title + '".');
+    track.encoded = metadata.encoded;
+    if (metadata.info) {
+        track.title = clip(metadata.info.title || track.title);
+        track.artist = clip(metadata.info.author || track.artist || "", 200);
+        track.durationSeconds = Math.floor((Number(metadata.info.length) || 0) / 1000) || track.durationSeconds;
+        track.thumbnail = metadata.info.artworkUrl || track.thumbnail;
     }
-    if (!session.currentProcess) return;
-    try { session.currentProcess.stdin?.destroy(); } catch {}
-    try { session.currentProcess.kill("SIGKILL"); } catch {}
-    session.currentProcess = null;
+    return track.encoded;
 }
-
-function getYouTubeVideoId(value) {
-    try {
-        const url = new URL(String(value || ""));
-        const host = url.hostname.replace(/^www\./i, "").toLowerCase();
-        if (host === "youtu.be") return url.pathname.split("/").filter(Boolean)[0] || null;
-        if (!["youtube.com", "m.youtube.com", "music.youtube.com", "youtube-nocookie.com"].includes(host)) return null;
-        const direct = url.searchParams.get("v");
-        if (direct) return direct;
-        const match = url.pathname.match(/^\/(?:shorts|embed|live|v)\/([^/?]+)/i);
-        return match?.[1] || null;
-    } catch {
-        return null;
-    }
-}
-
-async function getYouTubeAudioStream(session, track) {
-    const baseUrl = String(process.env.LAVALINK_HTTP_URL || "").trim().replace(/\/+$/, "");
-    const password = String(process.env.LAVALINK_PASSWORD || "").trim();
-    if (!baseUrl || !password) {
-        throw new Error("El servicio Lavalink no está configurado. Configura LAVALINK_HTTP_URL y LAVALINK_PASSWORD en el alojamiento.");
-    }
-
-    const videoId = getYouTubeVideoId(track.url);
-    if (!videoId) throw new Error("No pude extraer el ID del vídeo de YouTube.");
-
-    const response = await axios.get(
-        `${baseUrl}/youtube/stream/${encodeURIComponent(videoId)}`,
-        {
-            headers: { Authorization: password },
-            responseType: "stream",
-            timeout: 30000,
-            maxRedirects: 5,
-            validateStatus: status => status === 200
-        }
-    );
-    session.currentSourceStream = response.data;
-    return response.data;
-}
-
-async function createAudio(session, track, seek = 0) {
-    if (!ffmpegPath) throw new Error("FFmpeg no está disponible en el host.");
-
-    let sourceStream;
-    if (track.source === "YouTube") {
-        sourceStream = await getYouTubeAudioStream(session, track);
-    } else {
-        const source = await play.stream(track.url, {
-            ...(seek > 0 ? { seek: Math.floor(seek) } : {}),
-            discordPlayerCompatibility: true
-        });
-        sourceStream = source.stream;
-        session.currentSourceStream = sourceStream;
-    }
-
+async function applySessionFilter(session) {
     const filter = FILTERS[session.filter];
-    const args = ["-hide_banner", "-loglevel", "error", "-i", "pipe:0", "-vn"];
-    if (filter) args.push("-af", filter);
-    args.push("-f", "s16le", "-ar", "48000", "-ac", "2", "pipe:1");
-
-    const transcoder = spawn(ffmpegPath, args, { stdio: ["pipe", "pipe", "ignore"] });
-    session.currentProcess = transcoder;
-    sourceStream.on("error", error => {
-        console.error(`[MUSIC] Error leyendo ${track.source}:`, error.message);
-        transcoder.stdin.destroy(error);
-    });
-    transcoder.on("error", error => {
-        console.error("[MUSIC] FFmpeg no pudo iniciar:", error.message);
-    });
-    transcoder.stdin.on("error", () => {});
-    sourceStream.pipe(transcoder.stdin);
-
-    const resource = createAudioResource(transcoder.stdout, {
-        inputType: StreamType.Raw,
-        inlineVolume: true,
-        metadata: track
-    });
-    resource.volume?.setVolume(session.volume / 100);
-    return resource;
+    await session.player.setFilters(filter ? { ...filter, volume: session.volume / 100 } : { volume: session.volume / 100 });
 }
 
 function historyEntry(track) {
@@ -631,14 +540,12 @@ async function startNext(session) {
             session.currentTrack = track;
             session.seekOffset = 0;
             session.startedAt = null;
-            killCurrentProcess(session);
             try {
-                const resource = await createAudio(session, track, 0);
-                if (sessions.get(session.guildId) !== session) {
-                    killCurrentProcess(session);
-                    return;
-                }
-                session.player.play(resource);
+                const encoded = await resolveLavalinkTrack(session, track);
+                if (sessions.get(session.guildId) !== session) return;
+                await applySessionFilter(session);
+                await session.player.playTrack({ track: { encoded } });
+                session.seekOffset = 0;
                 session.startedAt = Date.now();
                 session.recentTracks.push(track);
                 if (session.recentTracks.length > 30) session.recentTracks.shift();
@@ -648,8 +555,7 @@ async function startNext(session) {
             } catch (error) {
                 console.error(`[MUSIC] No pude reproducir "${track.title}" en ${session.guildId}:`, error.message);
                 session.currentTrack = null;
-                killCurrentProcess(session);
-                failedTracks++;
+                    failedTracks++;
             }
         }
 
@@ -695,7 +601,7 @@ async function enqueueTracks(interaction, tracks) {
 
     if (!session.djUserId) session.djUserId = interaction.user.id;
     session.queue.push(...accepted);
-    const startsNow = !session.currentTrack && session.player.state.status === AudioPlayerStatus.Idle;
+    const startsNow = !session.currentTrack && !session.advancing;
     if (startsNow) void startNext(session);
     else void updatePanel(session);
 
@@ -811,7 +717,7 @@ function button(action, guildId, label, emoji, style = ButtonStyle.Secondary, di
 
 function buildPanelComponents(session) {
     const guildId = session.guildId;
-    const paused = session.player.state.status === AudioPlayerStatus.Paused;
+    const paused = Boolean(session.player?.paused);
     const disabled = !session.currentTrack;
     return [
         new ActionRowBuilder().addComponents(
@@ -870,12 +776,12 @@ function shuffleQueue(queue) {
 async function restartCurrent(session, seekSeconds) {
     if (!session.currentTrack) throw new Error("No hay una canción para controlar.");
     const track = session.currentTrack;
-    const position = Math.max(0, Math.min(Number(seekSeconds) || 0, track.durationSeconds ? track.durationSeconds - 1 : 86_400));
-    killCurrentProcess(session);
-    const resource = await createAudio(session, track, position);
+    const position = Math.max(0, Math.min(Number(seekSeconds) || 0, track.durationSeconds ? track.durationSeconds - 1 : 86400));
+    const encoded = await resolveLavalinkTrack(session, track);
+    await session.player.playTrack({ track: { encoded }, options: { startTime: Math.floor(position * 1000) } });
     session.seekOffset = position;
     session.startedAt = Date.now();
-    session.player.play(resource);
+    await applySessionFilter(session);
     await updatePanel(session);
 }
 
@@ -884,14 +790,13 @@ async function endSession(session, reason = null) {
     sessions.delete(session.guildId);
     clearTimer(session, "idleTimer");
     clearTimer(session, "emptyTimer");
-    session.suppressIdle = true;
-    session.player.stop(true);
-    killCurrentProcess(session);
     session.currentTrack = null;
     session.queue = [];
     session.autoplay = false;
+    await session.player.stopTrack().catch(() => {});
     await updatePanel(session).catch(() => {});
-    await releaseVoiceConnectionOverride(session.guild.client, session.guildId);
+    await session.guild.client.shoukaku?.leaveVoiceChannel(session.guildId).catch(() => {});
+    await releaseVoiceConnectionOverride(session.guild.client, session.guildId).catch(() => {});
 }
 
 function promoteDJIfNeeded(session) {
@@ -924,34 +829,31 @@ async function runControl(interaction, action, options = {}) {
 
     switch (action) {
         case "toggle":
-            if (session.player.state.status === AudioPlayerStatus.Paused) {
+            if (session.player.paused) {
+                await session.player.setPaused(false);
                 session.startedAt = Date.now();
-                session.player.unpause();
                 return "Reproducción reanudada.";
             }
-            if (session.player.state.status !== AudioPlayerStatus.Playing) throw new Error("La reproducción todavía no está lista para pausarse.");
+            if (!session.currentTrack) throw new Error("La reproducción todavía no está lista para pausarse.");
             session.seekOffset = getPosition(session);
             session.startedAt = null;
-            session.player.pause();
+            await session.player.setPaused(true);
             return "Reproducción pausada.";
         case "pause":
-            if (session.player.state.status !== AudioPlayerStatus.Playing) throw new Error("No hay una canción reproduciéndose ahora.");
+            if (!session.currentTrack || session.player.paused) throw new Error("No hay una canción reproduciéndose ahora.");
             session.seekOffset = getPosition(session);
             session.startedAt = null;
-            session.player.pause();
+            await session.player.setPaused(true);
             return "Reproducción pausada.";
         case "resume":
-            if (session.player.state.status !== AudioPlayerStatus.Paused) throw new Error("La reproducción no está pausada.");
+            if (!session.player.paused) throw new Error("La reproducción no está pausada.");
+            await session.player.setPaused(false);
             session.startedAt = Date.now();
-            session.player.unpause();
             return "Reproducción reanudada.";
         case "skip":
             if (!session.currentTrack) throw new Error("No hay una canción actual para saltar.");
             session.autoplaySeed = session.currentTrack;
-            session.suppressIdle = true;
-            session.player.stop(true);
-            session.suppressIdle = false;
-            killCurrentProcess(session);
+            await session.player.stopTrack();
             session.currentTrack = null;
             session.seekOffset = 0;
             session.startedAt = null;
@@ -965,10 +867,7 @@ async function runControl(interaction, action, options = {}) {
             }
             const previous = session.recentTracks.length > 1 ? session.recentTracks[session.recentTracks.length - 2] : null;
             if (!previous) throw new Error("No hay una canción anterior en el historial de esta sesión.");
-            session.suppressIdle = true;
-            session.player.stop(true);
-            session.suppressIdle = false;
-            killCurrentProcess(session);
+            await session.player.stopTrack();
             session.recentTracks.pop();
             session.queue.unshift(session.currentTrack);
             session.queue.unshift(previous);
@@ -1010,10 +909,7 @@ async function runControl(interaction, action, options = {}) {
             }
             session.queue.splice(0, position - 1);
             session.autoplaySeed = session.currentTrack;
-            session.suppressIdle = true;
-            session.player.stop(true);
-            session.suppressIdle = false;
-            killCurrentProcess(session);
+            await session.player.stopTrack();
             session.currentTrack = null;
             void startNext(session);
             return `Salté a la posición ${position} de la cola.`;
@@ -1038,15 +934,14 @@ async function runControl(interaction, action, options = {}) {
             const volume = Number(options.value);
             if (!Number.isInteger(volume) || volume < 0 || volume > 150) throw new Error("El volumen debe estar entre 0 y 150.");
             session.volume = volume;
-            const resource = session.player.state.resource;
-            resource?.volume?.setVolume(volume / 100);
+            await session.player.setFilterVolume(volume / 100);
             void updatePanel(session);
             return `Volumen establecido en ${volume}%.`;
         }
         case "volume_down":
         case "volume_up": {
             session.volume = Math.max(0, Math.min(150, session.volume + (action === "volume_up" ? 10 : -10)));
-            session.player.state.resource?.volume?.setVolume(session.volume / 100);
+            await session.player.setFilterVolume(session.volume / 100);
             void updatePanel(session);
             return `Volumen: ${session.volume}%.`;
         }
@@ -1054,7 +949,7 @@ async function runControl(interaction, action, options = {}) {
             const filter = String(options.filter || "").toLowerCase();
             if (!Object.hasOwn(FILTERS, filter)) throw new Error(`Filtro no disponible. Opciones: ${Object.keys(FILTERS).join(", " )}.`);
             session.filter = filter;
-            if (session.currentTrack) await restartCurrent(session, getPosition(session));
+            if (session.currentTrack) await applySessionFilter(session);
             else void updatePanel(session);
             return `Filtro establecido en **${filter}**.`;
         }
@@ -1188,7 +1083,7 @@ async function ensureConfiguredPanels(client) {
         }
         const idleSession = {
             guildId: guild.id, currentTrack: null, queue: [], loopMode: "off", autoplay: false,
-            player: { state: { status: AudioPlayerStatus.Idle } }
+            player: { paused: false }
         };
         const payload = {
             embeds: [buildPanelEmbed(idleSession)],
