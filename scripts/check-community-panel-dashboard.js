@@ -1,14 +1,14 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const { configurations } = require("../dashboard/modules");
 const { buildCommunityPanelPayload } = require("../Functions/communityPanelMessage");
 
 const root = path.join(__dirname, "..");
 const server = fs.readFileSync(path.join(root, "dashboard/server.js"), "utf8");
+const modules = fs.readFileSync(path.join(root, "dashboard/modules.js"), "utf8");
 const client = fs.readFileSync(path.join(root, "dashboard/public/server.js"), "utf8");
 
-assert.equal(configurations.communityPanels?.custom, true, "Community panels must appear as a dashboard module.");
+assert.match(modules, /communityPanels\s*:\s*\{[\s\S]*?custom:\s*true/, "Community panels must appear as a dashboard module.");
 assert.match(server, /\/api\/guilds\/:guildId\/community-panels/);
 assert.match(server, /buildCommunityPanelPayload/);
 assert.match(client, /async function renderCommunityPanels/);
