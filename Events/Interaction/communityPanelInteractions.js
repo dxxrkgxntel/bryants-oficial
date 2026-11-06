@@ -195,18 +195,21 @@ async function handleReview(interaction) {
         await interaction.reply({ content: "No tienes permiso para revisar estas solicitudes.", flags: MessageFlags.Ephemeral });
         return true;
     }
+    const target = await interaction.guild.members.fetch(request.userId).catch(() => null);
+    if (action === "approve" && !target) {
+        await interaction.reply({ content: "El solicitante ya no está en este servidor; no puedo completar la verificación.", flags: MessageFlags.Ephemeral });
+        return true;
+    }
     request.status = action === "approve" ? "approved" : "rejected";
     request.reviewerId = interaction.user.id;
     await request.save();
     if (action === "approve") {
-        const member = await interaction.guild.members.fetch(request.userId).catch(() => null);
-        if (member) await completeVerification(interaction.guild, member, panel, member.user);
+        await completeVerification(interaction.guild, target, panel, target.user);
     }
     await interaction.update({
         content: `Solicitud ${action === "approve" ? "aprobada" : "rechazada"} por <@${interaction.user.id}> · <@${request.userId}>`,
         components: []
     });
-    const target = await interaction.guild.members.fetch(request.userId).catch(() => null);
     if (target) await target.send(action === "approve"
         ? `Tu solicitud de verificación en **${interaction.guild.name}** fue aprobada.`
         : `Tu solicitud de verificación en **${interaction.guild.name}** fue rechazada. Contacta con el equipo si necesitas ayuda.`).catch(() => {});
