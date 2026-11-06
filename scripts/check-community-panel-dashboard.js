@@ -51,7 +51,7 @@ const verificationPayload = buildCommunityPanelPayload({
     title: "Verificación", description: "Pulsa para verificarte.", color: "#8A2BE2"
 }, guild);
 assert.equal(verificationPayload.flags, 1 << 15);
-assert.equal(verificationPayload.components[0].components.at(-1).components[0].custom_id, "community-panel:verify:verify:button");
+assert.equal(verificationPayload.components[0].components.at(-1).components[0].custom_id, "community-panel:verify:verify");
 const multiMethodPayload = buildCommunityPanelPayload({
     guildId: guild.id, panelId: "multi", kind: "verification", messageType: "embed",
     title: "Verificación", description: "Elige un método.", color: "#8A2BE2",
@@ -59,7 +59,7 @@ const multiMethodPayload = buildCommunityPanelPayload({
 }, guild);
 assert.deepEqual(
     multiMethodPayload.components[0].components.map(component => component.custom_id),
-    ["community-panel:multi:verify:button", "community-panel:multi:verify:captcha", "community-panel:multi:verify:question", "community-panel:multi:verify:manual_approval"]
+    ["community-panel:multi:verify", "community-panel:multi:verify:captcha", "community-panel:multi:verify:question", "community-panel:multi:verify:manual_approval"]
 );
 
 console.log("Community panel dashboard integration checks passed.");
