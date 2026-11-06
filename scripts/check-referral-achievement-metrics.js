@@ -36,14 +36,31 @@ async function run() {
     assert.equal(calls.length, 2);
     assert(calls.every(call => call[3] === 4 && call[4].absolute === true));
 
-    const noMember = createReferralAchievementMetricSync({
-        ReferralModel: { aggregate: async () => [{ _id: { guildId: "g", userId: "u" }, total: 1 }] },
-        trackProgress: async (...args) => calls.push(args),
+    const departedReferrerCalls = [];
+    const departedReferrer = createReferralAchievementMetricSync({
+        ReferralModel: { aggregate: async () => [{ _id: { guildId: "g", userId: "departed-user" }, total: 7 }] },
+        trackProgress: async (...args) => departedReferrerCalls.push(args),
         getGuild: async id => ({ id }),
         getUser: async id => ({ id }),
         getMember: async () => null
     });
-    assert.deepEqual(await noMember(), { processed: 0, skipped: 1 });
+    assert.deepEqual(await departedReferrer(), { processed: 1, skipped: 0 });
+    assert.equal(departedReferrerCalls.length, 1);
+    assert.deepEqual(departedReferrerCalls[0].slice(1), [
+        { id: "departed-user" },
+        "referrals",
+        7,
+        { absolute: true }
+    ]);
+
+    const missingUser = createReferralAchievementMetricSync({
+        ReferralModel: { aggregate: async () => [{ _id: { guildId: "g", userId: "missing-user" }, total: 1 }] },
+        trackProgress: async (...args) => calls.push(args),
+        getGuild: async id => ({ id }),
+        getUser: async () => null,
+        getMember: async () => null
+    });
+    assert.deepEqual(await missingUser(), { processed: 0, skipped: 1 });
 
     const failing = createReferralAchievementMetricSync({
         ReferralModel: { aggregate: async () => [{ _id: { guildId: "g", userId: "u" }, total: 1 }] },
