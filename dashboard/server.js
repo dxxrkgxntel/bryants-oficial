@@ -22,6 +22,9 @@ const DashboardAuditLog = require("../Models/DashboardAuditLog");
 const DashboardGuildPermission = require("../Models/DashboardGuildPermission");
 const DashboardNotification = require("../Models/DashboardNotification");
 const DashboardNotificationPreference = require("../Models/DashboardNotificationPreference");
+const DashboardAutomation = require("../Models/DashboardAutomation");
+const CustomForm = require("../Models/CustomForm");
+const CustomFormResponse = require("../Models/CustomFormResponse");
 const EconomyUser = require("../Models/EconomyUser");
 const EconomyEarningTransaction = require("../Models/EconomyEarningTransaction");
 const Achievement = require("../Models/Achievement");
@@ -2071,7 +2074,7 @@ app.get("/api/guilds/:guildId/config", requireGuildDashboardAccess, async (req, 
     try {
         await ensureDefaultAchievements(req.params.guildId);
         const visibleConfigurations = Object.entries(configurations).filter(([key]) =>
-            req.dashboardAccess.admin || (key === "notificationCenter" && hasGuildModulePermission(req.dashboardAccess, key, "view")) || (!configurations[key].custom && hasGuildModulePermission(req.dashboardAccess, key, "view"))
+            req.dashboardAccess.admin || (key !== "permissionsCenter" && hasGuildModulePermission(req.dashboardAccess, key, "view"))
         );
         const visibleLists = Object.entries(lists).filter(([key]) =>
             req.dashboardAccess.admin || hasGuildModulePermission(req.dashboardAccess, key, "view")
@@ -2600,6 +2603,185 @@ function validateCommunityPanelInput(input, guildId, resources) {
         reviewChannelId, reviewerRoleIds, removeRoleIds
     };
 }
+
+
+function validateAutomationInput(input, channels) {
+    const name = String(input?.name || "").trim();
+    const message = String(input?.message || "").trim();
+    const channelId = String(input?.channelId || "");
+    const scheduleType = input?.scheduleType === "interval" ? "interval" : "once";
+    if (!name || name.length > 80) throw new Error("El nombre debe tener entre 1 y 80 caracteres.");
+    if (!message || message.length > 2000) throw new Error("El mensaje debe tener entre 1 y 2000 caracteres.");
+    if (!channels.some(channel => channel.id === channelId && [0, 5].includes(channel.type))) throw new Error("Selecciona un canal de texto de este servidor.");
+    if (scheduleType === "interval") {
+        const intervalMinutes = Number(input.intervalMinutes);
+        if (!Number.isInteger(intervalMinutes) || intervalMinutes < 5 || intervalMinutes > 525600) throw new Error("El intervalo debe estar entre 5 minutos y 365 días.");
+        return { name, message, channelId, scheduleType, intervalMinutes, nextRunAt: new Date(Date.now() + intervalMinutes * 60000) };
+    }
+    const runAt = new Date(input.runAt);
+    if (!Number.isFinite(runAt.getTime()) || runAt.getTime() < Date.now() + 60000 || runAt.getTime() > Date.now() + 365 * 86400000) {
+        throw new Error("La fecha debe estar entre 1 minuto y 365 días en el futuro.");
+    }
+    return { name, message, channelId, scheduleType, intervalMinutes: null, runAt, nextRunAt: runAt };
+}
+
+function validateCustomFormInput(input, channels) {
+    const formId = String(input?.formId || "").trim().toLowerCase();
+    const title = String(input?.title || "").trim();
+    const description = String(input?.description || "").trim();
+    const channelId = String(input?.channelId || "");
+    const responseChannelId = String(input?.responseChannelId || "");
+    const buttonLabel = String(input?.buttonLabel || "Abrir formulario").trim();
+    if (!/^[a-z0-9_-]{1,40}$/.test(formId)) throw new Error("El ID solo admite letras minúsculas, números, guiones y guiones bajos (máximo 40).");
+    if (!title || title.length > 100) throw new Error("El título debe tener entre 1 y 100 caracteres.");
+    if (description.length > 1000) throw new Error("La descripción no puede superar 1000 caracteres.");
+    if (!buttonLabel || buttonLabel.length > 80) throw new Error("El texto del botón debe tener entre 1 y 80 caracteres.");
+    if (!channels.some(channel => channel.id === channelId && [0, 5].includes(channel.type))) throw new Error("Selecciona un canal de publicación válido.");
+    if (!channels.some(channel => channel.id === responseChannelId && [0, 5].includes(channel.type))) throw new Error("Selecciona un canal privado para recibir respuestas.");
+    if (!Array.isArray(input.questions) || input.questions.length < 1 || input.questions.length > 5) throw new Error("Cada formulario necesita entre 1 y 5 preguntas.");
+    const ids = new Set();
+    const questions = input.questions.map((question, index) => {
+        const label = String(question?.label || "").trim();
+        const questionId = "q" + index;
+        if (!label || label.length > 45) throw new Error("Cada pregunta debe tener entre 1 y 45 caracteres.");
+        if (ids.has(questionId)) throw new Error("Hay identificadores de preguntas duplicados.");
+        ids.add(questionId);
+        return {
+            questionId, label,
+            style: question.style === "paragraph" ? "paragraph" : "short",
+            required: question.required !== false,
+            placeholder: String(question.placeholder || "").slice(0, 100)
+        };
+    });
+    return { formId, title, description, channelId, responseChannelId, buttonLabel, questions, enabled: input.enabled !== false };
+}
+
+app.get("/api/guilds/:guildId/modules/:module/automations", requireGuildModulePermission("view"), async (req, res) => {
+    if (req.params.module !== "automations") return res.status(404).json({ error: "Módulo no encontrado." });
+    try {
+        const automations = await DashboardAutomation.find({ guildId: req.params.guildId }).sort({ nextRunAt: 1 }).limit(100).lean();
+        return res.json({ automations: automations.map(item => ({ ...item, _id: String(item._id) })) });
+    } catch (error) {
+        console.error("[Automations] Error al consultar:", error.message);
+        return res.status(500).json({ error: "No pude cargar las automatizaciones." });
+    }
+});
+
+app.post("/api/guilds/:guildId/modules/:module/automations", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
+    if (req.params.module !== "automations") return res.status(404).json({ error: "Módulo no encontrado." });
+    try {
+        const resources = await fetchGuildResources(req.params.guildId);
+        const input = validateAutomationInput(req.body, resources.channels);
+        const automation = await DashboardAutomation.create({ ...input, guildId: req.params.guildId, createdBy: req.session.user.id });
+        await recordDashboardAudit(req, req.params.guildId, "Automatización " + automation.name + " creada");
+        return res.status(201).json({ automation: serialize(automation) });
+    } catch (error) {
+        return res.status(400).json({ error: error.message || "No pude crear la automatización." });
+    }
+});
+
+app.put("/api/guilds/:guildId/modules/:module/automations/:automationId", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
+    if (req.params.module !== "automations" || !/^[a-f\d]{24}$/i.test(req.params.automationId)) return res.status(404).json({ error: "Automatización no encontrada." });
+    try {
+        const resources = await fetchGuildResources(req.params.guildId);
+        const input = validateAutomationInput(req.body, resources.channels);
+        const automation = await DashboardAutomation.findOneAndUpdate(
+            { _id: req.params.automationId, guildId: req.params.guildId },
+            { $set: { ...input, enabled: req.body.enabled !== false, lastError: null, completedAt: null, lockedUntil: null } },
+            { new: true, runValidators: true }
+        );
+        if (!automation) return res.status(404).json({ error: "Automatización no encontrada." });
+        await recordDashboardAudit(req, req.params.guildId, "Automatización " + automation.name + " actualizada");
+        return res.json({ automation: serialize(automation) });
+    } catch (error) {
+        return res.status(400).json({ error: error.message || "No pude actualizar la automatización." });
+    }
+});
+
+app.delete("/api/guilds/:guildId/modules/:module/automations/:automationId", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
+    if (req.params.module !== "automations" || !/^[a-f\d]{24}$/i.test(req.params.automationId)) return res.status(404).json({ error: "Automatización no encontrada." });
+    const result = await DashboardAutomation.deleteOne({ _id: req.params.automationId, guildId: req.params.guildId });
+    if (!result.deletedCount) return res.status(404).json({ error: "Automatización no encontrada." });
+    await recordDashboardAudit(req, req.params.guildId, "Automatización eliminada");
+    return res.json({ ok: true });
+});
+
+app.get("/api/guilds/:guildId/modules/:module/forms", requireGuildModulePermission("view"), async (req, res) => {
+    if (req.params.module !== "customForms") return res.status(404).json({ error: "Módulo no encontrado." });
+    try {
+        const forms = await CustomForm.find({ guildId: req.params.guildId }).sort({ updatedAt: -1 }).lean();
+        const counts = await CustomFormResponse.aggregate([{ $match: { guildId: req.params.guildId } }, { $group: { _id: "$formId", count: { $sum: 1 } } }]);
+        const countMap = new Map(counts.map(item => [item._id, item.count]));
+        return res.json({ forms: forms.map(form => ({ ...form, _id: String(form._id), responseCount: countMap.get(form.formId) || 0 })) });
+    } catch (error) {
+        console.error("[Custom Forms] Error al consultar:", error.message);
+        return res.status(500).json({ error: "No pude cargar los formularios." });
+    }
+});
+
+app.post("/api/guilds/:guildId/modules/:module/forms", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
+    if (req.params.module !== "customForms") return res.status(404).json({ error: "Módulo no encontrado." });
+    try {
+        const resources = await fetchGuildResources(req.params.guildId);
+        const input = validateCustomFormInput(req.body, resources.channels);
+        const form = await CustomForm.findOneAndUpdate(
+            { guildId: req.params.guildId, formId: input.formId },
+            { $set: input, $setOnInsert: { guildId: req.params.guildId, formId: input.formId, createdBy: req.session.user.id } },
+            { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+        );
+        await recordDashboardAudit(req, req.params.guildId, "Formulario " + form.formId + " guardado");
+        return res.status(201).json({ form: serialize(form) });
+    } catch (error) {
+        if (error.code === 11000) return res.status(409).json({ error: "Ya existe un formulario con ese ID." });
+        return res.status(400).json({ error: error.message || "No pude guardar el formulario." });
+    }
+});
+
+app.post("/api/guilds/:guildId/modules/:module/forms/:formId/publish", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
+    if (req.params.module !== "customForms") return res.status(404).json({ error: "Módulo no encontrado." });
+    try {
+        const form = await CustomForm.findOne({ guildId: req.params.guildId, formId: req.params.formId.toLowerCase(), enabled: true });
+        if (!form) return res.status(404).json({ error: "No encontré un formulario activo con ese ID." });
+        const payload = {
+            embeds: [{ color: 0x8A2BE2, title: form.title, description: form.description || "Pulsa el botón para responder." }],
+            components: [{ type: 1, components: [{ type: 2, style: 1, custom_id: "custom_form_open:" + form._id, label: form.buttonLabel }] }],
+            allowed_mentions: { parse: [] }
+        };
+        const endpoint = "https://discord.com/api/v10/channels/" + form.channelId + "/messages";
+        let message = null;
+        if (form.publishedMessageId) {
+            try { message = await discordBotRequest(endpoint + "/" + form.publishedMessageId, { method: "PATCH", body: payload }); }
+            catch (error) { if (error.status !== 404) throw error; }
+        }
+        if (!message) message = await discordBotRequest(endpoint, { method: "POST", body: payload });
+        form.publishedMessageId = message.id;
+        form.publishedAt = new Date();
+        await form.save();
+        await recordDashboardAudit(req, req.params.guildId, "Formulario " + form.formId + " publicado");
+        return res.json({ ok: true, messageId: message.id, url: "https://discord.com/channels/" + req.params.guildId + "/" + form.channelId + "/" + message.id });
+    } catch (error) {
+        return res.status(error.status === 429 ? 429 : error.status ? 502 : 400).json({ error: error.message || "No pude publicar el formulario." });
+    }
+});
+
+app.get("/api/guilds/:guildId/modules/:module/forms/:formId/responses", requireGuildModulePermission("view"), async (req, res) => {
+    if (req.params.module !== "customForms") return res.status(404).json({ error: "Módulo no encontrado." });
+    try {
+        const responses = await CustomFormResponse.find({ guildId: req.params.guildId, formId: req.params.formId }).sort({ createdAt: -1 }).limit(100).lean();
+        return res.json({ responses: responses.map(item => ({ ...item, _id: String(item._id) })) });
+    } catch (error) {
+        return res.status(500).json({ error: "No pude cargar las respuestas." });
+    }
+});
+
+app.delete("/api/guilds/:guildId/modules/:module/forms/:formId", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
+    if (req.params.module !== "customForms") return res.status(404).json({ error: "Módulo no encontrado." });
+    const form = await CustomForm.findOneAndDelete({ guildId: req.params.guildId, formId: req.params.formId.toLowerCase() });
+    if (!form) return res.status(404).json({ error: "Formulario no encontrado." });
+    await CustomFormResponse.deleteMany({ guildId: req.params.guildId, formId: form.formId });
+    await recordDashboardAudit(req, req.params.guildId, "Formulario " + form.formId + " eliminado");
+    return res.json({ ok: true });
+});
 
 app.get("/api/guilds/:guildId/community-panels", requireGuildAdmin, async (req, res) => {
     try {
