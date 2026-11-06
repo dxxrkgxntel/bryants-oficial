@@ -5,6 +5,7 @@ const EconomyEarningTransaction = require("../Models/EconomyEarningTransaction")
 const Level = require("../Models/Level");
 const TrophySettings = require("../Models/TrophySettings");
 const TrophyScore = require("../Models/TrophyScore");
+const { migrateAchievementCatalog } = require("./achievementCatalogMigration");
 const { EmbedBuilder } = require("discord.js");
 const { sendTrophyCard, sendTrophyComponents } = require("./trophyCard");
 const { achievementComparatorReached, achievementProgressUpdate } = require("./achievementRules");
@@ -94,6 +95,9 @@ async function ensureDefaultAchievements(guildId) {
                 { $set: { notoqCatalogSeeded: true }, $setOnInsert: { guildId } },
                 { upsert: true }
             );
+        }
+        if (NOTOQ_BACKUP.locale === "es") {
+            await migrateAchievementCatalog(guildId, NOTOQ_BACKUP);
         }
     })().catch(error => {
         seededGuilds.delete(guildId);
