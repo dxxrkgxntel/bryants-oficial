@@ -1,5 +1,5 @@
 const guildId = decodeURIComponent(window.location.pathname.split("/").filter(Boolean).at(-1) || "");
-const categoriesOrder = ["Comunidad", "Alertas sociales", "Moderación", "Servidor", "Economía y XP", "Trofeos"];
+const categoriesOrder = ["Administración", "Comunidad", "Alertas sociales", "Moderación", "Servidor", "Economía y XP", "Trofeos"];
 const nav = document.querySelector("#module-nav");
 const content = document.querySelector("#module-content");
 const notice = document.querySelector("#notice");
@@ -1790,6 +1790,139 @@ async function renderCommunityPanels(definition, editingPanel = null) {
     }
 }
 
+function renderPermissionsCenter(definition) {
+    currentModule = "permissionsCenter";
+    content.innerHTML = \`<article class="settings-card admin-center-card">
+        <div class="card-heading"><div><div class="eyebrow">ADMINISTRACIÓN</div><h2>\${escapeHtml(definition.title)}</h2></div><span class="status-pill configured">Control del servidor</span></div>
+        <p class="card-description">Asigna módulos y acciones a roles o miembros. Los administradores y el propietario del servidor conservan siempre el acceso completo.</p>
+        <div class="admin-center-section"><div class="admin-center-heading"><div><h3>Permisos por rol</h3><p>Todos los miembros con ese rol recibirán los accesos seleccionados.</p></div><button type="button" class="quiet-button" data-add-role-rule>＋ Añadir rol</button></div><div data-role-rules><div class="loading-card">Cargando permisos…</div></div></div>
+        <div class="admin-center-section"><div class="admin-center-heading"><div><h3>Permisos por miembro</h3><p>Los permisos individuales se suman a los concedidos por sus roles.</p></div><button type="button" class="quiet-button" data-add-user-rule>＋ Añadir miembro</button></div><div data-user-rules></div></div>
+        <div class="form-actions"><button type="button" class="primary-button" data-save-permissions>Guardar permisos</button><span class="save-feedback" role="status" aria-live="polite"></span></div>
+        <p class="admin-center-note">La gestión de permisos avanzados seguirá reservada a administradores del servidor.</p>
+    </article>\`;
+    const moduleEntries = Object.entries(currentModules.configurations || {}).concat(Object.entries(currentModules.lists || {}))
+        .filter(([key]) => !["permissionsCenter", "notificationCenter"].includes(key));
+    const roleContainer = content.querySelector("[data-role-rules]");
+    const userContainer = content.querySelector("[data-user-rules]");
+    const moduleOptions = (selected = []) => moduleEntries.map(([key, item]) => \`<label class="admin-module-check"><input type="checkbox" data-module-key="\${escapeHtml(key)}" \${selected.includes(key) ? "checked" : ""}><span>\${escapeHtml(item.title || key)}</span></label>\`).join("");
+    const actionOptions = (selected = ["view"]) => \`<label><input type="checkbox" data-action="view" \${selected.includes("view") ? "checked" : ""}> Ver</label><label><input type="checkbox" data-action="edit" \${selected.includes("edit") ? "checked" : ""}> Editar</label>\`;
+    const roleRow = (rule = {}) => \`<section class="permission-rule" data-permission-rule="role"><div class="permission-rule-top"><label class="field"><span>Rol</span><select data-rule-identity><option value="">Selecciona un rol</option>\${resources.roles.map(role => \`<option value="\${escapeHtml(role.id)}" \${rule.roleId === role.id ? "selected" : ""}>\${escapeHtml(role.name)}</option>\`).join("")}</select></label><button type="button" class="quiet-button danger-text" data-remove-rule>Eliminar</button></div><div class="permission-rule-grid"><div><strong>Módulos permitidos</strong><div class="admin-module-grid">\${moduleOptions(rule.modules || [])}</div></div><div><strong>Acciones</strong><div class="admin-action-list">\${actionOptions(rule.actions || ["view"])}</div></div></div></section>\`;
+    const userRow = (rule = {}) => \`<section class="permission-rule" data-permission-rule="user"><div class="permission-rule-top"><label class="field"><span>ID del miembro de Discord</span><input data-rule-identity inputmode="numeric" maxlength="20" value="\${escapeHtml(rule.userId || "")}" placeholder="ID de 17 a 20 dígitos"></label><button type="button" class="quiet-button danger-text" data-remove-rule>Eliminar</button></div><div class="permission-rule-grid"><div><strong>Módulos permitidos</strong><div class="admin-module-grid">\${moduleOptions(rule.modules || [])}</div></div><div><strong>Acciones</strong><div class="admin-action-list">\${actionOptions(rule.actions || ["view"])}</div></div></div></section>\`;
+    const collect = container => [...container.querySelectorAll("[data-permission-rule]")].map(row => {
+        const identity = row.querySelector("[data-rule-identity]").value.trim();
+        const modules = [...row.querySelectorAll("[data-module-key]:checked")].map(input => input.dataset.moduleKey);
+        const actions = [...row.querySelectorAll("[data-action]:checked")].map(input => input.dataset.action);
+        return row.dataset.permissionRule === "role" ? { roleId: identity, modules, actions } : { userId: identity, modules, actions };
+    });
+    const addRule = (container, render) => {
+        if (container.children.length >= 50) return showNotice("Puedes configurar hasta 50 reglas por tipo.", true);
+        if (container.querySelector(".loading-card")) container.replaceChildren();
+        container.insertAdjacentHTML("beforeend", render());
+    };
+    roleContainer.addEventListener("click", event => { if (event.target.closest("[data-remove-rule]")) event.target.closest("[data-permission-rule]").remove(); });
+    userContainer.addEventListener("click", event => { if (event.target.closest("[data-remove-rule]")) event.target.closest("[data-permission-rule]").remove(); });
+    content.querySelector("[data-add-role-rule]").addEventListener("click", () => addRule(roleContainer, roleRow));
+    content.querySelector("[data-add-user-rule]").addEventListener("click", () => addRule(userContainer, userRow));
+    content.querySelector("[data-save-permissions]").addEventListener("click", async event => {
+        const button = event.currentTarget;
+        const feedback = content.querySelector(".save-feedback");
+        button.disabled = true;
+        feedback.textContent = "Guardando permisos…";
+        try {
+            const result = await api(\`/api/guilds/\${encodeURIComponent(guildId)}/permissions\`, {
+                method: "PUT",
+                body: JSON.stringify({ roleRules: collect(roleContainer), userRules: collect(userContainer) })
+            });
+            feedback.textContent = "Permisos guardados correctamente.";
+            feedback.className = "save-feedback success";
+            showNotice("Permisos avanzados actualizados.");
+        } catch (error) {
+            feedback.textContent = error.message;
+            feedback.className = "save-feedback error";
+        } finally { button.disabled = false; }
+    });
+    api(\`/api/guilds/\${encodeURIComponent(guildId)}/permissions\`).then(result => {
+        roleContainer.innerHTML = result.roleRules.length ? result.roleRules.map(roleRow).join("") : '<p class="setup-empty">Todavía no hay permisos adicionales por rol.</p>';
+        userContainer.innerHTML = result.userRules.length ? result.userRules.map(userRow).join("") : '<p class="setup-empty">Todavía no hay permisos individuales.</p>';
+    }).catch(error => {
+        roleContainer.innerHTML = \`<p class="setup-empty">\${escapeHtml(error.message)}</p>\`;
+        userContainer.replaceChildren();
+    });
+}
+
+function renderNotificationCenter(definition) {
+    currentModule = "notificationCenter";
+    content.innerHTML = \`<article class="settings-card admin-center-card">
+        <div class="card-heading"><div><div class="eyebrow">ADMINISTRACIÓN</div><h2>\${escapeHtml(definition.title)}</h2></div><span class="status-pill configured">Avisos del servidor</span></div>
+        <p class="card-description">Publica avisos para el equipo y administra tus preferencias de notificación.</p>
+        <section class="admin-center-section"><div class="admin-center-heading"><div><h3>Preferencias personales</h3><p>Elige qué categorías quieres recibir en este centro.</p></div></div><div class="notification-preferences" data-notification-preferences><div class="loading-card">Cargando preferencias…</div></div><button type="button" class="quiet-button" data-save-preferences>Guardar preferencias</button></section>
+        <section class="admin-center-section"><div class="admin-center-heading"><div><h3>Publicar notificación</h3><p>El aviso aparecerá en el centro de notificaciones del servidor.</p></div></div><form data-notification-form class="notification-compose"><label class="field"><span>Título</span><input name="title" maxlength="120" required placeholder="Ej. Mantenimiento programado"></label><label class="field"><span>Mensaje</span><textarea name="message" maxlength="1000" required rows="3" placeholder="Escribe los detalles del aviso…"></textarea></label><div class="notification-compose-options"><label class="field"><span>Categoría</span><select name="category"><option value="system">Sistema</option><option value="configuration">Configuración</option><option value="security">Seguridad</option><option value="community">Comunidad</option></select></label><label class="field"><span>Prioridad</span><select name="severity"><option value="info">Informativa</option><option value="success">Correcta</option><option value="warning">Advertencia</option><option value="critical">Crítica</option></select></label></div><div class="form-actions"><button type="submit" class="primary-button">Publicar aviso</button><span class="save-feedback" role="status" aria-live="polite"></span></div></form></section>
+        <section class="admin-center-section"><div class="admin-center-heading"><div><h3>Notificaciones recientes</h3><p>Los avisos nuevos aparecen primero.</p></div><button type="button" class="quiet-button" data-refresh-notifications>Actualizar</button></div><div data-notification-list><div class="loading-card">Cargando notificaciones…</div></div></section>
+    </article>\`;
+    const preferenceContainer = content.querySelector("[data-notification-preferences]");
+    const list = content.querySelector("[data-notification-list]");
+    let preferences = { enabled: true, categories: { configuration: true, security: true, community: true, system: true } };
+    const categoryLabels = { configuration: "Configuración", security: "Seguridad", community: "Comunidad", system: "Sistema" };
+    const renderPreferences = () => {
+        preferenceContainer.innerHTML = \`<label class="notification-preference"><input type="checkbox" data-pref-enabled \${preferences.enabled ? "checked" : ""}><span>Recibir notificaciones</span></label>\${Object.entries(categoryLabels).map(([key,label]) => \`<label class="notification-preference"><input type="checkbox" data-pref-category="\${key}" \${preferences.categories[key] ? "checked" : ""}><span>\${label}</span></label>\`).join("")}\`;
+    };
+    const load = async () => {
+        list.innerHTML = '<div class="loading-card">Cargando notificaciones…</div>';
+        try {
+            const result = await api(\`/api/guilds/\${encodeURIComponent(guildId)}/notifications\`);
+            preferences = result.preferences || preferences;
+            renderPreferences();
+            if (!result.notifications.length) {
+                list.innerHTML = '<p class="setup-empty">No hay notificaciones todavía.</p>';
+                return;
+            }
+            list.innerHTML = result.notifications.map(item => {
+                const date = new Date(item.createdAt);
+                const formatted = Number.isNaN(date.getTime()) ? "—" : new Intl.DateTimeFormat("es", { dateStyle: "medium", timeStyle: "short" }).format(date);
+                return \`<article class="notification-item severity-\${escapeHtml(item.severity)} \${item.read ? "is-read" : "is-unread"}"><div class="notification-item-heading"><strong>\${escapeHtml(item.title)}</strong><span>\${escapeHtml(formatted)}</span></div><p>\${escapeHtml(item.message)}</p><div class="notification-item-footer"><span>\${escapeHtml(categoryLabels[item.category] || "Sistema")} · \${escapeHtml(item.severity)}</span>\${item.read ? '<span>Leída</span>' : \`<button type="button" class="quiet-button" data-mark-read="\${escapeHtml(item.id)}">Marcar como leída</button>\`}</div></article>\`;
+            }).join("");
+        } catch (error) { list.innerHTML = \`<p class="setup-empty">\${escapeHtml(error.message)}</p>\`; }
+    };
+    content.querySelector("[data-save-preferences]").addEventListener("click", async () => {
+        const enabled = Boolean(preferenceContainer.querySelector("[data-pref-enabled]")?.checked);
+        const categories = Object.fromEntries(Object.keys(categoryLabels).map(key => [key, Boolean(preferenceContainer.querySelector(\`[data-pref-category="\${key}"]\`)?.checked)]));
+        try {
+            await api(\`/api/guilds/\${encodeURIComponent(guildId)}/notifications/preferences\`, { method: "PUT", body: JSON.stringify({ enabled, categories }) });
+            showNotice("Preferencias de notificación guardadas.");
+        } catch (error) { showNotice(error.message, true); }
+    });
+    content.querySelector("[data-refresh-notifications]").addEventListener("click", load);
+    list.addEventListener("click", async event => {
+        const button = event.target.closest("[data-mark-read]");
+        if (!button) return;
+        button.disabled = true;
+        try {
+            await api(\`/api/guilds/\${encodeURIComponent(guildId)}/notifications/\${encodeURIComponent(button.dataset.markRead)}/read\`, { method: "POST", body: "{}" });
+            await load();
+        } catch (error) { showNotice(error.message, true); button.disabled = false; }
+    });
+    content.querySelector("[data-notification-form]").addEventListener("submit", async event => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const button = form.querySelector("button[type=submit]");
+        const feedback = form.querySelector(".save-feedback");
+        const payload = Object.fromEntries(new FormData(form).entries());
+        button.disabled = true;
+        feedback.textContent = "Publicando…";
+        try {
+            await api(\`/api/guilds/\${encodeURIComponent(guildId)}/notifications\`, { method: "POST", body: JSON.stringify(payload) });
+            form.reset();
+            feedback.textContent = "Notificación publicada.";
+            feedback.className = "save-feedback success";
+            await load();
+        } catch (error) {
+            feedback.textContent = error.message;
+            feedback.className = "save-feedback error";
+        } finally { button.disabled = false; }
+    });
+    load();
+}
+
 function renderModule(key, modules, options = {}) {
     const memberBalanceButton = document.querySelector("#member-balance-update");
     if (memberBalanceButton && key !== "memberEconomy") {
@@ -1810,6 +1943,8 @@ function renderModule(key, modules, options = {}) {
         : isList ? modules.lists[key] : modules.configurations[key];
     document.querySelector("#page-title").textContent = definition.title;
     if (key === "communityPanels") return renderCommunityPanels(definition);
+    if (key === "permissionsCenter") return renderPermissionsCenter(definition);
+    if (key === "notificationCenter") return renderNotificationCenter(definition);
     if (isList) return renderList(key, definition);
 
     const data = configState.configurations[key] || { configured: false };
