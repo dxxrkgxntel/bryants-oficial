@@ -3,7 +3,7 @@ const { Schema, model } = require("mongoose");
 const schema = new Schema({
     guildId: { type: String, required: true, index: true },
     userId: { type: String, required: true, index: true },
-    type: { type: String, enum: ["joined", "left", "kick", "ban", "timeout_added", "timeout_removed"], required: true },
+    type: { type: String, enum: ["joined", "left", "kick", "ban", "warn", "timeout_added", "timeout_removed"], required: true },
     actorId: { type: String, default: null },
     reason: { type: String, default: null, maxlength: 1000 },
     metadata: { type: Schema.Types.Mixed, default: {} }

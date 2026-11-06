@@ -1,6 +1,6 @@
 const MemberTimelineEvent = require("../Models/MemberTimelineEvent");
 
-const ALLOWED_TYPES = new Set(["joined", "left", "kick", "ban", "timeout_added", "timeout_removed"]);
+const ALLOWED_TYPES = new Set(["joined", "left", "kick", "ban", "warn", "timeout_added", "timeout_removed"]);
 const SNOWFLAKE = /^\d{17,20}$/;
 
 async function recordMemberTimelineEvent({ guildId, userId, type, actorId = null, reason = null, metadata = {} }) {
