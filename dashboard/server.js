@@ -204,6 +204,19 @@ async function recordDashboardAudit(req, guildId, action) {
             actorUsername: req.session.usernameVerified ? req.session.user.username : null,
             action: String(action).slice(0, 160)
         });
+        try {
+            const actionText = String(action).slice(0, 160);
+            await DashboardNotification.create({
+                guildId,
+                title: "Actividad del servidor",
+                message: actionText,
+                category: "configuration",
+                severity: /elimin|desactiv|bloque|rechaz/i.test(actionText) ? "warning" : "info",
+                createdBy: req.session.user.id
+            });
+        } catch (notificationError) {
+            console.warn("[Dashboard Notifications] No pude registrar el aviso de actividad:", notificationError.message);
+        }
     } catch (error) {
         console.error("[Dashboard Audit] No pude guardar el registro:", error.message);
     }
