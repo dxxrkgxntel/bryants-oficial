@@ -200,7 +200,10 @@ module.exports = {
             await reportUserSchema.create({
                 reportGuildId: guild.id,
                 reportUserId: reportedUser.id,
-                reportMessageId: reportMessage.id
+                reportMessageId: reportMessage.id,
+                reporterUserId: user.id,
+                reason,
+                status: "pending"
             });
 
             //////////////////////////////////////////////////

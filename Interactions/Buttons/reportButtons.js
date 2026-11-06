@@ -174,6 +174,10 @@ module.exports = {
                 );
             }
 
+            if (["resolved", "dismissed"].includes(userData.status)) {
+                return errReply(interaction, "Este reporte ya fue cerrado desde el centro de revisión.", true);
+            }
+
             //////////////////////////////////////////////////
             // MEMBER
             //////////////////////////////////////////////////
@@ -313,6 +317,11 @@ module.exports = {
 
             await config.action(
                 member
+            );
+
+            await reportUserSchema.updateOne(
+                { _id: userData._id },
+                { $set: { status: "resolved", reviewedBy: interaction.user.id, reviewedAt: new Date() } }
             );
 
             //////////////////////////////////////////////////
