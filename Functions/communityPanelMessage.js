@@ -25,7 +25,7 @@ function buildPanelControls(panel, guild) {
             const button = {
                 type: 2,
                 style: config.style,
-                custom_id: `community-panel:${panel.panelId}:verify:${method}`,
+                custom_id: method === "button" ? `community-panel:${panel.panelId}:verify` : `community-panel:${panel.panelId}:verify:${method}`,
                 label: String(config.label).slice(0, 80)
             };
             const emoji = parsePanelEmoji(config.emoji);
