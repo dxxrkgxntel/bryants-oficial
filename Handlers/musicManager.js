@@ -9,7 +9,7 @@ const {
     StringSelectMenuBuilder,
     ChannelType
 } = require("discord.js");
-const { createCanvas }const { createCanvas } = require("@napi-rs/canvas");
+const { createCanvas } = require("@napi-rs/canvas");
 const { randomBytes } = require("node:crypto");
 const play = require("play-dl");
 const axios = require("axios");
