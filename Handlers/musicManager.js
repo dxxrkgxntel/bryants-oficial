@@ -137,7 +137,7 @@ function collectYouTubeVideos(data, limit) {
             const owner = readYouTubeText(video.ownerText) || readYouTubeText(video.longBylineText);
             videos.push({
                 title,
-                url: \`https://www.youtube.com/watch?v=\${videoId}\`,
+                url: `https://www.youtube.com/watch?v=\${videoId}`,
                 durationInSec: parseYouTubeDuration(readYouTubeText(video.lengthText)),
                 channel: { name: owner },
                 thumbnails: thumbnails.map(item => ({ url: item.url }))
