@@ -80,10 +80,10 @@ async function handleVerificationButton(interaction, panel, method) {
         let expected;
         let challengeText = "";
         if (method === "captcha") {
-            const left = crypto.randomInt(2, 10);
-            const right = crypto.randomInt(2, 10);
-            expected = String(left + right);
-            challengeText = `Resuelve: ${left} + ${right} = ?`;
+            const left = crypto.randomInt(3, 13);
+            const right = crypto.randomInt(3, 13);
+            expected = String(left * right);
+            challengeText = `Resuelve: ${left} × ${right} = ?`;
         } else {
             expected = panel.verificationAnswerHash;
         }
