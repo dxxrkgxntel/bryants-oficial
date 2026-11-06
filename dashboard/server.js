@@ -2278,6 +2278,40 @@ app.post("/api/guilds/:guildId/giveaways", requireLogin, requireCsrf, requireGui
     }
 });
 
+
+app.post("/api/guilds/:guildId/giveaways/:giveawayId/end", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    try {
+        const giveaway = await Giveaway.findOneAndUpdate(
+            { _id: req.params.giveawayId, guildId: req.params.guildId, status: "active" },
+            { $set: { status: "ending", endedAt: new Date(), endedBy: String(req.session.user.id) } },
+            { new: true }
+        );
+        if (!giveaway) return res.status(409).json({ error: "El giveaway ya terminó o está finalizándose." });
+        const pool = [...new Set(giveaway.entrants || [])];
+        for (let i = pool.length - 1; i > 0; i -= 1) {
+            const j = crypto.randomInt(i + 1);
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        giveaway.winnerIds = pool.slice(0, Math.min(giveaway.winnerCount, pool.length));
+        giveaway.status = "ended";
+        await giveaway.save();
+        try {
+            await discordBotRequest(`https://discord.com/api/v10/channels/${giveaway.channelId}/messages/${giveaway.messageId}`, { method: "PATCH", body: makeGiveawayMessage(giveaway, true) });
+        } catch (error) { if (error.status !== 404) throw error; }
+        if (giveaway.winnerIds.length) {
+            await discordBotRequest(`https://discord.com/api/v10/channels/${giveaway.channelId}/messages`, {
+                method: "POST",
+                body: { content: `🎉 ¡Felicidades ${giveaway.winnerIds.map(id => `<@${id}>`).join(", ")}! Ganaste **${giveaway.prize}**.`, allowed_mentions: { parse: [], users: giveaway.winnerIds } }
+            });
+        }
+        await recordDashboardAudit(req, req.params.guildId, "Giveaway finalizado");
+        return res.json({ ok: true, winnerIds: giveaway.winnerIds });
+    } catch (error) {
+        console.error("[Dashboard Giveaways] Error al finalizar:", error.message);
+        return res.status(error.status === 429 ? 429 : 502).json({ error: error.message || "No pude finalizar el giveaway." });
+    }
+});
+
 app.post("/api/guilds/:guildId/lists/:list", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
     const definition = lists[req.params.list];
     if (!definition) return res.status(404).json({ error: "No encontré esa lista." });
