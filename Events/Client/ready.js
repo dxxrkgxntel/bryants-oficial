@@ -17,12 +17,14 @@ const { restoreServerStats } = require('../../Functions/serverStats');
 const { renderWeeklyDropDescription } = require('../../Functions/weeklyDropDescription');
 const { initializeInviteCache } = require('../../Utils/inviteTracker');
 const autoPollEnd = require("../../Functions/autoPollEnd");
+const startAutoGiveawayEnd = require("../../Functions/autoGiveawayEnd");
 const startSocialAlerts = require("../../Handlers/socialAlerts");
 const { startReferralAchievementMetricSync } = require("../../Functions/referralAchievementMetrics");
 const { startVoteAchievementMetricSync } = require("../../Functions/voteAchievementMetrics");
 const { startTotalEarnedMetricSync } = require("../../Functions/economyEarningMetrics");
 const { startExperienceMetricSync } = require("../../Functions/experienceMetrics");
 const { startAssistantAchievementMetricSync } = require("../../Functions/assistantAchievementMetrics");
+const { startGiveawayAchievementMetricSync } = require("../../Functions/giveawayAchievementMetrics");
 
 require('colors');
 
@@ -90,6 +92,8 @@ module.exports = {
             await restoreServerStats(client);
             // Los procesos que consultan MongoDB solo se inician tras confirmar la conexión.
             autoPollEnd(client);
+            startAutoGiveawayEnd(client);
+            startGiveawayAchievementMetricSync(client);
             startSocialAlerts(client);
             startReferralAchievementMetricSync(client);
             startVoteAchievementMetricSync(client);
