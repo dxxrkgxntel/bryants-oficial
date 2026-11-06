@@ -360,6 +360,24 @@ function requireGuildDashboardAccess(req, res, next) {
         });
 }
 
+function requireGuildNotificationAccess(req, res, next) {
+    if (!req.session.user || !req.session.oauth) {
+        return res.status(401).json({ error: "Inicia sesión con Discord para continuar." });
+    }
+    resolveGuildDashboardAccess(req, req.params.guildId)
+        .then(access => {
+            if (!access || (!access.admin && !hasGuildModulePermission(access, "notificationCenter", "view"))) {
+                return res.status(403).json({ error: "No tienes permiso para consultar las notificaciones de este servidor." });
+            }
+            req.dashboardAccess = access;
+            return next();
+        })
+        .catch(error => {
+            console.error("[Dashboard Notifications] Error al validar acceso:", error.message);
+            return res.status(502).json({ error: "No pude validar el acceso a las notificaciones." });
+        });
+}
+
 function requireGuildModulePermission(action = "view") {
     return (req, res, next) => {
         if (!req.session.user || !req.session.oauth) {
@@ -1475,7 +1493,7 @@ app.put("/api/guilds/:guildId/permissions", requireLogin, requireCsrf, requireGu
     }
 });
 
-app.get("/api/guilds/:guildId/notifications", requireGuildDashboardAccess, async (req, res) => {
+app.get("/api/guilds/:guildId/notifications", requireGuildNotificationAccess, async (req, res) => {
     res.set("Cache-Control", "private, no-store");
     try {
         const guildId = req.params.guildId;
@@ -1515,7 +1533,7 @@ app.get("/api/guilds/:guildId/notifications", requireGuildDashboardAccess, async
     }
 });
 
-app.put("/api/guilds/:guildId/notifications/preferences", requireLogin, requireCsrf, requireGuildDashboardAccess, async (req, res) => {
+app.put("/api/guilds/:guildId/notifications/preferences", requireLogin, requireCsrf, requireGuildNotificationAccess, async (req, res) => {
     const categories = req.body?.categories;
     if (typeof req.body?.enabled !== "boolean" || !categories || typeof categories !== "object" || Array.isArray(categories)) {
         return res.status(400).json({ error: "Las preferencias enviadas no son válidas." });
@@ -1562,7 +1580,7 @@ app.post("/api/guilds/:guildId/notifications", requireLogin, requireCsrf, requir
     }
 });
 
-app.post("/api/guilds/:guildId/notifications/:notificationId/read", requireLogin, requireCsrf, requireGuildDashboardAccess, async (req, res) => {
+app.post("/api/guilds/:guildId/notifications/:notificationId/read", requireLogin, requireCsrf, requireGuildNotificationAccess, async (req, res) => {
     try {
         const result = await DashboardNotification.updateOne(
             { _id: req.params.notificationId, guildId: req.params.guildId, $or: [{ targetUserIds: { $size: 0 } }, { targetUserIds: req.session.user.id }] },
