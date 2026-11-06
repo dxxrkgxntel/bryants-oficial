@@ -44,7 +44,7 @@ for (const item of catalog.achievements) {
 assert.equal(localizedIds.size, 397);
 assert.deepEqual([...localizedIds].sort(), [...sourceById.keys()].sort(), "Localized catalog must preserve every source ID");
 
-const untranslatedTerms = /\\b(?:Season|Starboard|Hall of Fame|boost|raid)\\b/i;
+const untranslatedTerms = /(?:^|[^A-Za-z])(?:Season|Starboard|Hall of Fame|boost|raid)(?:$|[^A-Za-z])/i;
 for (const item of catalog.achievements) {
     assert.doesNotMatch(item.description, untranslatedTerms, `English wording remains in description: ${item.id}`);
 }
