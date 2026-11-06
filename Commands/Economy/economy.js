@@ -16,6 +16,7 @@ const { trackAchievementProgress } = require("../../Functions/achievementTracker
 const { calculateCalendarStreak } = require("../../Functions/calendarStreak");
 const { trackEconomyAchievementSnapshot } = require("../../Functions/economyAchievementMetrics");
 const { recordEconomySpend } = require("../../Functions/economySpendMetrics");
+const { recordEconomyEarning } = require("../../Functions/economyEarningMetrics");
 
 const BALANCE_BANNER = "https://i.imgur.com/joAe57D.png";
 const WORK_BANNER = "https://i.imgur.com/joAe57D.png";
@@ -57,6 +58,10 @@ async function runBalance(interaction) {
  const userData = await getUser(interaction.guild.id, target.id);
  const bonus = await applyBankBonus(userData);
  await userData.save();
+ if (bonus > 0) await recordEconomyEarning({
+  guild: interaction.guild, user: interaction.user, amount: bonus,
+  category: "bank_interest", operationId: "bank-interest:" + interaction.id
+ }).catch(error => console.warn("[Economy] No se pudo registrar interés bancario:", error.message));
  const addedDebt = await updateDebt(userData);
  await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, userData);
  const total = userData.wallet + userData.bank;
@@ -100,6 +105,10 @@ async function runDaily(interaction) {
  user.lastDaily = now;
  user.lastDailyDate = today;
  await user.save();
+ await recordEconomyEarning({
+  guild: interaction.guild, user: interaction.user, amount: totalReward,
+  category: "daily_reward", operationId: "daily:" + interaction.id
+ }).catch(error => console.warn("[Economy] No se pudo registrar recompensa diaria:", error.message));
  await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, user);
  await trackAchievementProgress(interaction.guild, interaction.user, "economy_daily_streak", user.dailyStreak, { absolute: true })
   .catch(error => console.warn("[Achievements] No se pudo registrar economy_daily_streak:", error.message));
@@ -138,6 +147,10 @@ async function runWork(interaction) {
  user.wallet += amount;
  user.lastWork = now;
  await user.save();
+ await recordEconomyEarning({
+  guild: interaction.guild, user: interaction.user, amount,
+  category: "work_reward", operationId: "work:" + interaction.id
+ }).catch(error => console.warn("[Economy] No se pudo registrar recompensa de trabajo:", error.message));
  await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, user);
  await trackAchievementProgress(interaction.guild, interaction.user, "work_streak", user.workStreak, { absolute: true })
   .catch(error => console.warn("[Achievements] No se pudo registrar work_streak:", error.message));
@@ -404,6 +417,10 @@ async function runRob(interaction) {
  robberData.wallet += amount;
  await targetData.save();
  await robberData.save();
+ await recordEconomyEarning({
+  guild: interaction.guild, user: interaction.user, amount,
+  category: "successful_robbery", operationId: "robbery:" + interaction.id
+ }).catch(error => console.warn("[Economy] No se pudo registrar ganancia por robo:", error.message));
  await recordEconomySpend({ guild: interaction.guild, user: target, amount, category: "victim_loss", operationId: interaction.id }).catch(error => console.warn("[Economy] No se pudo registrar salida de patrimonio:", error.message));
  await trackEconomyAchievementSnapshot(interaction.guild, target, targetData);
  await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, robberData);
