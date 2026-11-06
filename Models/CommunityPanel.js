@@ -26,6 +26,9 @@ const communityPanelSchema = new Schema({
         default: []
     },
     maxValues: { type: Number, default: 1, min: 1, max: 25 },
+    selectPlaceholder: { type: String, default: "Selecciona tus roles", maxlength: 150 },
+    verifyLabel: { type: String, default: "Verificarme", maxlength: 80 },
+    verifyEmoji: { type: String, default: "", maxlength: 100 },
     verificationRoleId: { type: String, default: null },
     removeRoleIds: { type: [String], default: [] }
 }, { timestamps: true });
