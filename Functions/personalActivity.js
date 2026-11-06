@@ -2,7 +2,7 @@ const PersonalActivity = require("../Models/PersonalActivity");
 const { activityDayKeys } = require("./activityMath");
 
 async function recordDailyActivity(userId, guildId, date = new Date()) {
-    if (!/^\\d{17,20}$/.test(String(userId || "")) || !/^\\d{17,20}$/.test(String(guildId || ""))) return null;
+    if (!/^\d{17,20}$/.test(String(userId || "")) || !/^\d{17,20}$/.test(String(guildId || ""))) return null;
     const currentDate = new Date(date);
     if (!Number.isFinite(currentDate.getTime())) return null;
 

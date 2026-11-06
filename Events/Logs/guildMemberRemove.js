@@ -2,6 +2,7 @@ const isLogIgnored = require("../../Utils/logsIgnored");
 const { EmbedBuilder, AuditLogEvent } = require("discord.js");
 const logsSchema = require("../../Models/logsSchema");
 const { publishDashboardNotification } = require("../../Utils/dashboardNotifications");
+const { recordMemberTimelineEvent } = require("../../Functions/memberTimeline");
 
 module.exports = {
     name: "guildMemberRemove",
@@ -16,10 +17,11 @@ module.exports = {
                 log = fetchedLogs.entries.first() || null;
             } catch (auditError) {
                 console.warn("[Dashboard Notifications] No se pudo consultar el autor de la expulsión:", auditError.message);
-                return;
             }
 
-            if (!log || log.target?.id !== member.id) return;
+            const wasKicked = Boolean(log && log.target?.id === member.id);
+            await recordMemberTimelineEvent({ guildId: member.guild.id, userId: member.id, type: wasKicked ? "kick" : "left", actorId: wasKicked ? log.executor?.id : null, reason: wasKicked ? log.reason : null });
+            if (!wasKicked) return;
 
             const antiScamKick = log.reason === "Scam detectado";
             if (!antiScamKick) {

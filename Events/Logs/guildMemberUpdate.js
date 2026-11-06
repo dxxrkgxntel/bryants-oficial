@@ -2,6 +2,7 @@ const { EmbedBuilder, AuditLogEvent } = require("discord.js");
 const logsSchema = require("../../Models/logsSchema");
 const isLogIgnored = require("../../Utils/logsIgnored");
 const { publishDashboardNotification } = require("../../Utils/dashboardNotifications");
+const { recordMemberTimelineEvent } = require("../../Functions/memberTimeline");
 
 module.exports = {
     name: "guildMemberUpdate",
@@ -12,6 +13,7 @@ module.exports = {
             let log = null;
 
             if (timeoutAdded || timeoutRemoved) {
+                await recordMemberTimelineEvent({ guildId: newMember.guild.id, userId: newMember.id, type: timeoutAdded ? "timeout_added" : "timeout_removed", reason: null, metadata: { until: newMember.communicationDisabledUntil ? new Date(newMember.communicationDisabledUntil).toISOString() : null } });
                 try {
                     const fetchedLogs = await newMember.guild.fetchAuditLogs({
                         limit: 1,

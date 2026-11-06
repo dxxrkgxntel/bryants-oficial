@@ -104,6 +104,20 @@ const configurations = {
         custom: true,
         fields: []
     },
+    memberProfiles: {
+        title: "Perfiles avanzados de miembros",
+        category: "Comunidad",
+        description: "Consulta perfiles completos con roles, experiencia, economía, trofeos, actividad, sanciones, historial y notas administrativas privadas.",
+        custom: true,
+        fields: []
+    },
+    activityAnalytics: {
+        title: "Historial y estadísticas de actividad",
+        category: "Estadísticas",
+        description: "Analiza mensajes, voz, reacciones, miembros activos, entradas, salidas, moderación y canales más utilizados. Exporta los resultados a CSV.",
+        custom: true,
+        fields: []
+    },
     communityPanels: {
         title: "Paneles de comunidad",
         category: "Comunidad",

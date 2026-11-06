@@ -37,6 +37,11 @@ const achievementCategoryLabels = require("../data/locales/achievement-categorie
 const Level = require("../Models/Level");
 const SocialAlertState = require("../Models/SocialAlertState");
 const PersonalStatsDaily = require("../Models/PersonalStatsDaily");
+const PersonalActivity = require("../Models/PersonalActivity");
+const PersonalVoiceActivity = require("../Models/PersonalVoiceActivity");
+const MemberTimelineEvent = require("../Models/MemberTimelineEvent");
+const MemberAdminNote = require("../Models/MemberAdminNote");
+const ModerationWarning = require("../Models/ModerationWarning");
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -2655,6 +2660,220 @@ function validateCustomFormInput(input, channels) {
     });
     return { formId, title, description, channelId, responseChannelId, buttonLabel, questions, enabled: input.enabled !== false };
 }
+
+
+function validMemberSnowflake(value) {
+    return /^\d{17,20}$/.test(String(value || ""));
+}
+
+async function fetchGuildMemberSearch(guildId, query) {
+    const url = new URL(`https://discord.com/api/v10/guilds/${guildId}/members/search`);
+    url.searchParams.set("query", query);
+    url.searchParams.set("limit", "10");
+    const members = await discordBotRequest(url.toString());
+    if (!Array.isArray(members)) throw new Error("Discord devolvió una respuesta inesperada.");
+    return members.filter(member => member?.user?.id && member.user.username).map(member => ({
+        id: member.user.id,
+        username: member.user.username,
+        globalName: member.user.global_name || null,
+        nick: member.nick || null,
+        avatar: member.user.avatar || null
+    }));
+}
+
+app.get("/api/guilds/:guildId/modules/:module/members/search", requireGuildModulePermission("view"), async (req, res) => {
+    if (req.params.module !== "memberProfiles") return res.status(404).json({ error: "Módulo no encontrado." });
+    const query = String(req.query.q || "").trim();
+    if (query.length < 2 || query.length > 80) return res.json({ members: [] });
+    try {
+        return res.json({ members: await fetchGuildMemberSearch(req.params.guildId, query) });
+    } catch (error) {
+        return res.status(error.status === 429 ? 429 : 502).json({ error: error.message || "No pude buscar miembros." });
+    }
+});
+
+app.get("/api/guilds/:guildId/modules/:module/members/:userId/profile", requireGuildModulePermission("view"), async (req, res) => {
+    if (req.params.module !== "memberProfiles" || !validMemberSnowflake(req.params.userId)) return res.status(400).json({ error: "Miembro o módulo no válido." });
+    const { guildId } = req.params;
+    const userId = req.params.userId;
+    try {
+        const [member, roles, economy, level, personal, voice, daily, definitions, progress, warnings, timeline, notes, trophyRanking] = await Promise.all([
+            discordBotRequest(`https://discord.com/api/v10/guilds/${guildId}/members/${userId}`),
+            discordBotRequest(`https://discord.com/api/v10/guilds/${guildId}/roles`),
+            EconomyUser.findOne({ guildId, userId }).lean(),
+            Level.findOne({ guildId, userId }).lean(),
+            PersonalActivity.findOne({ guildId, userId }).lean(),
+            PersonalVoiceActivity.findOne({ guildId, userId }).lean(),
+            PersonalStatsDaily.aggregate([
+                { $match: { guildId, userId, day: { $gte: new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10) } } },
+                { $group: { _id: null, messages: { $sum: "$messages" }, voiceSeconds: { $sum: "$voiceSeconds" }, reactionsGiven: { $sum: "$reactionsGiven" }, reactionsReceived: { $sum: "$reactionsReceived" }, activeDays: { $sum: 1 } } }
+            ]),
+            Achievement.find({ guildId, enabled: true }).sort({ category: 1, name: 1 }).lean(),
+            UserAchievement.find({ guildId, userId }).lean(),
+            ModerationWarning.find({ guildId, targetId: userId }).sort({ createdAt: -1 }).limit(25).lean(),
+            MemberTimelineEvent.find({ guildId, userId }).sort({ createdAt: -1 }).limit(50).lean(),
+            MemberAdminNote.find({ guildId, userId }).sort({ createdAt: -1 }).limit(50).lean(),
+            getGuildTrophyRanking(guildId)
+        ]);
+        const roleMap = new Map((roles || []).map(role => [role.id, role]));
+        const memberRoles = (member.roles || []).map(id => roleMap.get(id)).filter(Boolean).sort((a, b) => b.position - a.position);
+        const isAdministrator = memberRoles.some(role => {
+            try { return (BigInt(role.permissions || "0") & 8n) === 8n; } catch { return false; }
+        });
+        const progressById = new Map(progress.map(entry => [entry.achievementId, entry]));
+        const achievements = definitions.filter(item => !item.secret || progressById.get(item.achievementId)?.unlockedAt).map(item => {
+            const entry = progressById.get(item.achievementId);
+            return {
+                achievementId: item.achievementId, name: item.name, description: item.description,
+                emoji: item.emoji, category: item.category,
+                categoryLabel: achievementCategoryLabels[item.category] || item.category,
+                goal: item.goal, progress: entry?.progress || 0,
+                unlockedLevels: entry?.unlockedLevels || [],
+                pointsEarned: entry?.pointsEarned || 0,
+                unlockedAt: entry?.unlockedAt || null
+            };
+        });
+        const trophyIndex = trophyRanking.findIndex(row => String(row._id) === userId);
+        const trophy = trophyIndex >= 0 ? trophyRanking[trophyIndex] : null;
+        const activity = daily[0] || { messages: 0, voiceSeconds: 0, reactionsGiven: 0, reactionsReceived: 0, activeDays: 0 };
+        const user = member.user || {};
+        const createdAt = user.id ? new Date(Number((BigInt(user.id) >> 22n) + 1420070400000n)) : null;
+        return res.set("Cache-Control", "private, no-store").json({
+            member: {
+                id: user.id, username: user.username, globalName: user.global_name || null,
+                nick: member.nick || null, avatar: user.avatar || null,
+                createdAt: createdAt && Number.isFinite(createdAt.getTime()) ? createdAt.toISOString() : null,
+                joinedAt: member.joined_at || null, premiumSince: member.premium_since || null,
+                roles: memberRoles.map(role => ({ id: role.id, name: role.name, color: role.color, position: role.position })),
+                isAdministrator
+            },
+            level: level || { xp: 0, level: 0, prestige: 0 },
+            economy: economy || { wallet: 0, bank: 0, inventory: [] },
+            trophy: { rank: trophy ? trophyIndex + 1 : null, totalMembers: trophyRanking.length, points: trophy?.points || 0, unlockedLevels: trophy?.unlockedLevels || 0, unlockedAchievements: trophy?.unlockedAchievements || 0 },
+            activity: {
+                ...activity,
+                currentStreak: personal?.currentStreak || 0,
+                bestStreak: personal?.bestStreak || 0,
+                daysActive: personal?.daysActive || 0,
+                voiceTotalSeconds: voice?.totalVoiceSeconds || 0,
+                streamingSeconds: voice?.totalStreamingSeconds || 0,
+                videoSeconds: voice?.totalVideoSeconds || 0
+            },
+            achievements,
+            warnings: warnings.map(item => ({ _id: String(item._id), moderatorId: item.moderatorId, reason: item.reason, createdAt: item.createdAt })),
+            timeline: timeline.map(item => ({ _id: String(item._id), type: item.type, actorId: item.actorId, reason: item.reason, metadata: item.metadata, createdAt: item.createdAt })),
+            notes: notes.map(item => ({ _id: String(item._id), authorId: item.authorId, authorUsername: item.authorUsername, content: item.content, createdAt: item.createdAt }))
+        });
+    } catch (error) {
+        return res.status(error.status === 404 ? 404 : 502).json({ error: error.status === 404 ? "El miembro ya no está en el servidor." : error.message || "No pude cargar el perfil." });
+    }
+});
+
+app.post("/api/guilds/:guildId/modules/:module/members/:userId/notes", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
+    if (req.params.module !== "memberProfiles" || !validMemberSnowflake(req.params.userId)) return res.status(400).json({ error: "Miembro o módulo no válido." });
+    const content = String(req.body?.content || "").trim();
+    if (!content || content.length > 1000) return res.status(400).json({ error: "La nota debe tener entre 1 y 1000 caracteres." });
+    try {
+        await discordBotRequest(`https://discord.com/api/v10/guilds/${req.params.guildId}/members/${req.params.userId}`);
+        const note = await MemberAdminNote.create({
+            guildId: req.params.guildId, userId: req.params.userId,
+            authorId: req.session.user.id,
+            authorUsername: req.session.user.username || req.session.user.globalName || null,
+            content
+        });
+        await recordDashboardAudit(req, req.params.guildId, "Nota administrativa añadida al perfil de un miembro");
+        return res.status(201).json({ note: { _id: String(note._id), authorId: note.authorId, authorUsername: note.authorUsername, content: note.content, createdAt: note.createdAt } });
+    } catch (error) {
+        return res.status(error.status === 404 ? 404 : 500).json({ error: error.status === 404 ? "El miembro ya no está en el servidor." : "No pude guardar la nota." });
+    }
+});
+
+app.delete("/api/guilds/:guildId/modules/:module/members/:userId/notes/:noteId", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
+    if (req.params.module !== "memberProfiles" || !validMemberSnowflake(req.params.userId) || !/^[a-f\d]{24}$/i.test(req.params.noteId)) return res.status(400).json({ error: "Nota no válida." });
+    const result = await MemberAdminNote.deleteOne({ _id: req.params.noteId, guildId: req.params.guildId, userId: req.params.userId });
+    if (!result.deletedCount) return res.status(404).json({ error: "No encontré esa nota." });
+    await recordDashboardAudit(req, req.params.guildId, "Nota administrativa eliminada del perfil de un miembro");
+    return res.json({ ok: true });
+});
+
+app.get("/api/guilds/:guildId/modules/:module/overview", requireGuildModulePermission("view"), async (req, res) => {
+    if (req.params.module !== "activityAnalytics") return res.status(404).json({ error: "Módulo no encontrado." });
+    const days = [7, 30, 90].includes(Number(req.query.days)) ? Number(req.query.days) : 30;
+    const guildId = req.params.guildId;
+    const startDay = new Date(Date.now() - (days - 1) * 86400000).toISOString().slice(0, 10);
+    try {
+        const [daily, totals, channels, levelSummary, memberCount, joins, leaves, moderation] = await Promise.all([
+            PersonalStatsDaily.aggregate([
+                { $match: { guildId, day: { $gte: startDay } } },
+                { $group: { _id: "$day", messages: { $sum: "$messages" }, voiceSeconds: { $sum: "$voiceSeconds" }, reactionsGiven: { $sum: "$reactionsGiven" }, reactionsReceived: { $sum: "$reactionsReceived" } } },
+                { $sort: { _id: 1 } }
+            ]),
+            PersonalStatsDaily.aggregate([
+                { $match: { guildId, day: { $gte: startDay } } },
+                { $group: { _id: "$userId", messages: { $sum: "$messages" }, voiceSeconds: { $sum: "$voiceSeconds" }, activeDays: { $sum: 1 }, reactionsGiven: { $sum: "$reactionsGiven" }, reactionsReceived: { $sum: "$reactionsReceived" } } },
+                { $sort: { messages: -1, voiceSeconds: -1 } },
+                { $limit: 100 }
+            ]),
+            PersonalStatsDaily.aggregate([
+                { $match: { guildId, day: { $gte: startDay } } },
+                { $project: { channels: { $objectToArray: { $ifNull: ["$channelMessages", {}] } } } },
+                { $unwind: "$channels" },
+                { $group: { _id: "$channels.k", messages: { $sum: "$channels.v" } } },
+                { $sort: { messages: -1 } },
+                { $limit: 10 }
+            ]),
+            Level.aggregate([{ $match: { guildId } }, { $group: { _id: null, trackedMembers: { $sum: 1 }, totalXp: { $sum: "$xp" }, highestLevel: { $max: "$level" } } }]),
+            PersonalStatsDaily.distinct("userId", { guildId, day: { $gte: startDay } }).then(items => items.length),
+            MemberTimelineEvent.countDocuments({ guildId, type: "joined", createdAt: { $gte: new Date(Date.now() - days * 86400000) } }),
+            MemberTimelineEvent.countDocuments({ guildId, type: { $in: ["left", "kick"] }, createdAt: { $gte: new Date(Date.now() - days * 86400000) } }),
+            MemberTimelineEvent.countDocuments({ guildId, type: { $in: ["kick", "ban", "timeout_added"] }, createdAt: { $gte: new Date(Date.now() - days * 86400000) } })
+        ]);
+        const byDay = new Map(daily.map(item => [item._id, item]));
+        const series = Array.from({ length: days }, (_, index) => {
+            const day = new Date(new Date(startDay + "T00:00:00.000Z").getTime() + index * 86400000).toISOString().slice(0, 10);
+            const row = byDay.get(day) || {};
+            return { day, messages: row.messages || 0, voiceSeconds: row.voiceSeconds || 0, reactionsGiven: row.reactionsGiven || 0, reactionsReceived: row.reactionsReceived || 0 };
+        });
+        const topMembers = totals.map((item, index) => ({ rank: index + 1, userId: item._id, messages: item.messages || 0, voiceSeconds: item.voiceSeconds || 0, activeDays: item.activeDays || 0, reactionsGiven: item.reactionsGiven || 0, reactionsReceived: item.reactionsReceived || 0 }));
+        return res.set("Cache-Control", "private, no-store").json({
+            period: { days, start: startDay, end: new Date().toISOString().slice(0, 10) },
+            summary: {
+                messages: series.reduce((sum, item) => sum + item.messages, 0),
+                voiceSeconds: series.reduce((sum, item) => sum + item.voiceSeconds, 0),
+                reactionsGiven: series.reduce((sum, item) => sum + item.reactionsGiven, 0),
+                reactionsReceived: series.reduce((sum, item) => sum + item.reactionsReceived, 0),
+                activeMembers: memberCount,
+                joins, leaves, moderation
+            },
+            levels: levelSummary[0] || { trackedMembers: 0, totalXp: 0, highestLevel: 0 },
+            daily: series, topMembers, topChannels: channels.map(item => ({ channel: item._id, messages: item.messages }))
+        });
+    } catch (error) {
+        console.error("[Activity Analytics] Error al cargar estadísticas:", error.message);
+        return res.status(500).json({ error: "No pude cargar las estadísticas de actividad." });
+    }
+});
+
+app.get("/api/guilds/:guildId/modules/:module/export.csv", requireGuildModulePermission("view"), async (req, res) => {
+    if (req.params.module !== "activityAnalytics") return res.status(404).json({ error: "Módulo no encontrado." });
+    const days = [7, 30, 90].includes(Number(req.query.days)) ? Number(req.query.days) : 30;
+    const startDay = new Date(Date.now() - (days - 1) * 86400000).toISOString().slice(0, 10);
+    try {
+        const rows = await PersonalStatsDaily.aggregate([
+            { $match: { guildId: req.params.guildId, day: { $gte: startDay } } },
+            { $group: { _id: "$userId", messages: { $sum: "$messages" }, voiceSeconds: { $sum: "$voiceSeconds" }, activeDays: { $sum: 1 }, reactionsGiven: { $sum: "$reactionsGiven" }, reactionsReceived: { $sum: "$reactionsReceived" } } },
+            { $sort: { messages: -1, voiceSeconds: -1 } },
+            { $limit: 5000 }
+        ]);
+        const quote = value => '"' + String(value ?? "").replace(/"/g, '""') + '"';
+        const csv = ["user_id,messages,voice_minutes,active_days,reactions_given,reactions_received", ...rows.map(row => [row._id, row.messages, Math.floor((row.voiceSeconds || 0) / 60), row.activeDays, row.reactionsGiven, row.reactionsReceived].map(quote).join(","))].join("\n");
+        res.set("Content-Type", "text/csv; charset=utf-8");
+        res.set("Content-Disposition", `attachment; filename="bryvex-activity-${days}d.csv"`);
+        return res.send("\uFEFF" + csv);
+    } catch (error) {
+        return res.status(500).json({ error: "No pude exportar las estadísticas." });
+    }
+});
 
 app.get("/api/guilds/:guildId/modules/:module/automations", requireGuildModulePermission("view"), async (req, res) => {
     if (req.params.module !== "automations") return res.status(404).json({ error: "Módulo no encontrado." });
