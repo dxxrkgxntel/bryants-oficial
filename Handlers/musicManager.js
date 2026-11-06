@@ -143,7 +143,6 @@ async function searchYouTubeVideos(query, limit = 8) {
     const searchTerm = String(query || "").trim();
     if (!searchTerm) return [];
 
-    let htmlError = null;
     try {
         const response = await axios.get("https://www.youtube.com/results", {
             params: { search_query: searchTerm },
@@ -158,23 +157,9 @@ async function searchYouTubeVideos(query, limit = 8) {
         const initialData = extractYouTubeInitialData(String(response.data || ""));
         const videos = collectYouTubeVideos(initialData, limit);
         if (videos.length) return videos;
-        htmlError = new Error("YouTube no devolvió vídeos para esa búsqueda.");
+        throw new Error("YouTube no devolvió vídeos para esa búsqueda.");
     } catch (error) {
-        htmlError = error;
-        console.warn("[MUSIC] La búsqueda web de YouTube falló; intentando el proveedor alternativo:", error.message);
-    }
-
-    try {
-        const fallback = await play.search(searchTerm, {
-            limit,
-            source: { youtube: "video" }
-        });
-        return Array.isArray(fallback) ? fallback : [];
-    } catch (error) {
-        console.error("[MUSIC] Fallaron ambos métodos de búsqueda de YouTube:", {
-            html: htmlError?.message,
-            playDl: error.message
-        });
+        console.error("[MUSIC] Falló la búsqueda de YouTube:", error.message);
         throw new Error("YouTube no permitió completar la búsqueda en este momento. Inténtalo de nuevo más tarde.");
     }
 }
