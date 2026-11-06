@@ -111,8 +111,8 @@ requirePattern(/function hasGuildModulePermission[\s\S]*?actions\?\.has\(action\
 requirePattern(/function requireGuildModulePermission\(action = "view"\)/, "Las rutas de edición deben comprobar permisos específicos del módulo");
 requirePattern(/app\.put\(["']\/api\/guilds\/:guildId\/permissions["'], requireLogin, requireCsrf, requireGuildAdmin/, "Solo los administradores pueden modificar las reglas de permisos");
 requirePattern(/app\.post\(["']\/api\/guilds\/:guildId\/notifications["'], requireLogin, requireCsrf, requireGuildAdmin/, "Solo los administradores pueden publicar notificaciones");
-requirePattern(/app\.get\(["']\/api\/guilds\/:guildId\/notifications["'], requireGuildDashboardAccess/, "El centro de notificaciones debe validar el acceso al servidor");
-requirePattern(/app\.put\(["']\/api\/guilds\/:guildId\/notifications\/preferences["'], requireLogin, requireCsrf, requireGuildDashboardAccess/, "Las preferencias de notificación deben estar protegidas");
+requirePattern(/app\.get\(["']\/api\/guilds\/:guildId\/notifications["'], requireGuildNotificationAccess/, "El centro de notificaciones debe validar el acceso al servidor");
+requirePattern(/app\.put\(["']\/api\/guilds\/:guildId\/notifications\/preferences["'], requireLogin, requireCsrf, requireGuildNotificationAccess/, "Las preferencias de notificación deben estar protegidas");
 assert.match(clientSource, /function renderPermissionsCenter\(/, "Debe existir la interfaz de permisos avanzados");
 assert.match(clientSource, /function renderNotificationCenter\(/, "Debe existir la interfaz del centro de notificaciones");
 assert.match(clientSource, /data-save-permissions/, "Los permisos deben poder guardarse desde la dashboard");
