@@ -166,10 +166,10 @@ async function handleModal(interaction) {
         await interaction.reply({ content: "❌ Respuesta incorrecta. Vuelve a intentarlo desde el panel.", flags: MessageFlags.Ephemeral });
         return true;
     }
-    request.status = "approved";
-    await request.save();
     const member = await interaction.guild.members.fetch(interaction.user.id);
     await completeVerification(interaction.guild, member, panel, interaction.user);
+    request.status = "approved";
+    await request.save();
     await interaction.reply({ content: "✅ Verificación completada correctamente.", flags: MessageFlags.Ephemeral });
     return true;
 }
@@ -195,16 +195,36 @@ async function handleReview(interaction) {
         await interaction.reply({ content: "No tienes permiso para revisar estas solicitudes.", flags: MessageFlags.Ephemeral });
         return true;
     }
+    if (interaction.user.id === request.userId) {
+        await interaction.reply({ content: "No puedes aprobar ni rechazar tu propia solicitud.", flags: MessageFlags.Ephemeral });
+        return true;
+    }
     const target = await interaction.guild.members.fetch(request.userId).catch(() => null);
     if (action === "approve" && !target) {
         await interaction.reply({ content: "El solicitante ya no está en este servidor; no puedo completar la verificación.", flags: MessageFlags.Ephemeral });
         return true;
     }
-    request.status = action === "approve" ? "approved" : "rejected";
-    request.reviewerId = interaction.user.id;
-    await request.save();
-    if (action === "approve") {
-        await completeVerification(interaction.guild, target, panel, target.user);
+    const claimed = await VerificationRequest.findOneAndUpdate(
+        { _id: request._id, status: "pending", expiresAt: { $gt: new Date() } },
+        { $set: { status: "processing", reviewerId: interaction.user.id } },
+        { new: true }
+    );
+    if (!claimed) {
+        await interaction.reply({ content: "Esta solicitud ya está siendo revisada o fue procesada.", flags: MessageFlags.Ephemeral });
+        return true;
+    }
+    try {
+        if (action === "approve") {
+            await completeVerification(interaction.guild, target, panel, target.user);
+        }
+        claimed.status = action === "approve" ? "approved" : "rejected";
+        await claimed.save();
+    } catch (error) {
+        await VerificationRequest.updateOne(
+            { _id: claimed._id, status: "processing" },
+            { $set: { status: "pending" }, $unset: { reviewerId: 1 } }
+        );
+        throw error;
     }
     await interaction.update({
         content: `Solicitud ${action === "approve" ? "aprobada" : "rechazada"} por <@${interaction.user.id}> · <@${request.userId}>`,
