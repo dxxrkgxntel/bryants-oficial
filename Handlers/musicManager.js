@@ -559,16 +559,16 @@ function createMusicGuideImage() {
     ctx.fillStyle = "#b7a9d6"; ctx.font = "400 25px sans-serif"; ctx.fillText("Guía rápida: cada icono tiene una función", 82, 198);
 
     const items = [
-        ["⏮", "ANTERIOR", "Vuelve a la canción anterior. Si llevas más de 5 segundos, reinicia la actual."],
+        ["|◀", "ANTERIOR", "Vuelve a la canción anterior. Si llevas más de 5 segundos, reinicia la actual."],
         ["Ⅱ / ▶", "PAUSAR / CONTINUAR", "Pausa la reproducción o continúa desde donde se quedó."],
-        ["⏭", "SALTAR", "Termina la canción actual y reproduce la siguiente de la cola."],
-        ["🔀", "ALEATORIO", "Mezcla el orden de las canciones que esperan en la cola."],
+        ["▶|", "SALTAR", "Termina la canción actual y reproduce la siguiente de la cola."],
+        ["↝", "ALEATORIO", "Mezcla el orden de las canciones que esperan en la cola."],
         ["■", "DETENER", "Detiene la música, limpia la cola y libera el canal de voz."],
-        ["🔁", "REPETIR", "Cambia entre sin repetición, repetir canción y repetir toda la cola."],
+        ["↻", "REPETIR", "Cambia entre sin repetición, repetir canción y repetir toda la cola."],
         ["✦", "AUTOPLAY", "Activa o desactiva recomendaciones automáticas al terminar la cola."],
-        ["☷", "VER COLA", "Muestra las canciones que están esperando para reproducirse."],
-        ["🔉", "BAJAR VOLUMEN", "Reduce el volumen en intervalos de 10 puntos."],
-        ["🔊", "SUBIR VOLUMEN", "Aumenta el volumen en intervalos de 10 puntos, hasta 150%."],
+        ["≡", "VER COLA", "Muestra las canciones que están esperando para reproducirse."],
+        ["−", "BAJAR VOLUMEN", "Reduce el volumen en intervalos de 10 puntos."],
+        ["+", "SUBIR VOLUMEN", "Aumenta el volumen en intervalos de 10 puntos, hasta 150%."],
         ["⌕", "BUSCAR CANCIÓN", "Abre una ventana para buscar por título, artista o pegar un enlace."],
         ["♫", "BUSCAR LETRA", "Abre una búsqueda web de la letra de la canción actual."]
     ];
