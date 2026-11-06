@@ -13,7 +13,7 @@ const Economy = require('../../Models/EconomyUser');
 const Welcome = require('../../Models/welcomeSchema');
 const startDailyPurgeScheduler = require('../../Handlers/dailyPurgeScheduler');
 const { restoreVoiceConnections, startVoiceConnectionSync } = require('../../Handlers/voiceConnectionManager');
-const { ensureConfiguredPanels } = require('../../Handlers/musicManager');
+const { ensureConfiguredPanels, startMusicPanelSync } = require('../../Handlers/musicManager');
 const { restoreServerStats } = require('../../Functions/serverStats');
 const { renderWeeklyDropDescription } = require('../../Functions/weeklyDropDescription');
 const { initializeInviteCache } = require('../../Utils/inviteTracker');
@@ -92,6 +92,7 @@ module.exports = {
             startVoiceConnectionSync(client);
             try {
                 await ensureConfiguredPanels(client);
+                startMusicPanelSync(client);
             } catch (error) {
                 console.error('[MUSIC] No pude inicializar los paneles musicales:', error.message);
             }

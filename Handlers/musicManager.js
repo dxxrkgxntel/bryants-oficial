@@ -30,6 +30,7 @@ const {
 const sessions = new Map();
 const pendingSessions = new Map();
 const pendingSearches = new Map();
+let panelSyncTimer = null;
 const MAX_QUEUE_SIZE = 100;
 const MAX_PLAYLIST_IMPORT = 25;
 const HISTORY_SIZE = 50;
@@ -752,7 +753,7 @@ async function runControl(interaction, action, options = {}) {
             return "Reproduciendo la canción anterior.";
         }
         case "stop":
-            await endSession(session, "La música se detuvo. Usa `/music play` para empezar otra sesión.");
+            await endSession(session, "La música se detuvo. Pulsa **Buscar canción** cuando quieras escuchar otra.");
             return "Detuve la música y salí del canal de voz.";
         case "shuffle":
             if (session.queue.length < 2) throw new Error("Agrega al menos dos canciones para mezclar la cola.");
@@ -943,6 +944,7 @@ async function executeButton(interaction, client) {
 async function ensureConfiguredPanels(client) {
     const configurations = await MusicSettings.find({}).lean();
     for (const settings of configurations) {
+        if (sessions.has(settings.guildId)) continue;
         const guild = client.guilds.cache.get(settings.guildId)
             || await client.guilds.fetch(settings.guildId).catch(() => null);
         if (!guild) continue;
@@ -975,6 +977,16 @@ async function ensureConfiguredPanels(client) {
     }
 }
 
+function startMusicPanelSync(client) {
+    if (panelSyncTimer) return panelSyncTimer;
+    const sync = () => ensureConfiguredPanels(client).catch(error => {
+        console.error("[MUSIC] Error al sincronizar paneles configurados:", error.message);
+    });
+    panelSyncTimer = setInterval(sync, 30_000);
+    panelSyncTimer.unref?.();
+    return panelSyncTimer;
+}
+
 module.exports = {
     FILTERS,
     MAX_PLAYLIST_IMPORT,
@@ -988,6 +1000,7 @@ module.exports = {
     executeButton,
     getSettings,
     ensureConfiguredPanels,
+    startMusicPanelSync,
     lyricsSearchUrl,
     queueEmbed,
     resolveQuery,

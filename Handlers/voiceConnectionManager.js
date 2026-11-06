@@ -247,6 +247,7 @@ async function syncVoiceConnections(client) {
     const configs = await VoiceConnectConfig.find({}).lean();
 
     for (const config of configs) {
+        if (voiceConnectionOverrides.has(config.guildId)) continue;
         if (config.enabled === false || !config.channelId) {
             const connection = getVoiceConnection(config.guildId);
             if (connection && connection.state.status !== VoiceConnectionStatus.Destroyed) {
