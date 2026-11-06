@@ -46,7 +46,7 @@ async function auditDatabase() {
                     unlocked: { $sum: { $cond: [{ $ne: ["$unlockedAt", null] }, 1, 0] } },
                     pointsEarned: { $sum: { $ifNull: ["$pointsEarned", 0] } },
                     progressTotal: { $sum: { $ifNull: ["$progress", 0] } },
-                    unlockedLevels: { $sum: { $size: { $ifNull: ["$unlockedLevels", []] } } }
+                    unlockedLevels: { $sum: { $size: { $cond: [{ $isArray: "$unlockedLevels" }, "$unlockedLevels", []] } } }
                 } }
             ])
         ]);
@@ -112,7 +112,7 @@ async function auditDatabase() {
             checks.status = checks.definitionCount === EXPECTED_COUNT &&
                 checks.missingCount === 0 && checks.unexpectedCount === 0 &&
                 checks.duplicateAchievementIds === 0 && checks.metadataDifferenceCount === 0 &&
-                checks.localeVersion >= CATALOG_LOCALE_VERSION ? "ready" : "review";
+                checks.localeVersion >= CATALOG_LOCALE_VERSION && checks.seeded ? "ready" : "review";
             results.push({ guild: maskGuildId(guildId), ...checks });
         }
 
