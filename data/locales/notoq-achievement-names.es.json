@@ -2,7 +2,7 @@
   "locale": "es",
   "version": 1,
   "status": "in_progress",
-  "translatedCount": 200,
+  "translatedCount": 300,
   "total": 397,
   "source": "data/backups/notoq-achievements.json",
   "note": "Traducciones por bloques. No activar la migración hasta completar los 397 registros y auditar descripciones/categorías.",
@@ -806,6 +806,406 @@
     {
       "id": "first_savings",
       "name": "Primeros ahorros"
+    },
+    {
+      "id": "billionaire_path",
+      "name": "Camino al billón"
+    },
+    {
+      "id": "first_gem",
+      "name": "Primera gema"
+    },
+    {
+      "id": "window_shopper",
+      "name": "Mirón de escaparates"
+    },
+    {
+      "id": "item_hoarder",
+      "name": "Acumulador de objetos"
+    },
+    {
+      "id": "count_getting",
+      "name": "Tomándole el ritmo"
+    },
+    {
+      "id": "count_perfect",
+      "name": "Contador perfecto"
+    },
+    {
+      "id": "game_dominator",
+      "name": "Dominador"
+    },
+    {
+      "id": "game_precise",
+      "name": "Precisión absoluta"
+    },
+    {
+      "id": "ambassador",
+      "name": "Embajador"
+    },
+    {
+      "id": "top_critic",
+      "name": "Crítico destacado"
+    },
+    {
+      "id": "review_legend",
+      "name": "Leyenda de las reseñas"
+    },
+    {
+      "id": "vote_champion",
+      "name": "Campeón de los votos"
+    },
+    {
+      "id": "just_arrived",
+      "name": "Recién llegado"
+    },
+    {
+      "id": "three_year_club",
+      "name": "Club de los tres años"
+    },
+    {
+      "id": "getting_comfy",
+      "name": "Entrando en confianza"
+    },
+    {
+      "id": "pillar",
+      "name": "Pilar de la comunidad"
+    },
+    {
+      "id": "iron_will",
+      "name": "Voluntad de hierro"
+    },
+    {
+      "id": "level_25",
+      "name": "Veterano"
+    },
+    {
+      "id": "level_60",
+      "name": "Prodigio"
+    },
+    {
+      "id": "xp_500k",
+      "name": "Magnate de XP"
+    },
+    {
+      "id": "star_icon",
+      "name": "Icono estelar"
+    },
+    {
+      "id": "star_machine",
+      "name": "Máquina de estrellas"
+    },
+    {
+      "id": "thread_lord",
+      "name": "Señor de los hilos"
+    },
+    {
+      "id": "mention_master",
+      "name": "Maestro de las menciones"
+    },
+    {
+      "id": "command_overlord",
+      "name": "Señor de los comandos"
+    },
+    {
+      "id": "almost_there",
+      "name": "Casi lo logras"
+    },
+    {
+      "id": "point_sage",
+      "name": "Sabio de los puntos"
+    },
+    {
+      "id": "first_stream",
+      "name": "Primera transmisión"
+    },
+    {
+      "id": "gif_novice",
+      "name": "Novato de los GIF"
+    },
+    {
+      "id": "image_deity",
+      "name": "Deidad de las imágenes"
+    },
+    {
+      "id": "banker_legend",
+      "name": "Fort Knox"
+    },
+    {
+      "id": "workaholic_pro",
+      "name": "Nunca desconecta"
+    },
+    {
+      "id": "earner_100m",
+      "name": "Constructor de imperios"
+    },
+    {
+      "id": "emoji_user",
+      "name": "Usuario de emojis"
+    },
+    {
+      "id": "emoji_fan",
+      "name": "Fan de los emojis"
+    },
+    {
+      "id": "emoji_lover",
+      "name": "Amante de los emojis"
+    },
+    {
+      "id": "emoji_addict",
+      "name": "Adicto a los emojis"
+    },
+    {
+      "id": "emoji_overlord",
+      "name": "Señor de los emojis"
+    },
+    {
+      "id": "emoji_deity_msg",
+      "name": "Deidad de los emojis"
+    },
+    {
+      "id": "curious_mind",
+      "name": "Mente curiosa"
+    },
+    {
+      "id": "inquirer",
+      "name": "Interrogador"
+    },
+    {
+      "id": "the_questioner",
+      "name": "El preguntón"
+    },
+    {
+      "id": "philosopher",
+      "name": "Filósofo"
+    },
+    {
+      "id": "socrates",
+      "name": "Sócrates"
+    },
+    {
+      "id": "spoiler_alert",
+      "name": "Alerta de spoiler"
+    },
+    {
+      "id": "secret_keeper",
+      "name": "Guardián de secretos"
+    },
+    {
+      "id": "spoiler_master",
+      "name": "Maestro de los spoilers"
+    },
+    {
+      "id": "coder",
+      "name": "Programador"
+    },
+    {
+      "id": "developer",
+      "name": "Desarrollador"
+    },
+    {
+      "id": "code_wizard",
+      "name": "Mago del código"
+    },
+    {
+      "id": "hello_bot",
+      "name": "Hola, bot"
+    },
+    {
+      "id": "bot_buddy",
+      "name": "Compañero del bot"
+    },
+    {
+      "id": "bot_bestie",
+      "name": "Mejor amigo del bot"
+    },
+    {
+      "id": "essayist",
+      "name": "Ensayista"
+    },
+    {
+      "id": "wall_of_text",
+      "name": "Muro de texto"
+    },
+    {
+      "id": "lore_master",
+      "name": "Maestro de la historia"
+    },
+    {
+      "id": "pollster",
+      "name": "Encuestador"
+    },
+    {
+      "id": "poll_maker",
+      "name": "Creador de encuestas"
+    },
+    {
+      "id": "poll_authority",
+      "name": "Autoridad en encuestas"
+    },
+    {
+      "id": "embed_enjoyer",
+      "name": "Fan de los embeds"
+    },
+    {
+      "id": "rich_poster",
+      "name": "Publicador enriquecido"
+    },
+    {
+      "id": "cam_on",
+      "name": "Cámara encendida"
+    },
+    {
+      "id": "face_reveal",
+      "name": "Revelación facial"
+    },
+    {
+      "id": "camera_star",
+      "name": "Estrella de la cámara"
+    },
+    {
+      "id": "always_on_cam",
+      "name": "Siempre ante la cámara"
+    },
+    {
+      "id": "cam_legend",
+      "name": "Leyenda de la cámara"
+    },
+    {
+      "id": "worth_10k",
+      "name": "Comodidad económica"
+    },
+    {
+      "id": "worth_100k",
+      "name": "Buena posición"
+    },
+    {
+      "id": "worth_1m",
+      "name": "Millonario en patrimonio"
+    },
+    {
+      "id": "worth_10m",
+      "name": "Alto patrimonio"
+    },
+    {
+      "id": "worth_100m",
+      "name": "Ultrarrico"
+    },
+    {
+      "id": "worth_1b",
+      "name": "El uno por ciento"
+    },
+    {
+      "id": "token_starter",
+      "name": "Primeras fichas"
+    },
+    {
+      "id": "token_collector",
+      "name": "Coleccionista de fichas"
+    },
+    {
+      "id": "token_hoarder",
+      "name": "Acumulador de fichas"
+    },
+    {
+      "id": "token_baron",
+      "name": "Barón de las fichas"
+    },
+    {
+      "id": "prestige_pts_100",
+      "name": "Puntos de prestigio"
+    },
+    {
+      "id": "prestige_pts_1000",
+      "name": "Experto en prestigio"
+    },
+    {
+      "id": "biz_earn_100k",
+      "name": "Pequeña empresa"
+    },
+    {
+      "id": "biz_earn_1m",
+      "name": "Dueño de negocios"
+    },
+    {
+      "id": "biz_earn_10m",
+      "name": "Titán corporativo"
+    },
+    {
+      "id": "biz_earn_100m",
+      "name": "Magnate empresarial"
+    },
+    {
+      "id": "homeowner",
+      "name": "Propietario"
+    },
+    {
+      "id": "landlord",
+      "name": "Casero"
+    },
+    {
+      "id": "real_estate_tycoon",
+      "name": "Magnate inmobiliario"
+    },
+    {
+      "id": "first_rent",
+      "name": "Primer alquiler"
+    },
+    {
+      "id": "rent_collector",
+      "name": "Cobrador de alquileres"
+    },
+    {
+      "id": "property_empire",
+      "name": "Imperio inmobiliario"
+    },
+    {
+      "id": "investor_first",
+      "name": "Inversor"
+    },
+    {
+      "id": "portfolio_builder",
+      "name": "Constructor de cartera"
+    },
+    {
+      "id": "wall_street",
+      "name": "Wall Street"
+    },
+    {
+      "id": "in_the_green",
+      "name": "En positivo"
+    },
+    {
+      "id": "bull_market",
+      "name": "Mercado alcista"
+    },
+    {
+      "id": "first_catch",
+      "name": "Primera captura"
+    },
+    {
+      "id": "angler",
+      "name": "Pescador aficionado"
+    },
+    {
+      "id": "fisherman",
+      "name": "Pescador"
+    },
+    {
+      "id": "master_angler",
+      "name": "Maestro pescador"
+    },
+    {
+      "id": "first_dig",
+      "name": "Primera excavación"
+    },
+    {
+      "id": "miner",
+      "name": "Minero"
+    },
+    {
+      "id": "prospector",
+      "name": "Buscador de minerales"
     }
   ]
 }
