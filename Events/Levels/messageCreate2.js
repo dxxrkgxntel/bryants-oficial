@@ -6,6 +6,7 @@ const { getLevelSettings } = require("../../Functions/levelSettings");
 const { sendLevelNotification } = require("../../Functions/levelNotification");
 const { trackAchievementProgress } = require("../../Functions/achievementTracker");
 const { recordEconomyEarning } = require("../../Functions/economyEarningMetrics");
+const { recordExperience } = require("../../Functions/experienceMetrics");
 const { extractMessageAchievementMetrics } = require("../../Functions/achievementMessageMetrics");
 const { createMemberAchievementMetricTracker } = require("../../Functions/memberAchievementMetrics");
 const { trackBoostAchievementMetric } = require("../../Functions/boostAchievementMetrics");
@@ -320,8 +321,10 @@ module.exports = {
         ////////////////////////////////////////
 
         await data.save();
-        await trackAchievementProgress(message.guild, message.author, "xp", xpRandom)
-            .catch(error => console.warn("[Achievements] No se pudo registrar xp:", error.message));
+        await recordExperience({
+            guild: message.guild, user: message.author, amount: xpRandom,
+            category: "message_xp", operationId: "message:" + message.id
+        }).catch(error => console.warn("[Achievements] No se pudo registrar XP de mensaje:", error.message));
         if (data.level > Number(data.achievementLevelReported || 0)) {
             try {
                 await trackAchievementProgress(message.guild, message.author, "level", data.level, { absolute: true });
