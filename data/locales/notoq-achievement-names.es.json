@@ -1,11 +1,11 @@
 {
   "locale": "es",
   "version": 1,
-  "status": "complete_names_pending_description_audit",
+  "status": "complete",
   "translatedCount": 397,
   "total": 397,
   "source": "data/backups/notoq-achievements.json",
-  "note": "Traducciones por bloques. No activar la migración hasta completar los 397 registros y auditar descripciones/categorías.",
+  "note": "Los 397 nombres están traducidos. Las descripciones se revisaron y se ajustaron los términos de producto que permanecían en inglés; las categorías están cubiertas por achievement-categories.es.json.",
   "achievements": [
     {
       "id": "casual_typer",
