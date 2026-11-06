@@ -19,6 +19,8 @@ assert.match(migration, /filter:\s*\{\s*guildId,\s*achievementId:\s*item\.id,\s*
 assert.match(migration, /\$set:\s*\{\s*name:\s*item\.name,\s*description:\s*item\.description,\s*category:\s*item\.category\s*\}/);
 assert.doesNotMatch(migration, /UserAchievement|pointsEarned|unlockedLevels|unlockedAt|progress\s*:/);
 assert.match(migration, /upsert:\s*false/);
+assert.match(migration, /matchedCount !== achievements\.length/);
+assert.ok(migration.indexOf("matchedCount !== achievements.length") < migration.indexOf("notoqCatalogLocaleVersion: CATALOG_LOCALE_VERSION"));
 assert.match(migration, /notoqCatalogLocaleVersion/);
 assert.match(migration, /achievements\.length !== 397/);
 assert.match(migration, /locale !== "es"/);
