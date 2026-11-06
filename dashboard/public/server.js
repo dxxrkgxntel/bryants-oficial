@@ -1655,6 +1655,148 @@ function renderMemberEconomy(definition, initialMemberId = null) {
     if (/^\d{17,20}$/.test(String(initialMemberId || ""))) selectMember(initialMemberId);
 }
 
+
+async function renderAutomations(definition) {
+    currentModule = "automations";
+    document.querySelector("#page-title").textContent = definition.title;
+    content.innerHTML = '<div class="loading-card">Cargando automatizaciones…</div>';
+    const base = "/api/guilds/" + encodeURIComponent(guildId) + "/modules/automations/automations";
+    try {
+        const result = await api(base);
+        if (currentModule !== "automations") return;
+        const channels = (resources.channels || []).filter(item => [0, 5].includes(item.type));
+        const channelOptions = channels.map(item => '<option value="' + escapeHtml(item.id) + '">' + escapeHtml(item.name) + '</option>').join("");
+        const tasks = (result.automations || []).map(item => {
+            const next = item.enabled ? new Date(item.nextRunAt).toLocaleString() : item.completedAt ? "Completada" : "Pausada";
+            return '<article class="community-panel-row"><div class="community-panel-row-main"><h3>' + escapeHtml(item.name) + '</h3><p>' + (item.enabled ? "Activa" : "Inactiva") + ' · ' + (item.scheduleType === "interval" ? "Cada " + item.intervalMinutes + " min" : "Una vez") + '</p><small>Próxima ejecución: ' + escapeHtml(next) + '</small>' + (item.lastError ? '<p class="notice-error">' + escapeHtml(item.lastError) + '</p>' : '') + '</div><div class="community-panel-actions"><button class="quiet-button danger-button" type="button" data-automation-delete="' + escapeHtml(item._id) + '">Eliminar</button></div></article>';
+        }).join("") || '<div class="empty-state">Todavía no hay automatizaciones. Crea la primera para programar un mensaje.</div>';
+        content.innerHTML = '<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">TAREAS PROGRAMADAS</div><h2>Nueva automatización</h2></div></div><p class="card-description">Programa un mensaje para una fecha futura o repítelo cada cierto intervalo. El bot debe permanecer activo para ejecutar las tareas.</p><form id="automation-form" class="fields-grid"><label class="field"><span>Nombre interno</span><input name="name" maxlength="80" required placeholder="Recordatorio semanal"></label><label class="field"><span>Tipo de programación</span><select name="scheduleType"><option value="once">Una sola vez</option><option value="interval">Repetir por intervalo</option></select></label><label class="field" data-automation-once><span>Fecha y hora</span><input name="runAt" type="datetime-local" required></label><label class="field" data-automation-interval hidden><span>Repetir cada (minutos)</span><input name="intervalMinutes" type="number" min="5" max="525600" value="1440"></label><label class="field"><span>Canal de destino</span><select name="channelId" required><option value="">Selecciona un canal</option>' + channelOptions + '</select></label><label class="field field-full"><span>Mensaje</span><textarea name="message" maxlength="2000" rows="4" required placeholder="Escribe el mensaje que publicará Bryvex Bot…"></textarea></label><div class="form-actions"><button class="primary-button" type="submit">Crear automatización</button><span class="save-feedback" role="status"></span></div></form></article><article class="settings-card"><div class="card-heading"><div><div class="eyebrow">GESTIÓN</div><h2>Automatizaciones del servidor</h2></div><span class="status-pill">' + (result.automations || []).length + ' tareas</span></div><div class="community-panel-list">' + tasks + '</div></article>';
+        const form = content.querySelector("#automation-form");
+        const type = form.elements.scheduleType;
+        const updateSchedule = () => {
+            const interval = type.value === "interval";
+            form.querySelector("[data-automation-once]").hidden = interval;
+            form.querySelector("[data-automation-interval]").hidden = !interval;
+            form.elements.runAt.required = !interval;
+        };
+        type.addEventListener("change", updateSchedule);
+        updateSchedule();
+        form.addEventListener("submit", async event => {
+            event.preventDefault();
+            const button = form.querySelector('button[type="submit"]');
+            button.disabled = true;
+            try {
+                const payload = {
+                    name: form.elements.name.value,
+                    scheduleType: type.value,
+                    runAt: type.value === "once" ? new Date(form.elements.runAt.value).toISOString() : null,
+                    intervalMinutes: type.value === "interval" ? Number(form.elements.intervalMinutes.value) : null,
+                    channelId: form.elements.channelId.value,
+                    message: form.elements.message.value
+                };
+                await api(base, { method: "POST", body: JSON.stringify(payload) });
+                showNotice("Automatización creada correctamente.");
+                await renderAutomations(definition);
+            } catch (error) {
+                showNotice(error.message, true);
+                button.disabled = false;
+            }
+        });
+        content.querySelectorAll("[data-automation-delete]").forEach(button => button.addEventListener("click", async () => {
+            if (!window.confirm("¿Eliminar esta automatización?")) return;
+            try {
+                await api(base + "/" + encodeURIComponent(button.dataset.automationDelete), { method: "DELETE" });
+                showNotice("Automatización eliminada.");
+                await renderAutomations(definition);
+            } catch (error) { showNotice(error.message, true); }
+        }));
+    } catch (error) {
+        content.innerHTML = '<div class="loading-card error">' + escapeHtml(error.message) + '</div>';
+    }
+}
+
+async function renderCustomForms(definition) {
+    currentModule = "customForms";
+    document.querySelector("#page-title").textContent = definition.title;
+    content.innerHTML = '<div class="loading-card">Cargando formularios…</div>';
+    const base = "/api/guilds/" + encodeURIComponent(guildId) + "/modules/customForms/forms";
+    try {
+        const result = await api(base);
+        if (currentModule !== "customForms") return;
+        const channels = (resources.channels || []).filter(item => [0, 5].includes(item.type));
+        const channelOptions = selected => '<option value="">Selecciona un canal</option>' + channels.map(item => '<option value="' + escapeHtml(item.id) + '" ' + (selected === item.id ? "selected" : "") + '>' + escapeHtml(item.name) + '</option>').join("");
+        const forms = (result.forms || []).map(item => '<article class="community-panel-row"><div class="community-panel-row-main"><h3>' + escapeHtml(item.title) + '</h3><p>ID: <code>' + escapeHtml(item.formId) + '</code> · ' + (item.enabled ? "Activo" : "Desactivado") + ' · ' + (item.responseCount || 0) + ' respuestas</p><small>' + (item.publishedAt ? "Publicado " + escapeHtml(new Date(item.publishedAt).toLocaleString()) : "Aún no publicado") + '</small></div><div class="community-panel-actions"><button class="quiet-button" type="button" data-form-publish="' + escapeHtml(item.formId) + '">Publicar</button><button class="quiet-button" type="button" data-form-responses="' + escapeHtml(item.formId) + '">Respuestas</button><button class="quiet-button danger-button" type="button" data-form-delete="' + escapeHtml(item.formId) + '">Eliminar</button></div></article>').join("") || '<div class="empty-state">Todavía no hay formularios. Crea uno y publícalo en un canal de Discord.</div>';
+        content.innerHTML = '<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">CREADOR DE FORMULARIOS</div><h2>Nuevo formulario</h2></div></div><p class="card-description">Cada formulario admite hasta cinco preguntas. Las respuestas se guardan y se envían al canal privado que elijas.</p><form id="custom-form-editor" class="fields-grid"><label class="field"><span>ID único</span><input name="formId" maxlength="40" pattern="[a-z0-9_-]+" required placeholder="solicitud-staff"></label><label class="field"><span>Título</span><input name="title" maxlength="100" required placeholder="Solicitud de staff"></label><label class="field field-full"><span>Descripción</span><textarea name="description" maxlength="1000" rows="2"></textarea></label><label class="field"><span>Canal donde se publica</span><select name="channelId" required>' + channelOptions("") + '</select></label><label class="field"><span>Canal privado de respuestas</span><select name="responseChannelId" required>' + channelOptions("") + '</select></label><label class="field"><span>Texto del botón</span><input name="buttonLabel" maxlength="80" value="Abrir formulario" required></label><div class="field field-full"><span>Preguntas (máximo 5)</span><div id="custom-form-questions"></div><button class="quiet-button" type="button" id="add-form-question">Añadir pregunta</button></div><div class="form-actions"><button class="primary-button" type="submit">Guardar formulario</button><span class="save-feedback" role="status"></span></div></form></article><article class="settings-card"><div class="card-heading"><div><div class="eyebrow">GESTIÓN</div><h2>Formularios del servidor</h2></div><span class="status-pill">' + (result.forms || []).length + ' formularios</span></div><div class="community-panel-list">' + forms + '</div><div id="form-response-view"></div></article>';
+        const editor = content.querySelector("#custom-form-editor");
+        const questionList = editor.querySelector("#custom-form-questions");
+        const addQuestion = (label = "", style = "short", required = true) => {
+            if (questionList.children.length >= 5) return;
+            const row = document.createElement("div");
+            row.className = "community-panel-row";
+            row.innerHTML = '<label class="field"><span>Pregunta</span><input data-question-label maxlength="45" required value="' + escapeHtml(label) + '" placeholder="¿Por qué quieres participar?"></label><label class="field"><span>Respuesta</span><select data-question-style><option value="short">Texto corto</option><option value="paragraph">Párrafo</option></select></label><label class="field"><span>Obligatoria</span><select data-question-required><option value="true">Sí</option><option value="false">No</option></select></label><button class="quiet-button danger-button" type="button" data-remove-question>Quitar</button>';
+            row.querySelector("[data-question-style]").value = style;
+            row.querySelector("[data-question-required]").value = String(required);
+            row.querySelector("[data-remove-question]").addEventListener("click", () => row.remove());
+            questionList.append(row);
+            editor.querySelector("#add-form-question").disabled = questionList.children.length >= 5;
+        };
+        addQuestion();
+        editor.querySelector("#add-form-question").addEventListener("click", () => addQuestion());
+        editor.addEventListener("submit", async event => {
+            event.preventDefault();
+            const button = editor.querySelector('button[type="submit"]');
+            button.disabled = true;
+            try {
+                const questions = [...questionList.children].map(row => ({
+                    label: row.querySelector("[data-question-label]").value,
+                    style: row.querySelector("[data-question-style]").value,
+                    required: row.querySelector("[data-question-required]").value === "true"
+                }));
+                await api(base, { method: "POST", body: JSON.stringify({
+                    formId: editor.elements.formId.value,
+                    title: editor.elements.title.value,
+                    description: editor.elements.description.value,
+                    channelId: editor.elements.channelId.value,
+                    responseChannelId: editor.elements.responseChannelId.value,
+                    buttonLabel: editor.elements.buttonLabel.value,
+                    questions
+                }) });
+                showNotice("Formulario guardado. Ya puedes publicarlo en Discord.");
+                await renderCustomForms(definition);
+            } catch (error) {
+                showNotice(error.message, true);
+                button.disabled = false;
+            }
+        });
+        content.querySelectorAll("[data-form-publish]").forEach(button => button.addEventListener("click", async () => {
+            try {
+                const published = await api(base + "/" + encodeURIComponent(button.dataset.formPublish) + "/publish", { method: "POST", body: "{}" });
+                showNotice("Formulario publicado en Discord.");
+                if (published.url) window.open(published.url, "_blank", "noopener,noreferrer");
+                await renderCustomForms(definition);
+            } catch (error) { showNotice(error.message, true); }
+        }));
+        content.querySelectorAll("[data-form-delete]").forEach(button => button.addEventListener("click", async () => {
+            if (!window.confirm("Eliminar el formulario y sus respuestas guardadas?")) return;
+            try {
+                await api(base + "/" + encodeURIComponent(button.dataset.formDelete), { method: "DELETE" });
+                showNotice("Formulario eliminado.");
+                await renderCustomForms(definition);
+            } catch (error) { showNotice(error.message, true); }
+        }));
+        content.querySelectorAll("[data-form-responses]").forEach(button => button.addEventListener("click", async () => {
+            const panel = content.querySelector("#form-response-view");
+            panel.innerHTML = '<div class="loading-card">Cargando respuestas…</div>';
+            try {
+                const response = await api(base + "/" + encodeURIComponent(button.dataset.formResponses) + "/responses");
+                panel.innerHTML = '<h3>Respuestas (' + response.responses.length + ')</h3>' + (response.responses.length ? response.responses.map(item => '<article class="community-panel-row"><div class="community-panel-row-main"><strong>' + escapeHtml(item.username) + '</strong><small>' + escapeHtml(new Date(item.createdAt).toLocaleString()) + '</small>' + item.answers.map(answer => '<p><b>' + escapeHtml(answer.question) + ':</b> ' + escapeHtml(answer.answer) + '</p>').join("") + '</div></article>').join("") : '<div class="empty-state">Todavía no hay respuestas.</div>');
+            } catch (error) { panel.textContent = error.message; }
+        }));
+    } catch (error) {
+        content.innerHTML = '<div class="loading-card error">' + escapeHtml(error.message) + '</div>';
+    }
+}
+
 async function renderCommunityPanels(definition, editingPanel = null) {
     currentModule = "communityPanels";
     document.querySelector("#page-title").textContent = definition.title;
@@ -1943,6 +2085,8 @@ function renderModule(key, modules, options = {}) {
         : isList ? modules.lists[key] : modules.configurations[key];
     document.querySelector("#page-title").textContent = definition.title;
     if (key === "communityPanels") return renderCommunityPanels(definition);
+    if (key === "automations") return renderAutomations(definition);
+    if (key === "customForms") return renderCustomForms(definition);
     if (key === "permissionsCenter") return renderPermissionsCenter(definition);
     if (key === "notificationCenter") return renderNotificationCenter(definition);
     if (isList) return renderList(key, definition);

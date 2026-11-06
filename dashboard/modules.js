@@ -90,6 +90,20 @@ const configurations = {
         custom: true,
         fields: []
     },
+    automations: {
+        title: "Automatizaciones",
+        category: "Administración",
+        description: "Programa anuncios para una fecha concreta o repítelos automáticamente. Consulta ejecuciones y errores desde la dashboard.",
+        custom: true,
+        fields: []
+    },
+    customForms: {
+        title: "Formularios personalizados",
+        category: "Comunidad",
+        description: "Diseña formularios de hasta cinco preguntas, publícalos en Discord y recibe las respuestas en un canal privado.",
+        custom: true,
+        fields: []
+    },
     communityPanels: {
         title: "Paneles de comunidad",
         category: "Comunidad",

@@ -4,6 +4,7 @@ const config = require('./config.json');
 const { loadEvents } = require('./Handlers/eventHandler');
 const { loadCommands } = require('./Handlers/commandHandler');
 const { loadInteractions } = require('./Handlers/interactionHandler');
+const { startAutomationScheduler } = require("./Handlers/automationScheduler");
 const { startWatcher } = require('./Handlers/watcher');
 const { loadScamDomains } = require("./Utils/antiscam/scamCache");
 
@@ -33,6 +34,7 @@ client.login(process.env.DISCORD_TOKEN || config.token).then(() => {
   loadEvents(client);
   loadCommands(client);
   loadInteractions(client);
+  startAutomationScheduler(client);
 
 });
 
