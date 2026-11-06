@@ -215,7 +215,6 @@ module.exports = (client) => {
                         await channel.send(payload);
                         await trackAchievementProgress(guild, member.user, "birthday_celebrations", 1)
                             .catch(error => console.warn("[Achievements] No se pudo registrar birthday_celebrations:", error.message));
-                        }
 
                     } catch (err) {
 
