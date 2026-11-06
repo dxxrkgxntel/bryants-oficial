@@ -1385,3 +1385,26 @@ button:disabled { opacity: .55; cursor: wait !important; }
     .community-panel-actions { justify-content: flex-start; }
     .community-panel-kind-fields, .community-role-grid { grid-template-columns: 1fr; }
 }
+
+
+/* Auditoría de solo lectura del catálogo español de Trofeos */
+.achievement-audit-panel{margin:18px 0;padding:20px;border:1px solid rgba(153,116,255,.28);border-radius:16px;background:linear-gradient(145deg,rgba(30,22,49,.82),rgba(13,13,22,.94));}
+.achievement-audit-heading,.achievement-audit-heading>div{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;}
+.achievement-audit-heading h3{margin:5px 0;font-size:1.12rem;}
+.achievement-audit-heading p,.achievement-audit-progress p,.achievement-audit-footnote{margin:5px 0;color:var(--muted,#a7a2b5);font-size:.82rem;}
+.achievement-audit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px;margin:15px 0;}
+.achievement-audit-stat{display:grid;gap:5px;padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:11px;background:rgba(255,255,255,.035);}
+.achievement-audit-stat span{color:var(--muted,#a7a2b5);font-size:.76rem;}
+.achievement-audit-stat strong{font-size:1.2rem;}
+.achievement-audit-progress{margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.09);}
+.achievement-audit-progress h4,.achievement-audit-detail h4{margin:0 0 10px;font-size:.92rem;}
+.achievement-audit-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px;margin-top:16px;}
+.achievement-audit-detail{min-width:0;padding:13px;border:1px solid rgba(255,255,255,.08);border-radius:12px;}
+.achievement-audit-detail h4{display:flex;justify-content:space-between;}
+.achievement-audit-detail ul{display:grid;gap:8px;max-height:220px;overflow:auto;margin:0;padding-left:20px;font-size:.8rem;}
+.achievement-audit-detail li{overflow-wrap:anywhere;}
+.achievement-audit-detail li span,.achievement-audit-detail li small{display:block;margin-top:3px;color:var(--muted,#a7a2b5);}
+.achievement-audit-empty,.achievement-audit-loading,.achievement-audit-error{margin:8px 0;font-size:.85rem;}
+.achievement-audit-error{color:#ff9292;}
+.achievement-audit-footnote{margin-top:14px;}
+@media(max-width:620px){.achievement-audit-panel{padding:14px}.achievement-audit-heading{flex-direction:column}.achievement-audit-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
