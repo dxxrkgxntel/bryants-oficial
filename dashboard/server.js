@@ -2223,7 +2223,6 @@ app.post("/api/guilds/:guildId/community-panels", requireLogin, requireCsrf, req
                 input.verificationAnswerHash = existing.verificationAnswerHash;
             }
             await validateAssignableRoleIds(guildId, [input.verificationRoleId, ...input.removeRoleIds]);
-            await validateAssignableRoleIds(guildId, input.reviewerRoleIds);
         } else {
             await validateAssignableRoleIds(guildId, input.roles.map(role => role.roleId));
         }
