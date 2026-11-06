@@ -5,18 +5,22 @@ function createVerificationAchievementMetricTracker({ model, trackProgress } = {
 
     return async function recordVerifiedMember(guild, user, verificationConfigId = null, verifiedAt = new Date()) {
         if (!guild?.id || !user?.id || user.bot) return false;
-        await model.updateOne(
-            { guildId: guild.id, userId: user.id },
-            {
-                $setOnInsert: {
-                    guildId: guild.id,
-                    userId: user.id,
-                    verifiedAt,
-                    verificationConfigId: verificationConfigId ? String(verificationConfigId) : null
-                }
-            },
-            { upsert: true }
-        );
+        try {
+            await model.updateOne(
+                { guildId: guild.id, userId: user.id },
+                {
+                    $setOnInsert: {
+                        guildId: guild.id,
+                        userId: user.id,
+                        verifiedAt,
+                        verificationConfigId: verificationConfigId ? String(verificationConfigId) : null
+                    }
+                },
+                { upsert: true }
+            );
+        } catch (error) {
+            if (error.code !== 11000) throw error;
+        }
         await trackProgress(guild, user, "verified", 1, { absolute: true });
         return true;
     };
