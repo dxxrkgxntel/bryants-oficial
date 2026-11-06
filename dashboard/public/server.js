@@ -1,5 +1,19 @@
 const guildId = decodeURIComponent(window.location.pathname.split("/").filter(Boolean).at(-1) || "");
-const categoriesOrder = ["Administración", "Comunidad", "Alertas sociales", "Moderación", "Servidor", "Economía y XP", "Trofeos", "Estadísticas"];
+const categoriesOrder = ["Administración", "Comunidad", "Alertas Sociales", "Moderación", "Servidor", "Economía", "Trofeos", "Estadisticas"];
+const categoryModuleOrder = {
+"Administración":["automations","permissionsCenter","notificationCenter"],
+"Comunidad":["autoroles","welcome","leaves","boosts","birthday","confessions","suggestions","customForms","polls","giveaways","counting","memberProfiles","communityPanels","birthdayMembers"],
+"Alertas Sociales":["socialAlerts"],
+"Moderación":["logs","inviteTracker","reports","antiScam","specialChannels","antiInvites","moderationCenter","purge","securityCenter"],
+"Servidor":["tempvoice","stats","voiceConnection"],
+"Economía":["economy","memberEconomy","prestige","quests","weeklyDrop","levelSettings","shopItems","storeItems","levelRewards","bankDonorRoles"],
+"Trofeos":["achievements","trophyMembers","trophyMilestones","trophySettings"],
+"Estadisticas":["activityAnalytics"]
+};
+function sortCategoryEntries(category, entries) {
+ const positions = new Map((categoryModuleOrder[category] || []).map((key,index)=>[key,index]));
+ return entries.sort((a,b)=>(positions.has(a[0])?positions.get(a[0]):Number.MAX_SAFE_INTEGER)-(positions.has(b[0])?positions.get(b[0]):Number.MAX_SAFE_INTEGER));
+}
 const nav = document.querySelector("#module-nav");
 const content = document.querySelector("#module-content");
 const notice = document.querySelector("#notice");
@@ -613,7 +627,7 @@ function renderHome(guild, modules) {
             ? `<article class="intelligence-empty"><strong>Elige el próximo sistema que quieres preparar.</strong><p>Bryvex puede guiarte por las secciones pendientes; empieza por la que más necesite tu comunidad.</p><button class="intelligence-action" type="button" data-overview-module="${escapeHtml(pendingEntries[0][0])}">Empezar con ${escapeHtml(pendingEntries[0][1].title)} <span aria-hidden="true">→</span></button></article>`
             : '<article class="intelligence-empty"><strong>Buen trabajo: todos los módulos aparecen configurados.</strong><p>Este resumen se basa en la configuración guardada; no sustituye una prueba en Discord de los permisos ni del funcionamiento de cada sistema.</p></article>';
     const categories = categoriesOrder.map(category => {
-        const group = entries.filter(([, definition]) => definition.category === category);
+        const group = sortCategoryEntries(category, entries.filter(([, definition]) => definition.category === category));
         if (!group.length) return "";
         const ready = group.filter(([key]) => isModuleConfigured(key)).length;
         const percent = Math.round(ready / group.length * 100);
@@ -1331,7 +1345,7 @@ function makeNav(modules) {
         pinnedEntries.forEach(([key, definition]) => appendEntry(key, definition, "Favoritos"));
     }
     for (const category of categoriesOrder) {
-        const group = all.filter(([key, definition]) => definition.category === category && !favoriteModules.has(key));
+        const group = sortCategoryEntries(category, all.filter(([key, definition]) => definition.category === category && !favoriteModules.has(key)));
         if (category === "Economía y XP") {
             const memberIndex = group.findIndex(([key]) => key === "memberEconomy");
             const economyIndex = group.findIndex(([key]) => key === "economy");

@@ -98,7 +98,7 @@ const configurations = {
         fields: []
     },
     securityCenter: {
-        title: "Seguridad y Anti-Raid",
+        title: "Seguridad y Anti-raid",
         category: "Moderación",
         description: "Configura la detección de entradas masivas, alertas y medidas preventivas contra raids.",
         model: require("../Models/SecuritySettings"),
@@ -127,7 +127,7 @@ const configurations = {
         fields: []
     },
     memberProfiles: {
-        title: "Perfiles avanzados de miembros",
+        title: "Perfiles avanzados",
         category: "Comunidad",
         description: "Consulta perfiles completos con roles, experiencia, economía, trofeos, actividad, sanciones, historial y notas administrativas privadas.",
         custom: true,
@@ -135,7 +135,7 @@ const configurations = {
     },
     activityAnalytics: {
         title: "Historial y estadísticas de actividad",
-        category: "Estadísticas",
+        category: "Estadisticas",
         description: "Analiza mensajes, voz, reacciones, miembros activos, entradas, salidas, moderación y canales más utilizados. Exporta los resultados a CSV.",
         custom: true,
         fields: []
@@ -148,7 +148,7 @@ const configurations = {
         fields: []
     },
     trophyMembers: {
-        title: "Trofeos · Miembros",
+        title: "Trofeos - Miembros",
         category: "Trofeos",
         description: "Consulta la clasificación de puntos y el progreso de los miembros.",
         model: require("../Models/TrophySettings"),
@@ -156,7 +156,7 @@ const configurations = {
         fields: []
     },
     trophySettings: {
-        title: "Trofeos · Recompensas y anuncios",
+        title: "Trofeos - Recompensas y Anuncios",
         category: "Trofeos",
         description: "Configura el formato de los desbloqueos, puntos, temporada, clasificación y roles de los tres primeros puestos.",
         model: require("../Models/TrophySettings"),
@@ -270,7 +270,7 @@ const configurations = {
         ]
     },
     stats: {
-        title: "Estadísticas del servidor",
+        title: "Estadisticas",
         category: "Servidor",
         description: "Configura la categoría y los dos canales de voz que muestran el total de miembros y la invitación personalizada. El bot actualiza los nombres de esos canales.",
         model: require("../Models/ServerStatsConfig"),
@@ -296,7 +296,7 @@ const configurations = {
         ]
     },
     inviteTracker: {
-        title: "Invite Tracker",
+        title: "Invites",
         category: "Moderación",
         description: "Configura el canal donde se publican las entradas y controla si el seguimiento de invitaciones está activo. Es independiente del sistema de logs generales.",
         model: require("../Models/logsSchema"),
@@ -434,7 +434,7 @@ const configurations = {
     },
     levelSettings: {
         title: "Niveles y XP",
-        category: "Economía y XP",
+        category: "Economía",
         model: require("../Models/LevelConfig"),
         guildField: "guildId",
         fields: [
@@ -486,7 +486,7 @@ const configurations = {
     },
     economy: {
         title: "Economía",
-        category: "Economía y XP",
+        category: "Economía",
         model: require("../Models/EconomyConfig"),
         guildField: "guildId",
         fields: [
@@ -502,7 +502,7 @@ const configurations = {
     },
     prestige: {
         title: "Prestigios",
-        category: "Economía y XP",
+        category: "Economía",
         model: require("../Models/PrestigeConfig"),
         guildField: "guildId",
         fields: [
@@ -512,8 +512,8 @@ const configurations = {
         ]
     },
     weeklyDrop: {
-        title: "Recompensa semanal",
-        category: "Economía y XP",
+        title: "WeeklyDrop",
+        category: "Economía",
         model: require("../Models/WeeklyDrop"),
         guildField: "guildId",
         fields: [
@@ -529,8 +529,8 @@ const configurations = {
 
 const lists = {
     levelRewards: {
-        title: "Recompensas de nivel",
-        category: "Economía y XP",
+        title: "Recompensa por Nivel",
+        category: "Economía",
         model: require("../Models/LevelReward"),
         fields: [
             { name: "level", label: "Nivel requerido", type: "number", min: 1 },
@@ -540,7 +540,7 @@ const lists = {
     },
     quests: {
         title: "Misiones",
-        category: "Economía y XP",
+        category: "Economía",
         model: require("../Models/Quest"),
         fields: [
             { name: "questId", label: "ID de la misión", type: "text", maxLength: 80 },
@@ -557,7 +557,7 @@ const lists = {
     },
     shopItems: {
         title: "Tienda de roles",
-        category: "Economía y XP",
+        category: "Economía",
         model: require("../Models/ShopItem"),
         fields: [
             { name: "roleId", label: "Rol", type: "role" },
@@ -569,7 +569,7 @@ const lists = {
     },
     storeItems: {
         title: "Artículos de tienda",
-        category: "Economía y XP",
+        category: "Economía",
         description: "Crea artículos que los miembros pueden comprar con las monedas del servidor. Las compras quedan registradas en su mochila.",
         model: require("../Models/StoreItem"),
         fields: [
@@ -585,7 +585,7 @@ const lists = {
         identity: "itemId"
     },
     achievements: {
-        title: "Logros",
+        title: "Trofeos - Logros",
         category: "Trofeos",
         description: "Administra el catálogo de logros, sus métricas, recompensas, rarezas y visibilidad. También puedes importar o exportar backups JSON.",
         model: require("../Models/Achievement"),
@@ -616,7 +616,7 @@ const lists = {
         identity: "achievementId"
     },
     trophyMilestones: {
-        title: "Hitos de puntos",
+        title: "Trofeos - Hito de Puntos",
         category: "Trofeos",
         description: "Asocia un total de puntos de trofeos con un rol y recompensas de monedas o XP.",
         model: require("../Models/TrophyMilestone"),
@@ -634,7 +634,7 @@ const lists = {
     },
     bankDonorRoles: {
         title: "Roles de bonificación bancaria",
-        category: "Economía y XP",
+        category: "Economía",
         model: require("../Models/BankDonorRoles"),
         fields: [
             { name: "roleId", label: "Rol", type: "role" },
@@ -656,7 +656,7 @@ const lists = {
     },
     memberEconomy: {
         title: "Miembros",
-        category: "Economía y XP",
+        category: "Economía",
         description: "Busca miembros del servidor y consulta su economía, mochila de compras y progreso de logros.",
         model: require("../Models/EconomyUser"),
         guildField: "guildId",
@@ -664,7 +664,7 @@ const lists = {
     },
     socialAlerts: {
         title: "Alertas sociales",
-        category: "Alertas sociales",
+        category: "Alertas Sociales",
         description: "Sigue canales de Kick, TikTok, Twitch y YouTube y envía una alerta Componentes V2 a Discord al comenzar un directo. Kick y Twitch requieren sus credenciales de API; YouTube requiere una clave de YouTube Data API v3 en el entorno del bot.",
         model: require("../Models/SocialAlert"),
         fields: [
