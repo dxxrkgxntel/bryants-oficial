@@ -18,7 +18,8 @@ module.exports = {
                 console.warn("[Dashboard Notifications] No se pudo consultar el autor del baneo:", auditError.message);
             }
 
-            if (log?.reason !== "Scam detectado") {
+            const antiScamBan = log?.target?.id === ban.user.id && log?.reason === "Scam detectado";
+            if (!antiScamBan) {
                 await publishDashboardNotification({
                     guildId: ban.guild.id,
                     title: "Usuario baneado",
