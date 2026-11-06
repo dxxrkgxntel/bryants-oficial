@@ -1801,7 +1801,7 @@ function renderPermissionsCenter(definition) {
         <p class="admin-center-note">La gestión de permisos avanzados seguirá reservada a administradores del servidor.</p>
     </article>`;
     const moduleEntries = Object.entries(currentModules.configurations || {}).concat(Object.entries(currentModules.lists || {}))
-        .filter(([key]) => !["permissionsCenter", "notificationCenter"].includes(key));
+        .filter(([key]) => key !== "permissionsCenter");
     const roleContainer = content.querySelector("[data-role-rules]");
     const userContainer = content.querySelector("[data-user-rules]");
     const moduleOptions = (selected = []) => moduleEntries.map(([key, item]) => `<label class="admin-module-check"><input type="checkbox" data-module-key="${escapeHtml(key)}" ${selected.includes(key) ? "checked" : ""}><span>${escapeHtml(item.title || key)}</span></label>`).join("");
