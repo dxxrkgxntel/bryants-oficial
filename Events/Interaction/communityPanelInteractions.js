@@ -42,13 +42,18 @@ module.exports = {
                     return interaction.reply({ content: "No puedo asignar el rol de verificación. Revisa Gestionar roles y la jerarquía.", flags: MessageFlags.Ephemeral });
                 }
                 if (member.roles.cache.has(role.id)) {
-                    return interaction.reply({ content: "Tu cuenta ya tiene el rol de verificación.", flags: MessageFlags.Ephemeral });
+                    await recordVerifiedMember(interaction.guild, interaction.user, panel.panelId)
+                        .catch(error => console.warn("[Community Panels] No se pudo sincronizar verified:", error.message));
+                    return interaction.reply({ content: "Tu cuenta ya está verificada.", flags: MessageFlags.Ephemeral });
                 }
                 const removeRoles = (panel.removeRoleIds || []).filter(id => id !== role.id).map(id => interaction.guild.roles.cache.get(id)).filter(item => canAssignRole(interaction.guild, item));
                 await member.roles.add(role, "Verificación completada desde el panel configurado");
-                if (removeRoles.length) await member.roles.remove(removeRoles, "Retirar roles previos tras verificar");
                 await recordVerifiedMember(interaction.guild, interaction.user, panel.panelId)
                     .catch(error => console.warn("[Community Panels] No se pudo sincronizar verified:", error.message));
+                if (removeRoles.length) {
+                    await member.roles.remove(removeRoles, "Retirar roles previos tras verificar")
+                        .catch(error => console.warn("[Community Panels] No se pudieron retirar roles previos:", error.message));
+                }
                 return interaction.reply({ content: "✅ Verificación completada correctamente.", flags: MessageFlags.Ephemeral });
             }
 
