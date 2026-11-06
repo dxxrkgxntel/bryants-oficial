@@ -14,6 +14,10 @@ function addCalendarMonthsClamped(date, months) {
     ));
 }
 
+function resolvePremiumSince(oldMember, newMember) {
+    return newMember?.premiumSince || oldMember?.premiumSince || null;
+}
+
 function completedCalendarMonths(startValue, nowValue = Date.now()) {
     if (startValue === null || startValue === undefined) return null;
     const start = startValue instanceof Date ? startValue : new Date(startValue);
@@ -75,6 +79,7 @@ async function trackBoostAchievementMetric(guild, member, premiumSince = member?
 
 module.exports = {
     addCalendarMonthsClamped,
+    resolvePremiumSince,
     completedCalendarMonths,
     createBoostAchievementMetricTracker,
     trackBoostAchievementMetric
