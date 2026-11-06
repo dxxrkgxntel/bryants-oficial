@@ -2348,8 +2348,11 @@ app.delete("/api/guilds/:guildId/giveaways/:giveawayId", requireLogin, requireCs
                 await discordBotRequest(`https://discord.com/api/v10/channels/${giveaway.channelId}/messages/${giveaway.messageId}`, { method: "DELETE" });
             } catch (error) { if (error.status !== 404) throw error; }
         }
-        await Giveaway.deleteOne({ _id: giveaway._id, guildId: req.params.guildId });
-        await recordDashboardAudit(req, req.params.guildId, "Giveaway eliminado");
+        await Giveaway.updateOne(
+            { _id: giveaway._id, guildId: req.params.guildId },
+            { $set: { status: "cancelled" } }
+        );
+        await recordDashboardAudit(req, req.params.guildId, "Giveaway cancelado y ocultado del canal");
         return res.json({ ok: true });
     } catch (error) {
         return res.status(error.status === 429 ? 429 : 502).json({ error: error.message || "No pude eliminar el giveaway." });
