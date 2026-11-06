@@ -161,7 +161,6 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
         const parsedGoals = String(achievement.levelGoals || "").split(",").map(x => Number(x.trim())).filter(x => Number.isSafeInteger(x) && x > 0);
         const goals = parsedGoals.length ? [...new Set(parsedGoals)].sort((x, y) => x - y) : [Number(achievement.goal)];
         if (!goals.length || !goals.every(Number.isFinite)) continue;
-        const pointsList = parseAchievementLevelValues(achievement.levelPoints);
         const rarityList = String(achievement.levelRarities || "").split(",").map(x => x.trim().toLowerCase());
         const progressFilter = {
             guildId: guild.id,
