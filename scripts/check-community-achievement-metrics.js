@@ -5,7 +5,7 @@ const { achievementProgressUpdate } = require("../Functions/achievementRules");
 const { wholeDaysSince, DAY_MS } = require("../Functions/memberAchievementMetrics");
 const { completedCalendarMonths, resolvePremiumSince } = require("../Functions/boostAchievementMetrics");
 const { buildCommunityPanelPayload } = require("../Functions/communityPanelMessage");
-const { MessageFlags } = require("discord.js");
+const { COMPONENTS_V2_FLAG } = require("../Functions/communityPanelMessage");
 
 async function run() {
     const roleRecords = new Map();
@@ -66,7 +66,7 @@ async function run() {
     const embedPayload = buildCommunityPanelPayload({ ...rolePanel, messageType: "embed", title: "Roles", description: "Escoge uno" }, panelGuild);
     assert.strictEqual(embedPayload.embeds[0].title, "Roles");
     const v2Payload = buildCommunityPanelPayload({ ...rolePanel, messageType: "components_v2", title: "Roles", description: "Escoge uno" }, panelGuild);
-    assert.strictEqual(v2Payload.flags, MessageFlags.IsComponentsV2);
+    assert.strictEqual(v2Payload.flags, COMPONENTS_V2_FLAG);
     assert.strictEqual(v2Payload.components[0].type, 17);
     const selectPayload = buildCommunityPanelPayload({ ...rolePanel, controlType: "select", maxValues: 2 }, panelGuild);
     assert.strictEqual(selectPayload.components[0].components[0].type, 3);
