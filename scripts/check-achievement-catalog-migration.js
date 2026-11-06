@@ -25,6 +25,8 @@ assert.match(migration, /locale !== "es"/);
 assert.match(tracker, /data\/locales\/notoq-achievements\.es\.json/);
 assert.match(tracker, /if \(NOTOQ_BACKUP\.locale === "es"\)/);
 
+assert.match(dashboardClient, /item\\.categoryLabel \\|\\| item\\.category/);
+
 assert.equal(catalog.locale, "es");
 assert.equal(catalog.achievements.length, 397);
 assert.equal(sourceCatalog.achievements.length, 397);
