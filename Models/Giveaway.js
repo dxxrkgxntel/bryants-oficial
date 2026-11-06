@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const giveawaySchema = new mongoose.Schema({
     guildId: { type: String, required: true, index: true },
     channelId: { type: String, required: true },
-    messageId: { type: String, default: null, unique: true, sparse: true },
+    messageId: { type: String, default: null, index: true },
     creatorId: { type: String, required: true, index: true },
     prize: { type: String, required: true, trim: true, maxlength: 200 },
     description: { type: String, default: "", trim: true, maxlength: 1000 },
