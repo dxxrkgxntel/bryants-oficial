@@ -2,7 +2,11 @@ const DashboardNotification = require("../Models/DashboardNotification");
 
 const CATEGORIES = new Set(["configuration", "security", "community", "system"]);
 const SEVERITIES = new Set(["info", "success", "warning", "critical"]);
-const SNOWFLAKE = /^\\d{17,20}$/;
+const SNOWFLAKE = /^\d{17,20}$/;
+
+function isValidSnowflake(value) {
+    return typeof value === "string" && SNOWFLAKE.test(value);
+}
 
 function cleanText(value, maxLength) {
     if (typeof value !== "string") return "";
@@ -26,16 +30,13 @@ async function publishDashboardNotification({
     const normalizedTitle = cleanText(title, 120);
     const normalizedMessage = cleanText(message, 1000);
 
-    if (!SNOWFLAKE.test(normalizedGuildId) || !normalizedTitle || !normalizedMessage) {
+    if (!isValidSnowflake(normalizedGuildId) || !normalizedTitle || !normalizedMessage) {
         return null;
     }
-
-    if (!CATEGORIES.has(category) || !SEVERITIES.has(severity)) {
-        return null;
-    }
+    if (!CATEGORIES.has(category) || !SEVERITIES.has(severity)) return null;
 
     const recipients = Array.isArray(targetUserIds)
-        ? [...new Set(targetUserIds.filter(id => typeof id === "string" && SNOWFLAKE.test(id)))].slice(0, 100)
+        ? [...new Set(targetUserIds.filter(isValidSnowflake))].slice(0, 100)
         : [];
 
     try {
@@ -55,4 +56,4 @@ async function publishDashboardNotification({
     }
 }
 
-module.exports = { publishDashboardNotification };
+module.exports = { publishDashboardNotification, isValidSnowflake };
