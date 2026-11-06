@@ -10,15 +10,29 @@ function parsePanelEmoji(value) {
 
 function buildPanelControls(panel, guild) {
     if (panel.kind === "verification") {
-        const button = {
-            type: 2,
-            style: 3,
-            custom_id: `community-panel:${panel.panelId}:verify`,
-            label: String(panel.verifyLabel || "Verificarme").slice(0, 80)
+        const methods = Array.isArray(panel.verificationMethods) && panel.verificationMethods.length
+            ? panel.verificationMethods
+            : ["button"];
+        const labels = {
+            button: { label: panel.verifyLabel || "Verificarme", style: 3, emoji: panel.verifyEmoji },
+            captcha: { label: "Resolver CAPTCHA", style: 2 },
+            question: { label: "Responder pregunta", style: 2 },
+            manual_approval: { label: "Solicitar verificación", style: 1 }
         };
-        const emoji = parsePanelEmoji(panel.verifyEmoji);
-        if (emoji) button.emoji = emoji;
-        return [{ type: 1, components: [button] }];
+        const buttons = methods.slice(0, 4).map(method => {
+            const config = labels[method];
+            if (!config) return null;
+            const button = {
+                type: 2,
+                style: config.style,
+                custom_id: `community-panel:${panel.panelId}:verify:${method}`,
+                label: String(config.label).slice(0, 80)
+            };
+            const emoji = parsePanelEmoji(config.emoji);
+            if (emoji) button.emoji = emoji;
+            return button;
+        }).filter(Boolean);
+        return buttons.length ? [{ type: 1, components: buttons }] : [];
     }
 
     const roles = (Array.isArray(panel.roles) ? panel.roles : []).filter(item => {
