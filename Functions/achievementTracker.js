@@ -243,9 +243,15 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
                     { $inc: { xp: achievement.rewardXP }, $setOnInsert: { guildId: guild.id, userId: user.id } },
                     { upsert: true, new: true, setDefaultsOnInsert: true }
                 );
-                if (metric !== "xp") {
-                    await trackAchievementProgress(guild, user, "xp", achievement.rewardXP, { skipTotalPointsSync: true });
-                }
+                const { recordExperience } = require("./experienceMetrics");
+                await recordExperience({
+                    guild,
+                    user,
+                    amount: achievement.rewardXP,
+                    category: "achievement_reward_xp",
+                    operationId: "achievement-xp:" + achievement.achievementId + ":" + tier.level,
+                    syncProgress: metric !== "xp"
+                }).catch(error => console.warn("[Achievements] No se pudo registrar XP de recompensa:", error.message));
             }
             if (achievement.rewardRoleIds?.length || achievement.rewardRemoveRoleIds?.length) {
                 const member = await guild.members.fetch(user.id).catch(() => null);
