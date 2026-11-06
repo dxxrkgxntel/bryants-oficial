@@ -1655,6 +1655,132 @@ function renderMemberEconomy(definition, initialMemberId = null) {
     if (/^\d{17,20}$/.test(String(initialMemberId || ""))) selectMember(initialMemberId);
 }
 
+async function renderCommunityPanels(definition, editingPanel = null) {
+    currentModule = "communityPanels";
+    document.querySelector("#page-title").textContent = definition.title;
+    nav.querySelectorAll(".nav-item").forEach(button => {
+        const active = button.dataset.module === "communityPanels";
+        button.classList.toggle("active", active);
+        if (active) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
+    });
+    content.innerHTML = '<div class="loading-card">Cargando paneles de comunidad…</div>';
+    try {
+        const result = await api("/api/guilds/" + encodeURIComponent(guildId) + "/community-panels");
+        if (currentModule !== "communityPanels") return;
+        const panels = result.panels || [];
+        const channelOptions = resources.channels.filter(item => [0, 5].includes(item.type));
+        const roleOptions = resources.roles || [];
+        const esc = escapeHtml;
+        const channelSelect = selected => '<option value="">Selecciona un canal</option>' + channelOptions.map(item => '<option value="' + esc(item.id) + '" ' + (selected === item.id ? "selected" : "") + '> #' + esc(item.name) + '</option>').join("");
+        const roleSelect = selected => '<option value="">Selecciona un rol</option>' + roleOptions.map(item => '<option value="' + esc(item.id) + '" ' + (selected === item.id ? "selected" : "") + '>' + esc(item.name) + '</option>').join("");
+        const selectedKind = editingPanel?.kind || "self_roles";
+        const roleChoices = (editingPanel?.roles || []);
+        const roleMarkup = roleOptions.map(role => {
+            const configured = roleChoices.find(item => item.roleId === role.id);
+            return '<label class="community-role-choice"><input type="checkbox" name="panelRole" value="' + esc(role.id) + '" ' + (configured ? "checked" : "") + '><span class="community-role-name">' + esc(role.name) + '</span><input class="community-role-label" name="roleLabel-' + esc(role.id) + '" maxlength="80" value="' + esc(configured?.label || role.name) + '" aria-label="Etiqueta para ' + esc(role.name) + '"></label>';
+        }).join("");
+        const cards = panels.length ? panels.map(panel => {
+            const channel = channelOptions.find(item => item.id === panel.channelId);
+            return '<article class="community-panel-row"><div class="community-panel-row-main"><div class="community-panel-kind">' + (panel.kind === "verification" ? "VERIFICACIÓN" : "AUTOROLES") + ' · ' + esc(panel.messageType || "embed").replace("_", " ").toUpperCase() + '</div><h3>' + esc(panel.name) + '</h3><p>ID: <code>' + esc(panel.panelId) + '</code> · ' + (panel.enabled ? "Activo" : "Desactivado") + ' · ' + (panel.roles?.length || 0) + ' roles</p><small>' + esc(channel ? channel.name : "Canal no disponible") + '</small></div><div class="community-panel-actions"><button class="quiet-button" type="button" data-panel-edit="' + esc(panel.panelId) + '">Editar</button><button class="quiet-button" type="button" data-panel-publish="' + esc(panel.panelId) + '">Publicar</button><button class="quiet-button danger-button" type="button" data-panel-delete="' + esc(panel.panelId) + '">Eliminar</button></div></article>';
+        }).join("") : '<div class="empty-state">Todavía no tienes paneles creados. Crea el primero para publicarlo en Discord.</div>';
+        const editor = '<article class="settings-card community-panel-editor"><div class="card-heading"><div><div class="eyebrow">CREADOR DE MENSAJES</div><h2>' + (editingPanel ? "Editar panel" : "Nuevo panel") + '</h2></div><span class="status-pill">' + (editingPanel ? "Edición" : "Borrador") + '</span></div><p class="card-description">Diseña el mensaje, selecciona roles y canales del servidor y publica directamente en Discord. Cada servidor conserva sus propios paneles.</p>' +
+        '<form id="community-panel-form" class="fields-grid community-panel-form">' +
+        '<label class="field"><span>ID único</span><input name="panelId" maxlength="40" pattern="[a-z0-9_-]+" required value="' + esc(editingPanel?.panelId || "") + '" ' + (editingPanel ? "readonly" : "") + ' placeholder="roles-miembros"></label>' +
+        '<label class="field"><span>Nombre interno</span><input name="name" maxlength="80" required value="' + esc(editingPanel?.name || "") + '" placeholder="Panel de roles"></label>' +
+        '<label class="field"><span>Tipo de panel</span><select name="kind"><option value="self_roles" ' + (selectedKind === "self_roles" ? "selected" : "") + '>Autoroles voluntarios</option><option value="verification" ' + (selectedKind === "verification" ? "selected" : "") + '>Verificación</option></select></label>' +
+        '<label class="field"><span>Canal de publicación</span><select name="channelId" required>' + channelSelect(editingPanel?.channelId) + '</select></label>' +
+        '<label class="field"><span>Formato</span><select name="messageType"><option value="text" ' + (editingPanel?.messageType === "text" ? "selected" : "") + '>Texto</option><option value="embed" ' + (!editingPanel || editingPanel.messageType === "embed" ? "selected" : "") + '>Embed</option><option value="components_v2" ' + (editingPanel?.messageType === "components_v2" ? "selected" : "") + '>Components V2</option></select></label>' +
+        '<label class="field"><span>Color</span><input name="color" type="color" value="' + esc(editingPanel?.color || "#8A2BE2") + '"></label>' +
+        '<label class="field community-panel-full"><span>Título</span><input name="title" maxlength="256" value="' + esc(editingPanel?.title || "") + '" placeholder="¡Elige tus roles!"></label>' +
+        '<label class="field community-panel-full"><span>Descripción</span><textarea name="description" rows="3" maxlength="4000">' + esc(editingPanel?.description || "") + '</textarea></label>' +
+        '<label class="field community-panel-full"><span>Texto adicional</span><textarea name="content" rows="2" maxlength="2000">' + esc(editingPanel?.content || "") + '</textarea></label>' +
+        '<label class="field"><span>Imagen (URL HTTPS)</span><input name="imageUrl" type="url" value="' + esc(editingPanel?.imageUrl || "") + '"></label><label class="field"><span>Miniatura (URL HTTPS)</span><input name="thumbnailUrl" type="url" value="' + esc(editingPanel?.thumbnailUrl || "") + '"></label>' +
+        '<section class="community-panel-kind-fields community-panel-full" data-kind-fields="self_roles" ' + (selectedKind !== "self_roles" ? "hidden" : "") + '><div class="community-panel-section-heading"><h3>Roles disponibles</h3><span>Hasta 25 roles</span></div><label class="field"><span>Controles</span><select name="controlType"><option value="buttons" ' + (editingPanel?.controlType !== "select" ? "selected" : "") + '>Botones</option><option value="select" ' + (editingPanel?.controlType === "select" ? "selected" : "") + '>Menú desplegable</option></select></label><label class="field"><span>Máximo por selección</span><input name="maxValues" type="number" min="1" max="25" value="' + Number(editingPanel?.maxValues || 1) + '"></label><label class="field community-panel-full"><span>Texto del menú</span><input name="selectPlaceholder" maxlength="150" value="' + esc(editingPanel?.selectPlaceholder || "Selecciona tus roles") + '"></label><div class="community-role-grid">' + roleMarkup + '</div></section>' +
+        '<section class="community-panel-kind-fields community-panel-full" data-kind-fields="verification" ' + (selectedKind !== "verification" ? "hidden" : "") + '><div class="community-panel-section-heading"><h3>Configuración de verificación</h3><span>Botón de asignación de rol</span></div><label class="field"><span>Rol de verificación</span><select name="verificationRoleId">' + roleSelect(editingPanel?.verificationRoleId) + '</select></label><label class="field"><span>Texto del botón</span><input name="verifyLabel" maxlength="80" value="' + esc(editingPanel?.verifyLabel || "Verificarme") + '"></label><label class="field"><span>Emoji del botón</span><input name="verifyEmoji" maxlength="100" value="' + esc(editingPanel?.verifyEmoji || "") + '"></label><label class="field community-panel-full"><span>Roles que se retirarán al verificar</span><select name="removeRoleIds" multiple size="5">' + roleOptions.map(role => '<option value="' + esc(role.id) + '" ' + ((editingPanel?.removeRoleIds || []).includes(role.id) ? "selected" : "") + '>' + esc(role.name) + '</option>').join("") + '</select><small>Usa Ctrl o Cmd para seleccionar varios.</small></label></section>' +
+        '<label class="community-panel-enabled"><input type="checkbox" name="enabled" ' + (editingPanel?.enabled !== false ? "checked" : "") + '> Panel activo</label>' +
+        '<div class="community-panel-preview-wrap community-panel-full"><div class="community-panel-section-heading"><h3>Vista previa</h3><span>Se actualiza mientras editas</span></div><div id="community-panel-preview" class="community-message-preview"></div></div>' +
+        '<div class="form-actions community-panel-full"><button class="primary-button" type="submit">' + (editingPanel ? "Guardar cambios" : "Crear panel") + '</button><button class="quiet-button" type="button" data-panel-reset>Limpiar</button><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>';
+        content.innerHTML = '<section class="community-panels-page"><div class="community-panels-header"><div><div class="eyebrow">COMUNIDAD · DISCORD</div><h2>Paneles guardados</h2><p>Administra mensajes interactivos de autoroles y verificación.</p></div><button class="primary-button" type="button" data-panel-new>+ Crear panel</button></div><div class="community-panel-list">' + cards + '</div>' + editor + '</section>';
+        const form = content.querySelector("#community-panel-form");
+        const preview = content.querySelector("#community-panel-preview");
+        const updatePreview = () => {
+            const data = new FormData(form);
+            const kind = data.get("kind");
+            const type = data.get("messageType");
+            const title = data.get("title") || (kind === "verification" ? "Verifica tu cuenta" : "Selecciona tus roles");
+            const description = data.get("description") || "La descripción de tu panel aparecerá aquí.";
+            const selected = [...form.querySelectorAll('input[name="panelRole"]:checked')].map(input => roleOptions.find(role => role.id === input.value)?.name).filter(Boolean);
+            const controls = kind === "verification"
+                ? '<button type="button" class="community-preview-control">✓ ' + esc(data.get("verifyLabel") || "Verificarme") + '</button>'
+                : type === "text" ? "" : data.get("controlType") === "select"
+                    ? '<div class="community-preview-select">⌄ ' + esc(data.get("selectPlaceholder") || "Selecciona tus roles") + '</div>'
+                    : selected.map(role => '<button type="button" class="community-preview-control">' + esc(role) + '</button>').join("");
+            preview.style.setProperty("--community-panel-accent", data.get("color") || "#8A2BE2");
+            preview.innerHTML = '<div class="community-preview-card ' + (type === "components_v2" ? "is-v2" : "") + ' ' + (type === "text" ? "is-text" : "") + '">' + (type === "embed" ? '<div class="community-preview-embed-bar"></div>' : "") + '<div class="community-preview-body"><h3>' + esc(title) + '</h3><p>' + esc(description) + '</p>' + (data.get("content") ? '<p>' + esc(data.get("content")) + '</p>' : "") + (data.get("imageUrl") ? '<img src="' + esc(data.get("imageUrl")) + '" alt="Vista previa">' : "") + '<div class="community-preview-controls">' + controls + '</div><small>Vista previa · Bryvex Bot</small></div></div>';
+        };
+        const syncKind = () => {
+            const kind = form.elements.kind.value;
+            form.querySelectorAll("[data-kind-fields]").forEach(section => { section.hidden = section.dataset.kindFields !== kind; });
+            updatePreview();
+        };
+        form.addEventListener("input", updatePreview);
+        form.addEventListener("change", event => event.target.name === "kind" ? syncKind() : updatePreview());
+        form.querySelector("[data-panel-reset]").addEventListener("click", () => renderCommunityPanels(definition));
+        form.addEventListener("submit", async event => {
+            event.preventDefault();
+            const button = form.querySelector('button[type="submit"]');
+            button.disabled = true;
+            setSaveFeedback(form, "Guardando panel…", "pending");
+            const data = new FormData(form);
+            const roles = [...form.querySelectorAll('input[name="panelRole"]:checked')].map(input => ({ roleId: input.value, label: form.elements["roleLabel-" + input.value]?.value || roleOptions.find(role => role.id === input.value)?.name || "" }));
+            const payload = {
+                panelId: data.get("panelId"), name: data.get("name"), kind: data.get("kind"), channelId: data.get("channelId"),
+                messageType: data.get("messageType"), title: data.get("title"), description: data.get("description"), content: data.get("content"),
+                color: data.get("color"), imageUrl: data.get("imageUrl"), thumbnailUrl: data.get("thumbnailUrl"), enabled: form.elements.enabled.checked,
+                controlType: data.get("controlType"), maxValues: Number(data.get("maxValues")), selectPlaceholder: data.get("selectPlaceholder"),
+                roles, verificationRoleId: data.get("verificationRoleId"), verifyLabel: data.get("verifyLabel"), verifyEmoji: data.get("verifyEmoji"),
+                removeRoleIds: [...form.elements.removeRoleIds.selectedOptions].map(option => option.value)
+            };
+            try {
+                await api("/api/guilds/" + encodeURIComponent(guildId) + "/community-panels", { method: "POST", body: JSON.stringify(payload) });
+                showNotice("Panel guardado correctamente.");
+                await renderCommunityPanels(definition);
+            } catch (error) {
+                setSaveFeedback(form, error.message, "error");
+                showNotice(error.message, true);
+                button.disabled = false;
+            }
+        });
+        content.querySelector("[data-panel-new]").addEventListener("click", () => renderCommunityPanels(definition));
+        content.querySelectorAll("[data-panel-edit]").forEach(button => button.addEventListener("click", () => {
+            const panel = panels.find(item => item.panelId === button.dataset.panelEdit);
+            if (panel) renderCommunityPanels(definition, panel);
+        }));
+        content.querySelectorAll("[data-panel-publish]").forEach(button => button.addEventListener("click", async () => {
+            button.disabled = true;
+            try {
+                const published = await api("/api/guilds/" + encodeURIComponent(guildId) + "/community-panels/" + encodeURIComponent(button.dataset.panelPublish) + "/publish", { method: "POST", body: "{}" });
+                showNotice("Panel publicado en Discord.");
+                if (published.url) window.open(published.url, "_blank", "noopener,noreferrer");
+            } catch (error) { showNotice(error.message, true); }
+            finally { button.disabled = false; }
+        }));
+        content.querySelectorAll("[data-panel-delete]").forEach(button => button.addEventListener("click", async () => {
+            if (!window.confirm("¿Eliminar este panel? El mensaje de Discord permanecerá, pero sus controles dejarán de funcionar.")) return;
+            button.disabled = true;
+            try {
+                await api("/api/guilds/" + encodeURIComponent(guildId) + "/community-panels/" + encodeURIComponent(button.dataset.panelDelete), { method: "DELETE" });
+                showNotice("Panel eliminado.");
+                await renderCommunityPanels(definition);
+            } catch (error) { showNotice(error.message, true); button.disabled = false; }
+        }));
+        updatePreview();
+    } catch (error) {
+        content.innerHTML = '<div class="loading-card error">' + escapeHtml(error.message) + '</div>';
+    }
+}
+
 function renderModule(key, modules, options = {}) {
     const memberBalanceButton = document.querySelector("#member-balance-update");
     if (memberBalanceButton && key !== "memberEconomy") {
@@ -1674,6 +1800,7 @@ function renderModule(key, modules, options = {}) {
         ? (modules.configurations[key] || { title: "Miembros", category: "Economía y XP", description: "Busca a un miembro por su nombre visible o usuario para consultar su economía." })
         : isList ? modules.lists[key] : modules.configurations[key];
     document.querySelector("#page-title").textContent = definition.title;
+    if (key === "communityPanels") return renderCommunityPanels(definition);
     if (isList) return renderList(key, definition);
 
     const data = configState.configurations[key] || { configured: false };

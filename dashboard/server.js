@@ -12,6 +12,8 @@ const Poll = require("../Models/Poll");
 const PollConfig = require("../Models/PollConfig");
 const Giveaway = require("../Models/Giveaway");
 const GiveawayConfig = require("../Models/GiveawayConfig");
+const CommunityPanel = require("../Models/CommunityPanel");
+const { buildCommunityPanelPayload } = require("../Functions/communityPanelMessage");
 const DashboardAccount = require("../Models/DashboardAccount");
 const DashboardReferral = require("../Models/DashboardReferral");
 const DashboardVote = require("../Models/DashboardVote");
@@ -1676,6 +1678,7 @@ app.get("/api/guilds/:guildId/config", requireGuildAdmin, async (req, res) => {
     try {
         await ensureDefaultAchievements(req.params.guildId);
         const configResults = await Promise.all(Object.entries(configurations).map(async ([key, definition]) => {
+            if (definition.custom) return [key, { configured: true }];
             if (key === "memberEconomy") return [key, { configured: true }];
             const document = await definition.model.findOne({ [definition.guildField]: req.params.guildId });
             const data = document?.toObject();
@@ -2115,6 +2118,135 @@ app.put("/api/guilds/:guildId/config/:module", requireLogin, requireCsrf, requir
     } catch (error) {
         if (error.code === 11000) return res.status(409).json({ error: "Este sistema ya tiene una configuración duplicada. Revísala desde Discord." });
         return res.status(400).json({ error: error.message || "No pude guardar la configuración." });
+    }
+});
+
+
+function validateCommunityPanelInput(input, guildId, resources) {
+    const panelId = String(input?.panelId || "").trim().toLowerCase();
+    const name = String(input?.name || "").trim();
+    const kind = input?.kind;
+    const channelId = String(input?.channelId || "");
+    const messageType = input?.messageType || "embed";
+    if (!/^[a-z0-9_-]{1,40}$/.test(panelId)) throw new Error("El ID solo admite letras minúsculas, números, guiones y guiones bajos (máximo 40 caracteres).");
+    if (!name || name.length > 80) throw new Error("El nombre debe tener entre 1 y 80 caracteres.");
+    if (!["self_roles", "verification"].includes(kind)) throw new Error("Selecciona autoroles o verificación.");
+    if (!["text", "embed", "components_v2"].includes(messageType)) throw new Error("Selecciona un formato de mensaje válido.");
+    const channel = resources.channels.find(item => item.id === channelId && [0, 5].includes(item.type));
+    if (!channel) throw new Error("Selecciona un canal de texto de este servidor.");
+    const title = String(input.title || "").trim().slice(0, 256);
+    const description = String(input.description || "").trim().slice(0, 4000);
+    const content = String(input.content || "").trim().slice(0, 2000);
+    const color = String(input.color || "#8A2BE2");
+    if (!/^#[0-9a-f]{6}$/i.test(color)) throw new Error("El color debe tener formato #RRGGBB.");
+    const safeUrl = (value, label) => {
+        if (!value) return null;
+        let url;
+        try { url = new URL(String(value)); } catch { throw new Error(label + " debe ser una URL válida."); }
+        if (url.protocol !== "https:") throw new Error(label + " debe comenzar con https://.");
+        return url.toString().slice(0, 500);
+    };
+    const validRoles = new Map(resources.roles.map(role => [role.id, role]));
+    const roles = kind === "self_roles" ? (Array.isArray(input.roles) ? input.roles : []).map(item => {
+        const roleId = String(item?.roleId || "");
+        const role = validRoles.get(roleId);
+        const label = String(item?.label || role?.name || "").trim();
+        if (!role || !label || label.length > 80) throw new Error("Revisa los roles y sus etiquetas; todos deben pertenecer a este servidor.");
+        return { roleId, label, description: String(item.description || "").slice(0, 100), emoji: String(item.emoji || "").slice(0, 100) };
+    }) : [];
+    if (roles.length > 25 || (kind === "self_roles" && !roles.length)) throw new Error("Un panel de autoroles necesita entre 1 y 25 roles.");
+    const verificationRoleId = kind === "verification" ? String(input.verificationRoleId || "") : null;
+    if (kind === "verification" && !validRoles.has(verificationRoleId)) throw new Error("Selecciona el rol de verificación de este servidor.");
+    const removeRoleIds = [...new Set((Array.isArray(input.removeRoleIds) ? input.removeRoleIds : []).map(String))];
+    if (removeRoleIds.some(id => !validRoles.has(id))) throw new Error("Los roles que se retirarán deben pertenecer a este servidor.");
+    const controlType = input.controlType === "select" ? "select" : "buttons";
+    const maxValues = Math.max(1, Math.min(25, Number(input.maxValues) || 1));
+    return {
+        panelId, name, kind, enabled: input.enabled !== false, channelId, messageType,
+        title, description, content, color,
+        imageUrl: safeUrl(input.imageUrl, "La imagen"),
+        thumbnailUrl: safeUrl(input.thumbnailUrl, "La miniatura"),
+        controlType, roles, maxValues,
+        selectPlaceholder: String(input.selectPlaceholder || "Selecciona tus roles").slice(0, 150),
+        verifyLabel: String(input.verifyLabel || "Verificarme").slice(0, 80),
+        verifyEmoji: String(input.verifyEmoji || "").slice(0, 100),
+        verificationRoleId, removeRoleIds
+    };
+}
+
+app.get("/api/guilds/:guildId/community-panels", requireGuildAdmin, async (req, res) => {
+    try {
+        const panels = await CommunityPanel.find({ guildId: req.params.guildId }).sort({ updatedAt: -1 }).lean();
+        return res.json({ panels: panels.map(panel => ({ ...panel, _id: String(panel._id) })) });
+    } catch (error) {
+        console.error("[Dashboard Community Panels] Error al cargar paneles:", error.message);
+        return res.status(500).json({ error: "No pude cargar los paneles de comunidad." });
+    }
+});
+
+app.post("/api/guilds/:guildId/community-panels", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    try {
+        const guildId = req.params.guildId;
+        const resources = await fetchGuildResources(guildId);
+        const input = validateCommunityPanelInput(req.body, guildId, resources);
+        if (input.kind === "verification") {
+            await validateAssignableRoleIds(guildId, [input.verificationRoleId, ...input.removeRoleIds]);
+        } else {
+            await validateAssignableRoleIds(guildId, input.roles.map(role => role.roleId));
+        }
+        const panel = await CommunityPanel.findOneAndUpdate(
+            { guildId, panelId: input.panelId },
+            { $set: input, $setOnInsert: { guildId, panelId: input.panelId } },
+            { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+        );
+        await recordDashboardAudit(req, guildId, "Panel de comunidad " + panel.panelId + " actualizado");
+        return res.json({ panel: serialize(panel) });
+    } catch (error) {
+        if (error.code === 11000) return res.status(409).json({ error: "Ya existe un panel con ese ID en este servidor." });
+        console.error("[Dashboard Community Panels] Error al guardar panel:", error.message);
+        return res.status(400).json({ error: error.message || "No pude guardar el panel." });
+    }
+});
+
+app.post("/api/guilds/:guildId/community-panels/:panelId/publish", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    try {
+        const guildId = req.params.guildId;
+        const panel = await CommunityPanel.findOne({ guildId, panelId: req.params.panelId.toLowerCase(), enabled: true });
+        if (!panel) return res.status(404).json({ error: "No encontré un panel activo con ese ID." });
+        const resources = await fetchGuildResources(guildId);
+        const roleMap = new Map(resources.roles.map(role => [role.id, { id: role.id, name: role.name, managed: role.managed, position: role.position }]));
+        const guildLike = { id: guildId, roles: { cache: { get: id => roleMap.get(id) } } };
+        const payload = buildCommunityPanelPayload(panel.toObject(), guildLike);
+        const endpoint = "https://discord.com/api/v10/channels/" + panel.channelId + "/messages";
+        let message;
+        if (panel.messageId) {
+            try {
+                message = await discordBotRequest(endpoint + "/" + panel.messageId, { method: "PATCH", body: payload });
+            } catch (error) {
+                if (error.status !== 404) throw error;
+            }
+        }
+        if (!message) message = await discordBotRequest(endpoint, { method: "POST", body: payload });
+        panel.messageId = message.id;
+        await panel.save();
+        await recordDashboardAudit(req, guildId, "Panel de comunidad " + panel.panelId + " publicado");
+        return res.json({ ok: true, messageId: message.id, channelId: panel.channelId, url: "https://discord.com/channels/" + guildId + "/" + panel.channelId + "/" + message.id });
+    } catch (error) {
+        console.error("[Dashboard Community Panels] Error al publicar:", error.message);
+        const status = error.status === 429 ? 429 : error.status ? 502 : 400;
+        return res.status(status).json({ error: error.message || "No pude publicar el panel en Discord." });
+    }
+});
+
+app.delete("/api/guilds/:guildId/community-panels/:panelId", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    try {
+        const result = await CommunityPanel.deleteOne({ guildId: req.params.guildId, panelId: req.params.panelId.toLowerCase() });
+        if (!result.deletedCount) return res.status(404).json({ error: "No encontré ese panel." });
+        await recordDashboardAudit(req, req.params.guildId, "Panel de comunidad " + req.params.panelId + " eliminado");
+        return res.json({ ok: true });
+    } catch (error) {
+        console.error("[Dashboard Community Panels] Error al eliminar:", error.message);
+        return res.status(500).json({ error: "No pude eliminar el panel." });
     }
 });
 
