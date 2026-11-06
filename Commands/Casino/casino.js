@@ -105,12 +105,7 @@ async function run_blackjack(interaction) {
             .setCustomId(`blackjack_stand_${interaction.user.id}_${amount}_${playerHand.join("-")}_${dealerHand.join("-")}`)
             .setLabel("Plantarse")
             .setEmoji("🛑")
-            .setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder()
-            .setCustomId(`blackjack_cancel_${interaction.user.id}_${amount}_${playerHand.join("-")}_${dealerHand.join("-")}`)
-            .setLabel("Cancelar")
-            .setEmoji("↩️")
-            .setStyle(ButtonStyle.Danger)
+            .setStyle(ButtonStyle.Secondary)
     );
 
     try {
