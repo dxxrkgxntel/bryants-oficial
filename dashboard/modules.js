@@ -76,6 +76,13 @@ const messageVariables = {
 };
 
 const configurations = {
+    communityPanels: {
+        title: "Paneles de comunidad",
+        category: "Comunidad",
+        description: "Crea, edita, previsualiza y publica paneles de autoroles y verificación directamente en Discord. Cada servidor conserva sus propios paneles.",
+        custom: true,
+        fields: []
+    },
     trophyMembers: {
         title: "Trofeos · Miembros",
         category: "Trofeos",
