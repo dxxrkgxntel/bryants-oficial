@@ -1487,7 +1487,7 @@ app.post("/api/guilds/:guildId/assistant", requireLogin, requireCsrf, requireGui
     const relatedModule = explicitModule || (!websiteHelpRequested && followUp ? historyModule : null);
     const websiteActionKey = getAssistantWebsiteActionKey(normalizedRecentContext, websiteHelpRequested);
     const hasBryvexContext = Boolean(explicitModule)
-        || /\b(bryvex|discord|bot|servidor|modulo|modulos|comando|comandos|alertas? sociales?|bienvenidas?|despedidas?|autoroles?|trofeos?|niveles?|economia|monedas?|coins|misiones|prestigios?|encuestas?|confesiones?|sugerencias?|cumpleanos|boosts?|tempvoice|tiktok|twitch|youtube|kick)\b/.test(normalizedRecentContext)
+        || /\b(bryvex|discord|bot|servidor|modulo|modulos|comando|comandos|alertas? sociales?|bienvenidas?|despedidas?|autoroles?|trofeos?|niveles?|economia|monedas?|coins|misiones|prestigios?|encuestas?|sorteos?|giveaways?|confesiones?|sugerencias?|cumpleanos|boosts?|tempvoice|tiktok|twitch|youtube|kick)\b/.test(normalizedRecentContext)
         || Boolean(relatedModule && followUp);
     if (!takeAssistantRateLimit(String(req.session.user.id))) {
         return res.status(429).json({ error: "Espera un minuto antes de volver a consultar al asistente." });
