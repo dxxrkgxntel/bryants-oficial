@@ -15,6 +15,7 @@ const play = require("play-dl");
 const axios = require("axios");
 const MusicHistory = require("../Models/MusicHistory");
 const MusicSettings = require("../Models/MusicSettings");
+const { setVoiceConnectionOverride, releaseVoiceConnectionOverride } = require("./voiceConnectionManager");
 
 const sessions = new Map();
 const pendingSessions = new Map();
@@ -409,18 +410,21 @@ async function ensureSession(interaction, request) {
         const shoukaku = interaction.client.shoukaku;
         if (!shoukaku) throw new Error("Lavalink no está configurado. Revisa LAVALINK_HTTP_URL y LAVALINK_PASSWORD en las variables de entorno.");
         if (!shoukaku.nodes.size) throw new Error("Todavía no hay ningún nodo Lavalink conectado. Espera a que el servicio esté listo e inténtalo otra vez.");
-        const player = await shoukaku.joinVoiceChannel({
-            guildId: interaction.guildId, channelId: voiceChannel.id,
-            shardId: interaction.guild.shardId || 0, deaf: true, mute: false
-        });
+        setVoiceConnectionOverride(interaction.guildId, voiceChannel.id);
+        let player;
         try {
+            player = await shoukaku.joinVoiceChannel({
+                guildId: interaction.guildId, channelId: voiceChannel.id,
+                shardId: interaction.guild.shardId || 0, deaf: true, mute: false
+            });
             const created = createSession(interaction.guild, voiceChannel, textChannel, settings, player);
             await player.setFilterVolume(created.volume / 100);
             if (settings.panelMessageId && textChannel?.messages) created.panelMessage = await textChannel.messages.fetch(settings.panelMessageId).catch(() => null);
             sessions.set(interaction.guildId, created);
             return created;
         } catch (error) {
-            await shoukaku.leaveVoiceChannel(interaction.guildId).catch(() => {});
+            if (player) await shoukaku.leaveVoiceChannel(interaction.guildId).catch(() => {});
+            await releaseVoiceConnectionOverride(interaction.client, interaction.guildId).catch(() => {});
             throw error;
         }
     })();
@@ -787,6 +791,7 @@ async function endSession(session, reason = null) {
     await session.player.stopTrack().catch(() => {});
     await updatePanel(session).catch(() => {});
     await session.guild.client.shoukaku?.leaveVoiceChannel(session.guildId).catch(() => {});
+    await releaseVoiceConnectionOverride(session.guild.client, session.guildId).catch(() => {});
 }
 
 function promoteDJIfNeeded(session) {
