@@ -2159,6 +2159,32 @@ function validateCommunityPanelInput(input, guildId, resources) {
     if (kind === "verification" && !validRoles.has(verificationRoleId)) throw new Error("Selecciona el rol de verificación de este servidor.");
     const removeRoleIds = [...new Set((Array.isArray(input.removeRoleIds) ? input.removeRoleIds : []).map(String))];
     if (removeRoleIds.some(id => !validRoles.has(id))) throw new Error("Los roles que se retirarán deben pertenecer a este servidor.");
+    const verificationMethods = kind === "verification"
+        ? [...new Set((Array.isArray(input.verificationMethods) ? input.verificationMethods : ["button"]).map(String))]
+        : ["button"];
+    const allowedMethods = new Set(["button", "captcha", "question", "manual_approval"]);
+    if (!verificationMethods.length || verificationMethods.length > 4 || verificationMethods.some(method => !allowedMethods.has(method))) {
+        throw new Error("Selecciona entre uno y cuatro métodos de verificación válidos.");
+    }
+    const verificationQuestion = String(input.verificationQuestion || "").trim().slice(0, 300);
+    const verificationAnswer = String(input.verificationAnswer || "").normalize("NFKC").trim().toLocaleLowerCase("es");
+    if (kind === "verification" && verificationMethods.includes("question")) {
+        if (verificationQuestion.length < 5) throw new Error("Escribe una pregunta de verificación de al menos 5 caracteres.");
+        if (verificationAnswer && verificationAnswer.length < 1) throw new Error("Escribe la respuesta correcta.");
+    }
+    const reviewChannelId = kind === "verification" && verificationMethods.includes("manual_approval")
+        ? String(input.reviewChannelId || "") : null;
+    if (reviewChannelId && !resources.channels.some(item => item.id === reviewChannelId && [0, 5].includes(item.type))) {
+        throw new Error("Selecciona un canal de texto válido para las revisiones.");
+    }
+    if (kind === "verification" && verificationMethods.includes("manual_approval") && !reviewChannelId) {
+        throw new Error("Selecciona el canal donde el equipo revisará las solicitudes.");
+    }
+    const reviewerRoleIds = [...new Set((Array.isArray(input.reviewerRoleIds) ? input.reviewerRoleIds : []).map(String))];
+    if (reviewerRoleIds.some(id => !validRoles.has(id))) throw new Error("Los roles revisores deben pertenecer a este servidor.");
+    const verificationAnswerHash = verificationAnswer
+        ? crypto.createHash("sha256").update(verificationAnswer).digest("hex")
+        : null;
     const controlType = input.controlType === "select" ? "select" : "buttons";
     const maxValues = Math.max(1, Math.min(25, Number(input.maxValues) || 1));
     return {
@@ -2170,7 +2196,8 @@ function validateCommunityPanelInput(input, guildId, resources) {
         selectPlaceholder: String(input.selectPlaceholder || "Selecciona tus roles").slice(0, 150),
         verifyLabel: String(input.verifyLabel || "Verificarme").slice(0, 80),
         verifyEmoji: String(input.verifyEmoji || "").slice(0, 100),
-        verificationRoleId, removeRoleIds
+        verificationRoleId, verificationMethods, verificationQuestion, verificationAnswerHash,
+        reviewChannelId, reviewerRoleIds, removeRoleIds
     };
 }
 
@@ -2190,7 +2217,13 @@ app.post("/api/guilds/:guildId/community-panels", requireLogin, requireCsrf, req
         const resources = await fetchGuildResources(guildId);
         const input = validateCommunityPanelInput(req.body, guildId, resources);
         if (input.kind === "verification") {
+            if (input.verificationMethods.includes("question") && !input.verificationAnswerHash) {
+                const existing = await CommunityPanel.findOne({ guildId, panelId: input.panelId }).select("+verificationAnswerHash").lean();
+                if (!existing?.verificationAnswerHash) throw new Error("Escribe la respuesta correcta para activar el método de pregunta.");
+                input.verificationAnswerHash = existing.verificationAnswerHash;
+            }
             await validateAssignableRoleIds(guildId, [input.verificationRoleId, ...input.removeRoleIds]);
+            await validateAssignableRoleIds(guildId, input.reviewerRoleIds);
         } else {
             await validateAssignableRoleIds(guildId, input.roles.map(role => role.roleId));
         }
