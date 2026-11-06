@@ -11,7 +11,7 @@ function createGiveawayAchievementMetricSync({ GiveawayModel, trackProgress, get
         try {
             const sources = [
                 ["giveaways_created", [{ $group: { _id: { guildId: "$guildId", userId: "$creatorId" }, total: { $sum: 1 } } }]],
-                ["giveaways_entered", [{ $unwind: "$entrants" }, { $group: { _id: { guildId: "$guildId", userId: "$entrants" }, total: { $sum: 1 } } }]],
+                ["giveaways_entered", [{ $unwind: "$entryHistory" }, { $group: { _id: { guildId: "$guildId", userId: "$entryHistory" }, total: { $sum: 1 } } }]],
                 ["giveaways_won", [{ $unwind: "$winnerIds" }, { $group: { _id: { guildId: "$guildId", userId: "$winnerIds" }, total: { $sum: 1 } } }]]
             ];
             for (const [metric, pipeline] of sources) {
