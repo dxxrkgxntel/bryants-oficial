@@ -35,9 +35,10 @@ async function auditDatabase() {
 
     await mongoose.connect(uri, { readPreference: "secondaryPreferred" });
     try {
-        const [settings, achievementGuildIds, progressStats] = await Promise.all([
+        const [settings, achievementGuildIds, progressGuildIds, progressStats] = await Promise.all([
             TrophySettings.find({}).select("guildId notoqCatalogLocaleVersion notoqCatalogSeeded").lean(),
             Achievement.distinct("guildId", { source: "notoq" }),
+            UserAchievement.distinct("guildId"),
             UserAchievement.aggregate([
                 { $group: {
                     _id: "$guildId",
@@ -52,7 +53,8 @@ async function auditDatabase() {
 
         const guildIds = [...new Set([
             ...settings.map(item => String(item.guildId)),
-            ...achievementGuildIds.map(String)
+            ...achievementGuildIds.map(String),
+            ...progressGuildIds.map(String)
         ])];
         const settingsByGuild = new Map(settings.map(item => [String(item.guildId), item]));
         const progressByGuild = new Map(progressStats.map(item => [String(item._id), item]));
