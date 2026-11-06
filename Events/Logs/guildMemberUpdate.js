@@ -17,7 +17,8 @@ module.exports = {
                         limit: 1,
                         type: AuditLogEvent.MemberUpdate
                     });
-                    log = fetchedLogs.entries.first() || null;
+                    const candidate = fetchedLogs.entries.first() || null;
+                    log = candidate?.target?.id === newMember.id ? candidate : null;
                 } catch (auditError) {
                     console.warn("[Dashboard Notifications] No se pudo consultar el autor del timeout:", auditError.message);
                 }
