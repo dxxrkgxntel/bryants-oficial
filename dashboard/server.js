@@ -2281,28 +2281,30 @@ app.post("/api/guilds/:guildId/giveaways", requireLogin, requireCsrf, requireGui
 
 app.post("/api/guilds/:guildId/giveaways/:giveawayId/end", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
     try {
-        const giveaway = await Giveaway.findOneAndUpdate(
-            { _id: req.params.giveawayId, guildId: req.params.guildId, status: "active" },
-            { $set: { status: "ending", endedAt: new Date(), endedBy: String(req.session.user.id) } },
-            { new: true }
-        );
-        if (!giveaway) return res.status(409).json({ error: "El giveaway ya terminó o está finalizándose." });
-        const pool = [...new Set(giveaway.entrants || [])];
+        const current = await Giveaway.findOne({ _id: req.params.giveawayId, guildId: req.params.guildId, status: "active" });
+        if (!current) return res.status(409).json({ error: "El giveaway ya terminó o está finalizándose." });
+        const pool = [...new Set(current.entrants || [])];
         for (let i = pool.length - 1; i > 0; i -= 1) {
             const j = crypto.randomInt(i + 1);
             [pool[i], pool[j]] = [pool[j], pool[i]];
         }
-        giveaway.winnerIds = pool.slice(0, Math.min(giveaway.winnerCount, pool.length));
-        giveaway.status = "ended";
-        await giveaway.save();
+        const winnerIds = pool.slice(0, Math.min(current.winnerCount, pool.length));
+        const giveaway = await Giveaway.findOneAndUpdate(
+            { _id: current._id, guildId: req.params.guildId, status: "active" },
+            { $set: { status: "ended", winnerIds, endedAt: new Date(), endedBy: String(req.session.user.id) } },
+            { new: true }
+        );
+        if (!giveaway) return res.status(409).json({ error: "Otro proceso ya finalizó este giveaway." });
         try {
             await discordBotRequest(`https://discord.com/api/v10/channels/${giveaway.channelId}/messages/${giveaway.messageId}`, { method: "PATCH", body: makeGiveawayMessage(giveaway, true) });
-        } catch (error) { if (error.status !== 404) throw error; }
+        } catch (error) {
+            if (error.status !== 404) console.warn("[Dashboard Giveaways] No se pudo actualizar el mensaje final:", error.message);
+        }
         if (giveaway.winnerIds.length) {
             await discordBotRequest(`https://discord.com/api/v10/channels/${giveaway.channelId}/messages`, {
                 method: "POST",
                 body: { content: `🎉 ¡Felicidades ${giveaway.winnerIds.map(id => `<@${id}>`).join(", ")}! Ganaste **${giveaway.prize}**.`, allowed_mentions: { parse: [], users: giveaway.winnerIds } }
-            });
+            }).catch(error => console.warn("[Dashboard Giveaways] No se pudo anunciar el ganador:", error.message));
         }
         await recordDashboardAudit(req, req.params.guildId, "Giveaway finalizado");
         return res.json({ ok: true, winnerIds: giveaway.winnerIds });
