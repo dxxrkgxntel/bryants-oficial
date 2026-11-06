@@ -55,7 +55,10 @@ client.selects = new Map();
 client.modals = new Map();
 
 // 🔥 PROTECCIÓN (opcional)
-client.setMaxListeners(20);\n\n// Inicializar Shoukaku antes del login para registrar los eventos Gateway de voz.\nclient.shoukaku = createLavalinkClient(client);
+client.setMaxListeners(20);
+
+// Inicializar Shoukaku antes del login para registrar los eventos Gateway de voz.
+client.shoukaku = createLavalinkClient(client);
 
 //////////////////////////////////////////////////////
 
