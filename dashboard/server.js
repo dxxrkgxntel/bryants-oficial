@@ -2223,6 +2223,61 @@ app.delete("/api/guilds/:guildId/polls/:pollId", requireLogin, requireCsrf, requ
     }
 });
 
+
+app.get("/api/guilds/:guildId/giveaways", requireGuildAdmin, async (req, res) => {
+    try {
+        const [config, giveaways] = await Promise.all([
+            GiveawayConfig.findOne({ guildId: req.params.guildId }).lean(),
+            Giveaway.find({ guildId: req.params.guildId }).sort({ createdAt: -1 }).limit(100).lean()
+        ]);
+        return res.json({
+            configuredChannelId: config?.channelId || null,
+            giveaways: giveaways.map(item => ({
+                _id: String(item._id), channelId: item.channelId, messageId: item.messageId,
+                prize: item.prize, description: item.description, winnerCount: item.winnerCount,
+                entrantCount: (item.entrants || []).length, winnerIds: item.winnerIds || [],
+                status: item.status, endAt: item.endAt || null, createdAt: item.createdAt || null,
+                url: item.channelId && item.messageId ? `https://discord.com/channels/${req.params.guildId}/${item.channelId}/${item.messageId}` : null
+            }))
+        });
+    } catch (error) {
+        console.error("[Dashboard Giveaways] Error al cargar sorteos:", error.message);
+        return res.status(500).json({ error: "No pude cargar los giveaways del servidor." });
+    }
+});
+
+app.post("/api/guilds/:guildId/giveaways", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    let sentMessage;
+    let giveaway;
+    try {
+        const config = await GiveawayConfig.findOne({ guildId: req.params.guildId }).lean();
+        if (!config?.channelId) return res.status(400).json({ error: "Primero guarda el canal de giveaways." });
+        const input = validateGiveawayInput(req.body);
+        giveaway = new Giveaway({
+            guildId: req.params.guildId, channelId: config.channelId,
+            creatorId: String(req.session.user.id), prize: input.prize,
+            description: input.description, winnerCount: input.winnerCount,
+            endAt: new Date(Date.now() + input.duration * 60_000)
+        });
+        await giveaway.save();
+        sentMessage = await discordBotRequest(`https://discord.com/api/v10/channels/${config.channelId}/messages`, {
+            method: "POST", body: makeGiveawayMessage(giveaway)
+        });
+        giveaway.messageId = sentMessage.id;
+        await giveaway.save();
+        await recordDashboardAudit(req, req.params.guildId, "Giveaway creado");
+        return res.status(201).json({
+            giveaway: { _id: String(giveaway._id), prize: giveaway.prize, status: giveaway.status },
+            url: `https://discord.com/channels/${req.params.guildId}/${config.channelId}/${sentMessage.id}`
+        });
+    } catch (error) {
+        if (giveaway?._id) await Giveaway.deleteOne({ _id: giveaway._id }).catch(() => {});
+        if (sentMessage?.id) await discordBotRequest(`https://discord.com/api/v10/channels/${sentMessage.channel_id || ""}/messages/${sentMessage.id}`, { method: "DELETE" }).catch(() => {});
+        const status = error.message?.startsWith("El ") || error.message?.startsWith("La ") ? 400 : error.status === 429 ? 429 : 502;
+        return res.status(status).json({ error: error.message || "No pude publicar el giveaway." });
+    }
+});
+
 app.post("/api/guilds/:guildId/lists/:list", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
     const definition = lists[req.params.list];
     if (!definition) return res.status(404).json({ error: "No encontré esa lista." });
