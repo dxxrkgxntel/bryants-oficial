@@ -51,6 +51,7 @@ function scheduleReconnect(guildId) {
     const timer = setTimeout(async () => {
         reconnectTimers.delete(guildId);
 
+        if (voiceConnectionOverrides.has(guildId)) return;
         const latestTarget = voiceTargetsByGuild.get(guildId);
         if (!latestTarget?.guild || !latestTarget.channelId) return;
 
@@ -64,7 +65,7 @@ function scheduleReconnect(guildId) {
         reconnectAttempts.set(guildId, (reconnectAttempts.get(guildId) || 0) + 1);
 
         try {
-            await connectToVoiceChannel(latestTarget.guild, latestTarget.channelId);
+            await connectToVoiceChannel(latestTarget.guild, latestTarget.channelId, latestTarget.options);
             console.log(
                 `[VOICE CONNECT] Recuperé la conexión en ${latestTarget.guild.name} / ${latestTarget.channelId}.`
             );
@@ -81,8 +82,8 @@ function scheduleReconnect(guildId) {
     reconnectTimers.set(guildId, timer);
 }
 
-function watchConnection(connection, guild, channelId) {
-    voiceTargetsByGuild.set(guild.id, { guild, channelId });
+function watchConnection(connection, guild, channelId, options = {}) {
+    voiceTargetsByGuild.set(guild.id, { guild, channelId, options });
 
     // The listeners belong to this VoiceConnection, not to every sync cycle.
     if (connection._bryvexVoiceRecoveryAttached) return;
@@ -108,11 +109,11 @@ function watchConnection(connection, guild, channelId) {
     });
 }
 
-async function performVoiceConnect(guild, channelId) {
-    voiceTargetsByGuild.set(guild.id, { guild, channelId });
+async function performVoiceConnect(guild, channelId, options = {}) {
+    voiceTargetsByGuild.set(guild.id, { guild, channelId, options });
 
     try {
-        return await performVoiceConnectAttempt(guild, channelId);
+        return await performVoiceConnectAttempt(guild, channelId, options);
     } catch (error) {
         // Also recover from synchronous adapter/join failures, not only emitted socket errors.
         scheduleReconnect(guild.id);
@@ -120,7 +121,7 @@ async function performVoiceConnect(guild, channelId) {
     }
 }
 
-async function performVoiceConnectAttempt(guild, channelId) {
+async function performVoiceConnectAttempt(guild, channelId, options = {}) {
     let connection = getVoiceConnection(guild.id);
     if (connection && connection.state.status !== VoiceConnectionStatus.Destroyed) {
         watchConnection(connection, guild, channelId);
@@ -146,8 +147,8 @@ async function performVoiceConnectAttempt(guild, channelId) {
         } else {
             const rejoined = connection.rejoin({
                 channelId,
-                selfMute: true,
-                selfDeaf: false
+                selfMute: options.selfMute ?? true,
+                selfDeaf: options.selfDeaf ?? false
             });
 
             if (rejoined) {
@@ -170,11 +171,11 @@ async function performVoiceConnectAttempt(guild, channelId) {
         channelId,
         guildId: guild.id,
         adapterCreator: guild.voiceAdapterCreator,
-        selfMute: true,
-        selfDeaf: false
+        selfMute: options.selfMute ?? true,
+        selfDeaf: options.selfDeaf ?? false
     });
 
-    watchConnection(connection, guild, channelId);
+    watchConnection(connection, guild, channelId, options);
 
     try {
         await entersState(connection, VoiceConnectionStatus.Ready, READY_TIMEOUT_MS);
@@ -186,11 +187,11 @@ async function performVoiceConnectAttempt(guild, channelId) {
     }
 }
 
-function connectToVoiceChannel(guild, channelId) {
+function connectToVoiceChannel(guild, channelId, options = {}) {
     const previousTask = connectionTasks.get(guild.id) || Promise.resolve();
     const task = previousTask
         .catch(() => null)
-        .then(() => performVoiceConnect(guild, channelId));
+        .then(() => performVoiceConnect(guild, channelId, options));
 
     connectionTasks.set(guild.id, task);
     task.finally(() => {
@@ -298,6 +299,7 @@ async function syncVoiceConnections(client) {
 
 function setVoiceConnectionOverride(guildId, channelId) {
     if (!guildId || !channelId) throw new Error("Servidor y canal de voz son obligatorios para reservar la conexión.");
+    clearReconnectState(guildId);
     voiceConnectionOverrides.set(guildId, channelId);
 }
 
