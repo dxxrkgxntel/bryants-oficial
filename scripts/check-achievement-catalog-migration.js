@@ -11,5 +11,7 @@ assert.doesNotMatch(source, /UserAchievement|pointsEarned|unlockedLevels|unlocke
 assert.match(source, /upsert:\s*false/);
 assert.match(source, /notoqCatalogLocaleVersion/);
 assert.match(source, /achievements\.length !== 397/);
+assert.match(source, /catalog/);
+assert.match(source, /locale !== "es"/);
 
 console.log("Achievement catalog migration safety checks passed.");
