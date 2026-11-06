@@ -16,6 +16,7 @@ const { trackEconomyAchievementSnapshot } = require("../../Functions/economyAchi
 const { trackAchievementProgress } = require("../../Functions/achievementTracker");
 const { getCasinoAchievementSnapshot } = require("../../Functions/casinoAchievementMetrics");
 const { recordEconomySpend } = require("../../Functions/economySpendMetrics");
+const { recordEconomyEarning } = require("../../Functions/economyEarningMetrics");
 const { reserveBlackjackBet, releaseBlackjackBet } = require("../../Functions/blackjackEconomy");
 
 const activeBets = new Set();
@@ -737,6 +738,7 @@ async function run_gamble(interaction) {
 
                 await freshUser.save();
                 await stats.save();
+                await recordEconomyEarning({ guild: interaction.guild, user: interaction.user, amount: winnings - amount, category: "casino_gamble_net_win", operationId: "gamble-win:" + interaction.id }).catch(error => console.warn("[Economy] No se pudo registrar ganancia de gamble:", error.message));
                 await recordEconomySpend({ guild: interaction.guild, user: interaction.user, amount, category: "casino_gamble", operationId: interaction.id }).catch(error => console.warn("[Economy] No se pudo registrar apuesta gamble:", error.message));
                 await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, freshUser);
                 await trackCasinoAchievementProgress(interaction.guild, interaction.user, stats);
@@ -909,6 +911,10 @@ async function run_ruleta(interaction) {
     }
 
     await Promise.all([freshUser.save(), stats.save()]);
+    if (won && winnings > amount) await recordEconomyEarning({
+        guild: interaction.guild, user: interaction.user, amount: winnings - amount,
+        category: "roulette_net_win", operationId: "roulette-win:" + interaction.id
+    }).catch(error => console.warn("[Economy] No se pudo registrar ganancia de ruleta:", error.message));
     await recordEconomySpend({ guild: interaction.guild, user: interaction.user, amount, category: "casino_bet", operationId: interaction.id }).catch(error => console.warn("[Economy] No se pudo registrar apuesta:", error.message));
     await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, freshUser);
                 await trackCasinoAchievementProgress(interaction.guild, interaction.user, stats);
@@ -1017,6 +1023,10 @@ async function run_slots(interaction) {
     }
 
     await Promise.all([freshUser.save(), stats.save()]);
+    if (multiplier > 0 && winnings > amount) await recordEconomyEarning({
+        guild: interaction.guild, user: interaction.user, amount: winnings - amount,
+        category: "slots_net_win", operationId: "slots-win:" + interaction.id
+    }).catch(error => console.warn("[Economy] No se pudo registrar ganancia de slots:", error.message));
     await recordEconomySpend({ guild: interaction.guild, user: interaction.user, amount, category: "casino_bet", operationId: interaction.id }).catch(error => console.warn("[Economy] No se pudo registrar apuesta:", error.message));
     await trackEconomyAchievementSnapshot(interaction.guild, interaction.user, freshUser);
                 await trackCasinoAchievementProgress(interaction.guild, interaction.user, stats);
