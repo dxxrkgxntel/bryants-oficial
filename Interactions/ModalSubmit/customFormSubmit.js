@@ -5,16 +5,17 @@ const { publishDashboardNotification } = require("../../Utils/dashboardNotificat
 module.exports = {
  id: "custom_form_submit:",
  async execute(interaction, client) {
+  await interaction.deferReply({ ephemeral: true });
   const id = interaction.customId.slice("custom_form_submit:".length);
-  if (!/^[a-f\d]{24}$/i.test(id)) return interaction.reply({ content: "No pude identificar el formulario.", ephemeral: true });
+  if (!/^[a-f\d]{24}$/i.test(id)) return interaction.editReply({ content: "No pude identificar el formulario." });
   const form = await CustomForm.findOne({ _id: id, guildId: interaction.guildId, enabled: true }).lean();
-  if (!form) return interaction.reply({ content: "Este formulario ya no está disponible.", ephemeral: true });
+  if (!form) return interaction.editReply({ content: "Este formulario ya no está disponible." });
   const answers = form.questions.slice(0, 5).map(question => ({
    questionId: question.questionId, question: question.label,
    answer: interaction.fields.getTextInputValue(question.questionId).trim()
   }));
   if (answers.some((answer, index) => form.questions[index].required !== false && !answer.answer)) {
-   return interaction.reply({ content: "Completa las respuestas obligatorias.", ephemeral: true });
+   return interaction.editReply({ content: "Completa las respuestas obligatorias." });
   }
   const response = await CustomFormResponse.create({
    guildId: form.guildId, formId: form.formId, formTitle: form.title,
@@ -37,6 +38,6 @@ module.exports = {
    message: interaction.user.username + " envió una respuesta a «" + form.title + "».",
    category: "community", severity: "info"
   });
-  return interaction.reply({ content: "¡Tu respuesta se envió correctamente! Gracias por participar.", ephemeral: true });
+  return interaction.editReply({ content: "¡Tu respuesta se envió correctamente! Gracias por participar." });
  }
 };
