@@ -29,7 +29,11 @@ module.exports = {
                 components: result.components
             });
         } catch (error) {
-            return interaction.editReply({ content: `🎵 ${error.message || "No pude completar la búsqueda."}` });
+            console.error(`[MUSIC] Falló la búsqueda en ${guildId}:`, error);
+            const message = error.code === "HPE_HEADER_OVERFLOW"
+                ? "YouTube devolvió una respuesta HTTP demasiado grande. El servidor ya tiene un límite ampliado; vuelve a intentarlo en unos segundos."
+                : (error.message || "No pude completar la búsqueda.");
+            return interaction.editReply({ content: `🎵 ${message}` });
         }
     }
 };
