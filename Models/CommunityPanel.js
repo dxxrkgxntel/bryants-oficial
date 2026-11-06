@@ -30,6 +30,11 @@ const communityPanelSchema = new Schema({
     verifyLabel: { type: String, default: "Verificarme", maxlength: 80 },
     verifyEmoji: { type: String, default: "", maxlength: 100 },
     verificationRoleId: { type: String, default: null },
+    verificationMethods: { type: [String], enum: ["button", "captcha", "question", "manual_approval"], default: ["button"] },
+    verificationQuestion: { type: String, default: "", maxlength: 300 },
+    verificationAnswerHash: { type: String, default: null, select: false },
+    reviewChannelId: { type: String, default: null },
+    reviewerRoleIds: { type: [String], default: [] },
     removeRoleIds: { type: [String], default: [] }
 }, { timestamps: true });
 
