@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } = require("discord.js");
+const crypto = require("node:crypto");
 const Giveaway = require("../../Models/Giveaway");
 const GiveawayConfig = require("../../Models/GiveawayConfig");
 const { buildGiveawayMessage } = require("../../Functions/giveawayMessage");
@@ -51,14 +52,16 @@ module.exports = {
             const winnerCount = interaction.options.getInteger("winners", true);
             const description = interaction.options.getString("description") || "";
             const giveaway = new Giveaway({ guildId: interaction.guildId, channelId: channel.id, creatorId: interaction.user.id, prize, description, winnerCount, endAt: new Date(Date.now() + duration * 60_000) });
+            let message;
             try {
-                const message = await channel.send(buildGiveawayMessage(giveaway));
+                message = await channel.send(buildGiveawayMessage(giveaway));
                 giveaway.messageId = message.id;
                 await giveaway.save();
                 await trackAchievementProgress(interaction.guild, interaction.user, "giveaways_created", 1)
                     .catch(error => console.warn("[Achievements] No se pudo registrar giveaways_created:", error.message));
                 return interaction.editReply(`Giveaway publicado: ${message.url}\nID: \`${giveaway.id}\``);
             } catch (error) {
+                if (message) await message.delete().catch(() => {});
                 console.error("[Giveaway] Error creando sorteo:", error);
                 return interaction.editReply("No pude publicar o guardar el giveaway. Comprueba los permisos del canal.");
             }
@@ -84,7 +87,7 @@ module.exports = {
             const pool = [...new Set(giveaway.entrants || [])].filter(userId => !previous.has(userId));
             if (!pool.length) return interaction.reply({ content: "No quedan participantes elegibles que no hayan ganado antes.", flags: MessageFlags.Ephemeral });
             const selected = [];
-            while (pool.length && selected.length < giveaway.winnerCount) selected.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+            while (pool.length && selected.length < giveaway.winnerCount) selected.push(pool.splice(crypto.randomInt(pool.length), 1)[0]);
             await Giveaway.updateOne({ _id: giveaway._id, status: "ended" }, { $addToSet: { winnerIds: { $each: selected } } });
             const updated = await Giveaway.findById(giveaway._id);
             await editGiveawayMessage(client, updated, true).catch(() => {});
