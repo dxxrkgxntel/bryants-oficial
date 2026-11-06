@@ -19,6 +19,8 @@ const connectionTasks = new Map();
 const voiceTargetsByGuild = new Map();
 const reconnectTimers = new Map();
 const reconnectAttempts = new Map();
+// Music temporarily borrows the guild's single voice connection.
+const voiceConnectionOverrides = new Map();
 
 function clearReconnectTimer(guildId) {
     const timer = reconnectTimers.get(guildId);
@@ -204,6 +206,7 @@ async function restoreVoiceConnections(client) {
     const configs = await VoiceConnectConfig.find({}).lean();
 
     for (const config of configs) {
+        if (voiceConnectionOverrides.has(config.guildId)) continue;
         if (config.enabled === false || !config.channelId) {
             const connection = getVoiceConnection(config.guildId);
             if (connection && connection.state.status !== VoiceConnectionStatus.Destroyed) {
@@ -292,6 +295,39 @@ async function syncVoiceConnections(client) {
     }
 }
 
+function setVoiceConnectionOverride(guildId, channelId) {
+    if (!guildId || !channelId) throw new Error("Servidor y canal de voz son obligatorios para reservar la conexión.");
+    voiceConnectionOverrides.set(guildId, channelId);
+}
+
+async function releaseVoiceConnectionOverride(client, guildId) {
+    voiceConnectionOverrides.delete(guildId);
+    const config = await VoiceConnectConfig.findOne({ guildId }).lean();
+    const connection = getVoiceConnection(guildId);
+    if (!config || config.enabled === false || !config.channelId) {
+        if (connection && connection.state.status !== VoiceConnectionStatus.Destroyed) connection.destroy();
+        voiceTargetsByGuild.delete(guildId);
+        clearReconnectState(guildId);
+        return;
+    }
+    const guild = client.guilds.cache.get(guildId)
+        || await client.guilds.fetch(guildId).catch(() => null);
+    const channel = guild && (guild.channels.cache.get(config.channelId)
+        || await guild.channels.fetch(config.channelId).catch(() => null));
+    if (!guild || !channel?.isVoiceBased()) {
+        if (connection && connection.state.status !== VoiceConnectionStatus.Destroyed) connection.destroy();
+        voiceTargetsByGuild.delete(guildId);
+        clearReconnectState(guildId);
+        return;
+    }
+    try {
+        await connectToVoiceChannel(guild, channel.id);
+    } catch (error) {
+        console.error(`[VOICE CONNECT] No pude restaurar el canal persistente en ${guildId}:`, error.message);
+        scheduleReconnect(guildId);
+    }
+}
+
 function startVoiceConnectionSync(client) {
     if (configSyncTimer) return configSyncTimer;
 
@@ -319,5 +355,7 @@ function startVoiceConnectionSync(client) {
 module.exports = {
     connectToVoiceChannel,
     restoreVoiceConnections,
-    startVoiceConnectionSync
+    startVoiceConnectionSync,
+    setVoiceConnectionOverride,
+    releaseVoiceConnectionOverride
 };

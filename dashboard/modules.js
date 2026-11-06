@@ -76,6 +76,21 @@ const messageVariables = {
 };
 
 const configurations = {
+    music: {
+        title: "Bryvex Music",
+        category: "Música",
+        description: "Configura el reproductor musical permanente de Discord. Los miembros buscarán canciones y controlarán la reproducción mediante botones, menús y ventanas interactivas.",
+        model: require("../Models/MusicSettings"),
+        guildField: "guildId",
+        fields: [
+            { name: "enabled", label: "Sistema musical activo", type: "boolean", default: true },
+            { name: "textChannelId", label: "Canal del panel musical", type: "channel", channelTypes: [0, 5], optional: true, help: "Bryvex Bot publicará y mantendrá aquí el reproductor interactivo." },
+            { name: "voiceChannelId", label: "Canal de voz permitido (opcional)", type: "voice", channelTypes: [2], optional: true, help: "Si se deja vacío, cada miembro podrá iniciar música desde su propio canal de voz." },
+            { name: "djRoleId", label: "Rol DJ (opcional)", type: "role", optional: true, help: "Los miembros con este rol podrán controlar la reproducción." },
+            { name: "defaultVolume", label: "Volumen inicial (%)", type: "number", min: 0, max: 150, default: 70 }
+        ]
+    },
+
     permissionsCenter: {
         title: "Permisos avanzados",
         category: "Administración",
