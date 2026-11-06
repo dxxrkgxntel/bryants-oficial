@@ -15,8 +15,8 @@ const CARD_FONT = '"Bryvex Sora", "Noto Sans", "DejaVu Sans", Arial, sans-serif'
 function normalizeCardText(value, maxLength = 80) {
     return String(value ?? "")
         .normalize("NFKC")
-        .replace(/[\\u200B-\\u200F\\u202A-\\u202E\\u2060\\uFEFF]/g, "")
-        .replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F]/g, "")
+        .replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, "")
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
         .trim()
         .slice(0, maxLength);
 }
