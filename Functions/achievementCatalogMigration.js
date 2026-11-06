@@ -4,7 +4,9 @@ const Achievement = require("../Models/Achievement");
 const CATALOG_LOCALE_VERSION = 1;
 const LOCALIZED_FIELDS = ["name", "description", "category"];
 
-function validateLocalizedCatalog(achievements) {
+function validateLocalizedCatalog(catalog) {
+    const achievements = catalog?.achievements;
+    if (catalog?.locale !== "es") throw new Error("El catálogo no está marcado como español.");
     if (!Array.isArray(achievements) || achievements.length !== 397) {
         throw new Error("El catálogo localizado debe contener exactamente 397 logros.");
     }
@@ -20,9 +22,10 @@ function validateLocalizedCatalog(achievements) {
     }
 }
 
-async function migrateAchievementCatalog(guildId, achievements) {
+async function migrateAchievementCatalog(guildId, catalog) {
     if (!guildId) return { migrated: false, reason: "missing-guild" };
-    validateLocalizedCatalog(achievements);
+    validateLocalizedCatalog(catalog);
+    const achievements = catalog.achievements;
 
     const settings = await TrophySettings.findOne({ guildId }).select("notoqCatalogLocaleVersion").lean();
     if (Number(settings?.notoqCatalogLocaleVersion || 0) >= CATALOG_LOCALE_VERSION) {
