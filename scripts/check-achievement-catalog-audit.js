@@ -18,6 +18,8 @@ assert.match(source, /notoqCatalogLocaleVersion/);
 assert.match(source, /UserAchievement\.aggregate/);
 assert.match(source, /pointsEarned/);
 assert.match(source, /unlockedLevels/);
+assert.match(source, /\$isArray/);
+assert.match(source, /checks\.seeded/);
 assert.match(source, /mongoose\.disconnect/);
 assert.match(source, /require\.main\s*===\s*module/);
 
