@@ -1431,7 +1431,7 @@ app.put("/api/guilds/:guildId/permissions", requireLogin, requireCsrf, requireGu
             return res.status(400).json({ error: "Envía listas válidas de hasta 50 reglas por tipo." });
         }
         const validModules = new Set([
-            ...Object.keys(configurations).filter(key => key !== "permissionsCenter"),
+            ...Object.entries(configurations).filter(([key, value]) => !value.custom || key === "notificationCenter").map(([key]) => key),
             ...Object.keys(lists)
         ]);
         const validActions = new Set(["view", "edit"]);
@@ -2053,7 +2053,7 @@ app.get("/api/guilds/:guildId/config", requireGuildDashboardAccess, async (req, 
     try {
         await ensureDefaultAchievements(req.params.guildId);
         const visibleConfigurations = Object.entries(configurations).filter(([key]) =>
-            req.dashboardAccess.admin || hasGuildModulePermission(req.dashboardAccess, key, "view")
+            req.dashboardAccess.admin || (key === "notificationCenter" && hasGuildModulePermission(req.dashboardAccess, key, "view")) || (!configurations[key].custom && hasGuildModulePermission(req.dashboardAccess, key, "view"))
         );
         const visibleLists = Object.entries(lists).filter(([key]) =>
             req.dashboardAccess.admin || hasGuildModulePermission(req.dashboardAccess, key, "view")
@@ -2072,8 +2072,9 @@ app.get("/api/guilds/:guildId/config", requireGuildDashboardAccess, async (req, 
         return res.json({
             configurations: Object.fromEntries(configResults),
             lists: Object.fromEntries(listResults),
+            access: { admin: Boolean(req.dashboardAccess.admin) },
             modules: {
-                configurations: Object.fromEntries(visibleConfigurations.map(([key, value]) => [key, { title: value.title, category: value.category, description: value.description, fields: value.fields }])),
+                configurations: Object.fromEntries(visibleConfigurations.map(([key, value]) => [key, { title: value.title, category: value.category, description: value.description, fields: value.fields, custom: Boolean(value.custom) }])),
                 lists: Object.fromEntries(visibleLists.map(([key, value]) => [key, { title: value.title, category: value.category, description: value.description, fields: value.fields }]))
             }
         });
