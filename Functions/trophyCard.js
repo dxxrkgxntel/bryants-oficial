@@ -1,5 +1,25 @@
-const { createCanvas, loadImage } = require("@napi-rs/canvas");
+const { createCanvas, loadImage, GlobalFonts } = require("@napi-rs/canvas");
 const { AttachmentBuilder, MessageFlags } = require("discord.js");
+const path = require("node:path");
+
+// Prefer a bundled font, while retaining system fallbacks for scripts and glyphs
+// that are not present in the bundled font.
+try {
+    GlobalFonts.registerFromPath(path.join(__dirname, "../Assets/Fonts/Sora-Bold.ttf"), "Bryvex Sora");
+} catch (error) {
+    console.warn("[Achievements] No se pudo registrar Sora; se usarán fuentes del sistema:", error.message);
+}
+
+const CARD_FONT = '"Bryvex Sora", "Noto Sans", "DejaVu Sans", Arial, sans-serif';
+
+function normalizeCardText(value, maxLength = 80) {
+    return String(value ?? "")
+        .normalize("NFKC")
+        .replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, "")
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
+        .trim()
+        .slice(0, maxLength);
+}
 
 function roundedRect(ctx, x, y, width, height, radius) {
     const r = Math.min(radius, width / 2, height / 2);
@@ -29,7 +49,7 @@ function drawPill(ctx, x, y, width, height, fill, label, textColor = "#FFFFFF", 
     ctx.textBaseline = "alphabetic";
 }
 
-function fitText(ctx, text, maxWidth, initialSize, weight = 800, family = "sans-serif") {
+function fitText(ctx, text, maxWidth, initialSize, weight = 800, family = CARD_FONT) {
     let size = initialSize;
     while (size > 24) {
         ctx.font = weight + " " + size + "px " + family;
@@ -110,13 +130,13 @@ async function sendTrophyCard(channel, { user, achievement, points, rarity, leve
     roundedRect(ctx, 66, 62, 8, 34, 4);
     ctx.fill();
     ctx.fillStyle = "#FFFFFF";
-    ctx.font = "700 19px sans-serif";
+    ctx.font = "700 19px " + CARD_FONT;
     ctx.letterSpacing = "3px";
-    ctx.fillText(String(settings?.cardTitle || "TROFEO DESBLOQUEADO").toUpperCase().slice(0, 54), 92, 85, 620);
+    ctx.fillText(normalizeCardText(settings?.cardTitle || "TROFEO DESBLOQUEADO", 54).toUpperCase(), 92, 85, 620);
     ctx.letterSpacing = "0px";
     ctx.fillStyle = "#8390B8";
-    ctx.font = "500 13px sans-serif";
-    ctx.fillText("BRYVEX  /  ACHIEVEMENT UNLOCKED", 68, 125);
+    ctx.font = "500 13px " + CARD_FONT;
+    ctx.fillText("BRYVEX  /  LOGRO DESBLOQUEADO", 68, 125);
 
     // Trophy medallion icon drawn with vector paths (emoji/font independent).
     const medX = 105, medY = 210;
@@ -140,10 +160,10 @@ async function sendTrophyCard(channel, { user, achievement, points, rarity, leve
     ctx.beginPath(); ctx.arc(medX + 18, medY - 8, 10, -Math.PI * 0.5, Math.PI * 0.55); ctx.stroke();
 
     // Main achievement title.
-    const name = String(achievement.name || "Nuevo trofeo").slice(0, 80);
+    const name = normalizeCardText(achievement.name || "Nuevo trofeo", 80);
     const titleSize = fitText(ctx, name, 640, 54, 800);
     ctx.fillStyle = "#FFFFFF";
-    ctx.font = "800 " + titleSize + "px sans-serif";
+    ctx.font = "800 " + titleSize + "px " + CARD_FONT;
     ctx.fillText(name, 68, 300, 650);
 
     const description = String(achievement.description || "Has desbloqueado un nuevo trofeo.").replace(/\s+/g, " ").slice(0, 115);
@@ -175,9 +195,9 @@ async function sendTrophyCard(channel, { user, achievement, points, rarity, leve
     ctx.letterSpacing = "2px";
     ctx.fillText("DESBLOQUEADO POR", 70, 523);
     ctx.letterSpacing = "0px";
-    const displayName = String(user.globalName || user.username || "Miembro").slice(0, 48);
+    const displayName = normalizeCardText(user.globalName || user.username || "Miembro", 48);
     ctx.fillStyle = "#FFFFFF";
-    ctx.font = "700 23px sans-serif";
+    ctx.font = "700 23px " + CARD_FONT;
     ctx.fillText(displayName, 70, 557, 530);
     ctx.fillStyle = "#8E9ABD";
     ctx.font = "400 14px sans-serif";
@@ -207,7 +227,7 @@ async function sendTrophyCard(channel, { user, achievement, points, rarity, leve
         console.warn("[Achievements] No se pudo cargar el avatar para la tarjeta:", error.message);
         ctx.fillStyle = "#26335D";
         ctx.beginPath(); ctx.arc(avatarX, avatarY, avatarR - 8, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#FFFFFF"; ctx.font = "700 46px sans-serif"; ctx.textAlign = "center";
+        ctx.fillStyle = "#FFFFFF"; ctx.font = "700 46px " + CARD_FONT; ctx.textAlign = "center";
         ctx.fillText(displayName.slice(0, 1).toUpperCase(), avatarX, avatarY + 16);
         ctx.textAlign = "left";
     }
