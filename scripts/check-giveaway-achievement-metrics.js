@@ -9,7 +9,7 @@ async function main() {
     };
     const model = {
         async aggregate(pipeline) {
-            if (pipeline.some(stage => stage.$unwind === "$entrants")) return rows.entrants;
+            if (pipeline.some(stage => stage.$unwind === "$entryHistory")) return rows.entrants;
             if (pipeline.some(stage => stage.$unwind === "$winnerIds")) return rows.winners;
             return rows.created;
         }
