@@ -23,4 +23,23 @@ assert.match(source, /checks\.seeded/);
 assert.match(source, /mongoose\.disconnect/);
 assert.match(source, /require\.main\s*===\s*module/);
 
+
+const dashboardSource = fs.readFileSync(path.join(__dirname, "..", "dashboard", "server.js"), "utf8");
+const dashboardClientSource = fs.readFileSync(path.join(__dirname, "..", "dashboard", "public", "server.js"), "utf8");
+const routeMatch = dashboardSource.match(/app\\.get\\(["']\\/api\\/guilds\\/:guildId\\/achievements\\/audit-spanish["'],([^\\n]*)/);
+assert.ok(routeMatch, "La dashboard debe exponer la auditoría del catálogo español.");
+assert.ok(routeMatch[1].includes("requireGuildAdmin"), "La auditoría debe exigir administración del servidor.");
+const routeStart = dashboardSource.indexOf('app.get("/api/guilds/:guildId/achievements/audit-spanish"');
+const routeEnd = dashboardSource.indexOf('app.get("/api/guilds/:guildId/achievements/export"', routeStart);
+assert.ok(routeStart >= 0 && routeEnd > routeStart, "La ruta de auditoría debe estar delimitada.");
+const auditRouteSource = dashboardSource.slice(routeStart, routeEnd);
+assert.match(auditRouteSource, /Achievement\\.find\\(/);
+assert.match(auditRouteSource, /Achievement\\.aggregate\\(/);
+assert.match(auditRouteSource, /UserAchievement\\.aggregate\\(/);
+assert.match(auditRouteSource, /TrophySettings\\.findOne\\(/);
+assert.doesNotMatch(auditRouteSource, /\\.(?:create|insertMany|updateOne|updateMany|findOneAndUpdate|bulkWrite|deleteOne|deleteMany|save)\\s*\\(/, "La ruta de auditoría no debe escribir en MongoDB.");
+assert.match(dashboardClientSource, /achievement-spanish-audit-trigger/, "Trofeos debe mostrar la acción de auditoría.");
+assert.match(dashboardClientSource, /achievements\\/audit-spanish/, "La dashboard debe consultar el endpoint de auditoría.");
+assert.match(dashboardClientSource, /AUDITORÍA DE SOLO LECTURA/, "El panel debe identificar la auditoría como solo lectura.");
+
 console.log("Read-only achievement catalog audit checks passed.");
