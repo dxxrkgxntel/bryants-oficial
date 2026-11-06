@@ -4,6 +4,7 @@ const trophySettingsSchema = new Schema({
     guildId: { type: String, required: true, unique: true, index: true },
     enabled: { type: Boolean, default: true },
     notoqCatalogSeeded: { type: Boolean, default: false },
+    notoqCatalogLocaleVersion: { type: Number, default: 0, min: 0 },
     announcementMode: { type: String, enum: ["card", "components", "embed", "text", "dm", "silent"], default: "embed" },
     announcementChannelId: { type: String, default: null },
     announcementTemplate: { type: String, default: "{user} desbloqueó {achievement} (+{points} puntos)", maxlength: 1500 },
