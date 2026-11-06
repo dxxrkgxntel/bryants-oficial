@@ -18,7 +18,7 @@ function normalizeSecuritySettings(document) {
         joinThreshold: boundedInteger(document?.joinThreshold, DEFAULT_SECURITY_SETTINGS.joinThreshold, 3, 50),
         joinWindowSeconds: boundedInteger(document?.joinWindowSeconds, DEFAULT_SECURITY_SETTINGS.joinWindowSeconds, 5, 120),
         alertCooldownMinutes: boundedInteger(document?.alertCooldownMinutes, DEFAULT_SECURITY_SETTINGS.alertCooldownMinutes, 1, 60),
-        alertChannelId: /^\\d{17,20}$/.test(String(document?.alertChannelId || "")) ? document.alertChannelId : null,
+        alertChannelId: /^\d{17,20}$/.test(String(document?.alertChannelId || "")) ? document.alertChannelId : null,
         notifyDashboard: document?.notifyDashboard !== false
     };
 }

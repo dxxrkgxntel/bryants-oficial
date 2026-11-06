@@ -2826,7 +2826,7 @@ app.post("/api/guilds/:guildId/modules/:module/moderation/warnings", requireLogi
     const { guildId } = req.params;
     const targetId = String(req.body?.targetId || "");
     const reason = String(req.body?.reason || "").trim();
-    if (!/^\\d{17,20}$/.test(targetId)) return res.status(400).json({ error: "Selecciona un miembro válido." });
+    if (!/^\d{17,20}$/.test(targetId)) return res.status(400).json({ error: "Selecciona un miembro válido." });
     if (!reason || reason.length > 1000) return res.status(400).json({ error: "La razón debe tener entre 1 y 1000 caracteres." });
     try {
         const [actor, target, roles] = await Promise.all([
