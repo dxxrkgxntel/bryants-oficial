@@ -3,6 +3,7 @@ const UserQuest = require("../Models/UserQuest");
 
 const Economy = require("../Models/EconomyUser");
 const { trackEconomyAchievementSnapshot } = require("./economyAchievementMetrics");
+const { recordEconomyEarning } = require("./economyEarningMetrics");
 
 module.exports = async (
     userId,
@@ -100,6 +101,10 @@ module.exports = async (
 
                     await economy.save();
                     if (context.guild && context.user) {
+                        await recordEconomyEarning({
+                            guild: context.guild, user: context.user, amount: quest.reward.coins,
+                            category: "quest_reward", operationId: "quest:" + guildId + ":" + userId + ":" + quest.questId
+                        }).catch(error => console.warn("[Economy] No se pudo registrar recompensa de misión:", error.message));
                         await trackEconomyAchievementSnapshot(context.guild, context.user, economy);
                     }
 
