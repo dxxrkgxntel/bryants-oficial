@@ -260,17 +260,21 @@ async function trackAchievementProgress(guild, user, metric, amount = 1, options
                     { $inc: { wallet: achievement.rewardCoins }, $setOnInsert: { guildId: guild.id, userId: user.id } },
                     { upsert: true, new: true, setDefaultsOnInsert: true }
                 );
-                await EconomyEarningTransaction.updateOne(
-                    { guildId: guild.id, userId: user.id, operationId: "achievement-reward:" + achievement.achievementId + ":" + (i + 1) },
-                    { $setOnInsert: {
-                        guildId: guild.id,
-                        userId: user.id,
-                        operationId: "achievement-reward:" + achievement.achievementId + ":" + (i + 1),
-                        category: "achievement_reward",
-                        amount: achievement.rewardCoins
-                    } },
-                    { upsert: true }
-                );
+                try {
+                    await EconomyEarningTransaction.updateOne(
+                        { guildId: guild.id, userId: user.id, operationId: "achievement-reward:" + achievement.achievementId + ":" + (i + 1) },
+                        { $setOnInsert: {
+                            guildId: guild.id,
+                            userId: user.id,
+                            operationId: "achievement-reward:" + achievement.achievementId + ":" + (i + 1),
+                            category: "achievement_reward",
+                            amount: achievement.rewardCoins
+                        } },
+                        { upsert: true }
+                    );
+                } catch (error) {
+                    console.warn("[Achievements] No se pudo guardar la recompensa en total_earned:", error.message);
+                }
                 const { trackEconomyAchievementSnapshot } = require("./economyAchievementMetrics");
                 await trackEconomyAchievementSnapshot(guild, user, rewardedEconomy);
             }
