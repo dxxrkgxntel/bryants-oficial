@@ -88,7 +88,12 @@ function buildCommunityPanelPayload(panel, guild) {
     }
 
     const payload = { allowed_mentions: { parse: [] } };
-    if (content) payload.content = content;
+    if (panel.messageType === "text") {
+        const textContent = [title, description, content].filter(Boolean).join("\n\n").slice(0, 2000);
+        if (textContent) payload.content = textContent;
+    } else if (content) {
+        payload.content = content;
+    }
     if (panel.messageType === "embed" && (title || description || panel.imageUrl || panel.thumbnailUrl)) {
         const embed = { color };
         if (title) embed.title = title;
