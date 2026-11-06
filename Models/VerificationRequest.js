@@ -5,7 +5,7 @@ const verificationRequestSchema = new Schema({
     panelId: { type: String, required: true, lowercase: true },
     userId: { type: String, required: true },
     method: { type: String, enum: ["captcha", "question", "manual_approval"], required: true },
-    status: { type: String, enum: ["challenge", "pending", "approved", "rejected", "expired"], default: "challenge" },
+    status: { type: String, enum: ["challenge", "pending", "processing", "approved", "rejected", "expired"], default: "challenge" },
     answerHash: { type: String, default: null, select: false },
     reviewChannelId: { type: String, default: null },
     reviewMessageId: { type: String, default: null },
