@@ -310,6 +310,14 @@ const configurations = {
         guildField: "guildId",
         fields: [{ name: "channelId", label: "Canal de encuestas", type: "channel", channelTypes: [0, 5] }]
     },
+    giveaways: {
+        title: "Giveaways",
+        category: "Comunidad",
+        description: "Crea sorteos, controla participantes y selecciona ganadores desde la dashboard o Discord.",
+        model: require("../Models/GiveawayConfig"),
+        guildField: "guildId",
+        fields: [{ name: "channelId", label: "Canal de giveaways", type: "channel", channelTypes: [0, 5] }]
+    },
     purge: {
         title: "Limpieza automática",
         category: "Moderación",
