@@ -483,6 +483,24 @@ async function fetchBotChannelPermissions(guildId, channels, roles) {
     return { channels: channelPermissions, roleManagement: { canManageRoles: manageRoles, botHighestRolePosition, unmanageableRoles } };
 }
 
+function validateGiveawayInput(input) {
+    const prize = typeof input?.prize === "string" ? input.prize.trim() : "";
+    const description = typeof input?.description === "string" ? input.description.trim() : "";
+    const duration = Number(input?.duration);
+    const winnerCount = Number(input?.winnerCount);
+    if (!prize || prize.length > 200) throw new Error("El premio debe tener entre 1 y 200 caracteres.");
+    if (description.length > 1000) throw new Error("La descripción no puede superar 1000 caracteres.");
+    if (!Number.isInteger(duration) || duration < 1 || duration > 43200) throw new Error("La duración debe estar entre 1 minuto y 30 días.");
+    if (!Number.isInteger(winnerCount) || winnerCount < 1 || winnerCount > 20) throw new Error("La cantidad de ganadores debe estar entre 1 y 20.");
+    return { prize, description, duration, winnerCount };
+}
+
+function makeGiveawayMessage(giveaway, ended = false) {
+    const winners = giveaway.winnerIds || [];
+    const description = [giveaway.description, "", `🎁 **Premio:** ${giveaway.prize}`, `🏆 **Ganadores:** ${giveaway.winnerCount}`, `👥 **Participantes:** ${(giveaway.entrants || []).length}`, ended ? (winners.length ? `🎉 **Ganador(es):** ${winners.map(id => `<@${id}>`).join(", ")}` : "No hubo participantes elegibles.") : `⏰ **Finaliza:** <t:${Math.floor(new Date(giveaway.endAt).getTime() / 1000)}:R>`].filter(Boolean);
+    return { embeds: [{ color: 0x8A2BE2, title: ended ? "🎉 Giveaway finalizado" : "🎁 GIVEAWAY", description: description.join("\n"), footer: { text: ended ? "Bryvex Bot · Sorteo finalizado" : "Pulsa Participar para entrar" } }], components: ended ? [] : [{ type: 1, components: [{ type: 2, style: 3, custom_id: `giveaway_enter:${giveaway._id}`, label: "Participar", emoji: { name: "🎉" } }, { type: 2, style: 2, custom_id: `giveaway_leave:${giveaway._id}`, label: "Salir", emoji: { name: "↩️" } }] }], allowed_mentions: { parse: [], users: winners } };
+}
+
 function validatePollInput(input) {
     const question = typeof input?.question === "string" ? input.question.trim() : "";
     if (!question || question.length > 256) throw new Error("La pregunta debe tener entre 1 y 256 caracteres.");
