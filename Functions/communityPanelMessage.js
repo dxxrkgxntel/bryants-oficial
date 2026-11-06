@@ -29,7 +29,7 @@ function buildPanelControls(panel, guild) {
             .setCustomId(`community-panel:${panel.panelId}:roles`)
             .setPlaceholder(String(panel.selectPlaceholder || "Selecciona tus roles").slice(0, 150))
             .setMinValues(1)
-            .setMaxValues(Math.max(1, Math.min(25, Number(panel.maxValues) || 1)));
+            .setMaxValues(Math.max(1, Math.min(roles.length, 25, Number(panel.maxValues) || 1)));
         menu.addOptions(roles.slice(0, 25).map(item => {
             const option = { label: item.label, value: item.roleId };
             if (item.description) option.description = item.description;
@@ -67,10 +67,10 @@ function buildCommunityPanelPayload(panel, guild) {
         const components = [];
         if (title) components.push({ type: 10, content: `## ${title}` });
         if (description) components.push({ type: 10, content: description });
+        if (content) components.push({ type: 10, content });
         if (panel.imageUrl) components.push({ type: 12, items: [{ media: { url: panel.imageUrl } }] });
         if (panel.thumbnailUrl && !panel.imageUrl) components.push({ type: 12, items: [{ media: { url: panel.thumbnailUrl } }] });
         components.push(...controls);
-        if (!components.length && content) components.push({ type: 10, content });
         if (!components.length) throw new Error("Añade texto, título, imagen o controles al mensaje.");
         const container = { type: 17, components };
         if (color !== null) container.accent_color = color;
