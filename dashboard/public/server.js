@@ -1,19 +1,5 @@
 const guildId = decodeURIComponent(window.location.pathname.split("/").filter(Boolean).at(-1) || "");
-const categoriesOrder = ["Administración", "Comunidad", "Alertas Sociales", "Moderación", "Servidor", "Economía", "Trofeos", "Estadisticas"];
-const categoryModuleOrder = {
-"Administración":["automations","permissionsCenter","notificationCenter"],
-"Comunidad":["autoroles","welcome","leaves","boosts","birthday","confessions","suggestions","customForms","polls","giveaways","counting","memberProfiles","communityPanels","birthdayMembers"],
-"Alertas Sociales":["socialAlerts"],
-"Moderación":["logs","inviteTracker","reports","antiScam","specialChannels","antiInvites","moderationCenter","purge","securityCenter"],
-"Servidor":["tempvoice","stats","voiceConnection"],
-"Economía":["economy","memberEconomy","prestige","quests","weeklyDrop","levelSettings","shopItems","storeItems","levelRewards","bankDonorRoles"],
-"Trofeos":["achievements","trophyMembers","trophyMilestones","trophySettings"],
-"Estadisticas":["activityAnalytics"]
-};
-function sortCategoryEntries(category, entries) {
- const positions = new Map((categoryModuleOrder[category] || []).map((key,index)=>[key,index]));
- return entries.sort((a,b)=>(positions.has(a[0])?positions.get(a[0]):Number.MAX_SAFE_INTEGER)-(positions.has(b[0])?positions.get(b[0]):Number.MAX_SAFE_INTEGER));
-}
+const categoriesOrder = ["Administración", "Comunidad", "Alertas sociales", "Moderación", "Servidor", "Economía y XP", "Trofeos", "Estadísticas"];
 const nav = document.querySelector("#module-nav");
 const content = document.querySelector("#module-content");
 const notice = document.querySelector("#notice");
@@ -627,7 +613,7 @@ function renderHome(guild, modules) {
             ? `<article class="intelligence-empty"><strong>Elige el próximo sistema que quieres preparar.</strong><p>Bryvex puede guiarte por las secciones pendientes; empieza por la que más necesite tu comunidad.</p><button class="intelligence-action" type="button" data-overview-module="${escapeHtml(pendingEntries[0][0])}">Empezar con ${escapeHtml(pendingEntries[0][1].title)} <span aria-hidden="true">→</span></button></article>`
             : '<article class="intelligence-empty"><strong>Buen trabajo: todos los módulos aparecen configurados.</strong><p>Este resumen se basa en la configuración guardada; no sustituye una prueba en Discord de los permisos ni del funcionamiento de cada sistema.</p></article>';
     const categories = categoriesOrder.map(category => {
-        const group = sortCategoryEntries(category, entries.filter(([, definition]) => definition.category === category));
+        const group = entries.filter(([, definition]) => definition.category === category);
         if (!group.length) return "";
         const ready = group.filter(([key]) => isModuleConfigured(key)).length;
         const percent = Math.round(ready / group.length * 100);
@@ -1345,7 +1331,7 @@ function makeNav(modules) {
         pinnedEntries.forEach(([key, definition]) => appendEntry(key, definition, "Favoritos"));
     }
     for (const category of categoriesOrder) {
-        const group = sortCategoryEntries(category, all.filter(([key, definition]) => definition.category === category && !favoriteModules.has(key)));
+        const group = all.filter(([key, definition]) => definition.category === category && !favoriteModules.has(key));
         if (category === "Economía y XP") {
             const memberIndex = group.findIndex(([key]) => key === "memberEconomy");
             const economyIndex = group.findIndex(([key]) => key === "economy");
@@ -2135,7 +2121,7 @@ function renderPermissionsCenter(definition) {
         <p class="admin-center-note">La gestión de permisos avanzados seguirá reservada a administradores del servidor.</p>
     </article>`;
     const moduleEntries = Object.entries(currentModules.configurations || {}).concat(Object.entries(currentModules.lists || {}))
-        .filter(([key, item]) => key === "notificationCenter" || !item.custom);
+        .filter(([key, item]) => ["notificationCenter", "reportReviewCenter"].includes(key) || !item.custom);
     const roleContainer = content.querySelector("[data-role-rules]");
     const userContainer = content.querySelector("[data-user-rules]");
     const moduleOptions = (selected = []) => moduleEntries.map(([key, item]) => `<label class="admin-module-check"><input type="checkbox" data-module-key="${escapeHtml(key)}" ${selected.includes(key) ? "checked" : ""}><span>${escapeHtml(item.title || key)}</span></label>`).join("");
@@ -2182,6 +2168,70 @@ function renderPermissionsCenter(definition) {
         roleContainer.innerHTML = `<p class="setup-empty">${escapeHtml(error.message)}</p>`;
         userContainer.replaceChildren();
     });
+}
+
+function renderReportReviewCenter(definition) {
+    currentModule = "reportReviewCenter";
+    content.innerHTML = `<article class="settings-card admin-center-card">
+        <div class="card-heading"><div><div class="eyebrow">ADMINISTRACIÓN</div><h2>${escapeHtml(definition.title)}</h2></div><span class="status-pill configured">Revisión de reportes</span></div>
+        <p class="card-description">Consulta los reportes enviados con /reportar, actualiza su estado y conserva notas internas para que el equipo pueda dar seguimiento a cada caso.</p>
+        <div class="admin-center-heading"><div><h3>Cola de revisión</h3><p>Se muestran hasta 150 reportes recientes. Los registros antiguos también aparecen como pendientes.</p></div><button type="button" class="quiet-button" data-refresh-reports>Actualizar</button></div>
+        <div class="notification-compose-options"><label class="field"><span>Filtrar por estado</span><select data-report-filter><option value="all">Todos</option><option value="pending">Pendientes</option><option value="reviewing">En revisión</option><option value="resolved">Resueltos</option><option value="dismissed">Descartados</option></select></label></div>
+        <div data-report-list><div class="loading-card">Cargando reportes…</div></div>
+    </article>`;
+    const list = content.querySelector("[data-report-list]");
+    const filter = content.querySelector("[data-report-filter]");
+    const labels = { pending: "Pendiente", reviewing: "En revisión", resolved: "Resuelto", dismissed: "Descartado" };
+    let reports = [];
+    const render = () => {
+        const visible = reports.filter(item => filter.value === "all" || item.status === filter.value);
+        if (!visible.length) { list.innerHTML = '<p class="setup-empty">No hay reportes para este filtro.</p>'; return; }
+        list.innerHTML = visible.map(item => {
+            const date = item.createdAt ? new Date(item.createdAt) : null;
+            const formatted = date && !Number.isNaN(date.getTime()) ? new Intl.DateTimeFormat("es", { dateStyle: "medium", timeStyle: "short" }).format(date) : "Fecha no disponible";
+            return `<section class="admin-center-section report-review-item" data-report-id="${escapeHtml(item.id)}">
+                <div class="notification-item-heading"><strong>Reporte · ${escapeHtml(labels[item.status] || "Pendiente")}</strong><span>${escapeHtml(formatted)}</span></div>
+                <p><strong>Usuario reportado:</strong> <code>${escapeHtml(item.reportedUserId || "No disponible")}</code></p>
+                <p><strong>Reportado por:</strong> <code>${escapeHtml(item.reporterUserId || "No disponible")}</code></p>
+                <p><strong>Motivo:</strong> ${escapeHtml(item.reason)}</p>
+                <label class="field"><span>Estado</span><select data-report-status><option value="pending" ${item.status === "pending" ? "selected" : ""}>Pendiente</option><option value="reviewing" ${item.status === "reviewing" ? "selected" : ""}>En revisión</option><option value="resolved" ${item.status === "resolved" ? "selected" : ""}>Resuelto</option><option value="dismissed" ${item.status === "dismissed" ? "selected" : ""}>Descartado</option></select></label>
+                <label class="field"><span>Nota interna de revisión</span><textarea data-report-note maxlength="1000" rows="2" placeholder="Añade contexto para el equipo…">${escapeHtml(item.reviewNote || "")}</textarea></label>
+                <div class="form-actions"><button type="button" class="primary-button" data-save-report>Guardar revisión</button><span class="save-feedback" role="status" aria-live="polite"></span></div>
+            </section>`;
+        }).join("");
+    };
+    const load = async () => {
+        list.innerHTML = '<div class="loading-card">Cargando reportes…</div>';
+        try {
+            const result = await api(`/api/guilds/${encodeURIComponent(guildId)}/reports/review`);
+            reports = Array.isArray(result.reports) ? result.reports : [];
+            render();
+        } catch (error) { list.innerHTML = `<p class="setup-empty">${escapeHtml(error.message)}</p>`; }
+    };
+    filter.addEventListener("change", render);
+    content.querySelector("[data-refresh-reports]").addEventListener("click", load);
+    list.addEventListener("click", async event => {
+        const button = event.target.closest("[data-save-report]");
+        if (!button) return;
+        const card = button.closest("[data-report-id]");
+        const feedback = card.querySelector(".save-feedback");
+        button.disabled = true;
+        feedback.textContent = "Guardando…";
+        try {
+            const status = card.querySelector("[data-report-status]").value;
+            const reviewNote = card.querySelector("[data-report-note]").value;
+            await api(`/api/guilds/${encodeURIComponent(guildId)}/reports/review/${encodeURIComponent(card.dataset.reportId)}`, { method: "PUT", body: JSON.stringify({ status, reviewNote }) });
+            const report = reports.find(item => item.id === card.dataset.reportId);
+            if (report) { report.status = status; report.reviewNote = reviewNote; }
+            render();
+            showNotice("Revisión del reporte guardada.");
+        } catch (error) {
+            feedback.textContent = error.message;
+            feedback.className = "save-feedback error";
+            button.disabled = false;
+        }
+    });
+    load();
 }
 
 function renderNotificationCenter(definition) {
@@ -2283,6 +2333,7 @@ function renderModule(key, modules, options = {}) {
     if (key === "moderationCenter") return renderModerationCenter(definition);
     if (key === "activityAnalytics") return renderActivityAnalytics(definition);
     if (key === "permissionsCenter") return renderPermissionsCenter(definition);
+    if (key === "reportReviewCenter") return renderReportReviewCenter(definition);
     if (key === "notificationCenter") return renderNotificationCenter(definition);
     if (isList) return renderList(key, definition);
 

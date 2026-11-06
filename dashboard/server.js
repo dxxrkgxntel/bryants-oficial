@@ -42,6 +42,7 @@ const PersonalVoiceActivity = require("../Models/PersonalVoiceActivity");
 const MemberTimelineEvent = require("../Models/MemberTimelineEvent");
 const MemberAdminNote = require("../Models/MemberAdminNote");
 const ModerationWarning = require("../Models/ModerationWarning");
+const ReportUser = require("../Models/reportUserSchema");
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
@@ -404,6 +405,26 @@ function requireGuildModulePermission(action = "view") {
             .catch(error => {
                 console.error("[Dashboard Permissions] Error al validar módulo:", error.message);
                 return res.status(502).json({ error: "No pude validar tus permisos para este módulo." });
+            });
+    };
+}
+
+function requireGuildSpecificModulePermission(moduleKey, action = "view") {
+    return (req, res, next) => {
+        if (!req.session.user || !req.session.oauth) {
+            return res.status(401).json({ error: "Inicia sesión con Discord para continuar." });
+        }
+        resolveGuildDashboardAccess(req, req.params.guildId)
+            .then(access => {
+                if (!access || !hasGuildModulePermission(access, moduleKey, action)) {
+                    return res.status(403).json({ error: "No tienes permiso para realizar esta acción en el Centro de revisión." });
+                }
+                req.dashboardAccess = access;
+                return next();
+            })
+            .catch(error => {
+                console.error("[Dashboard Reports] Error al validar permisos:", error.message);
+                return res.status(502).json({ error: "No pude validar tus permisos para el Centro de revisión." });
             });
     };
 }
@@ -1457,7 +1478,7 @@ app.put("/api/guilds/:guildId/permissions", requireLogin, requireCsrf, requireGu
             return res.status(400).json({ error: "Envía listas válidas de hasta 50 reglas por tipo." });
         }
         const validModules = new Set([
-            ...Object.entries(configurations).filter(([key, value]) => !value.custom || key === "notificationCenter").map(([key]) => key),
+            ...Object.entries(configurations).filter(([key, value]) => !value.custom || ["notificationCenter", "reportReviewCenter"].includes(key)).map(([key]) => key),
             ...Object.keys(lists)
         ]);
         const validActions = new Set(["view", "edit"]);
@@ -2071,6 +2092,54 @@ app.get("/api/guilds/:guildId/achievements/export", requireGuildAdmin, async (re
     } catch (error) {
         console.error("[Dashboard Achievements] Error al exportar backup:", error.message);
         return res.status(500).json({ error: "No pude exportar los logros de este servidor." });
+    }
+});
+
+app.get("/api/guilds/:guildId/reports/review", requireGuildSpecificModulePermission("reportReviewCenter", "view"), async (req, res) => {
+    res.set("Cache-Control", "private, no-store");
+    try {
+        const reports = await ReportUser.find({ reportGuildId: req.params.guildId }).sort({ createdAt: -1, _id: -1 }).limit(150).lean();
+        return res.json({ reports: reports.map(item => ({
+            id: String(item._id),
+            reportedUserId: item.reportUserId || "",
+            reporterUserId: item.reporterUserId || "",
+            reason: item.reason || "Este reporte se creó antes de habilitar el detalle ampliado.",
+            status: ["pending", "reviewing", "resolved", "dismissed"].includes(item.status) ? item.status : "pending",
+            reviewNote: item.reviewNote || "",
+            reviewedBy: item.reviewedBy || null,
+            reviewedAt: item.reviewedAt || null,
+            createdAt: item.createdAt || item._id.getTimestamp?.() || null,
+            messageId: item.reportMessageId || ""
+        })) });
+    } catch (error) {
+        console.error("[Dashboard Reports] Error al cargar reportes:", error.message);
+        return res.status(500).json({ error: "No pude cargar los reportes de este servidor." });
+    }
+});
+
+app.put("/api/guilds/:guildId/reports/review/:reportId", requireLogin, requireCsrf, requireGuildSpecificModulePermission("reportReviewCenter", "edit"), async (req, res) => {
+    const { status, reviewNote = "" } = req.body || {};
+    if (!["pending", "reviewing", "resolved", "dismissed"].includes(status)) return res.status(400).json({ error: "El estado seleccionado no es válido." });
+    if (typeof reviewNote !== "string" || reviewNote.length > 1000) return res.status(400).json({ error: "La nota interna no puede superar los 1.000 caracteres." });
+    if (!mongoose.isValidObjectId(req.params.reportId)) return res.status(400).json({ error: "El identificador del reporte no es válido." });
+    try {
+        const update = {
+            status,
+            reviewNote: reviewNote.trim(),
+            reviewedBy: status === "pending" ? null : req.session.user.id,
+            reviewedAt: status === "pending" ? null : new Date()
+        };
+        const report = await ReportUser.findOneAndUpdate(
+            { _id: req.params.reportId, reportGuildId: req.params.guildId },
+            { $set: update },
+            { new: true, runValidators: true }
+        ).lean();
+        if (!report) return res.status(404).json({ error: "No encontré ese reporte en este servidor." });
+        await recordDashboardAudit(req, req.params.guildId, "Estado de reporte actualizado");
+        return res.json({ ok: true, id: String(report._id), ...update });
+    } catch (error) {
+        console.error("[Dashboard Reports] Error al actualizar reporte:", error.message);
+        return res.status(500).json({ error: "No pude guardar la revisión del reporte." });
     }
 });
 
