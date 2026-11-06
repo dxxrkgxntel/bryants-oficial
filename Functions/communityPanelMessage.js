@@ -1,4 +1,4 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, EmbedBuilder, MessageFlags } = require("discord.js");
+const COMPONENTS_V2_FLAG = 1 << 15;
 
 function parsePanelEmoji(value) {
     const emoji = String(value || "").trim();
@@ -10,12 +10,15 @@ function parsePanelEmoji(value) {
 
 function buildPanelControls(panel, guild) {
     if (panel.kind === "verification") {
-        const button = new ButtonBuilder()
-            .setCustomId(`community-panel:${panel.panelId}:verify`)
-            .setLabel(String(panel.verifyLabel || "Verificarme").slice(0, 80))
-            .setStyle(ButtonStyle.Success);
-        if (panel.verifyEmoji) button.setEmoji(parsePanelEmoji(panel.verifyEmoji));
-        return [new ActionRowBuilder().addComponents(button).toJSON()];
+        const button = {
+            type: 2,
+            style: 3,
+            custom_id: `community-panel:${panel.panelId}:verify`,
+            label: String(panel.verifyLabel || "Verificarme").slice(0, 80)
+        };
+        const emoji = parsePanelEmoji(panel.verifyEmoji);
+        if (emoji) button.emoji = emoji;
+        return [{ type: 1, components: [button] }];
     }
 
     const roles = (Array.isArray(panel.roles) ? panel.roles : []).filter(item => {
@@ -25,32 +28,40 @@ function buildPanelControls(panel, guild) {
     if (!roles.length) return [];
 
     if (panel.controlType === "select") {
-        const menu = new StringSelectMenuBuilder()
-            .setCustomId(`community-panel:${panel.panelId}:roles`)
-            .setPlaceholder(String(panel.selectPlaceholder || "Selecciona tus roles").slice(0, 150))
-            .setMinValues(1)
-            .setMaxValues(Math.max(1, Math.min(roles.length, 25, Number(panel.maxValues) || 1)));
-        menu.addOptions(roles.slice(0, 25).map(item => {
+        const options = roles.slice(0, 25).map(item => {
             const option = { label: item.label, value: item.roleId };
             if (item.description) option.description = item.description;
-            if (item.emoji) option.emoji = parsePanelEmoji(item.emoji);
+            const emoji = parsePanelEmoji(item.emoji);
+            if (emoji) option.emoji = emoji;
             return option;
-        }));
-        return [new ActionRowBuilder().addComponents(menu).toJSON()];
+        });
+        return [{
+            type: 1,
+            components: [{
+                type: 3,
+                custom_id: `community-panel:${panel.panelId}:roles`,
+                placeholder: String(panel.selectPlaceholder || "Selecciona tus roles").slice(0, 150),
+                min_values: 1,
+                max_values: Math.max(1, Math.min(options.length, 25, Number(panel.maxValues) || 1)),
+                options
+            }]
+        }];
     }
 
     const rows = [];
     for (let index = 0; index < roles.length; index += 5) {
-        const row = new ActionRowBuilder();
-        for (const item of roles.slice(index, index + 5)) {
-            const button = new ButtonBuilder()
-                .setCustomId(`community-panel:${panel.panelId}:role:${item.roleId}`)
-                .setLabel(item.label.slice(0, 80))
-                .setStyle(ButtonStyle.Secondary);
-            if (item.emoji) button.setEmoji(parsePanelEmoji(item.emoji));
-            row.addComponents(button);
-        }
-        rows.push(row.toJSON());
+        const buttons = roles.slice(index, index + 5).map(item => {
+            const button = {
+                type: 2,
+                style: 2,
+                custom_id: `community-panel:${panel.panelId}:role:${item.roleId}`,
+                label: item.label.slice(0, 80)
+            };
+            const emoji = parsePanelEmoji(item.emoji);
+            if (emoji) button.emoji = emoji;
+            return button;
+        });
+        rows.push({ type: 1, components: buttons });
     }
     return rows;
 }
@@ -72,20 +83,19 @@ function buildCommunityPanelPayload(panel, guild) {
         if (panel.thumbnailUrl && !panel.imageUrl) components.push({ type: 12, items: [{ media: { url: panel.thumbnailUrl } }] });
         components.push(...controls);
         if (!components.length) throw new Error("Añade texto, título, imagen o controles al mensaje.");
-        const container = { type: 17, components };
-        if (color !== null) container.accent_color = color;
-        return { flags: MessageFlags.IsComponentsV2, components: [container], allowedMentions: { parse: [] } };
+        const container = { type: 17, components, accent_color: color };
+        return { flags: COMPONENTS_V2_FLAG, components: [container], allowed_mentions: { parse: [] } };
     }
 
-    const payload = { allowedMentions: { parse: [] } };
+    const payload = { allowed_mentions: { parse: [] } };
     if (content) payload.content = content;
     if (panel.messageType === "embed" && (title || description || panel.imageUrl || panel.thumbnailUrl)) {
-        const embed = new EmbedBuilder().setColor(color);
-        if (title) embed.setTitle(title);
-        if (description) embed.setDescription(description);
-        if (panel.imageUrl) embed.setImage(panel.imageUrl);
-        if (panel.thumbnailUrl) embed.setThumbnail(panel.thumbnailUrl);
-        payload.embeds = [embed.toJSON()];
+        const embed = { color };
+        if (title) embed.title = title;
+        if (description) embed.description = description;
+        if (panel.imageUrl) embed.image = { url: panel.imageUrl };
+        if (panel.thumbnailUrl) embed.thumbnail = { url: panel.thumbnailUrl };
+        payload.embeds = [embed];
     }
     if (controls.length) payload.components = controls;
     if (!payload.content && !payload.embeds?.length && !payload.components?.length) {
@@ -94,4 +104,4 @@ function buildCommunityPanelPayload(panel, guild) {
     return payload;
 }
 
-module.exports = { buildPanelControls, buildCommunityPanelPayload };
+module.exports = { COMPONENTS_V2_FLAG, buildPanelControls, buildCommunityPanelPayload };
