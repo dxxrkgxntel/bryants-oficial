@@ -1,8 +1,8 @@
-function createReferralAchievementMetricSync({ ReferralModel, trackProgress, getGuild, getMember } = {}) {
+function createReferralAchievementMetricSync({ ReferralModel, trackProgress, getGuild, getMember, getUser } = {}) {
     if (!ReferralModel || typeof ReferralModel.aggregate !== "function") {
         throw new TypeError("A referral model with aggregate() is required.");
     }
-    if (typeof trackProgress !== "function" || typeof getGuild !== "function" || typeof getMember !== "function") {
+    if (typeof trackProgress !== "function" || typeof getGuild !== "function" || typeof getMember !== "function" || typeof getUser !== "function") {
         throw new TypeError("Referral achievement sync callbacks are required.");
     }
 
@@ -30,12 +30,25 @@ function createReferralAchievementMetricSync({ ReferralModel, trackProgress, get
                         skipped += 1;
                         continue;
                     }
-                    const member = await getMember(guild, userId);
-                    if (!member?.user?.id) {
+                    let member = null;
+                    try {
+                        member = await getMember(guild, userId);
+                    } catch {
+                        // Un invitador puede haber salido del servidor; se intenta recuperar su usuario global.
+                    }
+                    let user = member?.user?.id ? member.user : null;
+                    if (!user) {
+                        try {
+                            user = await getUser(userId);
+                        } catch {
+                            user = null;
+                        }
+                    }
+                    if (!user?.id) {
                         skipped += 1;
                         continue;
                     }
-                    await trackProgress(guild, member.user, "referrals", total, { absolute: true });
+                    await trackProgress(guild, user, "referrals", total, { absolute: true });
                     processed += 1;
                 } catch (error) {
                     skipped += 1;
@@ -59,7 +72,8 @@ function startReferralAchievementMetricSync(client, { intervalMs = 60_000 } = {}
         ReferralModel: DashboardReferral,
         trackProgress: trackAchievementProgress,
         getGuild: async guildId => client.guilds.cache.get(guildId) || client.guilds.fetch(guildId),
-        getMember: (guild, userId) => guild.members.fetch(userId).catch(() => null)
+        getMember: (guild, userId) => guild.members.fetch(userId).catch(() => null),
+        getUser: userId => client.users.fetch(userId)
     });
     const run = () => sync().catch(error => console.error("[Achievement Referrals] Error de sincronización:", error));
     run();
