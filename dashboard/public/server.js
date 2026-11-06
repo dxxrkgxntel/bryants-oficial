@@ -1745,6 +1745,40 @@ async function renderMemberProfiles(definition, initialMemberId = null) {
     if (/^\d{17,20}$/.test(String(initialMemberId || ""))) loadProfile(initialMemberId);
 }
 
+async function renderModerationCenter(definition) {
+    currentModule = "moderationCenter";
+    const base = "/api/guilds/" + encodeURIComponent(guildId) + "/modules/moderationCenter/moderation";
+    content.innerHTML = '<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">MODERACIÓN DEL SERVIDOR</div><h2>Centro de moderación</h2></div><button id="moderation-refresh" class="quiet-button" type="button">Actualizar</button></div><p class="card-description">Consulta las advertencias registradas y añade nuevas. Las sanciones de Discord siguen respetando los permisos y la jerarquía del servidor.</p><div id="moderation-summary" class="member-economy-stats"></div><section class="member-profile-section"><h3>Emitir advertencia</h3><form id="moderation-warning-form" class="fields-grid"><label class="field"><span>ID del miembro</span><input name="targetId" inputmode="numeric" pattern="[0-9]{17,20}" maxlength="20" required placeholder="ID de Discord"></label><label class="field field-full"><span>Motivo</span><textarea name="reason" maxlength="1000" rows="3" required placeholder="Describe el motivo de la advertencia…"></textarea></label><div class="form-actions"><button class="primary-button" type="submit">Registrar advertencia</button></div></form></section><section class="member-profile-section"><h3>Expedientes recientes</h3><div id="moderation-warnings" class="community-panel-list"><div class="loading-card">Cargando historial…</div></div></section></article>';
+    const summary = content.querySelector("#moderation-summary");
+    const list = content.querySelector("#moderation-warnings");
+    async function load() {
+        list.innerHTML = '<div class="loading-card">Actualizando historial…</div>';
+        try {
+            const data = await api(base + "?limit=50");
+            if (!list.isConnected) return;
+            const number = value => Math.max(0, Number(value) || 0).toLocaleString("es-ES");
+            summary.innerHTML = '<div class="member-economy-stat"><span>Advertencias registradas</span><strong>' + number(data.summary?.warnings) + '</strong></div><div class="member-economy-stat"><span>Miembros advertidos</span><strong>' + number(data.summary?.warnedMembers) + '</strong></div>';
+            const date = value => value ? new Date(value).toLocaleString("es-ES") : "Fecha desconocida";
+            list.innerHTML = (data.warnings || []).map(item => '<article class="community-panel-row"><div class="community-panel-row-main"><strong>Advertencia · <span class="mono">' + escapeHtml(item.targetId) + '</span></strong><p>' + escapeHtml(item.reason || "Sin motivo") + '</p><small>' + escapeHtml(date(item.createdAt)) + ' · Moderador: ' + escapeHtml(item.moderatorId) + '</small></div></article>').join("") || '<p class="empty-state">Todavía no hay advertencias registradas.</p>';
+        } catch (error) { list.innerHTML = '<p class="empty-state">' + escapeHtml(error.message || "No pude cargar el historial.") + '</p>'; }
+    }
+    content.querySelector("#moderation-refresh").addEventListener("click", load);
+    content.querySelector("#moderation-warning-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const button = form.querySelector("button[type=submit]");
+        button.disabled = true;
+        try {
+            await api(base + "/warnings", { method: "POST", body: JSON.stringify({ targetId: form.elements.targetId.value.trim(), reason: form.elements.reason.value.trim() }) });
+            form.reset();
+            showNotice("Advertencia registrada correctamente.");
+            await load();
+        } catch (error) { showNotice(error.message || "No pude registrar la advertencia.", true); }
+        finally { button.disabled = false; }
+    });
+    await load();
+}
+
 async function renderActivityAnalytics(definition) {
     currentModule = "activityAnalytics";
     let days = 30;
@@ -2209,6 +2243,7 @@ function renderModule(key, modules, options = {}) {
     if (key === "automations") return renderAutomations(definition);
     if (key === "customForms") return renderCustomForms(definition);
     if (key === "memberProfiles") return renderMemberProfiles(definition, options.memberId);
+    if (key === "moderationCenter") return renderModerationCenter(definition);
     if (key === "activityAnalytics") return renderActivityAnalytics(definition);
     if (key === "permissionsCenter") return renderPermissionsCenter(definition);
     if (key === "notificationCenter") return renderNotificationCenter(definition);
