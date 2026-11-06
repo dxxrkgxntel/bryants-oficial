@@ -57,16 +57,16 @@ for (const route of [
     ["put", "/api/account/background", ["requireLogin", "requireCsrf"]],
     ["delete", "/api/account/background", ["requireLogin", "requireCsrf"]],
     ["put", "/api/guilds/:guildId/members/:userId/economy", ["requireLogin", "requireCsrf", "requireGuildAdmin"]],
-    ["put", "/api/guilds/:guildId/config/:module", ["requireLogin", "requireCsrf", "requireGuildAdmin"]],
+    ["put", "/api/guilds/:guildId/config/:module", ["requireLogin", "requireCsrf", "requireGuildModulePermission"]],
     ["get", "/api/guilds/:guildId/leaderboards/economy", ["requireGuildAdmin"]],
     ["get", "/api/guilds/:guildId/leaderboards/experience", ["requireGuildAdmin"]],
     ["get", "/api/guilds/:guildId/stats/overview", ["requireGuildAdmin"]],
     ["post", "/api/guilds/:guildId/polls", ["requireLogin", "requireCsrf", "requireGuildAdmin"]],
     ["put", "/api/guilds/:guildId/polls/:pollId", ["requireLogin", "requireCsrf", "requireGuildAdmin"]],
     ["delete", "/api/guilds/:guildId/polls/:pollId", ["requireLogin", "requireCsrf", "requireGuildAdmin"]],
-    ["post", "/api/guilds/:guildId/lists/:list", ["requireLogin", "requireCsrf", "requireGuildAdmin"]],
-    ["put", "/api/guilds/:guildId/lists/:list/:recordId", ["requireLogin", "requireCsrf", "requireGuildAdmin"]],
-    ["delete", "/api/guilds/:guildId/lists/:list/:recordId", ["requireLogin", "requireCsrf", "requireGuildAdmin"]],
+    ["post", "/api/guilds/:guildId/lists/:list", ["requireLogin", "requireCsrf", "requireGuildModulePermission"]],
+    ["put", "/api/guilds/:guildId/lists/:list/:recordId", ["requireLogin", "requireCsrf", "requireGuildModulePermission"]],
+    ["delete", "/api/guilds/:guildId/lists/:list/:recordId", ["requireLogin", "requireCsrf", "requireGuildModulePermission"]],
     ["post", "/api/support/tickets", ["requireLogin", "requireCsrf"]],
     ["post", "/api/support/tickets/:ticketId/messages", ["requireLogin", "requireCsrf"]],
     ["post", "/api/support/tickets/:ticketId/close", ["requireLogin", "requireCsrf"]],
@@ -104,5 +104,20 @@ assert.match(clientSource, /member-achievement-item/, "La ficha de miembro debe 
 for (const file of ["hub.css", "hub.js", "status.html", "docs.html", "updates.html", "updates.js", "stats.html", "stats.js", "leaderboard.html", "leaderboard.js", "templates.html", "templates.js"]) {
     assert.ok(fs.existsSync(path.join(root, "dashboard", "public", file)), "Falta un recurso público de Bryvex Bot: " + file);
 }
+
+
+requirePattern(/async function resolveGuildDashboardAccess[\s\S]*?DashboardGuildPermission\.findOne/, "Los permisos delegados deben validarse con roles y miembros reales del servidor");
+requirePattern(/function hasGuildModulePermission[\s\S]*?actions\?\.has\(action\)/, "Cada módulo debe comprobar la acción autorizada");
+requirePattern(/function requireGuildModulePermission\(action = "view"\)/, "Las rutas de edición deben comprobar permisos específicos del módulo");
+requirePattern(/app\.put\(["']\/api\/guilds\/:guildId\/permissions["'], requireLogin, requireCsrf, requireGuildAdmin/, "Solo los administradores pueden modificar las reglas de permisos");
+requirePattern(/app\.post\(["']\/api\/guilds\/:guildId\/notifications["'], requireLogin, requireCsrf, requireGuildAdmin/, "Solo los administradores pueden publicar notificaciones");
+requirePattern(/app\.get\(["']\/api\/guilds\/:guildId\/notifications["'], requireGuildNotificationAccess/, "El centro de notificaciones debe validar el acceso al servidor");
+requirePattern(/app\.put\(["']\/api\/guilds\/:guildId\/notifications\/preferences["'], requireLogin, requireCsrf, requireGuildNotificationAccess/, "Las preferencias de notificación deben estar protegidas");
+assert.match(clientSource, /function renderPermissionsCenter\(/, "Debe existir la interfaz de permisos avanzados");
+assert.match(clientSource, /function renderNotificationCenter\(/, "Debe existir la interfaz del centro de notificaciones");
+assert.match(clientSource, /data-save-permissions/, "Los permisos deben poder guardarse desde la dashboard");
+assert.match(clientSource, /data-mark-read/, "Las notificaciones deben poder marcarse como leídas");
+assert.match(moduleSource, /permissionsCenter:/, "La dashboard debe registrar el módulo de permisos");
+assert.match(moduleSource, /notificationCenter:/, "La dashboard debe registrar el centro de notificaciones");
 
 console.log("Dashboard security and assistant regression checks passed.");

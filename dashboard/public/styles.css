@@ -1408,3 +1408,34 @@ button:disabled { opacity: .55; cursor: wait !important; }
 .achievement-audit-error{color:#ff9292;}
 .achievement-audit-footnote{margin-top:14px;}
 @media(max-width:620px){.achievement-audit-panel{padding:14px}.achievement-audit-heading{flex-direction:column}.achievement-audit-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+/* Administración: permisos avanzados y centro de notificaciones */
+.admin-center-card { display: grid; gap: 22px; }
+.admin-center-section { border-top: 1px solid var(--border, rgba(255,255,255,.1)); padding-top: 20px; display: grid; gap: 14px; }
+.admin-center-heading, .permission-rule-top, .notification-item-heading, .notification-item-footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.admin-center-heading h3 { margin: 0 0 5px; }
+.admin-center-heading p, .admin-center-note { margin: 0; color: var(--muted, #aaa); font-size: .9rem; }
+.permission-rule { border: 1px solid var(--border, rgba(255,255,255,.12)); border-radius: 14px; padding: 16px; display: grid; gap: 14px; margin-top: 12px; }
+.permission-rule-top .field { flex: 1; max-width: 520px; }
+.permission-rule-grid { display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 18px; }
+.admin-module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px 12px; margin-top: 10px; }
+.admin-module-check, .admin-action-list label, .notification-preference { display: flex; align-items: center; gap: 9px; color: var(--text, inherit); font-size: .9rem; }
+.admin-module-check input, .admin-action-list input, .notification-preference input { accent-color: #9561ff; }
+.admin-action-list { display: grid; gap: 10px; margin-top: 10px; }
+.notification-preferences { display: flex; flex-wrap: wrap; gap: 12px 22px; }
+.notification-preference { border: 1px solid var(--border, rgba(255,255,255,.12)); border-radius: 10px; padding: 10px 12px; }
+.notification-compose { display: grid; gap: 14px; }
+.notification-compose-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.notification-item { border: 1px solid var(--border, rgba(255,255,255,.12)); border-left: 3px solid #8b5cf6; border-radius: 12px; padding: 14px 16px; margin-top: 10px; }
+.notification-item.is-read { opacity: .72; }
+.notification-item.severity-warning { border-left-color: #d99b36; }
+.notification-item.severity-critical { border-left-color: #dc5555; }
+.notification-item.severity-success { border-left-color: #35a77a; }
+.notification-item-heading strong { font-weight: 700; }
+.notification-item-heading span, .notification-item-footer { color: var(--muted, #aaa); font-size: .82rem; }
+.notification-item p { margin: 9px 0 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 720px) {
+    .permission-rule-grid, .notification-compose-options { grid-template-columns: 1fr; }
+    .admin-center-heading, .permission-rule-top { align-items: flex-start; }
+    .notification-item-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
+}
