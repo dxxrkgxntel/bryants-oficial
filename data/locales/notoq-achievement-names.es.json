@@ -1,8 +1,8 @@
 {
   "locale": "es",
   "version": 1,
-  "status": "in_progress",
-  "translatedCount": 300,
+  "status": "complete_names_pending_description_audit",
+  "translatedCount": 397,
   "total": 397,
   "source": "data/backups/notoq-achievements.json",
   "note": "Traducciones por bloques. No activar la migración hasta completar los 397 registros y auditar descripciones/categorías.",
@@ -1206,6 +1206,394 @@
     {
       "id": "prospector",
       "name": "Buscador de minerales"
+    },
+    {
+      "id": "master_miner",
+      "name": "Maestro minero"
+    },
+    {
+      "id": "gatherer",
+      "name": "Recolector"
+    },
+    {
+      "id": "resource_baron",
+      "name": "Barón de los recursos"
+    },
+    {
+      "id": "guesser_100",
+      "name": "Adivino"
+    },
+    {
+      "id": "sharp_eye",
+      "name": "Ojo agudo"
+    },
+    {
+      "id": "guessing_machine",
+      "name": "Máquina de adivinar"
+    },
+    {
+      "id": "globetrotter",
+      "name": "Trotamundos"
+    },
+    {
+      "id": "cartographer",
+      "name": "Cartógrafo"
+    },
+    {
+      "id": "flag_expert",
+      "name": "Experto en banderas"
+    },
+    {
+      "id": "world_atlas",
+      "name": "Atlas mundial"
+    },
+    {
+      "id": "on_the_board",
+      "name": "En el Starboard"
+    },
+    {
+      "id": "board_regular",
+      "name": "Habitual del Starboard"
+    },
+    {
+      "id": "board_legend",
+      "name": "Leyenda del Starboard"
+    },
+    {
+      "id": "going_viral",
+      "name": "Volviéndose viral"
+    },
+    {
+      "id": "viral_sensation",
+      "name": "Sensación viral"
+    },
+    {
+      "id": "giveaway_host",
+      "name": "Anfitrión de sorteos"
+    },
+    {
+      "id": "generous_host",
+      "name": "Anfitrión generoso"
+    },
+    {
+      "id": "event_organizer",
+      "name": "Organizador de eventos"
+    },
+    {
+      "id": "giveaway_legend",
+      "name": "Leyenda de los sorteos"
+    },
+    {
+      "id": "referrer_first",
+      "name": "Primer referente"
+    },
+    {
+      "id": "brand_ambassador",
+      "name": "Embajador de marca"
+    },
+    {
+      "id": "super_referrer",
+      "name": "Súper referente"
+    },
+    {
+      "id": "verified_member",
+      "name": "Miembro verificado"
+    },
+    {
+      "id": "legendary_recruiter",
+      "name": "Reclutador legendario"
+    },
+    {
+      "id": "boost_6mo",
+      "name": "Impulsor semestral"
+    },
+    {
+      "id": "boost_24mo",
+      "name": "Impulsor eterno"
+    },
+    {
+      "id": "review_master",
+      "name": "Maestro de las reseñas"
+    },
+    {
+      "id": "bday_first",
+      "name": "Primer cumpleaños"
+    },
+    {
+      "id": "bday_regular",
+      "name": "Cumpleañero habitual"
+    },
+    {
+      "id": "bday_veteran",
+      "name": "Veterano de cumpleaños"
+    },
+    {
+      "id": "self_made",
+      "name": "Hecho por ti"
+    },
+    {
+      "id": "role_picker",
+      "name": "Selector de roles"
+    },
+    {
+      "id": "role_enthusiast",
+      "name": "Entusiasta de los roles"
+    },
+    {
+      "id": "ticket_claimer",
+      "name": "Reclamador de tickets"
+    },
+    {
+      "id": "support_specialist",
+      "name": "Especialista de soporte"
+    },
+    {
+      "id": "support_overlord",
+      "name": "Señor del soporte"
+    },
+    {
+      "id": "rookie_mod",
+      "name": "Moderador novato"
+    },
+    {
+      "id": "peacekeeper",
+      "name": "Pacificador"
+    },
+    {
+      "id": "warden",
+      "name": "Guardián"
+    },
+    {
+      "id": "guardian_of_order",
+      "name": "Guardián del orden"
+    },
+    {
+      "id": "rule_enforcer",
+      "name": "Aplicador de las reglas"
+    },
+    {
+      "id": "the_hammer",
+      "name": "El martillo"
+    },
+    {
+      "id": "applicant_first",
+      "name": "Solicitante"
+    },
+    {
+      "id": "persistent_apply",
+      "name": "Solicitante persistente"
+    },
+    {
+      "id": "welcome_aboard",
+      "name": "Bienvenido a bordo"
+    },
+    {
+      "id": "team_player",
+      "name": "Jugador de equipo"
+    },
+    {
+      "id": "ai_curious",
+      "name": "Curioso de la IA"
+    },
+    {
+      "id": "ai_chatter",
+      "name": "Conversador de IA"
+    },
+    {
+      "id": "ai_power_user",
+      "name": "Usuario avanzado de IA"
+    },
+    {
+      "id": "ai_companion",
+      "name": "Compañero de IA"
+    },
+    {
+      "id": "ai_singularity",
+      "name": "Singularidad"
+    },
+    {
+      "id": "ai_convo_10",
+      "name": "Conversador"
+    },
+    {
+      "id": "ai_convo_100",
+      "name": "Conversador profundo"
+    },
+    {
+      "id": "top_member",
+      "name": "Miembro destacado"
+    },
+    {
+      "id": "community_champion",
+      "name": "Campeón de la comunidad"
+    },
+    {
+      "id": "server_mvp",
+      "name": "MVP del servidor"
+    },
+    {
+      "id": "the_answer",
+      "name": "La respuesta"
+    },
+    {
+      "id": "leet",
+      "name": "1337"
+    },
+    {
+      "id": "nice",
+      "name": "Qué buena"
+    },
+    {
+      "id": "blaze",
+      "name": "En llamas"
+    },
+    {
+      "id": "insomniac",
+      "name": "Insomne"
+    },
+    {
+      "id": "marathon",
+      "name": "Hablador de maratón"
+    },
+    {
+      "id": "dedication_secret",
+      "name": "Dedicación verdadera"
+    },
+    {
+      "id": "lucky_number",
+      "name": "Siete de la suerte"
+    },
+    {
+      "id": "high_roller",
+      "name": "Gran apostador"
+    },
+    {
+      "id": "completion_secret",
+      "name": "Más que completo"
+    },
+    {
+      "id": "gone_fishing",
+      "name": "De pesca"
+    },
+    {
+      "id": "say_cheese",
+      "name": "¡Di patata!"
+    },
+    {
+      "id": "robot_uprising",
+      "name": "Rebelión de los robots"
+    },
+    {
+      "id": "around_the_world",
+      "name": "La vuelta al mundo"
+    },
+    {
+      "id": "token_of_luck",
+      "name": "Ficha de la suerte"
+    },
+    {
+      "id": "emoji_singularity",
+      "name": "Singularidad de emojis"
+    },
+    {
+      "id": "night_philosopher",
+      "name": "Reflexiones de medianoche"
+    },
+    {
+      "id": "the_collector",
+      "name": "¡Hazte con todos!"
+    },
+    {
+      "id": "season_podium",
+      "name": "En el podio"
+    },
+    {
+      "id": "season_champion",
+      "name": "Campeón de temporada"
+    },
+    {
+      "id": "season_regular",
+      "name": "Habitual del podio"
+    },
+    {
+      "id": "season_defender",
+      "name": "Defensor del título"
+    },
+    {
+      "id": "season_dynasty",
+      "name": "Dinastía"
+    },
+    {
+      "id": "pioneer_1",
+      "name": "Pionero"
+    },
+    {
+      "id": "pioneer_5",
+      "name": "Pionero del camino"
+    },
+    {
+      "id": "pioneer_25",
+      "name": "Explorador"
+    },
+    {
+      "id": "pioneer_100",
+      "name": "Primera conquista"
+    },
+    {
+      "id": "clan_joined",
+      "name": "Juramentado"
+    },
+    {
+      "id": "clan_contributor",
+      "name": "Colaborador"
+    },
+    {
+      "id": "clan_pillar",
+      "name": "Pilar del clan"
+    },
+    {
+      "id": "clan_legend",
+      "name": "Leyenda del clan"
+    },
+    {
+      "id": "clan_recruiter",
+      "name": "Reclutador"
+    },
+    {
+      "id": "clan_headhunter",
+      "name": "Cazatalentos"
+    },
+    {
+      "id": "clan_legion_builder",
+      "name": "Constructor de legiones"
+    },
+    {
+      "id": "clan_war_hero",
+      "name": "Héroe de guerra"
+    },
+    {
+      "id": "clan_warlord",
+      "name": "Señor de la guerra"
+    },
+    {
+      "id": "clan_raid_hunter",
+      "name": "Cazador de incursiones"
+    },
+    {
+      "id": "clan_boss_slayer",
+      "name": "Matador de jefes"
+    },
+    {
+      "id": "clan_stronghold",
+      "name": "Fortaleza"
+    },
+    {
+      "id": "clan_diamond_season",
+      "name": "Temporada de diamante"
+    },
+    {
+      "id": "clan_champion_season",
+      "name": "Campeón de temporada"
     }
   ]
 }
