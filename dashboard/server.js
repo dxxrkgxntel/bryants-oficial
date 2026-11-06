@@ -25,6 +25,7 @@ const Achievement = require("../Models/Achievement");
 const UserAchievement = require("../Models/UserAchievement");
 const TrophySettings = require("../Models/TrophySettings");
 const { ensureDefaultAchievements } = require("../Functions/achievementTracker");
+const achievementCategoryLabels = require("../data/locales/achievement-categories.es.json").categories;
 const Level = require("../Models/Level");
 const SocialAlertState = require("../Models/SocialAlertState");
 const PersonalStatsDaily = require("../Models/PersonalStatsDaily");
@@ -1955,7 +1956,7 @@ app.get("/api/guilds/:guildId/members/:userId/economy", requireGuildAdmin, async
         const progressById = new Map(progress.map(entry => [entry.achievementId, entry]));
         const achievements = definitions.map(item => {
             const entry = progressById.get(item.achievementId);
-            return { achievementId: item.achievementId, name: item.name, description: item.description, emoji: item.emoji, category: item.category, goal: item.goal, progress: entry?.progress || 0, unlockedAt: entry?.unlockedAt || null, rewardCoins: item.rewardCoins || 0 };
+            return { achievementId: item.achievementId, name: item.name, description: item.description, emoji: item.emoji, category: item.category, categoryLabel: achievementCategoryLabels[item.category] || item.category, goal: item.goal, progress: entry?.progress || 0, unlockedAt: entry?.unlockedAt || null, rewardCoins: item.rewardCoins || 0 };
         });
         const trophyIndex = trophyRanking.findIndex(row => String(row._id) === req.params.userId);
         const trophyMember = trophyIndex >= 0 ? trophyRanking[trophyIndex] : null;
