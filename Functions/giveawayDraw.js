@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const Giveaway = require("../Models/Giveaway");
 const { buildGiveawayMessage } = require("./giveawayMessage");
+const { trackAchievementProgress } = require("./achievementTracker");
 
 async function editGiveawayMessage(client, giveaway, ended) {
     const guild = client.guilds.cache.get(giveaway.guildId) || await client.guilds.fetch(giveaway.guildId).catch(() => null);
@@ -44,6 +45,16 @@ async function finishGiveaway(client, giveawayId, actorId = null, { force = fals
     try {
         if (!reroll) giveaway.status = "ended";
         await giveaway.save();
+        if (winnerIds.length) {
+            const guild = client.guilds.cache.get(giveaway.guildId) || await client.guilds.fetch(giveaway.guildId).catch(() => null);
+            for (const userId of winnerIds) {
+                const member = await guild?.members.fetch(userId).catch(() => null);
+                if (member?.user) {
+                    await trackAchievementProgress(guild, member.user, "giveaways_won", 1)
+                        .catch(error => console.warn("[Achievements] No se pudo registrar giveaways_won:", error.message));
+                }
+            }
+        }
         await editGiveawayMessage(client, giveaway, true).catch(error => console.warn("[Giveaway] No se pudo editar el mensaje:", error.message));
         const guild = client.guilds.cache.get(giveaway.guildId) || await client.guilds.fetch(giveaway.guildId).catch(() => null);
         const channel = guild?.channels.cache.get(giveaway.channelId) || await guild?.channels.fetch(giveaway.channelId).catch(() => null);
