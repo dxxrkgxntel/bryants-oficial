@@ -98,7 +98,7 @@ assert.match(shopSource, /StoreItem/, "La tienda debe permitir comprar artículo
 assert.match(shopSource, /recordInventoryPurchase/, "Las compras deben guardarse en la mochila");
 assert.match(achievementSource, /findOneAndUpdate[\s\S]*?unlockedAt/, "Los logros deben guardar el progreso y evitar desbloqueos duplicados");
 assert.match(moduleSource, /title: "Artículos de tienda"/, "La dashboard debe permitir configurar artículos de venta");
-assert.match(moduleSource, /title: "Logros"/, "La dashboard debe permitir configurar logros");
+assert.match(moduleSource, /title: "Trofeos - Logros"/, "La dashboard debe permitir configurar logros");
 assert.match(clientSource, /member-backpack-item/, "La ficha de miembro debe mostrar los artículos comprados");
 assert.match(clientSource, /member-achievement-item/, "La ficha de miembro debe mostrar el progreso de logros");
 for (const file of ["hub.css", "hub.js", "status.html", "docs.html", "updates.html", "updates.js", "stats.html", "stats.js", "leaderboard.html", "leaderboard.js", "templates.html", "templates.js"]) {
