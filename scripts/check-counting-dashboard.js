@@ -1,0 +1,18 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const modulesSource = fs.readFileSync(require.resolve("../dashboard/modules"), "utf8");
+const modelSource = fs.readFileSync(require.resolve("../Models/CountingConfig"), "utf8");
+const match = modulesSource.match(/counting:\s*\{([\s\S]*?)\n\s{4}\},/);
+assert.ok(match, "Counting dashboard module must exist");
+const definition = match[1];
+assert.match(definition, /title:\s*"Sistema de conteo"/);
+assert.match(definition, /category:\s*"Comunidad"/);
+assert.match(definition, /require\("\.\.\/Models\/CountingConfig"\)/);
+assert.match(definition, /guildField:\s*"guildId"/);
+assert.match(definition, /name:\s*"enabled"[^\n]*type:\s*"boolean"/);
+assert.match(definition, /name:\s*"channelId"[^\n]*type:\s*"channel"[^\n]*channelTypes:\s*\[0\][^\n]*optional:\s*true/);
+assert.match(modelSource, /guildId:\s*\{\s*type:\s*String,\s*required:\s*true,\s*unique:\s*true/);
+assert.match(modelSource, /channelId:\s*\{\s*type:\s*String,\s*default:\s*null/);
+const serverSource = fs.readFileSync(require.resolve("../dashboard/server"), "utf8");
+assert.match(serverSource, /req\.params\.module === "counting"[\s\S]*?Selecciona un canal de texto antes de activar el sistema de conteo/);
+console.log("Counting dashboard module checks passed.");

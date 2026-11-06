@@ -389,6 +389,17 @@ const configurations = {
         guildField: "guildId",
         fields: [{ name: "channelId", label: "Canal de giveaways", type: "channel", channelTypes: [0, 5] }]
     },
+    counting: {
+        title: "Sistema de conteo",
+        category: "Comunidad",
+        description: "Configura el canal del juego de conteo, activa o pausa la actividad y consulta el progreso de tu comunidad.",
+        model: require("../Models/CountingConfig"),
+        guildField: "guildId",
+        fields: [
+            { name: "enabled", label: "Sistema de conteo activo", type: "boolean", default: false, help: "Al desactivarlo, el bot deja de procesar números sin borrar el progreso." },
+            { name: "channelId", label: "Canal de conteo", type: "channel", channelTypes: [0], optional: true, help: "Elige el canal de texto donde los miembros deben enviar la secuencia numérica." }
+        ]
+    },
     purge: {
         title: "Limpieza automática",
         category: "Moderación",
