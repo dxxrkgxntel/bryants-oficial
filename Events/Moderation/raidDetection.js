@@ -1,33 +1,10 @@
 const logsSchema = require("../../Models/logsSchema");
 const SecuritySettings = require("../../Models/SecuritySettings");
 const { publishDashboardNotification } = require("../../Utils/dashboardNotifications");
+const { normalizeSecuritySettings } = require("../../Functions/securitySettings");
 
-const DEFAULTS = Object.freeze({
-    enabled: true,
-    joinThreshold: 7,
-    joinWindowSeconds: 10,
-    alertCooldownMinutes: 5,
-    alertChannelId: null,
-    notifyDashboard: true
-});
 const recentJoins = new Map();
 const lastAlertAt = new Map();
-
-function boundedInteger(value, fallback, min, max) {
-    const number = Number(value);
-    return Number.isInteger(number) ? Math.min(max, Math.max(min, number)) : fallback;
-}
-
-function normalizeSettings(document) {
-    return {
-        enabled: document?.enabled !== false,
-        joinThreshold: boundedInteger(document?.joinThreshold, DEFAULTS.joinThreshold, 3, 50),
-        joinWindowSeconds: boundedInteger(document?.joinWindowSeconds, DEFAULTS.joinWindowSeconds, 5, 120),
-        alertCooldownMinutes: boundedInteger(document?.alertCooldownMinutes, DEFAULTS.alertCooldownMinutes, 1, 60),
-        alertChannelId: /^\\d{17,20}$/.test(String(document?.alertChannelId || "")) ? document.alertChannelId : null,
-        notifyDashboard: document?.notifyDashboard !== false
-    };
-}
 
 module.exports = {
     name: "guildMemberAdd",
@@ -35,7 +12,7 @@ module.exports = {
         try {
             if (!member?.guild || member.user?.bot) return;
             const guildId = member.guild.id;
-            const settings = normalizeSettings(await SecuritySettings.findOne({ guildId }).lean());
+            const settings = normalizeSecuritySettings(await SecuritySettings.findOne({ guildId }).lean());
             if (!settings.enabled) return;
 
             const now = Date.now();
@@ -68,6 +45,5 @@ module.exports = {
         } catch (error) {
             console.error("[RAID DETECTION] No se pudo comprobar una entrada: " + error.message);
         }
-    },
-    _test: { normalizeSettings, DEFAULTS, boundedInteger }
+    }
 };
