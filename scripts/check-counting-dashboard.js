@@ -1,0 +1,11 @@
+const assert = require("node:assert/strict");
+const { configurations } = require("../dashboard/modules");
+const counting = configurations.counting;
+assert.ok(counting, "Counting dashboard module must exist");
+assert.equal(counting.title, "Sistema de conteo");
+assert.equal(counting.guildField, "guildId");
+assert.equal(counting.model.modelName, "CountingConfig");
+assert.deepEqual(counting.fields.map(field => field.name), ["enabled", "channelId"]);
+assert.equal(counting.fields.find(field => field.name === "channelId").type, "channel");
+assert.equal(counting.fields.find(field => field.name === "channelId").optional, true);
+console.log("Counting dashboard module checks passed.");

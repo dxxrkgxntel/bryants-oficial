@@ -2473,6 +2473,14 @@ app.put("/api/guilds/:guildId/config/:module", requireLogin, requireCsrf, requir
         }
         const update = cleanFields(definition.fields, req.body);
         if (!Object.keys(update).length) return res.status(400).json({ error: "No hay cambios para guardar." });
+        if (req.params.module === "counting") {
+            const current = await definition.model.findOne({ guildId: req.params.guildId }).lean();
+            const nextEnabled = Object.prototype.hasOwnProperty.call(update, "enabled") ? update.enabled : Boolean(current?.enabled);
+            const nextChannelId = Object.prototype.hasOwnProperty.call(update, "channelId") ? update.channelId : current?.channelId;
+            if (nextEnabled && !nextChannelId) {
+                throw new Error("Selecciona un canal de texto antes de activar el sistema de conteo.");
+            }
+        }
         if (req.params.module === "inviteTracker") {
             const current = await definition.model.findOne({ [definition.guildField]: req.params.guildId }).lean();
             const nextEnabled = Object.prototype.hasOwnProperty.call(update, "InviteTrackerEnabled")
