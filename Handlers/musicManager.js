@@ -234,6 +234,29 @@ async function resolveQuery(query, requestedBy = null) {
 
     let type = false;
     if (/^https?:\/\//i.test(value)) {
+        try {
+            const parsed = new URL(value);
+            const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+            const videoId = host === "youtu.be"
+                ? parsed.pathname.split("/").filter(Boolean)[0]
+                : ["youtube.com", "m.youtube.com", "music.youtube.com", "youtube-nocookie.com"].includes(host)
+                    ? (parsed.searchParams.get("v") || parsed.pathname.match(/^\/(?:shorts|embed|live|v)\/([^/?]+)/i)?.[1])
+                    : null;
+            if (videoId) {
+                return {
+                    tracks: [{
+                        title: "YouTube " + videoId,
+                        artist: "",
+                        url: value,
+                        durationSeconds: 0,
+                        thumbnail: "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg",
+                        source: "YouTube",
+                        requestedBy
+                    }],
+                    playlistName: null
+                };
+            }
+        } catch {}
         type = await play.validate(value).catch(() => false);
         if (!type) throw new Error("No pude reconocer ese enlace. Prueba YouTube, SoundCloud, Spotify o Deezer.");
     }
@@ -414,12 +437,21 @@ async function resolveLavalinkTrack(session, track) {
     if (track.encoded) return track.encoded;
     const node = session.player.node;
     if (!node) throw new Error("El reproductor no está conectado a Lavalink.");
-    const identifier = track.source === "SoundCloud" ? track.url : ("ytsearch:" + track.title + " " + (track.artist || "")).trim();
+    const isYouTubeUrl = /^https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)\//i.test(track.url || "");
+    const identifier = track.source === "SoundCloud" || isYouTubeUrl
+        ? track.url
+        : ("ytsearch:" + track.title + " " + (track.artist || "")).trim();
     const result = await node.rest.resolve(identifier);
-    const encoded = result?.tracks?.[0]?.encoded;
-    if (!encoded) throw new Error('Lavalink no encontró una fuente reproducible para "' + track.title + '".');
-    track.encoded = encoded;
-    return encoded;
+    const metadata = result?.tracks?.[0];
+    if (!metadata?.encoded) throw new Error('Lavalink no encontró una fuente reproducible para "' + track.title + '".');
+    track.encoded = metadata.encoded;
+    if (metadata.info) {
+        track.title = clip(metadata.info.title || track.title);
+        track.artist = clip(metadata.info.author || track.artist || "", 200);
+        track.durationSeconds = Math.floor((Number(metadata.info.length) || 0) / 1000) || track.durationSeconds;
+        track.thumbnail = metadata.info.artworkUrl || track.thumbnail;
+    }
+    return track.encoded;
 }
 async function applySessionFilter(session) {
     const filter = FILTERS[session.filter];
