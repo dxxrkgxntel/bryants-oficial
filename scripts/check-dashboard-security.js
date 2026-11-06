@@ -122,9 +122,9 @@ assert.match(moduleSource, /notificationCenter:/, "La dashboard debe registrar e
 
 console.log("Dashboard security and assistant regression checks passed.");
 
-assert.match(moduleSource, /reportReviewCenter:[\\s\\S]*?title: "Centro de revisión",[\\s\\S]*?category: "Administración"/, "El centro de revisión debe estar en Administración");
-assert.match(clientSource, /function renderReportReviewCenter\\(/, "Debe existir la interfaz del centro de revisión");
+assert.match(moduleSource, /reportReviewCenter:[\s\S]*?title: "Centro de revisión",[\s\S]*?category: "Administración"/, "El centro de revisión debe estar en Administración");
+assert.match(clientSource, /function renderReportReviewCenter\(/, "Debe existir la interfaz del centro de revisión");
 assert.match(clientSource, /data-report-status/, "Los reportes deben poder cambiar de estado");
-assert.match(source, /ReportUser\\.find\\(\\{ reportGuildId: req\\.params\\.guildId \\}\\)/, "El centro de revisión debe leer los reportes existentes");
-assert.match(source, /reviewedBy: status === "pending" \? null : req\\.session\\.user\\.id/, "La revisión debe registrar quién actualizó el reporte");
-assert.match(source, /requireGuildSpecificModulePermission\\("reportReviewCenter", "edit"\\)/, "La edición del centro de revisión debe respetar permisos por módulo");
+assert.match(source, /ReportUser\.find\(\{ reportGuildId: req\.params\.guildId \}\)/, "El centro de revisión debe leer los reportes existentes");
+assert.match(source, /reviewedBy: status === "pending" \? null : req\.session\.user\.id/, "La revisión debe registrar quién actualizó el reporte");
+assert.match(source, /requireGuildSpecificModulePermission\("reportReviewCenter", "edit"\)/, "La edición del centro de revisión debe respetar permisos por módulo");
