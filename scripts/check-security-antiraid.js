@@ -1,0 +1,11 @@
+const assert = require("node:assert/strict");
+const { normalizeSecuritySettings, DEFAULT_SECURITY_SETTINGS } = require("../Functions/securitySettings");
+assert.deepEqual(normalizeSecuritySettings(null), DEFAULT_SECURITY_SETTINGS);
+assert.equal(normalizeSecuritySettings({ enabled: false }).enabled, false);
+assert.equal(normalizeSecuritySettings({ joinThreshold: 1000 }).joinThreshold, 50);
+assert.equal(normalizeSecuritySettings({ joinThreshold: 1 }).joinThreshold, 3);
+assert.equal(normalizeSecuritySettings({ joinWindowSeconds: 1 }).joinWindowSeconds, 5);
+assert.equal(normalizeSecuritySettings({ alertCooldownMinutes: 90 }).alertCooldownMinutes, 60);
+assert.equal(normalizeSecuritySettings({ alertChannelId: "invalid" }).alertChannelId, null);
+assert.equal(normalizeSecuritySettings({ alertChannelId: "12345678901234567" }).alertChannelId, "12345678901234567");
+console.log("Security Anti-Raid settings checks passed.");

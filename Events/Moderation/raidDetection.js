@@ -1,8 +1,8 @@
 const logsSchema = require("../../Models/logsSchema");
+const SecuritySettings = require("../../Models/SecuritySettings");
 const { publishDashboardNotification } = require("../../Utils/dashboardNotifications");
-const JOIN_WINDOW_MS = 10_000;
-const JOIN_THRESHOLD = 7;
-const ALERT_COOLDOWN_MS = 5 * 60_000;
+const { normalizeSecuritySettings } = require("../../Functions/securitySettings");
+
 const recentJoins = new Map();
 const lastAlertAt = new Map();
 
@@ -12,32 +12,34 @@ module.exports = {
         try {
             if (!member?.guild || member.user?.bot) return;
             const guildId = member.guild.id;
+            const settings = normalizeSecuritySettings(await SecuritySettings.findOne({ guildId }).lean());
+            if (!settings.enabled) return;
+
             const now = Date.now();
-            const joins = (recentJoins.get(guildId) || []).filter(timestamp => now - timestamp <= JOIN_WINDOW_MS);
+            const windowMs = settings.joinWindowSeconds * 1000;
+            const joins = (recentJoins.get(guildId) || []).filter(timestamp => now - timestamp <= windowMs);
             joins.push(now);
             recentJoins.set(guildId, joins);
-            if (joins.length < JOIN_THRESHOLD) return;
-            if (now - (lastAlertAt.get(guildId) || 0) < ALERT_COOLDOWN_MS) return;
+            if (joins.length < settings.joinThreshold) return;
+            if (now - (lastAlertAt.get(guildId) || 0) < settings.alertCooldownMinutes * 60_000) return;
 
             lastAlertAt.set(guildId, now);
-            await publishDashboardNotification({
-                guildId,
-                title: "Posible raid detectado",
-                message: "Entraron " + joins.length + " miembros en " + (JOIN_WINDOW_MS / 1000) + " segundos. Revisa la actividad reciente del servidor.",
-                category: "security",
-                severity: "warning"
-            });
+            const message = "Entraron " + joins.length + " miembros en " + settings.joinWindowSeconds + " segundos. Revisa la actividad reciente y aplica medidas preventivas si es necesario.";
+            if (settings.notifyDashboard) {
+                await publishDashboardNotification({ guildId, title: "Posible raid detectado", message, category: "security", severity: "warning" });
+            }
 
-            const config = await logsSchema.findOne({ Guild: guildId });
-            if (!config || config.Enabled === false || !config.Channel) return;
-            const channel = member.guild.channels.cache.get(config.Channel);
+            const logs = await logsSchema.findOne({ Guild: guildId }).lean();
+            const channelId = settings.alertChannelId || (logs?.Enabled !== false ? logs?.Channel : null);
+            if (!channelId) return;
+            const channel = member.guild.channels.cache.get(channelId);
             if (!channel?.isTextBased()) return;
             const me = member.guild.members.me;
             const permissions = me ? channel.permissionsFor(me) : null;
             if (!permissions?.has(["ViewChannel", "SendMessages"])) return;
 
             await channel.send({
-                content: "⚠️ **Posible raid detectado** en <#" + channel.id + ">: entraron **" + joins.length + " miembros** en los últimos " + (JOIN_WINDOW_MS / 1000) + " segundos. Revisa la lista de miembros y activa las medidas de moderación necesarias.",
+                content: "⚠️ **Posible raid detectado:** " + joins.length + " miembros entraron en los últimos " + settings.joinWindowSeconds + " segundos. Revisa la lista de miembros y activa las medidas de moderación necesarias.",
                 allowedMentions: { parse: [] }
             });
         } catch (error) {

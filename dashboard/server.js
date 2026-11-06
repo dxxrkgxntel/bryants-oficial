@@ -2796,6 +2796,69 @@ app.delete("/api/guilds/:guildId/modules/:module/members/:userId/notes/:noteId",
     return res.json({ ok: true });
 });
 
+app.get("/api/guilds/:guildId/modules/:module/moderation", requireGuildModulePermission("view"), async (req, res) => {
+    if (req.params.module !== "moderationCenter") return res.status(404).json({ error: "Módulo no encontrado." });
+    const guildId = req.params.guildId;
+    const limit = Math.min(100, Math.max(10, Number(req.query.limit) || 50));
+    try {
+        const [warnings, counts] = await Promise.all([
+            ModerationWarning.find({ guildId }).sort({ createdAt: -1 }).limit(limit).lean(),
+            ModerationWarning.aggregate([
+                { $match: { guildId } },
+                { $group: { _id: null, total: { $sum: 1 }, members: { $addToSet: "$targetId" } } }
+            ])
+        ]);
+        return res.set("Cache-Control", "private, no-store").json({
+            summary: { warnings: counts[0]?.total || 0, warnedMembers: counts[0]?.members?.length || 0 },
+            warnings: warnings.map(item => ({
+                id: String(item._id), targetId: item.targetId, moderatorId: item.moderatorId,
+                reason: item.reason, createdAt: item.createdAt
+            }))
+        });
+    } catch (error) {
+        console.error("[Moderation Center] No se pudo cargar el historial:", error.message);
+        return res.status(500).json({ error: "No pude cargar el historial de moderación." });
+    }
+});
+
+app.post("/api/guilds/:guildId/modules/:module/moderation/warnings", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
+    if (req.params.module !== "moderationCenter") return res.status(404).json({ error: "Módulo no encontrado." });
+    const { guildId } = req.params;
+    const targetId = String(req.body?.targetId || "");
+    const reason = String(req.body?.reason || "").trim();
+    if (!/^\d{17,20}$/.test(targetId)) return res.status(400).json({ error: "Selecciona un miembro válido." });
+    if (!reason || reason.length > 1000) return res.status(400).json({ error: "La razón debe tener entre 1 y 1000 caracteres." });
+    try {
+        const [actor, target, roles] = await Promise.all([
+            discordBotRequest(`https://discord.com/api/v10/guilds/${guildId}/members/${req.session.user.id}`),
+            discordBotRequest(`https://discord.com/api/v10/guilds/${guildId}/members/${targetId}`),
+            discordBotRequest(`https://discord.com/api/v10/guilds/${guildId}/roles`)
+        ]);
+        if (targetId === req.session.user.id) return res.status(400).json({ error: "No puedes advertirte a ti mismo." });
+        if (target.user?.bot) return res.status(400).json({ error: "No se registran advertencias para bots." });
+        const roleMap = new Map((roles || []).map(role => [role.id, role]));
+        const actorPermissions = (actor.roles || []).reduce((bits, roleId) => bits | BigInt(roleMap.get(roleId)?.permissions || "0"), BigInt(roleMap.get(guildId)?.permissions || "0"));
+        const canModerate = (actorPermissions & 8n) === 8n || (actorPermissions & 1099511627776n) === 1099511627776n;
+        if (!canModerate) return res.status(403).json({ error: "Tu cuenta de Discord necesita el permiso Moderar miembros para emitir advertencias." });
+
+        const warning = await ModerationWarning.create({
+            guildId, moderatorId: req.session.user.id, targetId,
+            interactionId: "dashboard-" + crypto.randomUUID(),
+            reason
+        });
+        await MemberTimelineEvent.create({ guildId, userId: targetId, type: "warn", actorId: req.session.user.id, reason, metadata: { source: "dashboard", warningId: String(warning._id) } });
+        await DashboardNotification.create({
+            guildId, title: "Nueva advertencia registrada",
+            message: "Se registró una advertencia para el miembro " + targetId + ".",
+            category: "security", severity: "info", targetUserIds: [], createdBy: req.session.user.id
+        });
+        await recordDashboardAudit(req, guildId, "Advertencia emitida desde el centro de moderación");
+        return res.status(201).json({ warning: { id: String(warning._id), targetId, moderatorId: warning.moderatorId, reason, createdAt: warning.createdAt } });
+    } catch (error) {
+        return res.status(error.status === 404 ? 404 : 500).json({ error: error.status === 404 ? "El miembro seleccionado ya no está en el servidor." : "No pude registrar la advertencia." });
+    }
+});
+
 app.get("/api/guilds/:guildId/modules/:module/overview", requireGuildModulePermission("view"), async (req, res) => {
     if (req.params.module !== "activityAnalytics") return res.status(404).json({ error: "Módulo no encontrado." });
     const days = [7, 30, 90].includes(Number(req.query.days)) ? Number(req.query.days) : 30;
