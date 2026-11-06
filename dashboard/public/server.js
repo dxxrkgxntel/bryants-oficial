@@ -1748,7 +1748,7 @@ async function renderMemberProfiles(definition, initialMemberId = null) {
 async function renderModerationCenter(definition) {
     currentModule = "moderationCenter";
     const base = "/api/guilds/" + encodeURIComponent(guildId) + "/modules/moderationCenter/moderation";
-    content.innerHTML = '<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">MODERACIÓN DEL SERVIDOR</div><h2>Centro de moderación</h2></div><button id="moderation-refresh" class="quiet-button" type="button">Actualizar</button></div><p class="card-description">Consulta las advertencias registradas y añade nuevas. Las sanciones de Discord siguen respetando los permisos y la jerarquía del servidor.</p><div id="moderation-summary" class="member-economy-stats"></div><section class="member-profile-section"><h3>Emitir advertencia</h3><form id="moderation-warning-form" class="fields-grid"><label class="field"><span>ID del miembro</span><input name="targetId" inputmode="numeric" pattern="[0-9]{17,20}" maxlength="20" required placeholder="ID de Discord"></label><label class="field field-full"><span>Motivo</span><textarea name="reason" maxlength="1000" rows="3" required placeholder="Describe el motivo de la advertencia…"></textarea></label><div class="form-actions"><button class="primary-button" type="submit">Registrar advertencia</button></div></form></section><section class="member-profile-section"><h3>Expedientes recientes</h3><div id="moderation-warnings" class="community-panel-list"><div class="loading-card">Cargando historial…</div></div></section></article>';
+    content.innerHTML = '<article class="settings-card"><div class="card-heading"><div><div class="eyebrow">MODERACIÓN DEL SERVIDOR</div><h2>Centro de moderación</h2></div><button id="moderation-refresh" class="quiet-button" type="button">Actualizar</button></div><p class="card-description">Consulta las advertencias registradas y añade nuevas. Las sanciones de Discord siguen respetando los permisos y la jerarquía del servidor.</p><div id="moderation-summary" class="member-economy-stats"></div><section class="member-profile-section"><h3>Emitir advertencia</h3><form id="moderation-warning-form" class="fields-grid"><label class="field"><span>ID del miembro</span><input name="targetId" inputmode="numeric" pattern="[0-9]{17,20}" maxlength="20" required placeholder="ID de Discord"></label><label class="field field-full"><span>Motivo</span><textarea name="reason" maxlength="1000" rows="3" required placeholder="Describe el motivo de la advertencia…"></textarea></label><div class="form-actions"><button class="primary-button" type="submit">Registrar advertencia</button></div></form></section><section class="member-profile-section"><h3>Aplicar sanción de Discord</h3><form id="moderation-action-form" class="fields-grid"><label class="field"><span>ID del miembro</span><input name="targetId" inputmode="numeric" pattern="[0-9]{17,20}" maxlength="20" required placeholder="ID de Discord"></label><label class="field"><span>Tipo de sanción</span><select name="action"><option value="timeout">Timeout</option><option value="kick">Expulsar</option><option value="ban">Banear</option></select></label><label class="field" id="moderation-duration-field"><span>Duración del timeout (minutos)</span><input name="durationMinutes" type="number" min="1" max="40320" value="60"></label><label class="field field-full"><span>Motivo</span><textarea name="reason" maxlength="500" rows="2" required placeholder="Motivo de la sanción…"></textarea></label><div class="form-actions"><button class="primary-button" type="submit">Aplicar sanción</button></div></form><p class="card-description">Se verifican los permisos reales de Discord y la jerarquía de roles del moderador y del bot.</p></section><section class="member-profile-section"><h3>Expedientes recientes</h3><div id="moderation-warnings" class="community-panel-list"><div class="loading-card">Cargando historial…</div></div></section></article>';
     const summary = content.querySelector("#moderation-summary");
     const list = content.querySelector("#moderation-warnings");
     async function load() {
@@ -1763,6 +1763,29 @@ async function renderModerationCenter(definition) {
         } catch (error) { list.innerHTML = '<p class="empty-state">' + escapeHtml(error.message || "No pude cargar el historial.") + '</p>'; }
     }
     content.querySelector("#moderation-refresh").addEventListener("click", load);
+    const actionForm = content.querySelector("#moderation-action-form");
+    const actionSelect = actionForm.elements.action;
+    const durationField = content.querySelector("#moderation-duration-field");
+    actionSelect.addEventListener("change", () => { durationField.hidden = actionSelect.value !== "timeout"; });
+    actionForm.addEventListener("submit", async event => {
+        event.preventDefault();
+        const button = actionForm.querySelector("button[type=submit]");
+        button.disabled = true;
+        try {
+            await api(base + "/actions", { method: "POST", body: JSON.stringify({
+                targetId: actionForm.elements.targetId.value.trim(),
+                action: actionSelect.value,
+                durationMinutes: Number(actionForm.elements.durationMinutes.value),
+                reason: actionForm.elements.reason.value.trim()
+            }) });
+            actionForm.reset();
+            durationField.hidden = false;
+            showNotice("Sanción aplicada correctamente.");
+            await load();
+        } catch (error) { showNotice(error.message || "No pude aplicar la sanción.", true); }
+        finally { button.disabled = false; }
+    });
+
     content.querySelector("#moderation-warning-form").addEventListener("submit", async event => {
         event.preventDefault();
         const form = event.currentTarget;

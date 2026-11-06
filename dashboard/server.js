@@ -2821,6 +2821,80 @@ app.get("/api/guilds/:guildId/modules/:module/moderation", requireGuildModulePer
     }
 });
 
+app.post("/api/guilds/:guildId/modules/:module/moderation/actions", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
+    if (req.params.module !== "moderationCenter") return res.status(404).json({ error: "Módulo no encontrado." });
+    const { guildId } = req.params;
+    const targetId = String(req.body?.targetId || "");
+    const action = String(req.body?.action || "");
+    const reason = String(req.body?.reason || "").trim().slice(0, 500);
+    const durationMinutes = Number(req.body?.durationMinutes);
+    if (!/^\d{17,20}$/.test(targetId)) return res.status(400).json({ error: "Selecciona un miembro válido." });
+    if (!["timeout", "kick", "ban"].includes(action)) return res.status(400).json({ error: "Selecciona una sanción válida." });
+    if (!reason) return res.status(400).json({ error: "Indica el motivo de la sanción." });
+    if (action === "timeout" && (!Number.isInteger(durationMinutes) || durationMinutes < 1 || durationMinutes > 40320)) {
+        return res.status(400).json({ error: "El timeout debe durar entre 1 minuto y 28 días." });
+    }
+    try {
+        const [guild, actor, target, roles, botUser] = await Promise.all([
+            discordBotRequest(`https://discord.com/api/v10/guilds/${guildId}`),
+            discordBotRequest(`https://discord.com/api/v10/guilds/${guildId}/members/${req.session.user.id}`),
+            discordBotRequest(`https://discord.com/api/v10/guilds/${guildId}/members/${targetId}`),
+            discordBotRequest(`https://discord.com/api/v10/guilds/${guildId}/roles`),
+            discordBotRequest("https://discord.com/api/v10/users/@me")
+        ]);
+        if (targetId === req.session.user.id || targetId === botUser.id) return res.status(400).json({ error: "No puedes sancionar a esa cuenta." });
+        if (target.user?.bot) return res.status(400).json({ error: "No se pueden aplicar estas sanciones a bots desde este panel." });
+        if (targetId === guild.owner_id) return res.status(403).json({ error: "No se puede sancionar al propietario del servidor." });
+
+        const botMember = await discordBotRequest(`https://discord.com/api/v10/guilds/${guildId}/members/${botUser.id}`);
+        const roleMap = new Map((roles || []).map(role => [role.id, role]));
+        const everyonePermissions = BigInt(roleMap.get(guildId)?.permissions || "0");
+        const actorPermissions = (actor.roles || []).reduce((bits, roleId) => bits | BigInt(roleMap.get(roleId)?.permissions || "0"), everyonePermissions);
+        const administrator = (actorPermissions & 8n) === 8n;
+        const requiredPermission = action === "ban" ? 4n : action === "kick" ? 2n : 1099511627776n;
+        if (!administrator && (actorPermissions & requiredPermission) !== requiredPermission) {
+            return res.status(403).json({ error: "Tu cuenta de Discord no tiene el permiso necesario para esta sanción." });
+        }
+
+        const highestRolePosition = member => Math.max(0, ...(member.roles || []).map(roleId => Number(roleMap.get(roleId)?.position) || 0));
+        const actorIsOwner = req.session.user.id === guild.owner_id;
+        if (!actorIsOwner && highestRolePosition(actor) <= highestRolePosition(target)) {
+            return res.status(403).json({ error: "Tu rol debe estar por encima del miembro que intentas sancionar." });
+        }
+        if (highestRolePosition(botMember) <= highestRolePosition(target)) {
+            return res.status(403).json({ error: "El rol de Bryvex Bot debe estar por encima del miembro objetivo." });
+        }
+
+        let timelineType;
+        if (action === "timeout") {
+            const until = new Date(Date.now() + durationMinutes * 60_000).toISOString();
+            await discordBotRequest(`https://discord.com/api/v10/guilds/${guildId}/members/${targetId}`, {
+                method: "PATCH", body: { communication_disabled_until: until }
+            });
+            timelineType = "timeout_added";
+        } else if (action === "kick") {
+            await discordBotRequest(`https://discord.com/api/v10/guilds/${guildId}/members/${targetId}`, { method: "DELETE" });
+            timelineType = "kick";
+        } else {
+            await discordBotRequest(`https://discord.com/api/v10/guilds/${guildId}/bans/${targetId}`, {
+                method: "PUT", body: { delete_message_seconds: 0, reason }
+            });
+            timelineType = "ban";
+        }
+        await MemberTimelineEvent.create({ guildId, userId: targetId, type: timelineType, actorId: req.session.user.id, reason, metadata: { source: "dashboard", action, durationMinutes: action === "timeout" ? durationMinutes : null } }).catch(error => console.warn("[Moderation Center] Timeline:", error.message));
+        await DashboardNotification.create({
+            guildId, title: "Sanción aplicada",
+            message: "Se aplicó " + (action === "timeout" ? "un timeout" : action === "kick" ? "una expulsión" : "un baneo") + " al miembro " + targetId + ".",
+            category: "security", severity: "warning", targetUserIds: [], createdBy: req.session.user.id
+        }).catch(error => console.warn("[Moderation Center] Notification:", error.message));
+        await recordDashboardAudit(req, guildId, "Sanción " + action + " aplicada desde el centro de moderación");
+        return res.json({ ok: true, action, targetId });
+    } catch (error) {
+        const status = [400, 403, 404, 429].includes(error.status) ? error.status : 500;
+        return res.status(status).json({ error: error.status === 404 ? "El miembro ya no está en el servidor." : error.message || "No pude aplicar la sanción." });
+    }
+});
+
 app.post("/api/guilds/:guildId/modules/:module/moderation/warnings", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
     if (req.params.module !== "moderationCenter") return res.status(404).json({ error: "Módulo no encontrado." });
     const { guildId } = req.params;
