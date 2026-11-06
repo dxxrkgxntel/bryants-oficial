@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, MessageFlags } = require("discord.js");
 const Achievement = require("../../Models/Achievement");
 const UserAchievement = require("../../Models/UserAchievement");
+const achievementCategoryLabels = require("../../data/locales/achievement-categories.es.json").categories;
 const { ensureDefaultAchievements } = require("../../Functions/achievementTracker");
 
 module.exports = {
@@ -37,7 +38,7 @@ module.exports = {
                 item.rewardXP > 0 ? `✨ ${item.rewardXP.toLocaleString()} XP` : ""
             ].filter(Boolean);
             const reward = rewards.length ? ` · ${rewards.join(" · ")}` : "";
-            return `${done ? "🏆" : "🔒"} ${item.emoji || "🏆"} **${item.name}** — ${done ? "Desbloqueado" : `${current.toLocaleString()}/${item.goal.toLocaleString()}`}\n> ${item.description}${reward}`;
+            return `${done ? "🏆" : "🔒"} ${item.emoji || "🏆"} **${item.name}** · _${achievementCategoryLabels[item.category] || item.category}_ — ${done ? "Desbloqueado" : `${current.toLocaleString()}/${item.goal.toLocaleString()}`}\n> ${item.description}${reward}`;
         });
         const container = new ContainerBuilder().setAccentColor(0x8A2BE2);
         container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## 🏆 Logros de ${target.username}`));
