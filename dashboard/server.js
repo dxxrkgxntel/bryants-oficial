@@ -2312,6 +2312,50 @@ app.post("/api/guilds/:guildId/giveaways/:giveawayId/end", requireLogin, require
     }
 });
 
+
+app.post("/api/guilds/:guildId/giveaways/:giveawayId/reroll", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    try {
+        const giveaway = await Giveaway.findOne({ _id: req.params.giveawayId, guildId: req.params.guildId, status: "ended" });
+        if (!giveaway) return res.status(409).json({ error: "Solo puedes volver a sortear un giveaway finalizado." });
+        const previous = new Set(giveaway.winnerIds || []);
+        const pool = [...new Set(giveaway.entrants || [])].filter(id => !previous.has(id));
+        if (!pool.length) return res.status(409).json({ error: "No quedan participantes que no hayan ganado antes." });
+        for (let i = pool.length - 1; i > 0; i -= 1) {
+            const j = crypto.randomInt(i + 1);
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        const selected = pool.slice(0, Math.min(giveaway.winnerCount, pool.length));
+        await Giveaway.updateOne({ _id: giveaway._id, status: "ended" }, { $addToSet: { winnerIds: { $each: selected } } });
+        const updated = await Giveaway.findById(giveaway._id);
+        await discordBotRequest(`https://discord.com/api/v10/channels/${updated.channelId}/messages/${updated.messageId}`, { method: "PATCH", body: makeGiveawayMessage(updated, true) });
+        await discordBotRequest(`https://discord.com/api/v10/channels/${updated.channelId}/messages`, {
+            method: "POST",
+            body: { content: `🔁 Nuevo sorteo de **${updated.prize}**: ${selected.map(id => `<@${id}>`).join(", ")}`, allowed_mentions: { parse: [], users: selected } }
+        });
+        await recordDashboardAudit(req, req.params.guildId, "Ganadores de giveaway sorteados nuevamente");
+        return res.json({ ok: true, winnerIds: selected });
+    } catch (error) {
+        return res.status(error.status === 429 ? 429 : 502).json({ error: error.message || "No pude volver a sortear los ganadores." });
+    }
+});
+
+app.delete("/api/guilds/:guildId/giveaways/:giveawayId", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
+    try {
+        const giveaway = await Giveaway.findOne({ _id: req.params.giveawayId, guildId: req.params.guildId });
+        if (!giveaway) return res.status(404).json({ error: "No encontré ese giveaway." });
+        if (giveaway.messageId) {
+            try {
+                await discordBotRequest(`https://discord.com/api/v10/channels/${giveaway.channelId}/messages/${giveaway.messageId}`, { method: "DELETE" });
+            } catch (error) { if (error.status !== 404) throw error; }
+        }
+        await Giveaway.deleteOne({ _id: giveaway._id, guildId: req.params.guildId });
+        await recordDashboardAudit(req, req.params.guildId, "Giveaway eliminado");
+        return res.json({ ok: true });
+    } catch (error) {
+        return res.status(error.status === 429 ? 429 : 502).json({ error: error.message || "No pude eliminar el giveaway." });
+    }
+});
+
 app.post("/api/guilds/:guildId/lists/:list", requireLogin, requireCsrf, requireGuildAdmin, async (req, res) => {
     const definition = lists[req.params.list];
     if (!definition) return res.status(404).json({ error: "No encontré esa lista." });
