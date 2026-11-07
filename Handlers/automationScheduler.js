@@ -40,6 +40,6 @@ function startAutomationScheduler(client) {
  client.automationSchedulerStarted = true;
  cron.schedule("* * * * *", () => runDueAutomations(client).catch(error => console.error("[Automations] Scheduler:", error)));
  runDueAutomations(client).catch(error => console.error("[Automations] Inicio:", error));
- console.log("[Automations] Scheduler iniciado.");
+ console.log("[AUTOMATIZACIÓN] Scheduler iniciado.");
 }
 module.exports = { startAutomationScheduler, runDueAutomations };
