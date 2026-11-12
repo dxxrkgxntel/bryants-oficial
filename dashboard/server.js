@@ -1202,7 +1202,7 @@ app.get("/api/account/rewards", requireLogin, async (req, res) => {
         voteConfigured: Boolean(process.env.TOPGG_WEBHOOK_SECRET && process.env.TOPGG_REWARD_GUILD_ID),
         referralConfigured: Boolean(getReferralRedirectUri()),
         voteRewardGuildId: process.env.TOPGG_REWARD_GUILD_ID || null,
-        topggUrl: `https://top.gg/bot/${encodeURIComponent(process.env.DISCORD_CLIENT_ID)}/vote`
+        topggUrl: process.env.TOPGG_VOTE_URL || "https://top.gg/es/bot/1497973126569656540/vote"
     });
 });
 
