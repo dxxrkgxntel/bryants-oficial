@@ -14,8 +14,8 @@ function renderLogins(query="") {
  const rows = data.logins.filter(item => ((item.globalName||"")+" "+(item.username||"")+" "+item.userId).toLowerCase().includes(query.toLowerCase()));
  $("#login-rows").innerHTML = rows.length ? rows.map(item => {
   const avatar = item.avatar ? '<img src="https://cdn.discordapp.com/avatars/'+encodeURIComponent(item.userId)+'/'+encodeURIComponent(item.avatar)+'.png?size=64" alt="">' : '<span class="avatar-fallback">'+esc((item.username||"?").slice(0,1).toUpperCase())+'</span>';
-  return '<tr><td><div class="identity">'+avatar+'<span><strong>'+esc(item.globalName||item.username||"Usuario")+'</strong><small>@'+esc(item.username)+'</small></span></div></td><td>'+esc(item.userId)+'</td><td>'+date(item.firstLoginAt)+'</td><td>'+date(item.lastLoginAt)+'</td><td>'+Number(item.loginCount||0)+'</td></tr>';
- }).join("") : '<tr><td colspan="5" class="empty">Todavía no hay inicios de sesión registrados.</td></tr>';
+  return '<tr><td><div class="identity">'+avatar+'<span><strong>'+esc(item.globalName||item.username||"Usuario")+'</strong><small>@'+esc(item.username)+'</small></span></div></td><td>'+esc(item.userId)+'</td><td>'+date(item.firstLoginAt)+'</td><td>'+date(item.lastLoginAt)+'</td><td>'+Number(item.loginCount||0)+'</td><td><span class="pill '+(item.hasActiveSession?"ok":"off")+'">'+(item.hasActiveSession?"Activa":"No detectada")+'</span></td></tr>';
+ }).join("") : '<tr><td colspan="6" class="empty">Todavía no hay inicios de sesión registrados.</td></tr>';
 }
 async function load() {
  try {
@@ -27,6 +27,7 @@ async function load() {
   $("#total-count").textContent = result.summary.totalGuilds;
   $("#users-count").textContent = result.summary.uniqueDashboardUsers;
   $("#logins-count").textContent = result.summary.totalLogins;
+  $("#sessions-count").textContent = result.summary.activeSessions;
   renderGuilds($("#guild-search").value);
   renderLogins($("#login-search").value);
  } catch(error) { $("#notice").textContent = error.message; }
