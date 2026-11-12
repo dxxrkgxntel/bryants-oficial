@@ -261,7 +261,7 @@ async function refreshOAuthToken(req) {
 function requireBotOwner(req, res, next) {
     if (!req.session.user || !req.session.oauth) return res.status(401).json({ error: "Inicia sesión con Discord para continuar." });
     const ownerId = String(process.env.BOT_OWNER_ID || "").trim();
-    if (!/^\\d{17,20}$/.test(ownerId)) return res.status(503).json({ error: "El control del bot todavía no está configurado. Añade BOT_OWNER_ID en FadeHost." });
+    if (!/^\d{17,20}$/.test(ownerId)) return res.status(503).json({ error: "El control del bot todavía no está configurado. Añade BOT_OWNER_ID en FadeHost." });
     if (req.session.user.id !== ownerId) return res.status(403).json({ error: "Este apartado está reservado al propietario de Bryvex Bot." });
     return next();
 }
@@ -3965,21 +3965,30 @@ app.get("/control.html", requireBotOwner, (_req, res) => {
 app.get("/api/owner/control/summary", requireBotOwner, async (_req, res) => {
     res.set("Cache-Control", "private, no-store");
     try {
-        const [guildCount, presentCount, loginCount, loginTotals, guilds, logins] = await Promise.all([
+        const [guildCount, presentCount, loginCount, loginTotals, guilds, logins, sessionDocs] = await Promise.all([
             BotGuildRegistry.countDocuments({}),
             BotGuildRegistry.countDocuments({ isPresent: true }),
             DashboardLogin.countDocuments({}),
             DashboardLogin.aggregate([{ $group: { _id: null, totalLogins: { $sum: "$loginCount" } } }]),
             BotGuildRegistry.find({}).sort({ isPresent: -1, name: 1 }).limit(500).lean(),
-            DashboardLogin.find({}).sort({ lastLoginAt: -1 }).limit(500).lean()
+            DashboardLogin.find({}).sort({ lastLoginAt: -1 }).limit(500).lean(),
+            mongoose.connection.collection("dashboardSessions").find({ expires: { $gt: new Date() } }, { projection: { session: 1 } }).toArray()
         ]);
+        const activeUserIds = new Set();
+        for (const document of sessionDocs) {
+            try {
+                const sessionData = typeof document.session === "string" ? JSON.parse(document.session) : document.session;
+                if (sessionData?.user?.id) activeUserIds.add(String(sessionData.user.id));
+            } catch { /* Una sesión malformada no debe bloquear el panel del propietario. */ }
+        }
         return res.json({
             summary: {
                 totalGuilds: guildCount,
                 presentGuilds: presentCount,
                 departedGuilds: Math.max(0, guildCount - presentCount),
                 uniqueDashboardUsers: loginCount,
-                totalLogins: loginTotals[0]?.totalLogins || 0
+                totalLogins: loginTotals[0]?.totalLogins || 0,
+                activeSessions: activeUserIds.size
             },
             guilds: guilds.map(guild => ({
                 guildId: guild.guildId,
@@ -3997,7 +4006,8 @@ app.get("/api/owner/control/summary", requireBotOwner, async (_req, res) => {
                 avatar: login.avatar || null,
                 firstLoginAt: login.firstLoginAt,
                 lastLoginAt: login.lastLoginAt,
-                loginCount: login.loginCount || 0
+                loginCount: login.loginCount || 0,
+                hasActiveSession: activeUserIds.has(String(login.userId))
             }))
         });
     } catch (error) {
