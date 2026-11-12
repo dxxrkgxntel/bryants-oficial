@@ -4,6 +4,7 @@ const {
 
 const mongoose =
     require('mongoose');
+const { syncBotGuildRegistry } = require('../../Functions/botGuildRegistry');
 
 const config =
     require('../../config.json');
@@ -75,6 +76,11 @@ module.exports = {
         }
 
         if (mongoose.connection.readyState === 1) {
+            try {
+                await syncBotGuildRegistry(client);
+            } catch (error) {
+                console.error("[BOT GUILD REGISTRY] No se pudo sincronizar el inventario:", error.message);
+            }
             try {
                 const legacyWelcomeCopy = await Welcome.updateMany(
                     { MessageDes: 'Pasala muy bien' },
