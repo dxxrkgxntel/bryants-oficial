@@ -3957,6 +3957,11 @@ app.get("/control", requireBotOwner, (_req, res) => {
     return res.sendFile(path.join(publicDirectory, "control.html"));
 });
 
+app.get("/control.html", requireBotOwner, (_req, res) => {
+    res.set("Cache-Control", "private, no-store");
+    return res.sendFile(path.join(publicDirectory, "control.html"));
+});
+
 app.get("/api/owner/control/summary", requireBotOwner, async (_req, res) => {
     res.set("Cache-Control", "private, no-store");
     try {
@@ -3979,7 +3984,7 @@ app.get("/api/owner/control/summary", requireBotOwner, async (_req, res) => {
             guilds: guilds.map(guild => ({
                 guildId: guild.guildId,
                 name: guild.name,
-                icon: guild.icon || null,
+                icon: guild.icon ? `https://cdn.discordapp.com/icons/${guild.guildId}/${guild.icon}.${String(guild.icon).startsWith("a_") ? "gif" : "png"}?size=128` : null,
                 firstSeenAt: guild.firstSeenAt,
                 lastSeenAt: guild.lastSeenAt,
                 leftAt: guild.leftAt || null,
