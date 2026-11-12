@@ -15,6 +15,8 @@ const GiveawayConfig = require("../Models/GiveawayConfig");
 const CommunityPanel = require("../Models/CommunityPanel");
 const { buildCommunityPanelPayload } = require("../Functions/communityPanelMessage");
 const DashboardAccount = require("../Models/DashboardAccount");
+const DashboardLogin = require("../Models/DashboardLogin");
+const BotGuildRegistry = require("../Models/BotGuildRegistry");
 const DashboardReferral = require("../Models/DashboardReferral");
 const DashboardVote = require("../Models/DashboardVote");
 const DashboardAssistantUsage = require("../Models/DashboardAssistantUsage");
@@ -254,6 +256,14 @@ async function refreshOAuthToken(req) {
     req.session.oauth.refreshToken = token.refresh_token || req.session.oauth.refreshToken;
     req.session.oauth.expiresAt = Date.now() + token.expires_in * 1000;
     return true;
+}
+
+function requireBotOwner(req, res, next) {
+    if (!req.session.user || !req.session.oauth) return res.status(401).json({ error: "Inicia sesión con Discord para continuar." });
+    const ownerId = String(process.env.BOT_OWNER_ID || "").trim();
+    if (!/^\\d{17,20}$/.test(ownerId)) return res.status(503).json({ error: "El control del bot todavía no está configurado. Añade BOT_OWNER_ID en FadeHost." });
+    if (req.session.user.id !== ownerId) return res.status(403).json({ error: "Este apartado está reservado al propietario de Bryvex Bot." });
+    return next();
 }
 
 function requireLogin(req, res, next) {
@@ -942,6 +952,24 @@ app.get("/auth/callback", async (req, res) => {
             expiresAt: Date.now() + token.expires_in * 1000
         };
         req.session.csrfToken = crypto.randomBytes(32).toString("hex");
+        try {
+            await DashboardLogin.findOneAndUpdate(
+                { userId: user.id },
+                {
+                    $set: {
+                        username: String(user.username || "").slice(0, 100),
+                        globalName: String(user.global_name || "").slice(0, 100),
+                        avatar: user.avatar || null,
+                        lastLoginAt: new Date()
+                    },
+                    $setOnInsert: { firstLoginAt: new Date() },
+                    $inc: { loginCount: 1 }
+                },
+                { upsert: true, new: true, setDefaultsOnInsert: true }
+            );
+        } catch (loginLogError) {
+            console.error("[Dashboard Login Log] No pude registrar el inicio de sesión:", loginLogError.message);
+        }
         return req.session.save(error => {
             if (error) return res.status(500).send("No se pudo guardar la sesión.");
             return res.redirect(isPopup
@@ -965,8 +993,8 @@ app.get("/api/me", async (req, res) => {
     res.set("Cache-Control", "no-store");
     await refreshDashboardUsername(req);
     res.json(req.session.user
-        ? { user: req.session.user, csrfToken: req.session.csrfToken }
-        : { user: null });
+        ? { user: req.session.user, csrfToken: req.session.csrfToken, isOwner: Boolean(process.env.BOT_OWNER_ID && req.session.user.id === process.env.BOT_OWNER_ID) }
+        : { user: null, isOwner: false });
 });
 
 app.get("/api/account/settings", requireLogin, async (req, res) => {
@@ -3920,6 +3948,56 @@ app.post("/api/support/tickets/:ticketId/close", requireLogin, requireCsrf, asyn
     } catch (error) {
         console.error("[Support] No pude cerrar el ticket:", error.message);
         return res.status(500).json({ error: "No pude cerrar el ticket." });
+    }
+});
+
+// Panel privado de propietario: la autorización se valida siempre en el servidor.
+app.get("/control", requireBotOwner, (_req, res) => {
+    res.set("Cache-Control", "private, no-store");
+    return res.sendFile(path.join(publicDirectory, "control.html"));
+});
+
+app.get("/api/owner/control/summary", requireBotOwner, async (_req, res) => {
+    res.set("Cache-Control", "private, no-store");
+    try {
+        const [guildCount, presentCount, loginCount, loginTotals, guilds, logins] = await Promise.all([
+            BotGuildRegistry.countDocuments({}),
+            BotGuildRegistry.countDocuments({ isPresent: true }),
+            DashboardLogin.countDocuments({}),
+            DashboardLogin.aggregate([{ $group: { _id: null, totalLogins: { $sum: "$loginCount" } } }]),
+            BotGuildRegistry.find({}).sort({ isPresent: -1, name: 1 }).limit(500).lean(),
+            DashboardLogin.find({}).sort({ lastLoginAt: -1 }).limit(500).lean()
+        ]);
+        return res.json({
+            summary: {
+                totalGuilds: guildCount,
+                presentGuilds: presentCount,
+                departedGuilds: Math.max(0, guildCount - presentCount),
+                uniqueDashboardUsers: loginCount,
+                totalLogins: loginTotals[0]?.totalLogins || 0
+            },
+            guilds: guilds.map(guild => ({
+                guildId: guild.guildId,
+                name: guild.name,
+                icon: guild.icon || null,
+                firstSeenAt: guild.firstSeenAt,
+                lastSeenAt: guild.lastSeenAt,
+                leftAt: guild.leftAt || null,
+                isPresent: Boolean(guild.isPresent)
+            })),
+            logins: logins.map(login => ({
+                userId: login.userId,
+                username: login.username,
+                globalName: login.globalName || null,
+                avatar: login.avatar || null,
+                firstLoginAt: login.firstLoginAt,
+                lastLoginAt: login.lastLoginAt,
+                loginCount: login.loginCount || 0
+            }))
+        });
+    } catch (error) {
+        console.error("[Bot Owner Control] No pude cargar los datos:", error.message);
+        return res.status(500).json({ error: "No pude consultar los datos del control del bot." });
     }
 });
 
