@@ -1467,3 +1467,5 @@ button:disabled { opacity: .55; cursor: wait !important; }
 .activity-top-member { width: 100%; text-align: left; color: inherit; cursor: pointer; align-items: center; }
 .activity-rank { min-width: 34px; font-weight: 800; color: #bd8cff; }
 @media (max-width: 640px) { .member-profile-hero { align-items: flex-start; padding: 15px; } .member-profile-avatar { width: 64px; height: 64px; } .activity-summary-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+
+.owner-control-link{display:inline-flex;align-items:center;justify-content:center;margin:0 10px;padding:9px 12px;border:1px solid rgba(189,123,255,.55);border-radius:10px;background:rgba(151,76,211,.14);color:#e5caff;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap}.owner-control-link:hover{background:rgba(151,76,211,.26);border-color:#bd7bff}@media(max-width:520px){.owner-control-link{margin:8px 0}}

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#100b18">
+<title>Control del Bot | Bryvex Bot</title>
+<link rel="icon" type="image/png" href="/bot-avatar.png">
+<link rel="stylesheet" href="/control.css">
+<script src="/control.js" defer></script>
+</head>
+<body>
+<main class="control-shell">
+<header class="control-header">
+<a class="brand" href="/"><img src="/bot-avatar.png" alt=""><span><strong>BRYVEX BOT</strong><small>CONTROL DEL PROPIETARIO</small></span></a>
+<a class="back-link" href="/">← Volver a la dashboard</a>
+</header>
+<section class="intro">
+<div class="eyebrow">ÁREA PRIVADA · SOLO PROPIETARIO</div>
+<h1>Control del Bot</h1>
+<p>Supervisa los servidores donde está Bryvex Bot y los accesos a la dashboard.</p>
+</section>
+<section class="stats" aria-label="Resumen">
+<article><span>Servidores actuales</span><strong id="present-count">—</strong></article>
+<article><span>Servidores históricos</span><strong id="total-count">—</strong></article>
+<article><span>Usuarios con acceso</span><strong id="users-count">—</strong></article>
+<article><span>Inicios de sesión</span><strong id="logins-count">—</strong></article>
+<article><span>Usuarios con sesión vigente</span><strong id="sessions-count">—</strong></article>
+</section>
+<section class="panel">
+<div class="panel-heading"><div><span class="eyebrow">INVENTARIO</span><h2>Servidores de Bryvex Bot</h2><p>Incluye servidores actuales y servidores de los que el bot ya salió.</p></div><input id="guild-search" type="search" placeholder="Buscar servidor…" aria-label="Buscar servidor"></div>
+<div class="table-wrap"><table><thead><tr><th>Servidor</th><th>ID</th><th>Primera detección</th><th>Última detección</th><th>Estado</th></tr></thead><tbody id="guild-rows"><tr><td colspan="5">Cargando servidores…</td></tr></tbody></table></div>
+</section>
+<section class="panel">
+<div class="panel-heading"><div><span class="eyebrow">ACCESOS OAUTH</span><h2>Inicios de sesión en la dashboard</h2><p>Se registra cada autenticación completada correctamente con Discord.</p></div><input id="login-search" type="search" placeholder="Buscar usuario…" aria-label="Buscar usuario"></div>
+<div class="table-wrap"><table><thead><tr><th>Usuario</th><th>ID de Discord</th><th>Primer acceso</th><th>Último acceso</th><th>Inicios</th><th>Sesión</th></tr></thead><tbody id="login-rows"><tr><td colspan="6">Cargando accesos…</td></tr></tbody></table></div>
+</section>
+<p id="notice" class="notice" role="status" aria-live="polite"></p>
+<footer>Los datos se consultan desde MongoDB. El historial comienza a recopilarse desde la instalación de esta versión.</footer>
+</main>
+</body>
+</html>

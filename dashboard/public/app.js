@@ -39,6 +39,14 @@ async function loadDashboard({ waitForSession = false } = {}) {
         serversSection.hidden = false;
         userArea.hidden = false;
         window.mountAccountMenu(userArea, session.user, showError);
+    if (session.isOwner) {
+        const ownerLink = document.createElement("a");
+        ownerLink.className = "owner-control-link";
+        ownerLink.href = "/control";
+        ownerLink.textContent = "Control del Bot";
+        ownerLink.setAttribute("aria-label", "Abrir Control del Bot");
+        userArea.append(ownerLink);
+    }
         serversList.replaceChildren();
         document.querySelector("#servers-error").hidden = true;
         document.querySelector("#empty-state").hidden = true;
