@@ -15,6 +15,7 @@ const v2 = validateMessageDraft({
 }, channels);
 const payload = buildMessagePayload(v2);
 assert.equal(payload.flags, COMPONENTS_V2_FLAG);
+assert.equal(payload.components[0].accent_color, 0x8A2BE2);
 assert.equal(payload.components[0].components[0].type, 10);
 assert.equal(payload.components[0].components[2].components[0].style, 5);
 assert.throws(() => validateMessageDraft({ name: "X", channelId: "bad", format: "embed", payload: { title: "x" } }, channels));
