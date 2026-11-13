@@ -1990,6 +1990,153 @@ async function renderCustomForms(definition) {
     }
 }
 
+
+async function renderMessageBuilder(definition, editingMessage = null) {
+    currentModule = "messageBuilder";
+    document.querySelector("#page-title").textContent = definition.title;
+    content.innerHTML = '<div class="loading-card">Cargando mensajes guardados…</div>';
+    const base = "/api/guilds/" + encodeURIComponent(guildId) + "/modules/messageBuilder/messages";
+    const esc = escapeHtml;
+    try {
+        const result = await api(base);
+        if (currentModule !== "messageBuilder") return;
+        const messages = result.messages || [];
+        const channels = (resources.channels || []).filter(item => [0, 5].includes(item.type));
+        const channelOptions = selected => '<option value="">Selecciona un canal</option>' + channels.map(item => '<option value="' + esc(item.id) + '" ' + (selected === item.id ? "selected" : "") + '> #' + esc(item.name) + '</option>').join("");
+        const saved = messages.map(item => '<article class="community-panel-row"><div class="community-panel-row-main"><div class="community-panel-kind">' + (item.format === "components_v2" ? "COMPONENTS V2" : "EMBED") + '</div><h3>' + esc(item.name) + '</h3><p>' + esc(channels.find(ch => ch.id === item.channelId)?.name || "Canal no disponible") + ' · ' + (item.messageId ? "Publicado" : "Borrador") + '</p><small>Actualizado ' + esc(new Date(item.updatedAt).toLocaleString()) + '</small></div><div class="community-panel-actions"><button class="quiet-button" type="button" data-message-edit="' + esc(item._id) + '">Editar</button><button class="quiet-button" type="button" data-message-publish="' + esc(item._id) + '">' + (item.messageId ? "Actualizar Discord" : "Publicar") + '</button><button class="quiet-button danger-button" type="button" data-message-delete="' + esc(item._id) + '">Eliminar</button></div></article>').join("") || '<div class="empty-state">Aún no has guardado mensajes. Crea tu primer embed o Components V2.</div>';
+        const draft = editingMessage || {};
+        const payload = draft.payload || {};
+        const embed = payload.embed || {};
+        const blocks = payload.blocks || [{ type: "text", content: "## Tu mensaje empieza aquí" }];
+        const embedFields = (embed.fields || []).map(field => '<div class="message-builder-field-row"><input data-embed-field-name maxlength="256" placeholder="Nombre del campo" value="' + esc(field.name) + '"><input data-embed-field-value maxlength="1024" placeholder="Contenido del campo" value="' + esc(field.value) + '"><label><input data-embed-field-inline type="checkbox" ' + (field.inline ? "checked" : "") + '> En línea</label><button class="quiet-button danger-button" type="button" data-remove-embed-field>Quitar</button></div>').join("");
+        const blockRows = blocks.map(block => messageBuilderBlockMarkup(block, esc)).join("");
+        const editor = '<article class="settings-card message-builder-editor"><div class="card-heading"><div><div class="eyebrow">DISEÑADOR VISUAL</div><h2>' + (draft._id ? "Editar mensaje guardado" : "Nuevo mensaje") + '</h2></div><span class="status-pill">' + (draft._id ? "Edición" : "Borrador") + '</span></div><p class="card-description">Diseña, revisa la vista previa y guarda tu mensaje. Podrás volver a editarlo sin empezar desde cero.</p>' +
+            '<form id="message-builder-form" class="fields-grid">' +
+            '<label class="field"><span>Nombre interno</span><input name="name" maxlength="80" required value="' + esc(draft.name || "") + '" placeholder="Anuncio de bienvenida"></label>' +
+            '<label class="field"><span>Canal de publicación</span><select name="channelId" required>' + channelOptions(draft.channelId) + '</select></label>' +
+            '<label class="field"><span>Tipo de mensaje</span><select name="format"><option value="embed" ' + (!draft.format || draft.format === "embed" ? "selected" : "") + '>Embed personalizado</option><option value="components_v2" ' + (draft.format === "components_v2" ? "selected" : "") + '>Discord Components V2</option></select></label>' +
+            '<section class="message-builder-format message-builder-full" data-format="embed" ' + (draft.format === "components_v2" ? "hidden" : "") + '>' +
+            '<div class="message-builder-grid"><label class="field"><span>Título</span><input name="embedTitle" maxlength="256" value="' + esc(embed.title || "") + '"></label><label class="field"><span>Enlace del título (HTTPS)</span><input name="embedUrl" type="url" value="' + esc(embed.url || "") + '"></label><label class="field message-builder-full"><span>Descripción</span><textarea name="embedDescription" maxlength="4096" rows="4">' + esc(embed.description || "") + '</textarea></label><label class="field"><span>Color</span><input name="embedColor" type="color" value="' + (embed.color != null ? "#" + Number(embed.color).toString(16).padStart(6, "0").slice(-6) : "#8A2BE2") + '"></label><label class="field"><span>Autor</span><input name="authorName" maxlength="256" value="' + esc(embed.author?.name || "") + '"></label><label class="field"><span>Enlace del autor</span><input name="authorUrl" type="url" value="' + esc(embed.author?.url || "") + '"></label><label class="field"><span>Icono del autor (HTTPS)</span><input name="authorIcon" type="url" value="' + esc(embed.author?.icon_url || "") + '"></label><label class="field"><span>Miniatura (HTTPS)</span><input name="thumbnail" type="url" value="' + esc(embed.thumbnail?.url || "") + '"></label><label class="field"><span>Imagen (HTTPS)</span><input name="image" type="url" value="' + esc(embed.image?.url || "") + '"></label><label class="field"><span>Pie de página</span><input name="footerText" maxlength="2048" value="' + esc(embed.footer?.text || "") + '"></label><label class="field"><span>Icono del pie (HTTPS)</span><input name="footerIcon" type="url" value="' + esc(embed.footer?.icon_url || "") + '"></label><label class="field"><span>Fecha y hora</span><select name="timestamp"><option value="false">No mostrar</option><option value="true" ' + (embed.timestamp ? "selected" : "") + '>Mostrar al publicar</option></select></label></div>' +
+            '<div class="message-builder-section"><div class="community-panel-section-heading"><h3>Campos del embed</h3><button class="quiet-button" type="button" id="add-embed-field">+ Añadir campo</button></div><div id="message-embed-fields">' + embedFields + '</div></div></section>' +
+            '<section class="message-builder-format message-builder-full" data-format="components_v2" ' + (draft.format !== "components_v2" ? "hidden" : "") + '><label class="field"><span>Color de acento</span><input name="accentColor" type="color" value="' + (payload.accentColor != null ? "#" + Number(payload.accentColor).toString(16).padStart(6, "0").slice(-6) : "#8A2BE2") + '"></label><div class="community-panel-section-heading"><h3>Bloques de Components V2</h3><select id="message-block-type"><option value="text">Texto</option><option value="separator">Separador</option><option value="image">Galería de imagen</option><option value="button">Botón con enlace</option></select><button class="quiet-button" type="button" id="add-message-block">+ Añadir bloque</button></div><div id="message-builder-blocks">' + blockRows + '</div><small>Los botones de este constructor son enlaces externos. Los componentes interactivos con acciones internas se añadirán en una ampliación posterior.</small></section>' +
+            '<div class="message-builder-preview message-builder-full"><div class="community-panel-section-heading"><h3>Vista previa</h3><span>Se actualiza mientras editas</span></div><div id="message-builder-preview" class="message-discord-preview"></div></div>' +
+            '<div class="form-actions message-builder-full"><button class="primary-button" type="submit">' + (draft._id ? "Guardar cambios" : "Guardar mensaje") + '</button><button class="quiet-button" type="button" data-message-clear>Nuevo borrador</button><span class="save-feedback" role="status" aria-live="polite"></span></div></form></article>';
+        content.innerHTML = '<section class="message-builder-page"><div class="community-panels-header"><div><div class="eyebrow">COMUNIDAD · CREADOR DE MENSAJES</div><h2>Mensajes guardados</h2><p>Crea embeds y Components V2 con vista previa y publícalos cuando estén listos.</p></div><button class="primary-button" type="button" data-message-new>+ Nuevo mensaje</button></div><div class="community-panel-list">' + saved + '</div>' + editor + '</section>';
+        const form = content.querySelector("#message-builder-form");
+        const preview = form.querySelector("#message-builder-preview");
+        const addField = (field = {}) => {
+            const row = document.createElement("div");
+            row.className = "message-builder-field-row";
+            row.innerHTML = '<input data-embed-field-name maxlength="256" placeholder="Nombre del campo" value="' + esc(field.name || "") + '"><input data-embed-field-value maxlength="1024" placeholder="Contenido del campo" value="' + esc(field.value || "") + '"><label><input data-embed-field-inline type="checkbox" ' + (field.inline ? "checked" : "") + '> En línea</label><button class="quiet-button danger-button" type="button" data-remove-embed-field>Quitar</button>';
+            row.querySelector("[data-remove-embed-field]").addEventListener("click", () => { row.remove(); updatePreview(); });
+            form.querySelector("#message-embed-fields").append(row);
+            updatePreview();
+        };
+        const syncBlockRow = row => {
+            const type = row.querySelector("[data-block-type]").value;
+            row.querySelector("[data-block-content]").hidden = type !== "text";
+            row.querySelector("[data-block-url]").hidden = !["image", "button"].includes(type);
+            row.querySelector("[data-block-label]").hidden = type !== "button";
+        };
+        const addBlock = (block = { type: "text", content: "" }) => {
+            const holder = document.createElement("div");
+            holder.innerHTML = messageBuilderBlockMarkup(block, esc);
+            const row = holder.firstElementChild;
+            syncBlockRow(row);
+            row.querySelector("[data-block-type]").addEventListener("change", () => { syncBlockRow(row); updatePreview(); });
+            row.querySelector("[data-remove-block]").addEventListener("click", () => { row.remove(); updatePreview(); });
+            form.querySelector("#message-builder-blocks").append(row);
+            updatePreview();
+        };
+        const collectBlocks = () => [...form.querySelectorAll(".message-builder-block-row")].map(row => ({
+            type: row.querySelector("[data-block-type]").value,
+            content: row.querySelector("[data-block-content]").value,
+            url: row.querySelector("[data-block-url]").value,
+            label: row.querySelector("[data-block-label]").value,
+            divider: true,
+            spacing: "small"
+        }));
+        const collectFields = () => [...form.querySelectorAll(".message-builder-field-row")].map(row => ({
+            name: row.querySelector("[data-embed-field-name]").value,
+            value: row.querySelector("[data-embed-field-value]").value,
+            inline: row.querySelector("[data-embed-field-inline]").checked
+        }));
+        const updatePreview = () => {
+            if (!preview) return;
+            const data = new FormData(form);
+            if (data.get("format") === "embed") {
+                const color = data.get("embedColor") || "#8A2BE2";
+                const title = data.get("embedTitle") || "Título del embed";
+                const description = data.get("embedDescription") || "La descripción aparecerá aquí.";
+                const fields = collectFields().filter(item => item.name || item.value);
+                preview.innerHTML = '<div class="message-preview-embed" style="border-left-color:' + esc(color) + '"><div class="message-preview-author">' + esc(data.get("authorName") || "") + '</div><h3>' + esc(title) + '</h3><p>' + esc(description).replace(/\n/g, "<br>") + '</p>' + (fields.length ? '<div class="message-preview-fields">' + fields.map(item => '<div><strong>' + esc(item.name) + '</strong><span>' + esc(item.value) + '</span></div>').join("") + '</div>' : "") + (data.get("thumbnail") ? '<img class="message-preview-thumb" src="' + esc(data.get("thumbnail")) + '" alt="">' : "") + (data.get("image") ? '<img class="message-preview-image" src="' + esc(data.get("image")) + '" alt="">' : "") + '<small>' + esc(data.get("footerText") || "Vista previa · Bryvex Bot") + '</small></div>';
+            } else {
+                preview.innerHTML = '<div class="message-preview-v2" style="border-left-color:' + esc(data.get("accentColor") || "#8A2BE2") + '">' + collectBlocks().map(block => block.type === "text" ? '<div class="message-preview-v2-text">' + esc(block.content).replace(/\n/g, "<br>") + '</div>' : block.type === "separator" ? '<hr>' : block.type === "image" ? '<img class="message-preview-image" src="' + esc(block.url) + '" alt="">' : '<div><span class="message-preview-link-button">↗ ' + esc(block.label || "Abrir enlace") + '</span></div>').join("") + '</div>';
+            }
+        };
+        form.querySelectorAll("[data-remove-embed-field]").forEach(button => button.addEventListener("click", () => { button.closest(".message-builder-field-row").remove(); updatePreview(); }));
+        form.querySelectorAll(".message-builder-block-row").forEach(row => {
+            syncBlockRow(row);
+            row.querySelector("[data-remove-block]").addEventListener("click", () => { row.remove(); updatePreview(); });
+            row.querySelector("[data-block-type]").addEventListener("change", () => { syncBlockRow(row); updatePreview(); });
+        });
+        form.addEventListener("input", updatePreview);
+        form.addEventListener("change", event => {
+            if (event.target.name === "format") form.querySelectorAll("[data-format]").forEach(section => { section.hidden = section.dataset.format !== event.target.value; });
+            updatePreview();
+        });
+        form.querySelector("#add-embed-field").addEventListener("click", () => addField());
+        form.querySelector("#add-message-block").addEventListener("click", () => addBlock({ type: form.querySelector("#message-block-type").value }));
+        form.querySelector("[data-message-clear]").addEventListener("click", () => renderMessageBuilder(definition));
+        content.querySelector("[data-message-new]").addEventListener("click", () => renderMessageBuilder(definition));
+        form.addEventListener("submit", async event => {
+            event.preventDefault();
+            const button = form.querySelector('button[type="submit"]');
+            button.disabled = true;
+            try {
+                const format = form.elements.format.value;
+                const payload = format === "embed" ? {
+                    title: form.elements.embedTitle.value, description: form.elements.embedDescription.value,
+                    color: form.elements.embedColor.value, url: form.elements.embedUrl.value,
+                    authorName: form.elements.authorName.value, authorUrl: form.elements.authorUrl.value, authorIcon: form.elements.authorIcon.value,
+                    thumbnail: form.elements.thumbnail.value, image: form.elements.image.value,
+                    footerText: form.elements.footerText.value, footerIcon: form.elements.footerIcon.value,
+                    timestamp: form.elements.timestamp.value === "true", fields: collectFields()
+                } : { accentColor: form.elements.accentColor.value, blocks: collectBlocks() };
+                await api(base, { method: "POST", body: JSON.stringify({ id: draft._id || null, name: form.elements.name.value, channelId: form.elements.channelId.value, format, payload }) });
+                showNotice("Mensaje guardado en la base de datos. Puedes volver a editarlo cuando quieras.");
+                await renderMessageBuilder(definition);
+            } catch (error) { showNotice(error.message, true); button.disabled = false; }
+        });
+        content.querySelectorAll("[data-message-edit]").forEach(button => button.addEventListener("click", () => {
+            const item = messages.find(entry => entry._id === button.dataset.messageEdit);
+            if (item) renderMessageBuilder(definition, item);
+        }));
+        content.querySelectorAll("[data-message-publish]").forEach(button => button.addEventListener("click", async () => {
+            button.disabled = true;
+            try {
+                const sent = await api(base + "/" + encodeURIComponent(button.dataset.messagePublish) + "/publish", { method: "POST", body: "{}" });
+                showNotice(sent.updated ? "Mensaje actualizado en Discord." : "Mensaje publicado en Discord.");
+                if (sent.url) window.open(sent.url, "_blank", "noopener,noreferrer");
+                await renderMessageBuilder(definition);
+            } catch (error) { showNotice(error.message, true); button.disabled = false; }
+        }));
+        content.querySelectorAll("[data-message-delete]").forEach(button => button.addEventListener("click", async () => {
+            if (!window.confirm("¿Eliminar este mensaje guardado? El mensaje publicado en Discord no se borrará.")) return;
+            try { await api(base + "/" + encodeURIComponent(button.dataset.messageDelete), { method: "DELETE" }); showNotice("Mensaje eliminado de la biblioteca."); await renderMessageBuilder(definition); }
+            catch (error) { showNotice(error.message, true); }
+        }));
+        updatePreview();
+    } catch (error) {
+        content.innerHTML = '<div class="loading-card error">' + escapeHtml(error.message) + '</div>';
+    }
+}
+
+function messageBuilderBlockMarkup(block, esc) {
+    const type = block.type || "text";
+    return '<div class="message-builder-block-row"><select data-block-type><option value="text" ' + (type === "text" ? "selected" : "") + '>Texto</option><option value="separator" ' + (type === "separator" ? "selected" : "") + '>Separador</option><option value="image" ' + (type === "image" ? "selected" : "") + '>Imagen</option><option value="button" ' + (type === "button" ? "selected" : "") + '>Botón con enlace</option></select><textarea data-block-content rows="2" placeholder="Contenido de texto" ' + (type !== "text" ? "hidden" : "") + '>' + esc(block.content || "") + '</textarea><input data-block-url type="url" placeholder="URL HTTPS de imagen o botón" value="' + esc(block.url || "") + '" ' + (!["image", "button"].includes(type) ? "hidden" : "") + '><input data-block-label maxlength="80" placeholder="Texto del botón" value="' + esc(block.label || "") + '" ' + (type !== "button" ? "hidden" : "") + '><button class="quiet-button danger-button" type="button" data-remove-block>Quitar</button></div>';
+}
+
 async function renderCommunityPanels(definition, editingPanel = null) {
     currentModule = "communityPanels";
     document.querySelector("#page-title").textContent = definition.title;
@@ -2341,6 +2488,7 @@ function renderModule(key, modules, options = {}) {
         ? (modules.configurations[key] || { title: "Miembros", category: "Economía", description: "Busca a un miembro por su nombre visible o usuario para consultar su economía." })
         : isList ? modules.lists[key] : modules.configurations[key];
     document.querySelector("#page-title").textContent = definition.title;
+    if (key === "messageBuilder") return renderMessageBuilder(definition);
     if (key === "communityPanels") return renderCommunityPanels(definition);
     if (key === "automations") return renderAutomations(definition);
     if (key === "customForms") return renderCustomForms(definition);
