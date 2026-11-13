@@ -3381,7 +3381,7 @@ app.post("/api/guilds/:guildId/modules/:module/messages/:messageId/publish", req
         const endpoint = "https://discord.com/api/v10/channels/" + message.channelId + "/messages";
         let sent = null;
         let updated = false;
-        if (message.messageId) {
+        if (message.messageId && message.publishedFormat === message.format) {
             try {
                 sent = await discordBotRequest(endpoint + "/" + message.messageId, { method: "PATCH", body: payload });
                 updated = true;
@@ -3391,6 +3391,7 @@ app.post("/api/guilds/:guildId/modules/:module/messages/:messageId/publish", req
         }
         if (!sent) sent = await discordBotRequest(endpoint, { method: "POST", body: payload });
         message.messageId = sent.id;
+        message.publishedFormat = message.format;
         await message.save();
         await recordDashboardAudit(req, guildId, "Mensaje de dashboard " + message.name + (updated ? " actualizado en Discord" : " publicado en Discord"));
         return res.json({
