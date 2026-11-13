@@ -154,6 +154,13 @@ const configurations = {
         custom: true,
         fields: []
     },
+    messageBuilder: {
+        title: "Constructor de mensajes",
+        category: "Comunidad",
+        description: "Diseña embeds y mensajes Components V2 con vista previa, guarda borradores en la base de datos y publícalos o actualízalos sin empezar desde cero.",
+        custom: true,
+        fields: []
+    },
     trophyMembers: {
         title: "Trofeos - Miembros",
         category: "Trofeos",
