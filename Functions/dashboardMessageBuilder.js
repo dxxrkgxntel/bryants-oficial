@@ -77,7 +77,7 @@ function validateMessageDraft(input, channels) {
     if (!components.length) throw new Error("Añade al menos un bloque a Components V2.");
     return {
         name, channelId, format,
-        payload: { accentColor: /^#[0-9a-f]{6}$/i.test(source.accentColor || "") ? Number.parseInt(source.accentColor.slice(1), 16) : 0x8A2BE2, blocks: blocks.map(block => ({ type: block.type, content: text(block.content, 4000), url: text(block.url, 500), label: text(block.label, 80), divider: block.divider !== false, spacing: block.spacing === "large" ? "large" : "small" })) }
+        payload: { accentColor: /^#[0-9a-f]{6}$/i.test(source.accentColor || "") ? Number.parseInt(source.accentColor.slice(1), 16) : 0x8A2BE2, blocks: blocks.map(block => ({ type: block.type, content: text(block.content, 4000), url: text(block.url, 500), label: text(block.label, 80), divider: block.divider !== false, spacing: block.spacing === "large" ? "large" : "small" })).filter(block => block.type === "separator" || (block.type === "text" && block.content) || (block.type === "image" && block.url) || (block.type === "button" && block.label && block.url)) }
     };
 }
 
