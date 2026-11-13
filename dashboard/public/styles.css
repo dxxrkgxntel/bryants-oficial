@@ -1469,3 +1469,38 @@ button:disabled { opacity: .55; cursor: wait !important; }
 @media (max-width: 640px) { .member-profile-hero { align-items: flex-start; padding: 15px; } .member-profile-avatar { width: 64px; height: 64px; } .activity-summary-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 
 .owner-control-link{display:inline-flex;align-items:center;justify-content:center;margin:0 10px;padding:9px 12px;border:1px solid rgba(189,123,255,.55);border-radius:10px;background:rgba(151,76,211,.14);color:#e5caff;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap}.owner-control-link:hover{background:rgba(151,76,211,.26);border-color:#bd7bff}@media(max-width:520px){.owner-control-link{margin:8px 0}}
+
+
+/* Visual dashboard message builder */
+.message-builder-page { display: grid; gap: 18px; }
+.message-builder-editor { margin-top: 8px; }
+.message-builder-full { grid-column: 1 / -1; }
+.message-builder-format { display: grid; gap: 16px; padding: 18px; border: 1px solid var(--border-color,rgba(255,255,255,.1)); border-radius: 14px; background: rgba(255,255,255,.018); }
+.message-builder-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+.message-builder-section { display: grid; gap: 10px; }
+.message-builder-field-row { display: grid; grid-template-columns: minmax(100px,1fr) minmax(140px,2fr) auto auto; align-items: center; gap: 8px; padding: 10px; border: 1px solid var(--border-color,rgba(255,255,255,.1)); border-radius: 10px; margin-top: 8px; }
+.message-builder-field-row input:not([type=checkbox]), .message-builder-block-row input, .message-builder-block-row textarea, .message-builder-block-row select { width: 100%; min-width: 0; }
+.message-builder-field-row label { display: flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 12px; }
+.message-builder-block-row { display: grid; grid-template-columns: 150px minmax(160px,1fr) minmax(160px,1fr) minmax(120px,.7fr) auto; align-items: center; gap: 8px; padding: 10px; border: 1px solid var(--border-color,rgba(255,255,255,.1)); border-radius: 10px; margin-top: 8px; }
+.message-builder-block-row [hidden], .message-builder-format[hidden] { display: none !important; }
+.message-builder-preview { display: grid; gap: 10px; }
+.message-discord-preview { min-height: 110px; padding: 18px; border-radius: 12px; background: #313338; color: #dbdee1; overflow-wrap: anywhere; }
+.message-preview-embed { position: relative; max-width: 620px; padding: 14px 16px; border-left: 4px solid #8A2BE2; border-radius: 4px; background: #2b2d31; }
+.message-preview-embed h3 { margin: 8px 0; color: #fff; font-size: 16px; }
+.message-preview-embed p { margin: 8px 0; white-space: normal; line-height: 1.45; }
+.message-preview-embed small, .message-preview-author { display: block; color: #b5bac1; font-size: 12px; margin-top: 10px; }
+.message-preview-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin-top: 12px; }
+.message-preview-fields > div { display: grid; gap: 4px; }
+.message-preview-fields strong { color: #fff; font-size: 13px; }
+.message-preview-fields span { font-size: 13px; white-space: pre-wrap; }
+.message-preview-thumb { float: right; width: 76px; height: 76px; object-fit: cover; border-radius: 5px; }
+.message-preview-image { display: block; max-width: min(100%,520px); max-height: 300px; object-fit: contain; border-radius: 8px; margin-top: 10px; }
+.message-preview-v2 { display: grid; gap: 12px; max-width: 650px; padding: 16px; border: 1px solid #4b4d53; border-left: 4px solid #8A2BE2; border-radius: 8px; background: #2b2d31; }
+.message-preview-v2-text { white-space: pre-wrap; line-height: 1.45; }
+.message-preview-v2 hr { width: 100%; border: 0; border-top: 1px solid #4b4d53; }
+.message-preview-link-button { display: inline-block; padding: 8px 12px; border-radius: 4px; background: #5865f2; color: white; font-size: 13px; }
+@media(max-width:760px) {
+    .message-builder-grid { grid-template-columns: 1fr; }
+    .message-builder-field-row, .message-builder-block-row { grid-template-columns: 1fr; }
+    .message-preview-fields { grid-template-columns: 1fr; }
+}
