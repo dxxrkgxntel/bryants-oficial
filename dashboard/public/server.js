@@ -2032,14 +2032,18 @@ async function renderMessageBuilder(definition, editingMessage = null) {
             form.querySelector("#message-embed-fields").append(row);
             updatePreview();
         };
+        const syncBlockRow = row => {
+            const type = row.querySelector("[data-block-type]").value;
+            row.querySelector("[data-block-content]").hidden = type !== "text";
+            row.querySelector("[data-block-url]").hidden = !["image", "button"].includes(type);
+            row.querySelector("[data-block-label]").hidden = type !== "button";
+        };
         const addBlock = (block = { type: "text", content: "" }) => {
             const holder = document.createElement("div");
             holder.innerHTML = messageBuilderBlockMarkup(block, esc);
             const row = holder.firstElementChild;
-            row.querySelector("[data-block-type]").addEventListener("change", () => {
-                row.querySelectorAll("[data-block-content], [data-block-url], [data-block-label]").forEach(el => { el.hidden = !el.matches("[data-block-content]") || row.querySelector("[data-block-type]").value !== "text" ? !el.matches("[data-block-url]") || row.querySelector("[data-block-type]").value !== "image" ? !el.matches("[data-block-label]") || row.querySelector("[data-block-type]").value !== "button" : false : false; });
-                updatePreview();
-            });
+            syncBlockRow(row);
+            row.querySelector("[data-block-type]").addEventListener("change", () => { syncBlockRow(row); updatePreview(); });
             row.querySelector("[data-remove-block]").addEventListener("click", () => { row.remove(); updatePreview(); });
             form.querySelector("#message-builder-blocks").append(row);
             updatePreview();
@@ -2072,8 +2076,9 @@ async function renderMessageBuilder(definition, editingMessage = null) {
         };
         form.querySelectorAll("[data-remove-embed-field]").forEach(button => button.addEventListener("click", () => { button.closest(".message-builder-field-row").remove(); updatePreview(); }));
         form.querySelectorAll(".message-builder-block-row").forEach(row => {
+            syncBlockRow(row);
             row.querySelector("[data-remove-block]").addEventListener("click", () => { row.remove(); updatePreview(); });
-            row.querySelector("[data-block-type]").addEventListener("change", updatePreview);
+            row.querySelector("[data-block-type]").addEventListener("change", () => { syncBlockRow(row); updatePreview(); });
         });
         form.addEventListener("input", updatePreview);
         form.addEventListener("change", event => {
