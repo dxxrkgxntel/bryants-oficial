@@ -39,20 +39,23 @@ function validateMessageDraft(input, channels) {
         const thumbnail = httpsUrl(source.thumbnail, "La miniatura");
         if (image) embed.image = { url: image };
         if (thumbnail) embed.thumbnail = { url: thumbnail };
-        if (source.timestamp) embed.timestamp = new Date().toISOString();
+        embed.timestamp = source.timestamp === true;
         const fields = Array.isArray(source.fields) ? source.fields.slice(0, 25).map(field => ({
             name: text(field?.name, 256),
             value: text(field?.value, 1024),
             inline: field?.inline === true
         })).filter(field => field.name && field.value) : [];
         if (fields.length) embed.fields = fields;
+        const embedTextLength = [embed.title, embed.description, embed.author?.name, embed.footer?.text, ...fields.flatMap(field => [field.name, field.value])].filter(Boolean).join("").length;
+        if (embedTextLength > 6000) throw new Error("El contenido total del embed no puede superar 6000 caracteres.");
         if (!embed.title && !embed.description && !embed.author && !embed.footer && !embed.image && !embed.thumbnail && !fields.length) {
             throw new Error("Añade contenido al embed antes de guardarlo.");
         }
         return { name, channelId, format, payload: { embed } };
     }
 
-    const blocks = Array.isArray(source.blocks) ? source.blocks.slice(0, 25) : [];
+    const blocks = Array.isArray(source.blocks) ? source.blocks : [];
+    if (blocks.length > 10) throw new Error("Components V2 admite hasta 10 bloques en este constructor.");
     const components = [];
     for (const block of blocks) {
         if (block?.type === "text") {
@@ -74,13 +77,16 @@ function validateMessageDraft(input, channels) {
     if (!components.length) throw new Error("Añade al menos un bloque a Components V2.");
     return {
         name, channelId, format,
-        payload: { blocks: blocks.map(block => ({ type: block.type, content: text(block.content, 4000), url: text(block.url, 500), label: text(block.label, 80), divider: block.divider !== false, spacing: block.spacing === "large" ? "large" : "small" })) }
+        payload: { accentColor: /^#[0-9a-f]{6}$/i.test(source.accentColor || "") ? Number.parseInt(source.accentColor.slice(1), 16) : 0x8A2BE2, blocks: blocks.map(block => ({ type: block.type, content: text(block.content, 4000), url: text(block.url, 500), label: text(block.label, 80), divider: block.divider !== false, spacing: block.spacing === "large" ? "large" : "small" })) }
     };
 }
 
 function buildMessagePayload(draft) {
     if (draft.format === "embed") {
-        return { embeds: [draft.payload.embed], allowed_mentions: { parse: [] } };
+        const embed = { ...draft.payload.embed };
+        if (embed.timestamp) embed.timestamp = new Date().toISOString();
+        else delete embed.timestamp;
+        return { embeds: [embed], allowed_mentions: { parse: [] } };
     }
     const components = draft.payload.blocks.map(block => {
         if (block.type === "text") return { type: 10, content: block.content };
@@ -91,7 +97,7 @@ function buildMessagePayload(draft) {
     }).filter(Boolean);
     return {
         flags: COMPONENTS_V2_FLAG,
-        components: [{ type: 17, accent_color: 0x8A2BE2, components }],
+        components: [{ type: 17, accent_color: draft.payload.accentColor || 0x8A2BE2, components }],
         allowed_mentions: { parse: [] }
     };
 }
