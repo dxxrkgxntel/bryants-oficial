@@ -5,6 +5,9 @@ let activeTicketLastMessageId = null;
 let currentUser = null;
 let ticketsLoadPromise = null;
 let supportPollRunning = false;
+let assistantHistory = [];
+let assistantBusy = false;
+let attachAssistantHistory = false;
 
 async function supportApi(url, options = {}) {
     const headers = { ...(options.headers || {}) };
@@ -16,6 +19,18 @@ async function supportApi(url, options = {}) {
     return result;
 }
 function notice(message) { const node=$("#support-notice"); node.textContent=message; node.hidden=false; }
+function appendAssistantMessage(role, content) {
+    const list = $("#support-ai-messages");
+    const item = document.createElement("article");
+    item.className = `support-ai-message ${role}`;
+    const author = document.createElement("strong");
+    author.textContent = role === "user" ? (currentUser?.displayName || currentUser?.username || "Tú") : "Asistente Bryvex";
+    const body = document.createElement("p");
+    body.textContent = content;
+    item.append(author, body);
+    list.append(item);
+    list.scrollTop = list.scrollHeight;
+}
 function renderTickets(tickets) {
     const list=$("#support-ticket-list"); list.replaceChildren();
     if (!tickets.length) { const empty=document.createElement("p"); empty.className="support-muted"; empty.textContent="Todavía no has creado tickets."; list.append(empty); return; }
@@ -99,12 +114,58 @@ async function init() {
         }
     } catch(error) { notice(error.message); }
 }
+$("#support-ai-form").addEventListener("submit", async event => {
+    event.preventDefault();
+    if (assistantBusy) return;
+    const field = $("#support-ai-question");
+    const question = field.value.trim();
+    if (!question) return;
+    assistantBusy = true;
+    const button = event.currentTarget.querySelector("button[type=submit]");
+    button.disabled = true;
+    field.disabled = true;
+    field.value = "";
+    assistantHistory.push({ role: "user", content: question });
+    appendAssistantMessage("user", question);
+    $("#support-ai-ticket").hidden = false;
+    try {
+        const result = await supportApi("/api/support/assistant", {
+            method: "POST",
+            body: JSON.stringify({ question, history: assistantHistory.slice(0, -1) })
+        });
+        if (result.answer) {
+            assistantHistory.push({ role: "assistant", content: result.answer });
+            appendAssistantMessage("assistant", result.answer);
+        } else {
+            throw new Error("El asistente no está disponible. Puedes crear un ticket directamente.");
+        }
+    } catch (error) {
+        appendAssistantMessage("assistant", error.message);
+        $("#support-ai-ticket").hidden = false;
+    } finally {
+        assistantBusy = false;
+        button.disabled = false;
+        field.disabled = false;
+        field.focus();
+    }
+});
+$("#support-ai-ticket").addEventListener("click", () => {
+    if (!assistantHistory.length) return;
+    attachAssistantHistory = true;
+    const firstQuestion = assistantHistory.find(message => message.role === "user")?.content || "";
+    $("#support-subject").value = firstQuestion.replace(/\s+/g, " ").slice(0, 120) || "Necesito ayuda con Bryvex";
+    $("#support-message").value = "Solicito ayuda del equipo de soporte. Adjunto la conversación previa con Asistente Bryvex para que puedan revisar lo que ya intenté.";
+    $("#support-category").value = "bot";
+    $("#support-create-form").scrollIntoView({ behavior: "smooth", block: "center" });
+    $("#support-subject").focus({ preventScroll: true });
+    notice("La conversación se adjuntará al ticket cuando lo crees. Puedes editar el asunto y el mensaje.");
+});
 $("#support-create-form").addEventListener("submit",async event=>{
     event.preventDefault();
     const button=event.currentTarget.querySelector("button[type=submit]"); button.disabled=true;
     try {
-        const result=await supportApi("/api/support/tickets",{method:"POST",body:JSON.stringify({category:$("#support-category").value,subject:$("#support-subject").value,message:$("#support-message").value})});
-        $("#support-subject").value=""; $("#support-message").value="";
+        const result=await supportApi("/api/support/tickets",{method:"POST",body:JSON.stringify({category:$("#support-category").value,subject:$("#support-subject").value,message:$("#support-message").value,assistantHistory:attachAssistantHistory?assistantHistory:[]})});
+        $("#support-subject").value=""; $("#support-message").value=""; attachAssistantHistory=false;
         notice(`Ticket #${result.ticket.ticketNumber} creado correctamente.`);
         await loadTickets(); await openTicket(result.ticket.id);
     } catch(error) { notice(error.message); } finally { button.disabled=false; }

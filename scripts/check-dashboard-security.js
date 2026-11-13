@@ -7,6 +7,8 @@ const source = fs.readFileSync(path.join(root, "dashboard", "server.js"), "utf8"
 const clientSource = fs.readFileSync(path.join(root, "dashboard", "public", "server.js"), "utf8");
 const templateSource = fs.readFileSync(path.join(root, "dashboard", "public", "templates.js"), "utf8");
 const leaderboardSource = fs.readFileSync(path.join(root, "dashboard", "public", "leaderboard.js"), "utf8");
+const supportClientSource = fs.readFileSync(path.join(root, "dashboard", "public", "support.js"), "utf8");
+const supportTemplateSource = fs.readFileSync(path.join(root, "dashboard", "public", "support.html"), "utf8");
 const achievementSource = fs.readFileSync(path.join(root, "Functions", "achievementTracker.js"), "utf8");
 const shopSource = fs.readFileSync(path.join(root, "Utils", "shopHandlers.js"), "utf8");
 const economyUserSource = fs.readFileSync(path.join(root, "Models", "EconomyUser.js"), "utf8");
@@ -67,6 +69,7 @@ for (const route of [
     ["post", "/api/guilds/:guildId/lists/:list", ["requireLogin", "requireCsrf", "requireGuildModulePermission"]],
     ["put", "/api/guilds/:guildId/lists/:list/:recordId", ["requireLogin", "requireCsrf", "requireGuildModulePermission"]],
     ["delete", "/api/guilds/:guildId/lists/:list/:recordId", ["requireLogin", "requireCsrf", "requireGuildModulePermission"]],
+    ["post", "/api/support/assistant", ["requireLogin", "requireCsrf"]],
     ["post", "/api/support/tickets", ["requireLogin", "requireCsrf"]],
     ["post", "/api/support/tickets/:ticketId/messages", ["requireLogin", "requireCsrf"]],
     ["post", "/api/support/tickets/:ticketId/close", ["requireLogin", "requireCsrf"]],
@@ -81,6 +84,10 @@ function requireClientPattern(pattern, message) {
 
 requireClientPattern(/function assistantReply\(question\)/, "Debe existir el asistente de dashboard");
 requireClientPattern(/const matched = findAssistantModule\(q\);[\s\S]*?const moduleQuestion = Boolean\(matched && matched\.score <= 2\);/, "Las consultas de módulos deben detectarse antes de responder con intenciones generales");
+assert.match(supportClientSource, /supportApi\("\/api\/support\/assistant"/, "El Centro de soporte debe consultar al asistente mediante su API protegida");
+assert.match(supportClientSource, /assistantHistory:attachAssistantHistory\?assistantHistory:\[\]/, "La transferencia a ticket debe enviar el historial de la IA");
+assert.match(supportTemplateSource, /id="support-ai-form"/, "El Centro de soporte debe mostrar el chat de Asistente Bryvex");
+assert.match(source, /assistantTranscript[\s\S]*?Conversación previa con Asistente Bryvex/, "Los tickets deben conservar el contexto de la conversación con la IA");
 requireClientPattern(/href: "\/support"/, "El asistente debe conservar el destino del Centro de soporte");
 requireClientPattern(/actionUrl:\s*assistantWebsitePageActions\.support\.href/, "Las consultas no reconocidas deben ofrecer acceso a Support");
 requireClientPattern(/actionLabel:\s*assistantWebsitePageActions\.support\.label/, "El acceso a Support debe tener una etiqueta visible");
