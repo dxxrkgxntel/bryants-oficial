@@ -13,6 +13,8 @@ const PollConfig = require("../Models/PollConfig");
 const Giveaway = require("../Models/Giveaway");
 const GiveawayConfig = require("../Models/GiveawayConfig");
 const CommunityPanel = require("../Models/CommunityPanel");
+const DashboardMessage = require("../Models/DashboardMessage");
+const { validateMessageDraft, buildMessagePayload } = require("../Functions/dashboardMessageBuilder");
 const { buildCommunityPanelPayload } = require("../Functions/communityPanelMessage");
 const DashboardAccount = require("../Models/DashboardAccount");
 const DashboardLogin = require("../Models/DashboardLogin");
@@ -3322,6 +3324,96 @@ app.delete("/api/guilds/:guildId/community-panels/:panelId", requireLogin, requi
     } catch (error) {
         console.error("[Dashboard Community Panels] Error al eliminar:", error.message);
         return res.status(500).json({ error: "No pude eliminar el panel." });
+    }
+});
+
+
+app.get("/api/guilds/:guildId/modules/:module/messages", requireGuildModulePermission("view"), async (req, res) => {
+    if (req.params.module !== "messageBuilder") return res.status(404).json({ error: "Módulo no encontrado." });
+    try {
+        const messages = await DashboardMessage.find({ guildId: req.params.guildId }).sort({ updatedAt: -1 }).limit(100).lean();
+        return res.set("Cache-Control", "private, no-store").json({
+            messages: messages.map(item => ({ ...item, _id: String(item._id) }))
+        });
+    } catch (error) {
+        console.error("[Dashboard Message Builder] Error al cargar mensajes:", error.message);
+        return res.status(500).json({ error: "No pude cargar los mensajes guardados." });
+    }
+});
+
+app.post("/api/guilds/:guildId/modules/:module/messages", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
+    if (req.params.module !== "messageBuilder") return res.status(404).json({ error: "Módulo no encontrado." });
+    try {
+        const guildId = req.params.guildId;
+        const resources = await fetchGuildResources(guildId);
+        const input = validateMessageDraft(req.body, resources.channels);
+        let message;
+        if (req.body.id) {
+            if (!/^[a-f\\d]{24}$/i.test(String(req.body.id))) return res.status(400).json({ error: "El identificador del mensaje no es válido." });
+            message = await DashboardMessage.findOneAndUpdate(
+                { _id: req.body.id, guildId },
+                { $set: input },
+                { new: true, runValidators: true }
+            );
+            if (!message) return res.status(404).json({ error: "No encontré el mensaje que intentas editar." });
+        } else {
+            message = await DashboardMessage.create({ ...input, guildId, createdBy: req.session.user.id });
+        }
+        await recordDashboardAudit(req, guildId, "Mensaje de dashboard " + message.name + " guardado");
+        return res.status(req.body.id ? 200 : 201).json({ message: serialize(message) });
+    } catch (error) {
+        console.error("[Dashboard Message Builder] Error al guardar:", error.message);
+        return res.status(400).json({ error: error.message || "No pude guardar el mensaje." });
+    }
+});
+
+app.post("/api/guilds/:guildId/modules/:module/messages/:messageId/publish", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
+    if (req.params.module !== "messageBuilder" || !/^[a-f\\d]{24}$/i.test(req.params.messageId)) return res.status(404).json({ error: "Mensaje no encontrado." });
+    try {
+        const guildId = req.params.guildId;
+        const message = await DashboardMessage.findOne({ _id: req.params.messageId, guildId });
+        if (!message) return res.status(404).json({ error: "No encontré el mensaje guardado." });
+        const resources = await fetchGuildResources(guildId);
+        if (!resources.channels.some(channel => channel.id === message.channelId && [0, 5].includes(channel.type))) {
+            return res.status(400).json({ error: "El canal guardado ya no está disponible en este servidor." });
+        }
+        const payload = buildMessagePayload(message.toObject());
+        const endpoint = "https://discord.com/api/v10/channels/" + message.channelId + "/messages";
+        let sent = null;
+        let updated = false;
+        if (message.messageId) {
+            try {
+                sent = await discordBotRequest(endpoint + "/" + message.messageId, { method: "PATCH", body: payload });
+                updated = true;
+            } catch (error) {
+                if (error.status !== 404) throw error;
+            }
+        }
+        if (!sent) sent = await discordBotRequest(endpoint, { method: "POST", body: payload });
+        message.messageId = sent.id;
+        await message.save();
+        await recordDashboardAudit(req, guildId, "Mensaje de dashboard " + message.name + (updated ? " actualizado en Discord" : " publicado en Discord"));
+        return res.json({
+            ok: true, updated, messageId: sent.id, channelId: message.channelId,
+            url: "https://discord.com/channels/" + guildId + "/" + message.channelId + "/" + sent.id
+        });
+    } catch (error) {
+        console.error("[Dashboard Message Builder] Error al publicar:", error.message);
+        const status = error.status === 429 ? 429 : error.status ? 502 : 400;
+        return res.status(status).json({ error: error.message || "No pude publicar el mensaje en Discord." });
+    }
+});
+
+app.delete("/api/guilds/:guildId/modules/:module/messages/:messageId", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
+    if (req.params.module !== "messageBuilder" || !/^[a-f\\d]{24}$/i.test(req.params.messageId)) return res.status(404).json({ error: "Mensaje no encontrado." });
+    try {
+        const result = await DashboardMessage.deleteOne({ _id: req.params.messageId, guildId: req.params.guildId });
+        if (!result.deletedCount) return res.status(404).json({ error: "No encontré ese mensaje." });
+        await recordDashboardAudit(req, req.params.guildId, "Mensaje guardado eliminado");
+        return res.json({ ok: true });
+    } catch (error) {
+        console.error("[Dashboard Message Builder] Error al eliminar:", error.message);
+        return res.status(500).json({ error: "No pude eliminar el mensaje guardado." });
     }
 });
 
