@@ -3349,7 +3349,7 @@ app.post("/api/guilds/:guildId/modules/:module/messages", requireLogin, requireC
         const input = validateMessageDraft(req.body, resources.channels);
         let message;
         if (req.body.id) {
-            if (!/^[a-f\\d]{24}$/i.test(String(req.body.id))) return res.status(400).json({ error: "El identificador del mensaje no es válido." });
+            if (!/^[a-f\d]{24}$/i.test(String(req.body.id))) return res.status(400).json({ error: "El identificador del mensaje no es válido." });
             message = await DashboardMessage.findOneAndUpdate(
                 { _id: req.body.id, guildId },
                 { $set: input },
@@ -3368,7 +3368,7 @@ app.post("/api/guilds/:guildId/modules/:module/messages", requireLogin, requireC
 });
 
 app.post("/api/guilds/:guildId/modules/:module/messages/:messageId/publish", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
-    if (req.params.module !== "messageBuilder" || !/^[a-f\\d]{24}$/i.test(req.params.messageId)) return res.status(404).json({ error: "Mensaje no encontrado." });
+    if (req.params.module !== "messageBuilder" || !/^[a-f\d]{24}$/i.test(req.params.messageId)) return res.status(404).json({ error: "Mensaje no encontrado." });
     try {
         const guildId = req.params.guildId;
         const message = await DashboardMessage.findOne({ _id: req.params.messageId, guildId });
@@ -3405,7 +3405,7 @@ app.post("/api/guilds/:guildId/modules/:module/messages/:messageId/publish", req
 });
 
 app.delete("/api/guilds/:guildId/modules/:module/messages/:messageId", requireLogin, requireCsrf, requireGuildModulePermission("edit"), async (req, res) => {
-    if (req.params.module !== "messageBuilder" || !/^[a-f\\d]{24}$/i.test(req.params.messageId)) return res.status(404).json({ error: "Mensaje no encontrado." });
+    if (req.params.module !== "messageBuilder" || !/^[a-f\d]{24}$/i.test(req.params.messageId)) return res.status(404).json({ error: "Mensaje no encontrado." });
     try {
         const result = await DashboardMessage.deleteOne({ _id: req.params.messageId, guildId: req.params.guildId });
         if (!result.deletedCount) return res.status(404).json({ error: "No encontré ese mensaje." });
