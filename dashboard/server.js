@@ -3862,12 +3862,20 @@ app.post("/api/support/assistant", requireLogin, requireCsrf, async (req, res) =
         return content ? [{ role: message.role, content }] : [];
     }) : [];
     const catalog = getAssistantKnowledgeCatalog();
+    const relatedModule = findAssistantKnowledgeModule(question, catalog);
+    const publicIndex = catalog.slice(0, 100).map(({ key, title, category, description }) => ({ key, title, category, description }));
     const knowledge = {
         priority: "Bryvex Bot y su dashboard son la fuente prioritaria. Discord general es conocimiento secundario.",
-        modules: catalog.slice(0, 100).map(({ key, title, category, description, fields }) => ({
-            key, title, category, description,
-            fields: fields.slice(0, 18)
-        })),
+        ...(relatedModule ? {
+            module: {
+                key: relatedModule.key,
+                title: relatedModule.title,
+                category: relatedModule.category,
+                description: relatedModule.description,
+                fields: relatedModule.fields.slice(0, 20)
+            },
+            relatedModules: publicIndex.filter(item => item.category === relatedModule.category && item.key !== relatedModule.key).slice(0, 8)
+        } : { modules: publicIndex }),
         publicPages: [
             { path: "/docs", purpose: "Documentación y guías de Bryvex Bot." },
             { path: "/status", purpose: "Estado técnico de servicios; consulta la página para datos en vivo." },
