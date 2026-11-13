@@ -7,6 +7,7 @@ const messageBuilderSchema = new Schema({
     format: { type: String, enum: ["embed", "components_v2"], required: true },
     payload: { type: Schema.Types.Mixed, required: true },
     messageId: { type: String, default: null },
+    publishedFormat: { type: String, enum: ["embed", "components_v2"], default: null },
     createdBy: { type: String, default: null }
 }, { timestamps: true });
 
