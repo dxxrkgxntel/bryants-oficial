@@ -97,6 +97,7 @@ function buildMessagePayload(draft) {
         if (block.type === "button") return { type: 1, components: [{ type: 2, style: 5, label: block.label, url: block.url }] };
         return null;
     }).filter(Boolean);
+    if (draft.payload.title) components.unshift({ type: 10, content: "# " + draft.payload.title });
     return {
         flags: COMPONENTS_V2_FLAG,
         components: [{ type: 17, accent_color: draft.payload.accentColor ?? 0x8A2BE2, components }],
