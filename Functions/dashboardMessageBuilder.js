@@ -54,9 +54,11 @@ function validateMessageDraft(input, channels) {
         return { name, channelId, format, payload: { embed } };
     }
 
+    const title = text(source.title, 256);
     const blocks = Array.isArray(source.blocks) ? source.blocks : [];
-    if (blocks.length > 10) throw new Error("Components V2 admite hasta 10 bloques en este constructor.");
+    if (blocks.length + (title ? 1 : 0) > 10) throw new Error("Components V2 admite hasta 10 componentes dentro del contenedor, incluido el título.");
     const components = [];
+    if (title) components.push({ type: 10, content: "# " + title });
     for (const block of blocks) {
         if (block?.type === "text") {
             const content = text(block.content, 4000);
@@ -77,7 +79,7 @@ function validateMessageDraft(input, channels) {
     if (!components.length) throw new Error("Añade al menos un bloque a Components V2.");
     return {
         name, channelId, format,
-        payload: { accentColor: /^#[0-9a-f]{6}$/i.test(source.accentColor || "") ? Number.parseInt(source.accentColor.slice(1), 16) : 0x8A2BE2, blocks: blocks.map(block => ({ type: block.type, content: text(block.content, 4000), url: text(block.url, 500), label: text(block.label, 80), divider: block.divider !== false, spacing: block.spacing === "large" ? "large" : "small" })).filter(block => block.type === "separator" || (block.type === "text" && block.content) || (block.type === "image" && block.url) || (block.type === "button" && block.label && block.url)) }
+        payload: { title, accentColor: /^#[0-9a-f]{6}$/i.test(source.accentColor || "") ? Number.parseInt(source.accentColor.slice(1), 16) : 0x8A2BE2, blocks: blocks.map(block => ({ type: block.type, content: text(block.content, 4000), url: text(block.url, 500), label: text(block.label, 80), divider: block.divider !== false, spacing: block.spacing === "large" ? "large" : "small" })).filter(block => block.type === "separator" || (block.type === "text" && block.content) || (block.type === "image" && block.url) || (block.type === "button" && block.label && block.url)) }
     };
 }
 
@@ -95,6 +97,7 @@ function buildMessagePayload(draft) {
         if (block.type === "button") return { type: 1, components: [{ type: 2, style: 5, label: block.label, url: block.url }] };
         return null;
     }).filter(Boolean);
+    if (draft.payload.title) components.unshift({ type: 10, content: "# " + draft.payload.title });
     return {
         flags: COMPONENTS_V2_FLAG,
         components: [{ type: 17, accent_color: draft.payload.accentColor ?? 0x8A2BE2, components }],

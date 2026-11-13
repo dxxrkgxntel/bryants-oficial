@@ -11,13 +11,16 @@ assert.equal(buildMessagePayload(embed).embeds[0].fields.length, 1);
 
 const v2 = validateMessageDraft({
     name: "Panel", channelId: channels[0].id, format: "components_v2",
-    payload: { blocks: [{ type: "text", content: "## Hola" }, { type: "separator" }, { type: "button", label: "Abrir", url: "https://example.com" }] }
+    payload: { title: "Título principal", blocks: [{ type: "text", content: "Hola" }, { type: "separator" }, { type: "button", label: "Abrir", url: "https://example.com" }] }
 }, channels);
 const payload = buildMessagePayload(v2);
 assert.equal(payload.flags, COMPONENTS_V2_FLAG);
 assert.equal(payload.components[0].accent_color, 0x8A2BE2);
 assert.equal(payload.components[0].components[0].type, 10);
-assert.equal(payload.components[0].components[2].components[0].style, 5);
+assert.equal(payload.components[0].components[0].content, "# Título principal");
+assert.equal(payload.components[0].components[1].content, "Hola");
+assert.equal(payload.components[0].components[3].components[0].style, 5);
 assert.throws(() => validateMessageDraft({ name: "X", channelId: "bad", format: "embed", payload: { title: "x" } }, channels));
 assert.throws(() => validateMessageDraft({ name: "X", channelId: channels[0].id, format: "components_v2", payload: { blocks: [{ type: "image", url: "javascript:alert(1)" }] } }, channels));
+assert.throws(() => validateMessageDraft({ name: "X", channelId: channels[0].id, format: "components_v2", payload: { title: "Título", blocks: Array.from({ length: 10 }, () => ({ type: "text", content: "x" })) } }, channels));
 console.log("Dashboard message builder checks passed.");
