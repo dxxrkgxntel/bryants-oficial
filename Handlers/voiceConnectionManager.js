@@ -157,9 +157,11 @@ function watchConnection(connection, guild, channelId) {
     });
 
     connection.on("stateChange", (_oldState, newState) => {
+        const latestTarget = voiceTargetsByGuild.get(guild.id);
         if (newState.status === VoiceConnectionStatus.Ready) {
             clearReconnectState(guild.id);
-            console.log("[VOICE CONNECT] Conexión estable en " + guild.id + "/" + channelId + ".");
+            console.log("[VOICE CONNECT] Conexión estable en " + guild.id + "/" +
+                (latestTarget?.channelId || connection.joinConfig.channelId) + ".");
             return;
         }
 
@@ -170,8 +172,8 @@ function watchConnection(connection, guild, channelId) {
             return;
         }
 
-        if (newState.status === VoiceConnectionStatus.Disconnected) {
-            scheduleDisconnectRecovery(connection, guild, channelId, newState);
+        if (newState.status === VoiceConnectionStatus.Disconnected && latestTarget?.channelId) {
+            scheduleDisconnectRecovery(connection, guild, latestTarget.channelId, newState);
         }
     });
 }
