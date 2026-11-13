@@ -97,7 +97,7 @@ function buildMessagePayload(draft) {
     }).filter(Boolean);
     return {
         flags: COMPONENTS_V2_FLAG,
-        components: [{ type: 17, accent_color: draft.payload.accentColor || 0x8A2BE2, components }],
+        components: [{ type: 17, accent_color: draft.payload.accentColor ?? 0x8A2BE2, components }],
         allowed_mentions: { parse: [] }
     };
 }
