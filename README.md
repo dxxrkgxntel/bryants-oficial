@@ -171,6 +171,6 @@ index.js      Entrada principal del bot
 
 ### Hecho para que los servidores tengan todo en un mismo lugar. 💜
 
-**Moderación · Comunidad · Voz · Juegos · Economía · Dashboard**
+**Moderación · Comunidad · Voz · Juegos · Economía · Dashboard · Family**
 
 </div>
